@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: #000000;
+  --color-accent: #D4AF37;
+  --color-secondary: #F5F5F5;
+  --color-background: #FFFFFF;
+  
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #000000;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: fadeSlideIn 0.35s ease-out forwards;
+}
+
+/* === ANIMATIONS GLOBALES INTERACTIVES (DASHBOARDS) === */
+button, 
+a[href],
+input[type="submit"],
+input[type="button"] {
+  /* Transition douce pour tous les changements d'état */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Effet "Pressé" (Scale) dès qu'on touche ou clique sur un bouton */
+button:active, 
+a[href]:active,
+input[type="submit"]:active,
+input[type="button"]:active {
+  transform: scale(0.96) !important;
+}
+
+/* Rendre le fond plus visible au survol (assombrit légèrement les couleurs/fonds) */
+button:hover:not(:disabled),
+a[href]:hover {
+  filter: brightness(0.93) !important;
+}
+
+/* Annuler l'effet pour les éléments désactivés */
+button:disabled {
+  transform: none !important;
+  filter: none !important;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
