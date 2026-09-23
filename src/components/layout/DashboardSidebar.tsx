@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
 import { 
   Home, 
   Calendar, 
@@ -15,10 +17,26 @@ import {
   ChevronRight,
   Plus
 } from "lucide-react";
-import { mockEvents } from "@/data/mock/events";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('events')
+          .select('*, pricing_plans(name)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (data) setEvents(data);
+      }
+    };
+    fetchEvents();
+  }, []);
   
   return (
     <aside className="w-64 bg-white border-r border-gray-100 flex flex-col hidden md:flex shrink-0">
@@ -38,7 +56,7 @@ export function DashboardSidebar() {
           <nav className="space-y-1">
             <SidebarLink href="/dashboard" icon={Home} label="Mon Espace" currentPath={pathname} exact />
             <SidebarLink href="/dashboard/messages" icon={Send} label="Messagerie Globale" currentPath={pathname} />
-            <SidebarLink href="/dashboard/events/create" icon={Plus} label="Créer un événement" currentPath={pathname} />
+            <SidebarLink href="/create" icon={Plus} label="Créer un événement" currentPath={pathname} />
           </nav>
         </div>
 
@@ -48,7 +66,7 @@ export function DashboardSidebar() {
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Mes Événements</h3>
           </div>
           <nav className="space-y-3">
-            {mockEvents.map((event) => {
+            {events.map((event) => {
               const isEventActive = pathname.includes(`/dashboard/events/${event.id}`);
               
               return (
@@ -64,7 +82,7 @@ export function DashboardSidebar() {
                       <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist" currentPath={pathname} />
                       <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitations" currentPath={pathname} />
                       <SubLink href={`/dashboard/events/${event.id}/participants`} label="Participants" currentPath={pathname} />
-                      {event.plan === "Gold" && (
+                      {event.pricing_plans?.name === "Gold" && (
                         <>
                           <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} />
                           <SubLink href={`/dashboard/events/${event.id}/messages`} label="Messagerie" currentPath={pathname} />

@@ -21,8 +21,8 @@ export default function PublicLayout({
             <Link href="/login" className="hidden md:flex items-center px-4 py-2 text-sm font-semibold text-gray-600 hover:text-black transition-colors rounded-full hover:bg-gray-50">
               Connexion
             </Link>
-            <Link href="/register" className="flex items-center justify-center rounded-full bg-[#111111] px-6 py-2.5 text-sm font-semibold text-[#D4AF37] hover:bg-black hover:shadow-md transition-all border border-transparent hover:border-[#D4AF37]/30">
-              Inscription
+            <Link href="/create" className="flex items-center justify-center rounded-full bg-[#111111] px-6 py-2.5 text-sm font-semibold text-[#D4AF37] hover:bg-black hover:shadow-md transition-all border border-transparent hover:border-[#D4AF37]/30">
+              Créer un événement
             </Link>
           </div>
         </div>

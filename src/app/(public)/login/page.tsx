@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { login } from "@/app/(auth)/auth-actions";
 
 export default function LoginPage() {
   return (
@@ -11,11 +12,13 @@ export default function LoginPage() {
             <p className="text-gray-500 text-sm">Connectez-vous pour accéder à votre espace Evenium.</p>
           </div>
 
-          <form className="space-y-5">
+          <form action={login} className="space-y-5">
+            <input type="hidden" name="redirect" value="checkout" />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Adresse Email</label>
               <input 
                 type="email" 
+                name="email"
                 placeholder="vous@exemple.com" 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                 required
@@ -28,7 +31,8 @@ export default function LoginPage() {
                 <Link href="#" className="text-xs font-semibold text-[#B8860B] hover:text-[#996B00]">Oublié ?</Link>
               </div>
               <input 
-                type="password" 
+                type="password"
+                name="password"
                 placeholder="••••••••" 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                 required

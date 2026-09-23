@@ -220,7 +220,7 @@ export default function PricingSection() {
             </div>
             
             <div className="pt-6">
-              <Link onClick={() => setSelectedFormula(null)} href="/register" className={`flex items-center justify-center w-full text-center py-4 rounded-xl font-bold transition-all ${selectedFormula.id === 'gold' ? 'bg-[#B8860B] hover:bg-[#996B00] text-white shadow-lg shadow-[#B8860B]/20' : 'bg-gray-900 hover:bg-black text-white shadow-lg'}`}>
+              <Link onClick={() => setSelectedFormula(null)} href="/create" className={`flex items-center justify-center w-full text-center py-4 rounded-xl font-bold transition-all ${selectedFormula.id === 'gold' ? 'bg-[#B8860B] hover:bg-[#996B00] text-white shadow-lg shadow-[#B8860B]/20' : 'bg-gray-900 hover:bg-black text-white shadow-lg'}`}>
                 Choisir cette formule
               </Link>
             </div>

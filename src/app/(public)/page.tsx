@@ -31,7 +31,7 @@ export default function Home() {
             
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-start items-center w-full sm:w-auto">
               <Link
-                href="/register"
+                href="/create"
                 className="w-full sm:w-auto rounded-full bg-primary px-8 py-4 text-sm font-semibold text-white shadow-lg hover:bg-black/80 transition-all flex items-center justify-center gap-2 hover:gap-4"
               >
                 Créer mon événement <ArrowRight size={16} />
@@ -270,7 +270,7 @@ export default function Home() {
       <section className="py-24 px-6 text-center">
         <h2 className="font-serif text-3xl md:text-4xl text-primary mb-8">Prêt à vivre un événement inoubliable ?</h2>
         <Link
-          href="/register"
+          href="/create"
           className="inline-flex rounded-full bg-primary px-8 py-4 text-sm font-semibold text-white shadow-lg hover:bg-black/80 transition-all items-center gap-2"
         >
           Commencer maintenant <ArrowRight size={16} />
