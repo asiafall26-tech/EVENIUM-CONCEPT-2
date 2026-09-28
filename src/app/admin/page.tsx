@@ -1,3 +1,5 @@
+"use client";
+
 import { 
   Calendar, 
   FileText, 
@@ -12,8 +14,13 @@ import {
   Headphones
 } from "lucide-react";
 import Image from "next/image";
+import { useEvents } from "@/store/EventsContext";
+import { usePrestataires } from "@/store/PrestataireContext";
 
 export default function AdminDashboardPage() {
+  const { events } = useEvents();
+  const { prestataires } = usePrestataires();
+
   const tickets = [
     { client: "Amina Diop", type: "Problème paiement", date: "12 oct. 2026", priorite: "Haute", status: "Nouveau" },
     { client: "Moussa Kane", type: "Bug affichage", date: "5 nov. 2026", priorite: "Moyenne", status: "En cours" },
@@ -58,7 +65,7 @@ export default function AdminDashboardPage() {
             <Calendar size={24} strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="text-2xl font-bold">48</h3>
+            <h3 className="text-2xl font-bold">{events.length}</h3>
             <p className="text-xs text-gray-500 font-medium mb-1">Événements</p>
             <div className="text-[10px] text-green-600 font-bold flex items-center gap-0.5"><TrendingUp size={10} /> +12%</div>
           </div>
@@ -80,7 +87,7 @@ export default function AdminDashboardPage() {
             <Users size={24} strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="text-2xl font-bold">36</h3>
+            <h3 className="text-2xl font-bold">{prestataires.length}</h3>
             <p className="text-xs text-gray-500 font-medium mb-1">Prestataires</p>
             <div className="text-[10px] text-green-600 font-bold flex items-center gap-0.5"><TrendingUp size={10} /> +8%</div>
           </div>

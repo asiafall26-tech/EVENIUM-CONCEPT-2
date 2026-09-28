@@ -20,11 +20,8 @@ export async function login(formData: FormData) {
     redirect('/login?error=Email ou mot de passe incorrect')
   }
 
-  const redirectPath = formData.get('redirect') as string
-  const nextPath = redirectPath === 'checkout' ? '/checkout' : '/dashboard'
-
-  revalidatePath(nextPath, 'layout')
-  redirect(nextPath)
+  revalidatePath('/dashboard', 'layout')
+  redirect('/dashboard')
 }
 
 export async function signup(formData: FormData) {
@@ -43,17 +40,14 @@ export async function signup(formData: FormData) {
   const { error } = await supabase.auth.signUp(data)
 
   if (error) {
-    redirect('/register?error=Erreur lors de la création du compte')
+    redirect('/signup?error=Erreur lors de la création du compte')
   }
 
-  const redirectPath = formData.get('redirect') as string
-  const nextPath = redirectPath === 'checkout' ? '/checkout' : '/dashboard'
-
-  revalidatePath(nextPath, 'layout')
-  redirect(nextPath)
+  revalidatePath('/dashboard', 'layout')
+  redirect('/dashboard')
 }
 
-export async function loginWithProvider(provider: 'google' | 'apple') {
+export async function loginWithProvider(provider: 'google' | 'apple' | 'github') {
   const supabase = await createClient()
   
   // NOTE: This approach requires the browser to redirect to the URL returned

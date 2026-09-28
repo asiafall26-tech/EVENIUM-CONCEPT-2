@@ -17,13 +17,19 @@ export const metadata: Metadata = {
   description: "Créez, personnalisez et gérez votre événement de A à Z avec Evenium.",
 };
 
+import { Providers } from "@/components/Providers";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="fr"
       className={`${playfair.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-white text-black">{children}</body>
+      <body className="min-h-full flex flex-col font-sans bg-white text-black">
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }

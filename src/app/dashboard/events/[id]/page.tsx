@@ -1,9 +1,9 @@
 "use client";
 
-import { mockEvents } from "@/data/mock/events";
 import { notFound } from "next/navigation";
 import { Users, CheckCircle, Clock, Wallet, CheckSquare, Sparkles } from "lucide-react";
 import { use } from "react";
+import { useEvents } from "@/store/EventsContext";
 
 export default function EventDashboardPage({
   params,
@@ -11,11 +11,30 @@ export default function EventDashboardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const event = mockEvents.find((e) => e.id === id);
+  const { events } = useEvents();
+  
+  const event = events.find(e => e.id === id);
 
   if (!event) {
     notFound();
   }
+
+  // Data mapping from mockEvents
+  const budget = {
+    total: event.budget?.total || 0,
+    spent: event.budget?.spent || 0,
+  };
+  
+  const guests = {
+    total: event.guests?.total || 0,
+    confirmed: event.guests?.confirmed || 0,
+    pending: event.guests?.pending || 0,
+  };
+
+  const tasks = {
+    total: event.tasks?.total || 0,
+    completed: event.tasks?.completed || 0,
+  };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -88,14 +107,14 @@ export default function EventDashboardPage({
               <Wallet size={18} /> Budget
             </div>
             <div className="mb-2">
-              <span className="text-3xl font-semibold">{event.budget.spent.toLocaleString()}</span>
+              <span className="text-3xl font-semibold">{budget.spent.toLocaleString()}</span>
               <span className="text-gray-500 text-sm ml-1">FCFA dépensés</span>
             </div>
-            <p className="text-sm text-gray-500 mb-4">Sur un total de {event.budget.total.toLocaleString()} FCFA</p>
+            <p className="text-sm text-gray-500 mb-4">Sur un total de {budget.total.toLocaleString()} FCFA</p>
             <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
               <div 
                 className="bg-primary h-2 rounded-full" 
-                style={{ width: `${(event.budget.spent / event.budget.total) * 100}%` }}
+                style={{ width: `${budget.total > 0 ? (budget.spent / budget.total) * 100 : 0}%` }}
               />
             </div>
           </div>
@@ -104,16 +123,16 @@ export default function EventDashboardPage({
         {/* Guests Card */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
-            <Users size={18} /> Invités ({event.guests.total})
+            <Users size={18} /> Invités ({guests.total})
           </div>
           <div className="space-y-4">
             <div className="flex justify-between items-center text-sm">
               <span className="flex items-center gap-2 text-green-600"><CheckCircle size={16} /> Confirmés</span>
-              <span className="font-semibold text-green-700">{event.guests.confirmed}</span>
+              <span className="font-semibold text-green-700">{guests.confirmed}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="flex items-center gap-2 text-amber-500"><Clock size={16} /> En attente</span>
-              <span className="font-semibold text-amber-600">{event.guests.pending}</span>
+              <span className="font-semibold text-amber-600">{guests.pending}</span>
             </div>
           </div>
         </div>
@@ -125,14 +144,14 @@ export default function EventDashboardPage({
               <CheckSquare size={18} /> To-do List
             </div>
             <div className="mb-2">
-              <span className="text-3xl font-semibold">{event.tasks.completed}</span>
-              <span className="text-gray-500 text-sm ml-1">/ {event.tasks.total} tâches</span>
+              <span className="text-3xl font-semibold">{tasks.completed}</span>
+              <span className="text-gray-500 text-sm ml-1">/ {tasks.total} tâches</span>
             </div>
-            <p className="text-sm text-gray-500 mb-4">{event.tasks.total - event.tasks.completed} tâches restantes</p>
+            <p className="text-sm text-gray-500 mb-4">{tasks.total - tasks.completed} tâches restantes</p>
             <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
               <div 
                 className="bg-accent h-2 rounded-full" 
-                style={{ width: `${(event.tasks.completed / event.tasks.total) * 100}%` }}
+                style={{ width: `${tasks.total > 0 ? (tasks.completed / tasks.total) * 100 : 0}%` }}
               />
             </div>
           </div>

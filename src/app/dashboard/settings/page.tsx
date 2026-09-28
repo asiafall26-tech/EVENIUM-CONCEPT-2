@@ -3,8 +3,10 @@
 import { Save, User, Bell, Shield, CreditCard, Camera, LogOut, Check, CreditCard as CardIcon, Download, Smartphone, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function GlobalSettingsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"profil" | "notifications" | "securite" | "facturation">("profil");
 
   const [paymentMethods, setPaymentMethods] = useState([
@@ -109,7 +111,7 @@ export default function GlobalSettingsPage() {
             <CreditCard size={18} /> Facturation
           </button>
           <div className="h-px bg-gray-100 my-4 w-full"></div>
-          <button className="w-full text-left px-5 py-3 text-red-500 hover:bg-red-50 font-medium rounded-xl flex items-center gap-3 transition-colors">
+          <button onClick={() => router.push('/login')} className="w-full text-left px-5 py-3 text-red-500 hover:bg-red-50 font-medium rounded-xl flex items-center gap-3 transition-colors">
             <LogOut size={18} /> Déconnexion
           </button>
         </div>

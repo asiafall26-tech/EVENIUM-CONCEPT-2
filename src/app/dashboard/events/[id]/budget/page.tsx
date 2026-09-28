@@ -1,10 +1,10 @@
 "use client";
 
 import { Wallet, PieChart, TrendingDown, Plus, ChevronDown, CheckCircle2, Lock, ArrowUpRight, Receipt, Activity, MoreHorizontal, X, FileText, Calendar, Edit2, Trash2 } from "lucide-react";
-import { mockEvents } from "@/data/mock/events";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { use, useState, useMemo } from "react";
+import { use, useState, useEffect, useMemo } from "react";
+import { useEvents } from "@/store/EventsContext";
 
 export default function BudgetDashboardPage({
   params,
@@ -12,10 +12,15 @@ export default function BudgetDashboardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const event = mockEvents.find((e) => e.id === id);
+  const { events } = useEvents();
+
+  const [event, setEvent] = useState<any>(null);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
-  const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [newExpense, setNewExpense] = useState({
     description: "",
@@ -25,32 +30,55 @@ export default function BudgetDashboardPage({
     status: "Payé"
   });
 
-  const [expenses, setExpenses] = useState([
-    { id: 1, description: "Acompte Traiteur", category: "Lieu & Traiteur", date: "20 Sept. 2026", amount: 850000, status: "Payé", rawDate: "2026-09-20" },
-    { id: 2, description: "Acompte Décoration", category: "Décoration", date: "18 Sept. 2026", amount: 300000, status: "Payé", rawDate: "2026-09-18" },
-    { id: 3, description: "Location Salle de réception", category: "Lieu & Traiteur", date: "15 Sept. 2026", amount: 1250000, status: "En attente", rawDate: "2026-09-15" },
-    { id: 4, description: "Acompte Photographe", category: "Photo & Vidéo", date: "10 Sept. 2026", amount: 150000, status: "Payé", rawDate: "2026-09-10" },
-  ]);
+  useEffect(() => {
+    // Simulate API fetch using Context Events
+    const fetchBudget = async () => {
+      const eventData = events.find(e => e.id === id);
+      if (eventData) {
+        setEvent(eventData);
+        // Simulate some initial expenses based on the spent budget
+        if (eventData.budget?.spent > 0) {
+          setExpenses([
+            {
+              id: "exp-1",
+              description: "Acompte Salle & Traiteur",
+              category: "Lieu & Traiteur",
+              date: "2026-05-15",
+              amount: eventData.budget.spent,
+              status: "Payé"
+            }
+          ]);
+        }
+      }
+      setLoading(false);
+    };
 
-  const globalBudget = 5000000;
+    fetchBudget();
+  }, [id]);
+
+  const globalBudget = event?.budget?.total || 0;
   
   const totalSpent = useMemo(() => {
-    return expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    return expenses.filter(e => e.status === "Payé").reduce((sum, exp) => sum + Number(exp.amount), 0);
   }, [expenses]);
 
   const remainingBudget = globalBudget - totalSpent;
-  const consumedPercentage = Math.min(100, Math.round((totalSpent / globalBudget) * 100));
+  const consumedPercentage = globalBudget > 0 ? Math.min(100, Math.round((totalSpent / globalBudget) * 100)) : 0;
 
   const expensesByCategory = useMemo(() => {
     const cats: Record<string, number> = {};
     expenses.forEach(e => {
-      cats[e.category] = (cats[e.category] || 0) + e.amount;
+      cats[e.category] = (cats[e.category] || 0) + Number(e.amount);
     });
     return cats;
   }, [expenses]);
 
+  if (loading) {
+    return <div className="p-8 max-w-7xl mx-auto flex items-center justify-center h-[80vh]">Chargement de votre budget...</div>;
+  }
+
   if (!event) {
-    notFound();
+    return <div className="p-8 max-w-7xl mx-auto flex items-center justify-center h-[80vh]">Événement introuvable.</div>;
   }
 
   if (event.plan !== "Gold") {
@@ -88,52 +116,45 @@ export default function BudgetDashboardPage({
     setNewExpense({
       description: expense.description,
       category: expense.category,
-      date: expense.rawDate || "", // Use rawDate if available for the input
+      date: expense.date || "",
       amount: expense.amount.toString(),
       status: expense.status
     });
     setIsAddExpenseModalOpen(true);
   };
 
-  const handleDeleteExpense = (id: number) => {
+  const handleDeleteExpense = async (expenseId: string) => {
     if (confirm("Êtes-vous sûr de vouloir supprimer cette dépense ?")) {
-      setExpenses(expenses.filter(e => e.id !== id));
+      setExpenses(expenses.filter(e => e.id !== expenseId));
     }
   };
 
-  const handleSaveExpense = (e: React.FormEvent) => {
+  const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpense.description || !newExpense.amount || !newExpense.date) return;
 
-    const formattedDate = new Date(newExpense.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    setIsSubmitting(true);
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const payload = {
+      id: editingExpenseId || `exp-${Date.now()}`,
+      event_id: id,
+      description: newExpense.description,
+      category: newExpense.category,
+      date: newExpense.date,
+      amount: parseFloat(newExpense.amount),
+      status: newExpense.status
+    };
 
     if (editingExpenseId) {
-      setExpenses(expenses.map(exp => 
-        exp.id === editingExpenseId 
-          ? { 
-              ...exp, 
-              description: newExpense.description, 
-              category: newExpense.category, 
-              date: formattedDate,
-              rawDate: newExpense.date,
-              amount: parseInt(newExpense.amount), 
-              status: newExpense.status 
-            } 
-          : exp
-      ));
+      setExpenses(expenses.map(exp => exp.id === editingExpenseId ? payload : exp));
     } else {
-      const expense = {
-        id: Date.now(),
-        description: newExpense.description,
-        category: newExpense.category,
-        date: formattedDate,
-        rawDate: newExpense.date,
-        amount: parseInt(newExpense.amount),
-        status: newExpense.status
-      };
-      setExpenses([expense, ...expenses]);
+      setExpenses([payload, ...expenses]);
     }
     
+    setIsSubmitting(false);
     setIsAddExpenseModalOpen(false);
   };
 
@@ -306,7 +327,9 @@ export default function BudgetDashboardPage({
                           {expense.category}
                         </span>
                       </td>
-                      <td className="py-4 text-gray-500">{expense.date}</td>
+                      <td className="py-4 text-gray-500">
+                        {new Date(expense.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
                       <td className="py-4"><span className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold ${getStatusColor(expense.status)}`}>{expense.status}</span></td>
                       <td className="py-4 text-right font-bold text-gray-900">{formatCurrency(expense.amount)} F</td>
                       <td className="py-4 text-center">
@@ -418,9 +441,10 @@ export default function BudgetDashboardPage({
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 bg-black text-white hover:bg-gray-900 px-4 py-3 rounded-xl text-sm font-bold shadow-lg shadow-black/10 transition-colors"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-black text-white hover:bg-gray-900 px-4 py-3 rounded-xl text-sm font-bold shadow-lg shadow-black/10 transition-colors disabled:opacity-50"
                 >
-                  {editingExpenseId ? "Enregistrer les modifications" : "Ajouter la dépense"}
+                  {isSubmitting ? "Sauvegarde..." : (editingExpenseId ? "Enregistrer" : "Ajouter")}
                 </button>
               </div>
             </form>

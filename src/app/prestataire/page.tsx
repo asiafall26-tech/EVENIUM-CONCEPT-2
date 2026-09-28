@@ -3,15 +3,10 @@
 import { FileText, CalendarCheck, Clock, CheckCircle, ChevronDown, Plus, MoreHorizontal, MapPin, Star, BadgeCheck, Edit2, X } from "lucide-react";
 import Image from "next/image";
 import { useState, useMemo } from "react";
+import { usePrestataires } from "@/store/PrestataireContext";
 
 export default function PrestataireDashboardPage() {
-  const [demandes, setDemandes] = useState([
-    { id: 1, client: "Amina Diop", init: "AD", type: "Mariage", date: "12 oct. 2026", budget: 1500000, status: "Nouvelle demande" },
-    { id: 2, client: "Moussa Kane", init: "MK", type: "Séminaire", date: "5 nov. 2026", budget: 800000, status: "En discussion" },
-    { id: 3, client: "Sophie Fall", init: "SF", type: "Anniversaire", date: "28 sept. 2026", budget: 350000, status: "Devis envoyé" },
-    { id: 4, client: "Ibrahima Ba", init: "IB", type: "Événement d'entreprise", date: "15 oct. 2026", budget: 1200000, status: "Confirmé" },
-    { id: 5, client: "Ndeye Diallo", init: "ND", type: "Baptême", date: "3 oct. 2026", budget: 400000, status: "En discussion" },
-  ]);
+  const { demandes } = usePrestataires();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newDemande, setNewDemande] = useState({ client: "", type: "Mariage", date: "", budget: "" });
@@ -172,11 +167,13 @@ export default function PrestataireDashboardPage() {
                 {demandes.slice(0, 5).map((d) => (
                   <tr key={d.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="py-4 font-medium text-gray-800 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">{d.init}</div>
-                      {d.client}
+                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                        {d.clientName ? d.clientName.substring(0, 2).toUpperCase() : 'C'}
+                      </div>
+                      {d.clientName}
                     </td>
-                    <td className="py-4 text-gray-600">{d.type}</td>
-                    <td className="py-4 text-gray-500">{d.date}</td>
+                    <td className="py-4 text-gray-600">{d.eventType}</td>
+                    <td className="py-4 text-gray-500">{d.eventDate}</td>
                     <td className="py-4 font-medium text-gray-800">{formatMoney(d.budget)}</td>
                     <td className="py-4">
                       <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${getStatusStyle(d.status)}`}>

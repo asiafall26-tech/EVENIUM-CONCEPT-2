@@ -1,58 +1,32 @@
 "use client";
 
 import { Send, Edit3, Eye, Sparkles, X, CheckCircle, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { useState, use } from "react";
+import { useEvents } from "@/store/EventsContext";
+import { notFound } from "next/navigation";
+import Link from "next/link";
 
-export default function InvitationsDashboardPage({ params }: { params: { id: string } }) {
-  const eventId = params.id;
+export default function InvitationsDashboardPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { events } = useEvents();
+  const event = events.find((e) => e.id === id);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
   
-  const [loading, setLoading] = useState(true);
-  const [invitationRecordId, setInvitationRecordId] = useState<string | null>(null);
-  const [templateInfo, setTemplateInfo] = useState<any>(null);
   const [invitationData, setInvitationData] = useState({
-    title: "Le Mariage de Sophie & Marc",
-    date: "12 Octobre 2026",
-    message: "Nous avons la joie de vous inviter à célébrer notre union..."
+    title: event ? event.name : "Le Mariage de Sophie & Marc",
+    date: event ? (event.date || "À définir") : "12 Octobre 2026",
+    message: "Nous avons la joie de vous inviter à célébrer notre événement..."
   });
 
-  useEffect(() => {
-    const fetchInvitation = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('event_invitations')
-        .select(`
-          id, customization, 
-          invitation_templates (name, type, thumbnail_url, is_premium)
-        `)
-        .eq('event_id', eventId)
-        .single();
-        
-      if (data) {
-        setInvitationRecordId(data.id);
-        setTemplateInfo(data.invitation_templates);
-        if (data.customization && Object.keys(data.customization).length > 0) {
-          setInvitationData(data.customization as any);
-        }
-      }
-      setLoading(false);
-    };
-    fetchInvitation();
-  }, [eventId]);
-
-  const handleSaveCustomization = async () => {
-    if (!invitationRecordId) return;
-    const supabase = createClient();
-    await supabase
-      .from('event_invitations')
-      .update({ customization: invitationData })
-      .eq('id', invitationRecordId);
-    setIsEditModalOpen(false);
-  };
+  if (!event) return notFound();
 
   const handleSend = () => {
     setIsSending(true);
@@ -66,19 +40,17 @@ export default function InvitationsDashboardPage({ params }: { params: { id: str
     }, 1500);
   };
 
-  if (loading) return <div className="p-8 text-center">Chargement de votre invitation...</div>;
-
   return (
     <div className="p-8 max-w-7xl mx-auto w-full relative">
       {/* Breadcrumb */}
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
-        <span>Accueil</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Invitations</span>
+        <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Invitations</span>
       </div>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2">Invitations</h1>
+          <h1 className="font-serif text-3xl font-bold text-black mb-2">Invitations - {event.name}</h1>
           <p className="text-gray-500 text-sm">Personnalisez votre modèle d'invitation exclusif avant l'envoi.</p>
         </div>
         <button 
@@ -94,18 +66,13 @@ export default function InvitationsDashboardPage({ params }: { params: { id: str
         <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-[#D4AF37] to-[#B8860B]"></div>
         
         <div className="w-full sm:w-64 aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden relative flex-shrink-0 border border-gray-200 shadow-md">
-          {templateInfo?.thumbnail_url ? (
-            <img src={templateInfo.thumbnail_url} alt="Template" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#F9F5EC] to-[#E8DCC4] flex items-center justify-center">
-              <Sparkles size={48} className="text-[#D4AF37] opacity-60" />
-            </div>
-          )}
-          {templateInfo?.is_premium && (
-            <div className="absolute top-3 right-3 bg-[#B8860B] text-white px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-              <Sparkles size={12} /> Modèle Premium
-            </div>
-          )}
+          {/* Placeholder for the invitation image */}
+          <div className="w-full h-full bg-gradient-to-br from-[#F9F5EC] to-[#E8DCC4] flex items-center justify-center">
+            <Sparkles size={48} className="text-[#D4AF37] opacity-60" />
+          </div>
+          <div className="absolute top-3 right-3 bg-[#B8860B] text-white px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+            <Sparkles size={12} /> Modèle Premium
+          </div>
         </div>
         
         <div className="flex-1 w-full py-4">
@@ -115,7 +82,7 @@ export default function InvitationsDashboardPage({ params }: { params: { id: str
             </span>
           </div>
           
-          <h2 className="font-serif text-3xl font-bold text-gray-900 mb-3">{templateInfo?.name || "Modèle d'invitation"}</h2>
+          <h2 className="font-serif text-3xl font-bold text-gray-900 mb-3">Floral Gold (Animée)</h2>
           
           <p className="text-gray-600 text-sm mb-8 max-w-2xl leading-relaxed">
             Ce modèle est actuellement utilisé pour votre événement. Vous disposez des droits complets pour le modifier. 
@@ -135,6 +102,9 @@ export default function InvitationsDashboardPage({ params }: { params: { id: str
               className="bg-black hover:bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-black/10"
             >
               <Edit3 size={18} /> Personnaliser l'invitation
+            </button>
+            <button className="bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm">
+              <Eye size={18} /> Voir l'aperçu complet
             </button>
           </div>
         </div>
@@ -175,7 +145,7 @@ export default function InvitationsDashboardPage({ params }: { params: { id: str
             </div>
             <div className="p-6 border-t border-gray-100 bg-gray-50">
               <button 
-                onClick={handleSaveCustomization}
+                onClick={() => setIsEditModalOpen(false)}
                 className="w-full bg-black text-white py-3 rounded-xl font-bold"
               >
                 Enregistrer les modifications

@@ -3,8 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { 
   Home, 
   Calendar, 
@@ -15,28 +13,14 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  Plus
+  Plus,
+  Lock
 } from "lucide-react";
+import { useEvents } from "@/store/EventsContext";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const [events, setEvents] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('events')
-          .select('*, pricing_plans(name)')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        if (data) setEvents(data);
-      }
-    };
-    fetchEvents();
-  }, []);
+  const { events } = useEvents();
   
   return (
     <aside className="w-64 bg-white border-r border-gray-100 flex flex-col hidden md:flex shrink-0">
@@ -56,7 +40,6 @@ export function DashboardSidebar() {
           <nav className="space-y-1">
             <SidebarLink href="/dashboard" icon={Home} label="Mon Espace" currentPath={pathname} exact />
             <SidebarLink href="/dashboard/messages" icon={Send} label="Messagerie Globale" currentPath={pathname} />
-            <SidebarLink href="/create" icon={Plus} label="Créer un événement" currentPath={pathname} />
           </nav>
         </div>
 
@@ -72,23 +55,25 @@ export function DashboardSidebar() {
               return (
                 <div key={event.id} className="space-y-1">
                   <Link href={`/dashboard/events/${event.id}`} className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isEventActive ? 'bg-[#F9F5EC] text-[#B8860B]' : 'text-gray-700 hover:bg-gray-50'}`}>
-                    <span className="truncate pr-2">{event.name}</span>
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      <span className="truncate">{event.name}</span>
+                      {event.status === 'completed' && <span className="px-1.5 py-0.5 bg-gray-200 text-gray-500 rounded text-[10px] uppercase font-bold shrink-0">Clos</span>}
+                    </div>
                     {isEventActive ? <ChevronDown size={14} /> : <ChevronRight size={14} className="text-gray-400" />}
                   </Link>
                   
                   {isEventActive && (
-                    <div className="pl-4 space-y-1 mt-1 border-l-2 border-gray-100 ml-4">
+                    <div className="pl-4 space-y-1 mt-1 border-l-2 border-gray-100 ml-4 pb-2">
                       <SubLink href={`/dashboard/events/${event.id}`} label="Aperçu" currentPath={pathname} exact />
-                      <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist" currentPath={pathname} />
-                      <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitations" currentPath={pathname} />
-                      <SubLink href={`/dashboard/events/${event.id}/participants`} label="Participants" currentPath={pathname} />
-                      {event.pricing_plans?.name === "Gold" && (
-                        <>
-                          <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} />
-                          <SubLink href={`/dashboard/events/${event.id}/messages`} label="Messagerie" currentPath={pathname} />
-                          <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} />
-                        </>
-                      )}
+                      <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Mon invitation" currentPath={pathname} />
+                      <SubLink href={`/dashboard/events/${event.id}/participants`} label="Mes invités (RSVP)" currentPath={pathname} />
+                      
+                      {/* GOLD Features - Locked if Premium */}
+                      <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      <SubLink href={`/dashboard/events/${event.id}/messages`} label="Messagerie" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      
                       <SubLink href={`/dashboard/events/${event.id}/settings`} label="Paramètres" currentPath={pathname} />
                     </div>
                   )}
@@ -129,9 +114,21 @@ function SidebarLink({ href, icon: Icon, label, currentPath, exact = false }: { 
   );
 }
 
-function SubLink({ href, label, currentPath, exact = false }: { href: string, label: string, currentPath: string, exact?: boolean }) {
+function SubLink({ href, label, currentPath, exact = false, locked = false }: { href: string, label: string, currentPath: string, exact?: boolean, locked?: boolean }) {
   const isActive = exact ? currentPath === href : currentPath === href;
   
+  if (locked) {
+    return (
+      <div className="flex items-center justify-between px-4 py-2 text-[11px] uppercase tracking-wider font-semibold rounded-lg text-gray-300 cursor-not-allowed group relative">
+        <span className="flex items-center gap-2">{label}</span>
+        <Lock size={12} className="text-gray-300" />
+        <div className="absolute left-full ml-2 hidden group-hover:block w-max bg-gray-900 text-white text-[10px] py-1.5 px-3 rounded z-50 shadow-xl normal-case font-medium">
+          Disponible avec la formule Gold
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Link href={href} className={`block px-4 py-2 text-xs font-medium rounded-lg transition-colors ${isActive ? 'text-[#B8860B] font-bold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
       {label}

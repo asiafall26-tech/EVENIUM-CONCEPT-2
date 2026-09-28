@@ -1,7 +1,10 @@
+"use client";
+
 import { Search, Filter, MoreHorizontal, Eye, Trash2, Calendar as CalendarIcon } from "lucide-react";
-import { mockEvents } from "@/data/mock/events";
+import { useEvents } from "@/store/EventsContext";
 
 export default function AdminEventsPage() {
+  const { events } = useEvents();
   return (
     <div className="p-8 max-w-7xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
@@ -39,7 +42,7 @@ export default function AdminEventsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {mockEvents.map((event, idx) => (
+            {events.map((event, idx) => (
               <tr key={idx} className="hover:bg-gray-50 transition-colors group">
                 <td className="px-6 py-4">
                   <div className="font-semibold text-gray-900">{event.name}</div>
@@ -92,7 +95,7 @@ export default function AdminEventsPage() {
         </table>
         
         <div className="p-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-          <span>Affichage de 1 à {mockEvents.length} sur {mockEvents.length} événements</span>
+          <span>Affichage de 1 à {events.length} sur {events.length} événements</span>
           <div className="flex gap-1">
             <button className="px-3 py-1 border border-gray-200 rounded text-gray-400 cursor-not-allowed">Précédent</button>
             <button className="px-3 py-1 border border-gray-200 rounded text-gray-400 cursor-not-allowed">Suivant</button>

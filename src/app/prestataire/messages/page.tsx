@@ -5,155 +5,225 @@ import { useState, useMemo } from "react";
 import { Modal } from "@/components/ui/Modal"; // Assuming this exists
 
 export default function PrestataireMessagesPage() {
-  const [messages, setMessages] = useState([
-    { id: 1, sender: "Ndeye Astou", event: "Mariage Astou & Ali", subject: "Précisions sur le devis", preview: "Bonjour, pourriez-vous inclure le menu végétarien...", time: "10:42", read: false },
-    { id: 2, sender: "Ousmane Diallo", event: "Dîner de Gala", subject: "Confirmation de disponibilité", preview: "Super, nous validons la date du 15 Novembre...", time: "Hier", read: true },
-    { id: 3, sender: "Fatou Sow", event: "Anniversaire Sophie", subject: "Question logistique", preview: "Avez-vous besoin d'accéder à la salle avant 16h ?", time: "12 Sept", read: true },
-  ]);
+  const conversations = [
+    { 
+      id: "1", 
+      clientName: "Ndeye Astou", 
+      eventName: "Mariage Astou & Ali",
+      status: "En ligne", 
+      avatar: "NA", 
+      unread: 1, 
+      lastMessage: "Bonjour, pourriez-vous inclure le menu végétarien...",
+      time: "10:42"
+    },
+    { 
+      id: "2", 
+      clientName: "Ousmane Diallo", 
+      eventName: "Dîner de Gala",
+      status: "Hors ligne", 
+      avatar: "OD", 
+      unread: 0, 
+      lastMessage: "Super, nous validons la date du 15 Novembre...",
+      time: "Hier"
+    },
+    { 
+      id: "3", 
+      clientName: "Fatou Sow", 
+      eventName: "Anniversaire Sophie",
+      status: "Hors ligne", 
+      avatar: "FS", 
+      unread: 0, 
+      lastMessage: "Avez-vous besoin d'accéder à la salle avant 16h ?",
+      time: "12 Sept"
+    },
+  ];
 
-  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [selectedConv, setSelectedConv] = useState(conversations[0]);
+  const [messageText, setMessageText] = useState("");
   const [search, setSearch] = useState("");
-  const [isComposeOpen, setIsComposeOpen] = useState(false);
-  const [newMessage, setNewMessage] = useState({ to: "", subject: "", body: "" });
 
-  const filteredMessages = useMemo(() => {
-    return messages.filter(m => {
-      const matchFilter = filter === "all" || (filter === "unread" && !m.read);
-      const matchSearch = m.sender.toLowerCase().includes(search.toLowerCase()) || m.event.toLowerCase().includes(search.toLowerCase()) || m.subject.toLowerCase().includes(search.toLowerCase());
-      return matchFilter && matchSearch;
-    });
-  }, [messages, filter, search]);
+  const [chats, setChats] = useState<Record<string, any[]>>({
+    "1": [
+      { id: 1, sender: "client", text: "Bonjour, nous aimerions confirmer le menu pour 100 personnes.", time: "10:30", date: "Aujourd'hui" },
+      { id: 2, sender: "me", text: "Bonjour Ndeye ! C'est noté. Avez-vous des restrictions alimentaires ?", time: "10:35", date: "Aujourd'hui" },
+      { id: 3, sender: "client", text: "Bonjour, pourriez-vous inclure le menu végétarien...", time: "10:42", date: "Aujourd'hui" }
+    ],
+    "2": [
+      { id: 1, sender: "me", text: "Bonjour Ousmane, la salle est bien pré-réservée.", time: "Hier", date: "Hier" },
+      { id: 2, sender: "client", text: "Super, nous validons la date du 15 Novembre...", time: "Hier", date: "Hier" },
+    ],
+    "3": [
+      { id: 1, sender: "client", text: "Avez-vous besoin d'accéder à la salle avant 16h ?", time: "12 Sept", date: "12 Sept" }
+    ]
+  });
 
-  const toggleReadStatus = (id: number) => {
-    setMessages(messages.map(m => m.id === id ? { ...m, read: !m.read } : m));
-  };
+  const chatHistory = chats[selectedConv.id] || [];
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.to || !newMessage.body) return;
+  const handleSendMessage = () => {
+    if (!messageText.trim()) return;
     
-    // Simulate sending message
-    alert(`Message envoyé à ${newMessage.to} !`);
-    setIsComposeOpen(false);
-    setNewMessage({ to: "", subject: "", body: "" });
+    const newMessage = {
+      id: Date.now(),
+      sender: "me",
+      text: messageText,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: "Aujourd'hui"
+    };
+    
+    setChats({
+      ...chats,
+      [selectedConv.id]: [...(chats[selectedConv.id] || []), newMessage]
+    });
+    
+    setMessageText("");
   };
+
+  const filteredConvs = conversations.filter(c => 
+    c.clientName.toLowerCase().includes(search.toLowerCase()) || 
+    c.eventName.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="p-8 max-w-6xl mx-auto w-full h-[calc(100vh-80px)] flex flex-col">
+    <div className="p-8 max-w-7xl mx-auto w-full h-[calc(100vh-80px)] flex flex-col">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 shrink-0">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2">Messages</h1>
-          <p className="text-gray-500 text-sm">Échangez avec vos clients et les organisateurs d'événements.</p>
+          <p className="text-gray-500 text-sm">Échangez en direct avec vos clients et organisateurs.</p>
         </div>
-        <button onClick={() => setIsComposeOpen(true)} className="flex items-center gap-2 bg-[#B8860B] hover:bg-[#996B00] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md transition-colors">
-          <PenSquare size={16} /> Nouveau message
-        </button>
       </div>
 
       <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm flex overflow-hidden">
-        {/* Sidebar messages */}
-        <div className="w-64 border-r border-gray-100 hidden md:flex flex-col bg-gray-50 shrink-0">
-          <div className="p-4 border-b border-gray-100">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Boîtes de réception</h3>
-            <div className="space-y-1">
-              <button onClick={() => setFilter("all")} className={`w-full flex items-center justify-between px-3 py-2 font-medium rounded-lg text-sm transition-colors ${filter === 'all' ? 'bg-white text-[#B8860B] border border-[#D4AF37]/30 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}>
-                <span>Tous les messages</span>
-                <span className={`${filter === 'all' ? 'bg-[#D4AF37] text-white' : 'bg-gray-200 text-gray-600'} text-[10px] font-bold px-2 py-0.5 rounded-full`}>{messages.length}</span>
-              </button>
-              <button onClick={() => setFilter("unread")} className={`w-full flex items-center justify-between font-medium rounded-lg px-3 py-2 text-sm transition-colors ${filter === 'unread' ? 'bg-white text-[#B8860B] border border-[#D4AF37]/30 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}>
-                <span>Non lus</span>
-                <span className={`${filter === 'unread' ? 'bg-[#D4AF37] text-white' : 'bg-gray-200 text-gray-600'} text-[10px] font-bold px-2 py-0.5 rounded-full`}>{messages.filter(m => !m.read).length}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Inbox list */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-            <div className="relative w-full max-w-md">
+        {/* Sidebar Contacts */}
+        <div className="w-full md:w-80 border-r border-gray-100 flex flex-col bg-gray-50/50">
+          <div className="p-4 border-b border-gray-100 bg-white space-y-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input 
                 type="text" 
-                placeholder="Rechercher par nom, événement..." 
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                placeholder="Rechercher un client..." 
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            {filteredMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-3">
-                <MailOpen size={48} className="opacity-20" />
-                <p>Aucun message trouvé.</p>
-              </div>
-            ) : (
-              filteredMessages.map((msg) => (
-                <div key={msg.id} onClick={() => toggleReadStatus(msg.id)} className={`flex items-start gap-4 p-5 border-b border-gray-100 cursor-pointer transition-colors ${msg.read ? 'bg-white hover:bg-gray-50' : 'bg-[#F9F5EC]/30 hover:bg-[#F9F5EC]/70'}`}>
-                  <div className="pt-1 text-gray-400">
-                    {msg.read ? <MailOpen size={18} /> : <Mail size={18} className="text-[#B8860B]" />}
+            {filteredConvs.map((c) => (
+              <div 
+                key={c.id}
+                onClick={() => setSelectedConv(c)}
+                className={`flex items-start gap-3 p-4 cursor-pointer transition-colors border-l-4 ${
+                  selectedConv.id === c.id 
+                    ? 'bg-white border-[#B8860B] shadow-[0_2px_10px_rgb(0,0,0,0.02)]' 
+                    : 'border-transparent hover:bg-gray-100'
+                }`}
+              >
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-serif font-bold text-gray-600 shrink-0">
+                    {c.avatar}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className={`font-semibold text-sm truncate ${!msg.read ? 'text-black' : 'text-gray-900'}`}>{msg.sender}</span>
-                        <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full shrink-0">{msg.event}</span>
-                      </div>
-                      <span className="text-xs text-gray-500 font-medium shrink-0 ml-2">{msg.time}</span>
-                    </div>
-                    <h4 className={`text-sm mb-1 truncate ${!msg.read ? 'font-bold text-black' : 'font-medium text-gray-800'}`}>{msg.subject}</h4>
-                    <p className={`text-sm truncate ${!msg.read ? 'text-gray-700' : 'text-gray-500'}`}>{msg.preview}</p>
-                  </div>
+                  {c.status === "En ligne" && (
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                  )}
                 </div>
-              ))
-            )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="font-bold text-gray-900 text-sm truncate pr-2">{c.clientName}</h4>
+                    <span className="text-[10px] text-gray-400 whitespace-nowrap mt-0.5">{c.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-[#F9F5EC] text-[#B8860B] rounded-md truncate max-w-[100px]">
+                      {c.eventName}
+                    </span>
+                  </div>
+                  <p className={`text-xs truncate ${c.unread > 0 ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                    {c.lastMessage}
+                  </p>
+                </div>
+                {c.unread > 0 && (
+                  <div className="w-5 h-5 rounded-full bg-[#D4AF37] text-white flex items-center justify-center text-[10px] font-bold mt-2 shrink-0">
+                    {c.unread}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col bg-white">
+          {/* Chat Header */}
+          <div className="h-20 border-b border-gray-100 flex items-center justify-between px-6 shrink-0 bg-white">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center font-serif font-bold text-[#B8860B]">
+                {selectedConv.avatar}
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                  {selectedConv.clientName}
+                </h3>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  Événement : <span className="text-[#B8860B]">{selectedConv.eventName}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-6 bg-[#F9F9F9] space-y-6 flex flex-col">
+            <div className="flex justify-center">
+              <span className="px-3 py-1 bg-gray-200/60 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                Aujourd'hui
+              </span>
+            </div>
+
+            {chatHistory.map((msg) => (
+              <div key={msg.id} className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}>
+                <div className={`max-w-[70%] rounded-2xl px-5 py-3 ${
+                  msg.sender === 'me' 
+                    ? 'bg-[#B8860B] text-white rounded-tr-sm shadow-md' 
+                    : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm'
+                }`}>
+                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                </div>
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-[10px] text-gray-400 font-medium">{msg.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chat Input */}
+          <div className="p-4 bg-white border-t border-gray-100 shrink-0">
+            <div className="flex items-end gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-200 focus-within:border-[#D4AF37]/50 focus-within:ring-1 focus-within:ring-[#D4AF37]/50 transition-all">
+              <textarea 
+                placeholder="Écrivez votre message..." 
+                className="flex-1 max-h-32 bg-transparent border-none focus:outline-none resize-none py-3 px-4 text-sm text-gray-800"
+                rows={1}
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <button 
+                onClick={handleSendMessage}
+                className={`p-3 rounded-xl flex items-center justify-center transition-all ${
+                  messageText.trim().length > 0 
+                    ? 'bg-[#B8860B] text-white shadow-md' 
+                    : 'bg-gray-200 text-gray-400'
+                }`}
+              >
+                <Send size={18} className={messageText.trim().length > 0 ? 'translate-x-0.5' : ''} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Modal Nouveau Message */}
-      {isComposeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h3 className="font-bold text-gray-900">Nouveau message</h3>
-              <button onClick={() => setIsComposeOpen(false)} className="text-gray-400 hover:text-black">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSendMessage} className="p-6 space-y-4">
-              <div>
-                <input 
-                  type="text" required placeholder="À : (Nom du client ou organisateur)" 
-                  className="w-full px-0 py-2 border-b border-gray-200 text-sm focus:outline-none focus:border-[#D4AF37]"
-                  value={newMessage.to} onChange={e => setNewMessage({...newMessage, to: e.target.value})}
-                />
-              </div>
-              <div>
-                <input 
-                  type="text" placeholder="Objet" 
-                  className="w-full px-0 py-2 border-b border-gray-200 text-sm focus:outline-none font-semibold focus:border-[#D4AF37]"
-                  value={newMessage.subject} onChange={e => setNewMessage({...newMessage, subject: e.target.value})}
-                />
-              </div>
-              <div>
-                <textarea 
-                  rows={8} required placeholder="Rédigez votre message ici..." 
-                  className="w-full px-0 py-4 text-sm focus:outline-none resize-none"
-                  value={newMessage.body} onChange={e => setNewMessage({...newMessage, body: e.target.value})}
-                />
-              </div>
-              <div className="pt-4 flex justify-end">
-                <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-[#B8860B] text-white text-sm font-semibold rounded-lg hover:bg-[#996B00] transition-colors shadow-md">
-                  <Send size={16} /> Envoyer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

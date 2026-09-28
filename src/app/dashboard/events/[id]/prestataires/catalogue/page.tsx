@@ -7,12 +7,19 @@ import Link from "next/link";
 import { use } from "react";
 import Image from "next/image";
 
+import { useEvents } from "@/store/EventsContext";
+import { usePrestataires } from "@/store/PrestataireContext";
+
 export default function CataloguePrestatairesPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { events } = useEvents();
+  const { addDemande } = usePrestataires();
+  const event = events.find((e) => e.id === id);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [addedProviders, setAddedProviders] = useState<string[]>([]);
@@ -29,6 +36,18 @@ export default function CataloguePrestatairesPage({
   const handleAdd = (providerId: string) => {
     if (!addedProviders.includes(providerId)) {
       setAddedProviders([...addedProviders, providerId]);
+      
+      if (event) {
+        addDemande({
+          eventId: event.id,
+          clientName: "Ndeye Astou", // Mock User
+          eventType: event.type,
+          eventDate: event.date || "À définir",
+          prestataireId: providerId,
+          status: "Nouvelle demande",
+          budget: 0 // A définir plus tard
+        });
+      }
     }
   };
 

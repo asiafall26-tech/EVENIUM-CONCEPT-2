@@ -16,7 +16,7 @@ import {
   Plus
 } from "lucide-react";
 import { AdminSidebarNav } from "@/components/AdminSidebarNav";
-
+import { UserMenu } from "@/components/ui/UserMenu";
 export default function AdminLayout({
   children,
 }: {
@@ -69,16 +69,13 @@ export default function AdminLayout({
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
             </button>
 
-            <div className="flex items-center gap-3 cursor-pointer">
-              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-semibold text-sm">
-                NA
-              </div>
-              <div className="hidden md:block">
-                <p className="text-sm font-semibold text-black leading-tight">Ndeye Astou</p>
-                <p className="text-xs text-gray-500">Administratrice</p>
-              </div>
-              <ChevronDown size={16} className="text-gray-400" />
-            </div>
+            <UserMenu 
+              name="Super Admin" 
+              role="Administrateur" 
+              initials="SA" 
+              avatarColor="bg-black text-white" 
+              profileHref="/admin/settings" 
+            />
           </div>
         </header>
         <div className="flex-1 overflow-auto">

@@ -15,6 +15,8 @@ import {
   ChevronDown
 } from "lucide-react";
 import { PrestataireSidebarNav } from "@/components/PrestataireSidebarNav";
+import { NotificationBell } from "@/components/ui/NotificationBell";
+import { UserMenu } from "@/components/ui/UserMenu";
 
 export default function PrestataireLayout({
   children,
@@ -60,21 +62,15 @@ export default function PrestataireLayout({
           </div>
           
           <div className="flex items-center gap-6">
-            <button className="relative text-[#B8860B] hover:text-[#996B00] transition-colors">
-              <Bell size={20} />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#D4AF37] rounded-full border-2 border-white" />
-            </button>
+            <NotificationBell role="prestataire" />
 
-            <div className="flex items-center gap-3 cursor-pointer">
-              <div className="w-10 h-10 rounded-full bg-[#B8860B] text-white flex items-center justify-center font-semibold text-sm">
-                SP
-              </div>
-              <div className="hidden md:block">
-                <p className="text-sm font-semibold text-black leading-tight">Saveurs d'Afrique</p>
-                <p className="text-xs text-gray-500">Traiteur</p>
-              </div>
-              <ChevronDown size={16} className="text-gray-400" />
-            </div>
+            <UserMenu 
+              name="Saveurs d'Afrique" 
+              role="Traiteur" 
+              initials="SP" 
+              avatarColor="bg-[#B8860B] text-white" 
+              profileHref="/prestataire/profil" 
+            />
           </div>
         </header>
         <div className="flex-1 overflow-auto">

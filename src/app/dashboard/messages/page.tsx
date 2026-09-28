@@ -56,12 +56,27 @@ export default function GlobalMessagesPage() {
   const [selectedConv, setSelectedConv] = useState(conversations[0]);
   const [messageText, setMessageText] = useState("");
 
-  const [chatHistory, setChatHistory] = useState([
-    { id: 1, sender: "provider", text: "Bonjour, nous faisons suite à votre demande de devis pour le dîner.", time: "10:30", date: "Aujourd'hui" },
-    { id: 2, sender: "me", text: "Bonjour ! Oui, je voulais m'assurer que le menu végétarien est bien pris en compte.", time: "10:45", date: "Aujourd'hui" },
-    { id: 3, sender: "provider", text: "Tout à fait, nous avons prévu 15 repas végétariens comme convenu.", time: "11:02", date: "Aujourd'hui" },
-    { id: 4, sender: "provider", text: "Je vous envoie le menu révisé demain matin.", time: "11:03", date: "Aujourd'hui" },
-  ]);
+  const [chats, setChats] = useState<Record<string, any[]>>({
+    "1": [
+      { id: 1, sender: "provider", text: "Bonjour, nous faisons suite à votre demande de devis pour le dîner.", time: "10:30", date: "Aujourd'hui" },
+      { id: 2, sender: "me", text: "Bonjour ! Oui, je voulais m'assurer que le menu végétarien est bien pris en compte.", time: "10:45", date: "Aujourd'hui" },
+      { id: 3, sender: "provider", text: "Tout à fait, nous avons prévu 15 repas végétariens comme convenu.", time: "11:02", date: "Aujourd'hui" },
+      { id: 4, sender: "provider", text: "Je vous envoie le menu révisé demain matin.", time: "11:03", date: "Aujourd'hui" },
+    ],
+    "2": [
+      { id: 1, sender: "me", text: "Bonjour, avez-vous des nappes dorées ?", time: "Hier", date: "Hier" },
+      { id: 2, sender: "provider", text: "Les nappes dorées ont bien été réservées.", time: "Hier", date: "Hier" },
+    ],
+    "3": [
+      { id: 1, sender: "provider", text: "Pouvez-vous confirmer l'heure d'arrivée ?", time: "10 Sept", date: "10 Sept" }
+    ],
+    "4": [
+      { id: 1, sender: "me", text: "Voici la playlist.", time: "01 Sept", date: "01 Sept" },
+      { id: 2, sender: "provider", text: "La playlist est validée. Merci !", time: "02 Sept", date: "02 Sept" }
+    ]
+  });
+
+  const chatHistory = chats[selectedConv.id] || [];
 
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
@@ -74,7 +89,11 @@ export default function GlobalMessagesPage() {
       date: "Aujourd'hui"
     };
     
-    setChatHistory([...chatHistory, newMessage]);
+    setChats({
+      ...chats,
+      [selectedConv.id]: [...(chats[selectedConv.id] || []), newMessage]
+    });
+    
     setMessageText("");
   };
 

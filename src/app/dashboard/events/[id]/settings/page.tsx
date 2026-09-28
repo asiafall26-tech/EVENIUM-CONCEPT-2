@@ -1,14 +1,18 @@
-import { Save, AlertTriangle, Trash2 } from "lucide-react";
-import { mockEvents } from "@/data/mock/events";
-import { notFound } from "next/navigation";
+"use client";
 
-export default async function EventSettingsPage({
+import { Save, AlertTriangle, Trash2 } from "lucide-react";
+import { useEvents } from "@/store/EventsContext";
+import { notFound } from "next/navigation";
+import { use } from "react";
+
+export default function EventSettingsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const event = mockEvents.find((e) => e.id === id);
+  const { id } = use(params);
+  const { events, updateEventStatus } = useEvents();
+  const event = events.find((e) => e.id === id);
 
   if (!event) {
     notFound();
@@ -31,16 +35,12 @@ export default async function EventSettingsPage({
             <h2 className="text-lg font-semibold mb-4 text-black">Informations de base</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'événement</label>
-                <input type="text" defaultValue={event.name} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4AF37] outline-none" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'événement <span className="text-xs text-gray-400 font-normal ml-2">(Non modifiable)</span></label>
+                <input type="text" defaultValue={event.name} disabled className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type d'événement</label>
-                <select defaultValue={event.type} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4AF37] outline-none bg-white">
-                  <option value="Mariage">Mariage</option>
-                  <option value="Anniversaire">Anniversaire</option>
-                  <option value="Soirée">Soirée</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type d'événement <span className="text-xs text-gray-400 font-normal ml-2">(Non modifiable)</span></label>
+                <input type="text" defaultValue={event.type} disabled className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -60,8 +60,32 @@ export default async function EventSettingsPage({
                 <p className="font-semibold text-[#B8860B]">Formule {event.plan}</p>
                 <p className="text-sm text-gray-600">Facturé annuellement. Renouvellement le 12 Dec 2026.</p>
               </div>
-              <button className="text-sm font-medium text-[#B8860B] bg-white px-4 py-2 rounded-lg border border-[#D4AF37]/30 hover:bg-[#D4AF37]/10 transition-colors">
-                Gérer l'abonnement
+              <button 
+                onClick={() => alert("Votre demande de changement de formule a bien été envoyée aux administrateurs. Nous vous recontacterons très vite !")}
+                className="text-sm font-medium text-[#B8860B] bg-white px-4 py-2 rounded-lg border border-[#D4AF37]/30 hover:bg-[#D4AF37]/10 transition-colors"
+              >
+                Demander un changement
+              </button>
+            </div>
+          </section>
+          <section className="pt-6 border-t border-gray-100">
+            <h2 className="text-lg font-semibold mb-4 text-black">Statut de l'événement</h2>
+            <div className={`border rounded-xl p-4 flex justify-between items-center ${event.status === 'completed' ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+              <div>
+                <p className={`font-semibold ${event.status === 'completed' ? 'text-green-800' : 'text-gray-800'}`}>
+                  {event.status === 'completed' ? 'Cet événement est terminé' : 'Événement en cours'}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Clôturer l'événement permet de l'archiver dans votre tableau de bord.</p>
+              </div>
+              <button 
+                onClick={() => updateEventStatus(event.id, event.status === 'completed' ? 'published' : 'completed')}
+                className={`text-sm font-medium px-4 py-2 rounded-lg border transition-colors ${
+                  event.status === 'completed' 
+                    ? 'text-gray-600 bg-white border-gray-200 hover:bg-gray-100' 
+                    : 'text-green-700 bg-green-100 border-green-200 hover:bg-green-200'
+                }`}
+              >
+                {event.status === 'completed' ? 'Rouvrir l\'événement' : 'Marquer comme terminé'}
               </button>
             </div>
           </section>

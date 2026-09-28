@@ -2,7 +2,8 @@
 
 import { Store, Plus, Search, MoreHorizontal, Star, Phone, CheckCircle, Clock, Lock, MessageCircle, ExternalLink, MapPin } from "lucide-react";
 import Link from "next/link";
-import { mockEvents } from "@/data/mock/events";
+import { useEvents } from "@/store/EventsContext";
+import { usePrestataires } from "@/store/PrestataireContext";
 import { notFound } from "next/navigation";
 import { use, useState } from "react";
 
@@ -12,7 +13,8 @@ export default function PrestatairesDashboardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const event = mockEvents.find((e) => e.id === id);
+  const { events } = useEvents();
+  const event = events.find((e) => e.id === id);
 
   const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
 
@@ -44,51 +46,38 @@ export default function PrestatairesDashboardPage({
     );
   }
   
-  // Fake data for UI preview (Mixed platform vs external providers)
-  const prestataires = [
-    { 
-      id: "PR-01",
-      name: "Saveurs d'Afrique", 
-      role: "Traiteur", 
-      rating: 4.8, 
-      status: "Confirmé", 
-      phone: "+221 77 111 22 33", 
-      cost: "850 000 FCFA", 
-      isPlatformProvider: true,
-      zone: "Dakar, Sénégal",
-      description: "Service traiteur haut de gamme spécialisé dans la gastronomie africaine et internationale.",
-      services: ["Buffet de mariage", "Service à table", "Cocktail dinatoire", "Gâteau sur mesure"],
-      priceRange: "À partir de 15 000 FCFA / pax"
-    },
-    { 
-      id: "PR-02",
-      name: "Studio Lumière", 
-      role: "Photographe", 
-      rating: 4.9, 
-      status: "Devis en attente", 
-      phone: "+221 76 222 33 44", 
-      cost: "150 000 FCFA", 
-      isPlatformProvider: true,
-      zone: "Sénégal & International",
-      description: "L'art de capturer vos plus beaux moments avec une touche cinématographique.",
-      services: ["Couverture complète (journée)", "Shooting couple", "Drone vidéo", "Album photo premium"],
-      priceRange: "À partir de 100 000 FCFA"
-    },
-    { 
-      id: "PR-03",
-      name: "Sons & Rythmes (DJ)", 
-      role: "Animation", 
-      rating: null, 
-      status: "Acompte payé", 
-      phone: "+221 70 333 44 55", 
-      cost: "300 000 FCFA", 
-      isPlatformProvider: false,
-      zone: "Dakar",
-      description: "Prestataire externe gérant l'animation musicale.",
-      services: ["DJ Set", "Sonorisation"],
-      priceRange: "Sur devis"
-    },
-  ];
+  const { demandes, prestataires: cataloguePrestataires } = usePrestataires();
+  
+  // Fake external data just for demo purposes if the user wants to see a mix
+  const externalPrestataire = { 
+    id: "PR-03",
+    name: "Sons & Rythmes (DJ)", 
+    role: "Animation", 
+    rating: null, 
+    status: "Acompte payé", 
+    phone: "+221 70 333 44 55", 
+    cost: "300 000 FCFA", 
+    isPlatformProvider: false,
+    zone: "Dakar",
+    description: "Prestataire externe gérant l'animation musicale.",
+    services: ["DJ Set", "Sonorisation"],
+    priceRange: "Sur devis"
+  };
+
+  const eventDemandes = demandes.filter(d => d.eventId === event.id);
+  const myPrestataires = eventDemandes.map(d => {
+    const pInfo = cataloguePrestataires.find(p => p.id === d.prestataireId);
+    if (!pInfo) return null;
+    return {
+      ...pInfo,
+      status: d.status,
+      cost: d.budget > 0 ? `${d.budget.toLocaleString('fr-FR')} FCFA` : "Sur devis",
+      demandeId: d.id
+    };
+  }).filter(Boolean);
+  
+  // Combine dynamic requests with the mock external provider for UI richness
+  const prestatairesToDisplay = [...myPrestataires, externalPrestataire];
 
   return (
     <div className="p-8 max-w-7xl mx-auto w-full">
@@ -109,7 +98,7 @@ export default function PrestatairesDashboardPage({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {prestataires.map((p, idx) => (
+        {prestatairesToDisplay.map((p: any, idx: number) => (
           <div key={idx} className={`bg-white p-6 rounded-2xl border ${p.isPlatformProvider ? 'border-gray-100' : 'border-gray-200 border-dashed'} shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col group hover:border-[#D4AF37]/30 transition-all`}>
             <div className="flex justify-between items-start mb-4">
               <div className="flex gap-3 items-center">

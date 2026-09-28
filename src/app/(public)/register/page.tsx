@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight, Calendar, Building2 } from "lucide-react";
-import { signup } from "@/app/(auth)/auth-actions";
 
 export default function RegisterPage() {
   return (
@@ -12,14 +11,12 @@ export default function RegisterPage() {
             <p className="text-gray-500 text-sm">Rejoignez Evenium et simplifiez l'organisation de vos événements.</p>
           </div>
 
-          <form action={signup} className="space-y-6">
-            <input type="hidden" name="redirect" value="checkout" />
+          <form className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Prénom</label>
                 <input 
                   type="text" 
-                  name="firstName"
                   placeholder="Ex: Ndeye" 
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                   required
@@ -29,7 +26,6 @@ export default function RegisterPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom</label>
                 <input 
                   type="text" 
-                  name="lastName"
                   placeholder="Ex: Astou" 
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                   required
@@ -41,7 +37,6 @@ export default function RegisterPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Adresse Email</label>
               <input 
                 type="email" 
-                name="email"
                 placeholder="vous@exemple.com" 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                 required
@@ -62,7 +57,6 @@ export default function RegisterPage() {
                 </select>
                 <input 
                   type="tel" 
-                  name="phone"
                   placeholder="77 123 45 67" 
                   className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                   required
@@ -73,7 +67,7 @@ export default function RegisterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Pays</label>
-                <select name="country" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all appearance-none cursor-pointer" required>
+                <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all appearance-none cursor-pointer" required>
                   <option value="">Sélectionnez un pays</option>
                   <option value="Sénégal">Sénégal</option>
                   <option value="Côte d'Ivoire">Côte d'Ivoire</option>
@@ -86,7 +80,6 @@ export default function RegisterPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Région / Ville</label>
                 <input 
                   type="text" 
-                  name="city"
                   placeholder="Ex: Dakar" 
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                   required
@@ -98,7 +91,6 @@ export default function RegisterPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
               <input 
                 type="password" 
-                name="password"
                 placeholder="••••••••" 
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] transition-all"
                 required
