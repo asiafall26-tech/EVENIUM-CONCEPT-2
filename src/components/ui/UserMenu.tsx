@@ -37,7 +37,7 @@ export function UserMenu({ name, role, initials, avatarColor, profileHref }: Use
     <div className="relative" ref={dropdownRef}>
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 cursor-pointer p-1.5 rounded-xl hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-3 cursor-pointer py-1.5 pl-1.5 pr-3 rounded-full hover:bg-white hover:shadow-sm transition-all"
       >
         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${avatarColor}`}>
           {initials}
@@ -50,7 +50,7 @@ export function UserMenu({ name, role, initials, avatarColor, profileHref }: Use
       </div>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-[0_25px_60px_-20px_rgba(40,25,5,0.35)] border border-gray-100 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
           <div className="p-2 space-y-1">
             <Link 
               href={profileHref}

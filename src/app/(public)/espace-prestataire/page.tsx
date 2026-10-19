@@ -18,10 +18,10 @@ export default function EspacePrestataireLanding() {
           {/* OPTION 1 : PRESTATAIRE EVENIUM (Déjà sélectionné) */}
           <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-              <ShieldCheck size={100} className="text-[#D4AF37]" />
+              <ShieldCheck size={100} className="text-[#b8924a]" />
             </div>
             
-            <div className="w-16 h-16 bg-[#F9F5EC] text-[#B8860B] rounded-2xl flex items-center justify-center mb-8 shadow-sm">
+            <div className="w-16 h-16 bg-[#f5eee1] text-[#8f6f33] rounded-2xl flex items-center justify-center mb-8 shadow-sm">
               <ShieldCheck size={32} />
             </div>
             
@@ -39,12 +39,12 @@ export default function EspacePrestataireLanding() {
           </div>
 
           {/* OPTION 2 : PRESTATAIRE EXTERNE (Nouvelle adhésion) */}
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-black rounded-3xl p-10 border border-gray-800 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
+          <div className="bg-gradient-to-br from-[#2b2118] to-black rounded-3xl p-10 border border-gray-800 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Star size={100} className="text-[#D4AF37]" />
+              <Star size={100} className="text-[#b8924a]" />
             </div>
 
-            <div className="w-16 h-16 bg-white/10 text-[#D4AF37] rounded-2xl flex items-center justify-center mb-8 shadow-sm backdrop-blur-sm">
+            <div className="w-16 h-16 bg-white/10 text-[#b8924a] rounded-2xl flex items-center justify-center mb-8 shadow-sm backdrop-blur-sm">
               <Star size={32} />
             </div>
             
@@ -55,7 +55,7 @@ export default function EspacePrestataireLanding() {
             
             <Link 
               href="/espace-prestataire/inscription"
-              className="w-full flex items-center justify-center gap-2 bg-[#B8860B] hover:bg-[#996B00] text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-[#B8860B]/20 transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-[#8f6f33]/20 transition-colors"
             >
               REJOINDRE EVENIUM <ArrowRight size={18} />
             </Link>

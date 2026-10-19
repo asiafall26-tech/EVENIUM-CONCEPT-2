@@ -1,9 +1,12 @@
 'use client';
+import type { EventTypeName } from "@/lib/eventTypes";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type { VeloursContent } from '@/components/invitations/velours/content';
 
-export type EventType = "Mariage" | "Anniversaire" | "Baptême" | "Baby shower" | "Conférence" | "Événement professionnel" | "Gala" | "Fiançailles";
-export type PlanType = "Premium" | "Gold" | null;
+// Liste complète : src/lib/eventTypes.ts (« Événement professionnel » conservé pour les anciens événements)
+export type EventType = EventTypeName | "Événement professionnel";
+export type PlanType = "Standard" | "Premium" | "Gold" | null;
 export type InvitationType = "Carte" | "Animée" | null;
 
 export interface EventCreationState {
@@ -21,6 +24,12 @@ export interface EventCreationState {
   
   // Step 3: Invitation Template
   invitationModelId: string | null;
+  
+  // Invitation Customization
+  invitationTitle: string;
+  invitationMessage: string;
+  /** Full content of editable models (e.g. Velours Bordeaux) */
+  invitationContent: VeloursContent | null;
 }
 
 const initialState: EventCreationState = {
@@ -33,6 +42,9 @@ const initialState: EventCreationState = {
   plan: null,
   invitationType: null,
   invitationModelId: null,
+  invitationTitle: "",
+  invitationMessage: "",
+  invitationContent: null,
 };
 
 interface EventCreationContextType {
@@ -52,7 +64,7 @@ export function EventCreationProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('evenium_event_creation');
     if (saved) {
       try {
-        setState(JSON.parse(saved));
+        setState({ ...initialState, ...JSON.parse(saved) });
       } catch (e) {
         console.error("Failed to parse saved event creation state");
       }

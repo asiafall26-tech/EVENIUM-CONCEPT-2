@@ -1,6 +1,8 @@
+import type { EventTypeName } from "@/lib/eventTypes";
 export type EventStatus = "draft" | "published" | "completed";
-export type EventType = "Mariage" | "Anniversaire" | "Baptême" | "Baby shower" | "Conférence" | "Événement professionnel" | "Gala" | "Fiançailles";
-export type PlanType = "Premium" | "Gold";
+// Liste complète : src/lib/eventTypes.ts (« Événement professionnel » conservé pour les anciens événements)
+export type EventType = EventTypeName | "Événement professionnel";
+export type PlanType = "Standard" | "Premium" | "Gold";
 export type FormatType = "Carte" | "Animée";
 
 export interface Event {
@@ -14,6 +16,11 @@ export interface Event {
   plan: PlanType;
   format: FormatType;
   status: EventStatus;
+  invitationModelId?: string | null;
+  invitationTitle?: string | null;
+  invitationMessage?: string | null;
+  /** Content of editable invitation models, stored as JSON (column invitation_content) */
+  invitationContent?: Record<string, unknown> | null;
   budget: {
     total: number;
     spent: number;

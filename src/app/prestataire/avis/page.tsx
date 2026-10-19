@@ -1,48 +1,81 @@
 "use client";
 
-import { Star, Filter, MessageSquare, ThumbsUp, X, Send } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Star, Filter, MessageSquare, ThumbsUp, X, Send, Store } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { useBadgeStore } from "@/store/BadgeStore";
 
 export default function PrestataireAvisPage() {
-  const [reviews, setReviews] = useState([
-    { id: 1, client: "Ndeye Astou", event: "Mariage", date: "Il y a 2 jours", rating: 5, comment: "Prestation exceptionnelle ! Le repas était délicieux et le service irréprochable. Tous nos invités ont adoré.", likes: 12, reply: null },
-    { id: 2, client: "Ousmane Diallo", event: "Dîner de Gala", date: "Le mois dernier", rating: 4, comment: "Très bon service traiteur. Petit retard lors de l'installation mais vite rattrapé par le professionnalisme de l'équipe.", likes: 3, reply: null },
-    { id: 3, client: "Amina Diop", event: "Cocktail Privé", date: "Il y a 3 mois", rating: 5, comment: "Je recommande vivement Saveurs d'Afrique. La présentation des plats est digne des grands restaurants.", likes: 8, reply: "Merci beaucoup Amina ! Ce fut un plaisir de vous accompagner pour cet événement." },
-  ]);
-
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [filterRating, setFilterRating] = useState<number | null>(null);
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  
+  const supabase = createClient();
+
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Fetch from reviews table if it exists
+    const { data } = await supabase
+      .from('reviews')
+      .select('*, profiles(full_name)')
+      .eq('prestataire_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      setReviews(data);
+    }
+    setLoading(false);
+  };
 
   const filteredReviews = useMemo(() => {
     if (filterRating === null) return reviews;
     return reviews.filter(r => r.rating === filterRating);
   }, [reviews, filterRating]);
 
-  const handleReplySubmit = (e: React.FormEvent, id: number) => {
+  const handleReplySubmit = async (e: React.FormEvent, id: string) => {
     e.preventDefault();
     if (!replyText.trim()) return;
+    
+    // In a real app, update the reply column in Supabase
+    await supabase.from('reviews').update({ reply: replyText }).eq('id', id);
     
     setReviews(reviews.map(r => r.id === id ? { ...r, reply: replyText } : r));
     setReplyingTo(null);
     setReplyText("");
+    useBadgeStore.getState().refresh();
   };
 
-  const handleLike = (id: number) => {
-    setReviews(reviews.map(r => r.id === id ? { ...r, likes: r.likes + 1 } : r));
+  const calculateAverage = () => {
+    if (reviews.length === 0) return 0;
+    const sum = reviews.reduce((acc, curr) => acc + curr.rating, 0);
+    return (sum / reviews.length).toFixed(1);
   };
+
+  const averageRating = calculateAverage();
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full">
+    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2">Avis Clients</h1>
+          <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
+            Avis Clients <Star size={24} className="text-[#b8924a]" fill="#b8924a" />
+          </h1>
           <p className="text-gray-500 text-sm">Gérez votre e-réputation et répondez aux commentaires.</p>
         </div>
         <div className="flex gap-2">
           {filterRating !== null && (
             <button onClick={() => setFilterRating(null)} className="text-xs font-semibold text-gray-500 hover:text-black transition-colors px-3">
-              Effacer les filtres
+              Effacer
             </button>
           )}
           <select 
@@ -60,114 +93,114 @@ export default function PrestataireAvisPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-[#111111] text-white p-6 rounded-2xl shadow-lg flex flex-col justify-center items-center">
-          <h2 className="text-4xl font-bold text-[#D4AF37] mb-2">4.8</h2>
-          <div className="flex gap-1 mb-2">
-            {[1,2,3,4,5].map(i => <Star key={i} size={18} className="fill-[#D4AF37] text-[#D4AF37]" />)}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-[#2b2118] text-white p-6 rounded-3xl border border-gray-800 shadow-xl flex flex-col justify-center items-center text-center relative overflow-hidden">
+          <div className="absolute -right-4 -bottom-4 opacity-10">
+            <Star size={100} />
           </div>
-          <p className="text-sm text-gray-400">Note Globale</p>
+          <h3 className="text-6xl font-bold font-serif text-[#b8924a] relative z-10">{averageRating}</h3>
+          <div className="flex items-center justify-center gap-1 my-2 relative z-10">
+            {[1,2,3,4,5].map(i => (
+              <Star key={i} size={16} className={i <= Number(averageRating) ? "text-[#b8924a]" : "text-gray-600"} fill={i <= Number(averageRating) ? "#b8924a" : "none"} />
+            ))}
+          </div>
+          <p className="text-sm text-gray-400 relative z-10">{reviews.length} avis au total</p>
         </div>
         
-        <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-center">
+        <div className="md:col-span-3 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-center">
           <div className="space-y-3">
-            {[
-              { stars: 5, percent: 85 },
-              { stars: 4, percent: 10 },
-              { stars: 3, percent: 5 },
-              { stars: 2, percent: 0 },
-              { stars: 1, percent: 0 },
-            ].map((row, idx) => (
-              <div key={idx} className="flex items-center gap-4 text-sm cursor-pointer group" onClick={() => setFilterRating(row.stars)}>
-                <div className={`flex items-center gap-1 w-12 font-medium transition-colors ${filterRating === row.stars ? 'text-[#B8860B]' : 'text-gray-600 group-hover:text-black'}`}>
-                  {row.stars} <Star size={14} className={filterRating === row.stars ? "fill-[#B8860B] text-[#B8860B]" : "fill-yellow-400 text-yellow-400"} />
+            {[5,4,3,2,1].map(rating => {
+              const count = reviews.filter(r => r.rating === rating).length;
+              const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+              return (
+                <div key={rating} className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-1 w-12 font-medium text-gray-700">
+                    {rating} <Star size={12} className="text-[#b8924a]" fill="#b8924a" />
+                  </div>
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#b8924a] rounded-full" style={{ width: `${percentage}%` }}></div>
+                  </div>
+                  <div className="w-8 text-right text-gray-500 font-medium">{count}</div>
                 </div>
-                <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-                  <div className="bg-[#B8860B] h-2 rounded-full transition-all duration-500" style={{ width: `${row.percent}%` }} />
-                </div>
-                <div className="w-10 text-right text-gray-500 text-xs font-medium">{row.percent}%</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
       <div className="space-y-6">
-        {filteredReviews.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-500">
-            Aucun avis ne correspond à ce filtre.
-          </div>
-        ) : (
+        {loading ? (
+           <div className="text-center p-12 text-gray-500">Chargement des avis...</div>
+        ) : filteredReviews.length > 0 ? (
           filteredReviews.map((review) => (
-            <div key={review.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
-                    {review.client.substring(0,2).toUpperCase()}
+            <div key={review.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm group hover:border-[#b8924a]/30 transition-colors">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center font-bold text-lg uppercase shadow-lg">
+                    {review.profiles?.full_name?.substring(0,2) || "U"}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">{review.client}</h4>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                      <span className="font-medium bg-gray-100 px-2 py-0.5 rounded">{review.event}</span>
-                      <span>• {review.date}</span>
-                    </div>
+                    <h3 className="font-bold text-gray-900">{review.profiles?.full_name || "Utilisateur"}</h3>
+                    <p className="text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString('fr-FR')}</p>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} className={i < review.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} />
-                  ))}
+                <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
+                  <Star size={14} className="text-[#8f6f33]" fill="#8f6f33" />
+                  <span className="font-bold text-[#8f6f33]">{review.rating}</span>
                 </div>
               </div>
               
-              <p className="text-gray-700 text-sm leading-relaxed mb-4">"{review.comment}"</p>
+              <p className="text-gray-700 mb-6 leading-relaxed">{review.comment}</p>
               
               {review.reply ? (
-                <div className="mb-4 ml-6 p-4 bg-[#F9F5EC] rounded-xl border border-[#E8DCC4] relative">
-                  <div className="absolute top-4 -left-3 w-3 h-3 bg-[#F9F5EC] border-l border-b border-[#E8DCC4] rotate-45"></div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-sm text-[#996B00]">Votre réponse</span>
-                    <button onClick={() => setReviews(reviews.map(r => r.id === review.id ? { ...r, reply: null } : r))} className="text-gray-400 hover:text-red-500 transition-colors">
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-700">{review.reply}</p>
+                <div className="ml-12 p-4 bg-gray-50 border-l-2 border-[#b8924a] rounded-r-2xl relative">
+                  <div className="absolute -left-6 top-4 w-4 h-4 rounded-full border-4 border-white bg-[#b8924a]"></div>
+                  <h4 className="font-bold text-sm text-gray-900 mb-1 flex items-center gap-2">
+                    <Store size={14} className="text-[#b8924a]"/> Votre réponse
+                  </h4>
+                  <p className="text-sm text-gray-600">{review.reply}</p>
                 </div>
-              ) : replyingTo === review.id ? (
-                <form onSubmit={(e) => handleReplySubmit(e, review.id)} className="mb-4 ml-6">
-                  <textarea 
-                    autoFocus
-                    rows={3} 
-                    className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] resize-none"
-                    placeholder="Rédigez votre réponse publique..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                  />
-                  <div className="flex justify-end gap-2 mt-2">
-                    <button type="button" onClick={() => {setReplyingTo(null); setReplyText("")}} className="text-xs font-semibold px-3 py-1.5 text-gray-500 hover:text-black">
-                      Annuler
+              ) : (
+                <div className="ml-12">
+                  {replyingTo === review.id ? (
+                    <form onSubmit={(e) => handleReplySubmit(e, review.id)} className="bg-gray-50 p-2 rounded-2xl border border-gray-200 flex items-end gap-2 animate-in fade-in zoom-in-95 duration-200">
+                      <textarea 
+                        autoFocus
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Écrivez votre réponse publique..."
+                        className="flex-1 bg-transparent border-none focus:ring-0 resize-none text-sm p-2 outline-none h-10"
+                      />
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => {setReplyingTo(null); setReplyText("")}} className="p-2 text-gray-400 hover:text-red-500 rounded-xl hover:bg-white transition-colors">
+                          <X size={18} />
+                        </button>
+                        <button type="submit" disabled={!replyText.trim()} className="p-2 bg-black text-white rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-50">
+                          <Send size={18} />
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <button 
+                      onClick={() => {setReplyingTo(review.id); setReplyText("")}} 
+                      className="text-sm font-medium text-[#b8924a] hover:text-[#8f6f33] flex items-center gap-2 py-1 px-3 hover:bg-yellow-50 rounded-full transition-colors"
+                    >
+                      <MessageSquare size={14} />
+                      Répondre publiquement
                     </button>
-                    <button type="submit" className="flex items-center gap-1.5 bg-[#B8860B] hover:bg-[#996B00] text-white px-4 py-1.5 rounded text-xs font-bold transition-colors">
-                      <Send size={12} /> Publier la réponse
-                    </button>
-                  </div>
-                </form>
-              ) : null}
-
-              <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-                <div className="flex items-center gap-4">
-                  <button onClick={() => handleLike(review.id)} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-[#B8860B] transition-colors">
-                    <ThumbsUp size={14} /> {review.likes} utiles
-                  </button>
+                  )}
                 </div>
-                {!review.reply && replyingTo !== review.id && (
-                  <button onClick={() => setReplyingTo(review.id)} className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#996B00] transition-colors">
-                    <MessageSquare size={14} /> Répondre
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           ))
+        ) : (
+          <div className="text-center p-12 bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Aucun avis {filterRating ? "correspondant" : ""} pour le moment</h3>
+            <p className="text-gray-500 max-w-sm mx-auto">
+              Vos futurs clients pourront laisser leurs avis ici après vos prestations.
+            </p>
+          </div>
         )}
       </div>
     </div>

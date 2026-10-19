@@ -1,36 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Sparkles, Store, Users, ShieldCheck, Mail, Lock, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Sparkles, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-
-type Role = "client" | "prestataire" | "admin";
+import { login } from "../auth-actions";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<Role>("client");
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const searchParams = useSearchParams();
+  const errorMsg = searchParams.get("error");
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const redirectTo = searchParams.get("redirectTo");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     setIsLoading(true);
-
-    // Simulate network delay for auth
-    setTimeout(() => {
-      setIsLoading(false);
-      // Redirect based on selected role
-      if (selectedRole === "client") {
-        router.push("/dashboard");
-      } else if (selectedRole === "prestataire") {
-        router.push("/prestataire");
-      } else if (selectedRole === "admin") {
-        router.push("/admin");
-      }
-    }, 1200);
   };
 
   return (
@@ -50,7 +36,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
         
         <div className="relative z-20 max-w-lg px-12 text-center text-white">
-          <Link href="/" className="inline-flex items-center gap-2 text-[#D4AF37] font-serif text-3xl font-bold mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-[#b8924a] font-serif text-3xl font-bold mb-8">
             <Sparkles size={28} />
             Evenium
           </Link>
@@ -65,7 +51,7 @@ export default function LoginPage() {
 
       {/* Right Side: Login Form */}
       <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 md:px-24 py-12 relative">
-        <Link href="/" className="absolute top-8 left-8 lg:hidden text-[#D4AF37] font-serif text-2xl font-bold flex items-center gap-2">
+        <Link href="/" className="absolute top-8 left-8 lg:hidden text-[#b8924a] font-serif text-2xl font-bold flex items-center gap-2">
           <Sparkles size={24} />
           Evenium
         </Link>
@@ -73,58 +59,20 @@ export default function LoginPage() {
         <div className="w-full max-w-md mx-auto">
           <div className="mb-10">
             <h1 className="font-serif text-3xl font-bold mb-2">Bienvenue</h1>
-            <p className="text-gray-500">Connectez-vous à votre espace personnel.</p>
+            <p className="text-gray-500">
+              {redirectTo ? "Connectez-vous pour accéder à votre tableau de bord." : "Connectez-vous à votre espace personnel."}
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            
-            {/* Role Selection (Mock Auth) */}
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700">Choisissez votre rôle (Simulation)</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole("client")}
-                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border text-sm transition-all ${
-                    selectedRole === "client" 
-                      ? "border-[#D4AF37] bg-[#D4AF37]/5 ring-1 ring-[#D4AF37] text-gray-900 font-semibold" 
-                      : "border-gray-200 text-gray-500 hover:border-gray-300"
-                  }`}
-                >
-                  <Users size={20} className={selectedRole === "client" ? "text-[#D4AF37]" : ""} />
-                  Organisateur
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole("prestataire")}
-                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border text-sm transition-all ${
-                    selectedRole === "prestataire" 
-                      ? "border-[#D4AF37] bg-[#D4AF37]/5 ring-1 ring-[#D4AF37] text-gray-900 font-semibold" 
-                      : "border-gray-200 text-gray-500 hover:border-gray-300"
-                  }`}
-                >
-                  <Store size={20} className={selectedRole === "prestataire" ? "text-[#D4AF37]" : ""} />
-                  Prestataire
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedRole("admin")}
-                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border text-sm transition-all ${
-                    selectedRole === "admin" 
-                      ? "border-[#D4AF37] bg-[#D4AF37]/5 ring-1 ring-[#D4AF37] text-gray-900 font-semibold" 
-                      : "border-gray-200 text-gray-500 hover:border-gray-300"
-                  }`}
-                >
-                  <ShieldCheck size={20} className={selectedRole === "admin" ? "text-[#D4AF37]" : ""} />
-                  Admin
-                </button>
-
-              </div>
+          {errorMsg && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium">
+              {errorMsg}
             </div>
+          )}
 
+          <form action={login} onSubmit={() => setIsLoading(true)} className="space-y-6">
+            {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
+            
             {/* Form Fields */}
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -132,11 +80,11 @@ export default function LoginPage() {
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input 
+                    name="email"
                     type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    required
                     placeholder="exemple@evenium.com"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl pl-12 pr-4 py-3.5 focus:bg-white focus:ring-2 focus:ring-[#D4AF37]/20 focus:border-[#D4AF37] outline-none transition-all"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl pl-12 pr-4 py-3.5 focus:bg-white focus:ring-2 focus:ring-[#b8924a]/20 focus:border-[#b8924a] outline-none transition-all"
                   />
                 </div>
               </div>
@@ -144,17 +92,24 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-sm font-semibold text-gray-700">Mot de passe</label>
-                  <Link href="#" className="text-xs font-semibold text-[#D4AF37] hover:underline">Mot de passe oublié ?</Link>
+                  <Link href="#" className="text-xs font-semibold text-[#b8924a] hover:underline">Mot de passe oublié ?</Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    name="password"
+                    type={showPassword ? "text" : "password"} 
+                    required
                     placeholder="••••••••"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl pl-12 pr-4 py-3.5 focus:bg-white focus:ring-2 focus:ring-[#D4AF37]/20 focus:border-[#D4AF37] outline-none transition-all"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl pl-12 pr-12 py-3.5 focus:bg-white focus:ring-2 focus:ring-[#b8924a]/20 focus:border-[#b8924a] outline-none transition-all"
                   />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
             </div>
@@ -162,10 +117,10 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-[#111111] hover:bg-black text-[#D4AF37] font-semibold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-2"
+              className="w-full bg-[#2b2118] hover:bg-black text-[#b8924a] font-semibold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-2"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-[#b8924a] border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
                   Se connecter
@@ -176,10 +131,13 @@ export default function LoginPage() {
             
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center pt-6 border-t border-gray-100">
             <p className="text-sm text-gray-500">
               Nouveau sur Evenium ?{" "}
-              <Link href="#" className="font-semibold text-gray-900 hover:text-[#D4AF37] transition-colors">
+              <Link 
+                href={redirectTo ? `/register?redirectTo=${encodeURIComponent(redirectTo)}` : "/register"} 
+                className="font-semibold text-gray-900 hover:text-[#b8924a] transition-colors"
+              >
                 Créer un compte
               </Link>
             </p>

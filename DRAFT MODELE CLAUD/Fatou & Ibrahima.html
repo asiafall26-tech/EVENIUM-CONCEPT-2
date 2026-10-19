@@ -1,0 +1,482 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Fatou & Ibrahima</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Marcellus&display=swap">
+<style>
+/* Layout : faire-part vertical de mobile, colonne unique de 440px, sections séparées par des rubans de satin rose et des lotus */
+:root{
+  --paper:#fffaf8;
+  --blush:#f6dfe1;
+  --rose:#e9a9b2;
+  --wine:#a8505e;
+  --ink:#5a2f37;
+  --muted:#9a7a80;
+  --gold:#c9a36a;
+  --script:"Pinyon Script","Brush Script MT",cursive;
+  --serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --label:"Marcellus","Cormorant Garamond",Georgia,serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{background:#efe4e4}
+body{background:#efe4e4;color:var(--ink);font-family:var(--serif);font-size:17px;line-height:1.55;margin:0}
+.card{max-width:440px;margin:0 auto;background:var(--paper);position:relative;overflow:hidden;box-shadow:0 0 40px rgba(90,47,55,.12)}
+section{position:relative;padding-block:44px;padding-inline:24px}
+h2{font-family:var(--label);font-weight:400;color:var(--wine);text-transform:uppercase;letter-spacing:.14em;font-size:15px;margin:0 0 18px;text-wrap:balance}
+.script{font-family:var(--script);font-weight:400;color:var(--wine)}
+.label{font-family:var(--label);text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--wine)}
+.muted{color:var(--muted)}
+.center{text-align:center}
+.right{text-align:right}
+
+/* Enveloppe d'ouverture */
+#cover{position:fixed;inset:0;z-index:50;background:#efe4e4;display:grid;place-items:center;padding:24px;transition:opacity .9s ease, visibility .9s}
+#cover.open{opacity:0;visibility:hidden}
+.env{width:min(340px,100%);aspect-ratio:1.45;position:relative;background:var(--blush);border-radius:6px;box-shadow:0 18px 40px rgba(90,47,55,.22);cursor:pointer;border:0;padding:0;font:inherit;color:inherit}
+.env:focus-visible{outline:2px solid var(--wine);outline-offset:6px}
+.env .flap{position:absolute;inset:0 0 auto 0;height:62%;background:var(--rose);clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top;transition:transform .8s ease}
+.env .pocket{position:absolute;inset:auto 0 0 0;height:100%;background:linear-gradient(160deg,#f3d2d6,#efc3c9);clip-path:polygon(0 100%,0 38%,50% 72%,100% 38%,100% 100%);border-radius:0 0 6px 6px}
+.env .seal{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:66px;height:66px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c46a78,var(--wine));display:grid;place-items:center;color:#fff3f0;font-family:var(--script);font-size:26px;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:2}
+#cover.opening .flap{transform:rotateX(180deg)}
+.cover-hint{margin-top:22px;text-align:center}
+.cover-hint .script{font-size:34px;display:block}
+
+/* Décors */
+.lotus{position:absolute;pointer-events:none;width:150px;height:auto;opacity:.95}
+.ribbon{display:block;width:100%;height:70px;margin:-10px 0}
+
+/* Héros */
+.hero{padding-top:56px}
+.photos{display:flex;justify-content:center;gap:0;margin-bottom:22px}
+.photo{width:150px;aspect-ratio:3/4;background:#fff;padding:7px 7px 7px;box-shadow:0 6px 18px rgba(90,47,55,.18);border:1px solid #f0d5d8}
+.photo:first-child{transform:rotate(-6deg) translateY(6px)}
+.photo:last-child{transform:rotate(5deg);margin-left:-14px}
+.ph{width:100%;height:100%;display:grid;place-items:center;background:linear-gradient(170deg,#f8e6e8,#edc9ce);color:var(--wine);font-family:var(--script);font-size:46px}
+.names{position:relative;height:120px}
+.names .n1{position:absolute;left:4%;top:8px;font-family:var(--label);letter-spacing:.12em;font-size:26px;color:var(--wine);font-style:italic}
+.names .n2{position:absolute;right:4%;top:48px;font-family:var(--label);letter-spacing:.12em;font-size:26px;color:var(--wine);font-style:italic}
+.names .amp{position:absolute;left:50%;top:-6px;transform:translateX(-50%);font-family:var(--script);font-size:92px;color:var(--rose);opacity:.55;line-height:1}
+
+/* Cérémonie */
+.parents{display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:15px;margin-bottom:22px}
+.parents > div{min-width:0}
+.parents .wine{color:var(--wine);font-weight:600}
+.invite-line{font-style:italic;color:var(--wine);font-size:15px;margin:0 0 6px}
+.big-names{font-family:var(--script);color:var(--wine);font-size:46px;line-height:1.05;margin:4px 0 26px}
+.event{margin-bottom:26px}
+.event .place{margin:4px 0}
+.event .time{display:flex;gap:18px;font-size:14px;color:var(--wine)}
+.date{display:flex;align-items:center;gap:14px;margin-top:6px}
+.date .d{font-size:56px;line-height:1;color:var(--wine);font-weight:500}
+.date .m{border-left:1px solid var(--rose);padding-left:14px;color:var(--wine);text-transform:uppercase;letter-spacing:.08em;font-size:15px;line-height:1.5}
+
+/* Galerie */
+.gallery{position:relative;height:300px;margin-top:8px}
+.slide{position:absolute;top:0;left:50%;width:200px;height:280px;margin-left:-100px;background:#fff;padding:8px;box-shadow:0 8px 22px rgba(90,47,55,.2);transition:transform .5s ease,opacity .5s ease}
+.slide .ph{font-size:30px;text-align:center;line-height:1.2;padding:12px}
+.gal-nav{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:10px}
+.gal-nav button{background:none;border:1px solid var(--rose);color:var(--wine);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px}
+.gal-nav button:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+.gal-count{font-family:var(--label);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Réception & compte à rebours */
+.rec-head{font-family:var(--label);text-transform:uppercase;letter-spacing:.08em;font-size:17px;color:var(--wine);text-align:center;margin-bottom:14px}
+.countdown{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 22px}
+.cd{text-align:center;border:1px solid #f0d0d4;background:#fff;padding:10px 4px;border-radius:2px}
+.cd b{display:block;font-size:30px;font-weight:500;color:var(--wine);font-variant-numeric:tabular-nums;line-height:1.1}
+.cd span{font-family:var(--label);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hours{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:10px;margin-bottom:22px}
+.hours b{display:block;font-size:22px;color:var(--wine);font-weight:500}
+
+.cal{border:1px solid #f0d0d4;border-radius:10px;padding:14px 12px 10px;background:#fff}
+.cal .title{font-family:var(--script);font-size:32px;color:var(--wine);text-align:center;border-bottom:1px solid #f0d0d4;padding-bottom:4px;margin-bottom:8px}
+.cal table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.cal th{font-weight:400;color:var(--muted);font-size:12px;padding:4px 0}
+.cal td{text-align:center;padding:6px 0;color:var(--ink)}
+.cal td.hl span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--wine);color:#fff;position:relative}
+.cal td.hl span::after{content:"♥";position:absolute;top:-9px;right:-6px;font-size:11px;color:var(--wine)}
+.add-cal{display:block;text-align:right;margin-top:12px;color:var(--wine);font-size:14px}
+
+.btn{display:block;width:100%;max-width:300px;margin:24px auto 0;border:0;background:var(--rose);color:#fff;font-family:var(--label);letter-spacing:.12em;text-transform:uppercase;font-size:13px;padding:14px 18px;cursor:pointer;border-radius:2px;transition:background .2s}
+.btn:hover{background:var(--wine)}
+.btn:focus-visible{outline:2px solid var(--wine);outline-offset:3px}
+
+/* RSVP */
+.rsvp{margin-top:18px;display:grid;gap:10px}
+.rsvp[hidden]{display:none}
+input,textarea,select{width:100%;font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid #ecc8cd;padding:10px 12px;border-radius:2px}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--rose);outline-offset:0;border-color:var(--rose)}
+.choice{display:flex;gap:8px}
+.choice label{flex:1;text-align:center;border:1px solid #ecc8cd;padding:9px 6px;cursor:pointer;font-size:15px;background:#fff}
+.choice input{position:absolute;opacity:0;width:1px;height:1px}
+.choice input:checked + span{color:#fff}
+.choice label:has(input:checked){background:var(--wine);border-color:var(--wine);color:#fff}
+.choice label:has(input:focus-visible){outline:2px solid var(--wine);outline-offset:2px}
+.thanks{background:var(--blush);padding:14px;text-align:center;color:var(--wine);font-style:italic}
+
+/* Lieu */
+.map{display:block;text-decoration:none;color:inherit;border:1px solid #f0d0d4;background:
+  repeating-linear-gradient(35deg,#f5eeee 0 22px,#f9f4f4 22px 44px);height:170px;position:relative;margin-top:14px;border-radius:4px;overflow:hidden}
+.map .river{position:absolute;left:28%;top:-10%;width:60px;height:130%;background:#cfe3ea;transform:rotate(12deg)}
+.map .pin{position:absolute;left:58%;top:38%;width:30px;height:30px;border-radius:50% 50% 50% 0;background:var(--wine);transform:rotate(-45deg);box-shadow:0 3px 6px rgba(0,0,0,.25)}
+.map .pin::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+.map .tag{position:absolute;left:12px;bottom:12px;background:#fff;padding:6px 10px;font-size:13px;color:var(--wine);box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.itin{display:block;text-align:center;margin-top:12px;color:var(--wine);font-family:var(--label);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+
+/* Dress code */
+.swatches{display:flex;gap:16px;margin-top:12px}
+.sw{width:44px;height:44px;border-radius:50%;border:1px solid #e8d6d6}
+
+/* Programme */
+.prog{list-style:none;margin:10px 0 0;padding:0;position:relative}
+.prog::before{content:"";position:absolute;left:50%;top:8px;bottom:8px;width:1px;background:var(--rose)}
+.prog li{display:grid;grid-template-columns:1fr 28px 1fr;align-items:start;gap:10px;padding:12px 0}
+.prog .t{text-align:right;color:var(--wine);font-variant-numeric:tabular-nums;font-size:16px}
+.prog .dot{width:10px;height:10px;border-radius:50%;background:var(--wine);margin:7px auto 0;position:relative;z-index:1;box-shadow:0 0 0 4px var(--paper)}
+.prog .what{color:var(--wine);font-size:15px;line-height:1.35}
+
+/* Livre d'or */
+.guest form{display:grid;gap:10px}
+.guest .send{margin:0;max-width:none}
+.msgs{display:grid;gap:12px;margin-top:20px;max-height:380px;overflow:auto;padding-right:4px}
+.msg{border:1px solid #f0d0d4;background:#fff;padding:12px 14px}
+.msg header{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:4px}
+.msg header b{color:var(--wine);font-weight:600}
+.msg header time{color:var(--muted);font-size:12px;white-space:nowrap}
+.msg p{margin:0;font-size:15px}
+.note{font-size:12px;color:var(--muted);margin-top:8px;font-style:italic}
+
+/* Boîte cadeau */
+.gift{display:grid;place-items:center;gap:10px}
+.giftbox{width:120px;height:110px;position:relative;cursor:pointer;background:none;border:0;padding:0}
+.giftbox:focus-visible{outline:2px solid var(--wine);outline-offset:6px}
+.giftbox .box{position:absolute;left:10px;right:10px;bottom:0;height:70px;background:linear-gradient(#f3c6cd,#e9a9b2);border-radius:4px}
+.giftbox .lid{position:absolute;left:2px;right:2px;top:22px;height:22px;background:#f7d6da;border-radius:4px;transition:transform .5s ease}
+.giftbox .rib{position:absolute;left:50%;top:22px;bottom:0;width:14px;margin-left:-7px;background:var(--wine)}
+.giftbox .bow{position:absolute;left:50%;top:4px;transform:translateX(-50%);font-size:26px;color:var(--wine);transition:transform .5s ease}
+.giftbox.open .lid{transform:translateY(-26px) rotate(-12deg)}
+.giftbox.open .bow{transform:translate(-60%,-30px) rotate(-12deg)}
+.gift-info{background:var(--blush);padding:16px;text-align:center;width:100%}
+.gift-info .num{font-family:var(--label);font-size:18px;color:var(--wine);letter-spacing:.05em;user-select:all}
+.copy{margin-top:8px;background:none;border:1px solid var(--wine);color:var(--wine);padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+
+footer{text-align:center;padding:30px 20px 40px;color:var(--muted);font-size:14px;font-style:italic}
+footer .script{font-size:34px;display:block;font-style:normal}
+
+.reveal{animation:rise .9s ease both}
+@keyframes rise{from{transform:translateY(14px)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<!-- Écran d'ouverture -->
+<div id="cover" role="dialog" aria-label="Ouvrir l'invitation">
+  <div>
+    <button class="env" id="openEnv" aria-label="Ouvrir l'enveloppe">
+      <span class="pocket"></span>
+      <span class="flap"></span>
+      <span class="seal">F&amp;I</span>
+    </button>
+    <div class="cover-hint">
+      <span class="script">Vous êtes invités</span>
+      <span class="label">Touchez le sceau pour ouvrir</span>
+    </div>
+  </div>
+</div>
+
+<main class="card">
+
+  <!-- lotus réutilisable -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="pet" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0" stop-color="#fbe9ec"/>
+        <stop offset=".6" stop-color="#f4c3cb"/>
+        <stop offset="1" stop-color="#e48c9b"/>
+      </linearGradient>
+      <linearGradient id="pet2" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0" stop-color="#fdf3f4"/>
+        <stop offset="1" stop-color="#eeaab6"/>
+      </linearGradient>
+      <symbol id="lotus" viewBox="0 0 200 160">
+        <path d="M100 150 C60 140 10 120 4 80 C40 82 80 110 100 150Z" fill="url(#pet2)"/>
+        <path d="M100 150 C140 140 190 120 196 80 C160 82 120 110 100 150Z" fill="url(#pet2)"/>
+        <path d="M100 150 C70 130 30 90 36 40 C70 60 96 110 100 150Z" fill="url(#pet)"/>
+        <path d="M100 150 C130 130 170 90 164 40 C130 60 104 110 100 150Z" fill="url(#pet)"/>
+        <path d="M100 150 C80 120 66 70 100 8 C134 70 120 120 100 150Z" fill="url(#pet)"/>
+        <path d="M100 150 C90 125 86 95 100 60 C114 95 110 125 100 150Z" fill="#f9d9de" opacity=".8"/>
+        <circle cx="100" cy="128" r="9" fill="#f2cf7a"/>
+      </symbol>
+      <symbol id="ribbon" viewBox="0 0 440 70" preserveAspectRatio="none">
+        <path d="M-10 40 C60 0 120 70 200 36 S330 0 450 30 L450 44 C330 18 270 60 200 52 S70 22 -10 56Z" fill="#f2b9c2"/>
+        <path d="M-10 46 C60 10 120 70 200 42 S330 10 450 36" fill="none" stroke="#fde6ea" stroke-width="2" opacity=".9"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- Héros -->
+  <section class="hero center">
+    <svg class="lotus" style="right:-46px;top:-20px;transform:rotate(-14deg)" viewBox="0 0 200 160"><use href="#lotus"/></svg>
+    <div class="photos">
+      <div class="photo"><div class="ph">F</div></div>
+      <div class="photo"><div class="ph">I</div></div>
+    </div>
+    <div class="names" aria-label="Fatou et Ibrahima">
+      <span class="amp" aria-hidden="true">&amp;</span>
+      <span class="n1">FATOU</span>
+      <span class="n2">IBRAHIMA</span>
+    </div>
+  </section>
+
+  <svg class="ribbon" aria-hidden="true"><use href="#ribbon"/></svg>
+
+  <!-- Cérémonie -->
+  <section>
+    <h2>Info cérémonie</h2>
+    <div class="parents">
+      <div><span class="wine">M. et Mme</span><br>Abdou Ndiaye<br>Khady Fall</div>
+      <div><span class="wine">M. et Mme</span><br>Moustapha Diop<br>Mariama Ba</div>
+    </div>
+    <p class="invite-line">C'est avec une grande joie que nous vous invitons à partager ce jour</p>
+    <p class="big-names">Fatou Ndiaye<br>&amp;<br>Ibrahima Diop</p>
+
+    <div class="event">
+      <div class="label">Cérémonie religieuse</div>
+      <p class="place">Grande Mosquée de Dakar</p>
+      <div class="time"><span>À 16h00</span><span>SAMEDI</span></div>
+      <div class="date"><span class="d">12</span><span class="m">Juin<br>2027</span></div>
+    </div>
+    <div class="event" style="margin-bottom:0">
+      <div class="label">Réception</div>
+      <p class="place">Terrou-Bi, Corniche Ouest</p>
+      <div class="time"><span>À 20h00</span><span>SAMEDI</span></div>
+      <div class="date"><span class="d">12</span><span class="m">Juin<br>2027</span></div>
+    </div>
+    <svg class="lotus" style="right:-56px;bottom:30px;width:130px;transform:rotate(10deg)" viewBox="0 0 200 160"><use href="#lotus"/></svg>
+  </section>
+
+  <svg class="ribbon" aria-hidden="true" style="transform:scaleX(-1)"><use href="#ribbon"/></svg>
+
+  <!-- Galerie -->
+  <section class="center">
+    <h2 class="right">Galerie photo</h2>
+    <div class="gallery" id="gallery"></div>
+    <div class="gal-nav">
+      <button id="prev" aria-label="Photo précédente">‹</button>
+      <span class="gal-count" id="galCount">1 / 5</span>
+      <button id="next" aria-label="Photo suivante">›</button>
+    </div>
+    <p class="note">Remplacez ces cadres par vos photos de couple.</p>
+  </section>
+
+  <!-- Réception -->
+  <section>
+    <svg class="lotus" style="left:-60px;top:60px;width:140px;transform:rotate(18deg)" viewBox="0 0 200 160"><use href="#lotus"/></svg>
+    <h2 class="right">Info réception</h2>
+    <div class="rec-head">La réception aura lieu le :</div>
+    <div class="date" style="justify-content:center"><span class="d">12</span><span class="m">Samedi · 20h00<br>Juin 2027</span></div>
+
+    <div class="label center" style="margin-top:26px">Compte à rebours</div>
+    <div class="countdown" aria-live="polite">
+      <div class="cd"><b id="cdD">0</b><span>Jours</span></div>
+      <div class="cd"><b id="cdH">0</b><span>Heures</span></div>
+      <div class="cd"><b id="cdM">0</b><span>Min</span></div>
+      <div class="cd"><b id="cdS">0</b><span>Sec</span></div>
+    </div>
+
+    <div class="hours">
+      <div><span class="label">Accueil des invités</span><b>19:30</b></div>
+      <div><span class="label">Réception</span><b>20:00</b></div>
+    </div>
+
+    <div class="cal">
+      <div class="title">Juin 2027</div>
+      <table aria-label="Calendrier de juin 2027"><thead><tr><th>Lu</th><th>Ma</th><th>Me</th><th>Je</th><th>Ve</th><th>Sa</th><th>Di</th></tr></thead><tbody id="calBody"></tbody></table>
+    </div>
+    <a class="add-cal" id="addCal" href="#" target="_blank" rel="noopener">Ajouter au calendrier ↗</a>
+
+    <button class="btn" id="rsvpBtn" aria-expanded="false" aria-controls="rsvp">Confirmer la présence</button>
+    <form class="rsvp" id="rsvp" hidden>
+      <input id="rName" required placeholder="Votre nom complet*">
+      <div class="choice" role="radiogroup" aria-label="Présence">
+        <label><input type="radio" name="att" id="attYes" value="oui" checked><span>Je serai là</span></label>
+        <label><input type="radio" name="att" id="attNo" value="non"><span>Je ne pourrai pas</span></label>
+      </div>
+      <select id="rCount" aria-label="Nombre de personnes">
+        <option value="1">1 personne</option><option value="2">2 personnes</option><option value="3">3 personnes</option><option value="4">4 personnes</option>
+      </select>
+      <button class="btn" type="submit" style="margin-top:4px">Envoyer ma réponse</button>
+    </form>
+    <div class="thanks" id="thanks" hidden></div>
+  </section>
+
+  <svg class="ribbon" aria-hidden="true"><use href="#ribbon"/></svg>
+
+  <!-- Lieu -->
+  <section>
+    <h2>Lieu de la réception</h2>
+    <div>Terrou-Bi<br><span class="muted">Boulevard Martin Luther King, Corniche Ouest, Dakar</span></div>
+    <a class="map" href="https://www.google.com/maps/search/?api=1&query=Terrou-Bi+Dakar" target="_blank" rel="noopener" aria-label="Ouvrir le lieu dans Google Maps">
+      <span class="river"></span><span class="pin"></span><span class="tag">Ouvrir dans Maps ↗</span>
+    </a>
+    <a class="itin" href="https://www.google.com/maps/dir/?api=1&destination=Terrou-Bi+Dakar" target="_blank" rel="noopener">➤ Itinéraire</a>
+  </section>
+
+  <!-- Dress code -->
+  <section>
+    <h2>Dress code</h2>
+    <div class="muted">Tenue de soirée · tons poudrés</div>
+    <div class="swatches">
+      <span class="sw" style="background:#a8505e" title="Bordeaux rosé"></span>
+      <span class="sw" style="background:#e9a9b2" title="Rose poudré"></span>
+      <span class="sw" style="background:#d9c3a5" title="Beige sable"></span>
+      <span class="sw" style="background:#f8f1ea" title="Ivoire"></span>
+    </div>
+  </section>
+
+  <!-- Programme -->
+  <section>
+    <svg class="lotus" style="right:-60px;top:-10px;width:130px;transform:rotate(-20deg)" viewBox="0 0 200 160"><use href="#lotus"/></svg>
+    <h2>Programme du jour</h2>
+    <ol class="prog">
+      <li><span class="t">14:30</span><span class="dot"></span><span class="what">Cérémonie civile à la mairie</span></li>
+      <li><span class="t">16:00</span><span class="dot"></span><span class="what">Cérémonie religieuse</span></li>
+      <li><span class="t">18:00</span><span class="dot"></span><span class="what">Cortège et séance photo</span></li>
+      <li><span class="t">20:00</span><span class="dot"></span><span class="what">Réception</span></li>
+      <li><span class="t">22:00</span><span class="dot"></span><span class="what">Discours des familles</span></li>
+      <li><span class="t">23:00</span><span class="dot"></span><span class="what">Ouverture du bal</span></li>
+    </ol>
+  </section>
+
+  <svg class="ribbon" aria-hidden="true" style="transform:scaleX(-1)"><use href="#ribbon"/></svg>
+
+  <!-- Livre d'or -->
+  <section class="guest">
+    <h2 class="right">Livre d'or</h2>
+    <form id="gForm">
+      <input id="gName" required placeholder="Entrez votre nom*">
+      <textarea id="gMsg" required rows="4" placeholder="Entrez vos vœux*"></textarea>
+      <button class="btn send" type="submit">Envoyer un vœu</button>
+    </form>
+    <div class="msgs" id="msgs"></div>
+    <p class="note">Messages d'exemple affichés pour la démonstration.</p>
+  </section>
+
+  <!-- Boîte cadeau -->
+  <section class="center">
+    <svg class="lotus" style="left:-50px;top:0;width:140px;transform:rotate(14deg)" viewBox="0 0 200 160"><use href="#lotus"/></svg>
+    <h2 class="right">Boîte cadeau</h2>
+    <div class="gift">
+      <button class="giftbox" id="giftBtn" aria-expanded="false" aria-controls="giftInfo" aria-label="Ouvrir la boîte cadeau">
+        <span class="box"></span><span class="lid"></span><span class="rib"></span><span class="bow">❦</span>
+      </button>
+      <span class="muted" style="font-size:14px">Appuyez pour ouvrir</span>
+      <div class="gift-info" id="giftInfo" hidden>
+        <div class="label">Wave / Orange Money</div>
+        <div class="num" id="giftNum">77 000 00 00</div>
+        <button class="copy" id="copyBtn">Copier le numéro</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="script">Merci</span>
+    Votre présence sera le plus beau des cadeaux.
+  </footer>
+</main>
+
+<script>
+(function(){
+  // Ouverture
+  const cover=document.getElementById('cover');
+  document.getElementById('openEnv').addEventListener('click',()=>{
+    cover.classList.add('opening');
+    setTimeout(()=>cover.classList.add('open'),700);
+  });
+
+  // Compte à rebours
+  const target=new Date('2027-06-12T20:00:00Z'); // Dakar = UTC+0
+  const pad=n=>String(n).padStart(2,'0');
+  function tick(){
+    let s=Math.max(0,Math.floor((target-new Date())/1000));
+    const d=Math.floor(s/86400); s%=86400;
+    const h=Math.floor(s/3600); s%=3600;
+    const m=Math.floor(s/60); s%=60;
+    cdD.textContent=d; cdH.textContent=pad(h); cdM.textContent=pad(m); cdS.textContent=pad(s);
+  }
+  tick(); setInterval(tick,1000);
+
+  // Calendrier
+  const year=2027, month=5, day=12;
+  const first=(new Date(year,month,1).getDay()+6)%7;
+  const days=new Date(year,month+1,0).getDate();
+  let html='<tr>', col=0;
+  for(let i=0;i<first;i++){html+='<td></td>';col++}
+  for(let d=1;d<=days;d++){
+    html+= d===day ? `<td class="hl"><span>${d}</span></td>` : `<td>${d}</td>`;
+    if(++col%7===0 && d<days) html+='</tr><tr>';
+  }
+  calBody.innerHTML=html+'</tr>';
+
+  addCal.href='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Mariage Fatou & Ibrahima')+
+    '&dates=20270612T200000Z/20270613T030000Z&location='+encodeURIComponent('Terrou-Bi, Dakar');
+
+  // Galerie
+  const captions=['Notre rencontre','Les fiançailles','À Saint-Louis','Sur la Corniche','Pour toujours'];
+  const gal=document.getElementById('gallery');
+  captions.forEach(c=>{const s=document.createElement('div');s.className='slide';s.innerHTML=`<div class="ph">${c}</div>`;gal.appendChild(s)});
+  const slides=[...gal.children]; let cur=0;
+  function layout(){
+    slides.forEach((s,i)=>{
+      let off=i-cur; const n=slides.length;
+      if(off>n/2) off-=n; if(off<-n/2) off+=n;
+      const a=Math.abs(off);
+      s.style.transform=`translateX(${off*70}px) scale(${1-a*.14}) rotate(${off*3}deg)`;
+      s.style.zIndex=10-a; s.style.opacity=a>1?0:1-a*.25;
+    });
+    galCount.textContent=`${cur+1} / ${slides.length}`;
+  }
+  prev.onclick=()=>{cur=(cur-1+slides.length)%slides.length;layout()};
+  next.onclick=()=>{cur=(cur+1)%slides.length;layout()};
+  let sx=null;
+  gal.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+  gal.addEventListener('touchend',e=>{if(sx==null)return;const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)(dx<0?next:prev).onclick();sx=null});
+  layout();
+
+  // RSVP
+  rsvpBtn.onclick=()=>{rsvp.hidden=!rsvp.hidden;rsvpBtn.setAttribute('aria-expanded',!rsvp.hidden)};
+  rsvp.addEventListener('submit',e=>{
+    e.preventDefault();
+    const yes=attYes.checked;
+    thanks.textContent= yes ? `Merci ${rName.value.trim()}, votre présence (${rCount.value} pers.) est notée. À très vite !`
+                            : `Merci ${rName.value.trim()} de nous avoir prévenus. Vous nous manquerez.`;
+    rsvp.hidden=true; rsvpBtn.hidden=true; thanks.hidden=false;
+  });
+
+  // Livre d'or
+  const fmt=d=>d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const sample=[
+    ['Tata Awa','Que votre foyer soit rempli de paix, de rires et de baraka.'],
+    ['Cheikh & Ndeye','Félicitations à vous deux ! Une très belle aventure commence.'],
+    ['Famille Sow','Tous nos vœux de bonheur pour cette nouvelle vie à deux.']
+  ];
+  function addMsg(name,text,date,top){
+    const el=document.createElement('article');el.className='msg reveal';
+    el.innerHTML='<header><b></b><time></time></header><p></p>';
+    el.querySelector('b').textContent=name; el.querySelector('time').textContent=fmt(date); el.querySelector('p').textContent=text;
+    top?msgs.prepend(el):msgs.appendChild(el);
+  }
+  sample.forEach((m,i)=>addMsg(m[0],m[1],new Date(Date.now()-(i+1)*86400000*3),false));
+  gForm.addEventListener('submit',e=>{e.preventDefault();addMsg(gName.value.trim(),gMsg.value.trim(),new Date(),true);gForm.reset();msgs.scrollTop=0});
+
+  // Cadeau
+  giftBtn.onclick=()=>{giftBtn.classList.toggle('open');const o=giftBtn.classList.contains('open');giftInfo.hidden=!o;giftBtn.setAttribute('aria-expanded',o)};
+  copyBtn.onclick=()=>{
+    const t=giftNum.textContent;
+    navigator.clipboard?.writeText(t).then(()=>copyBtn.textContent='Copié ✓').catch(()=>{
+      const r=document.createRange();r.selectNodeContents(giftNum);const s=getSelection();s.removeAllRanges();s.addRange(r);copyBtn.textContent='Sélectionné';
+    });
+  };
+})();
+</script>
+
+</body></html>

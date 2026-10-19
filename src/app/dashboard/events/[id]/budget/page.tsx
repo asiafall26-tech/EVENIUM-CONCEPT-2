@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { use, useState, useEffect, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
+import { createClient } from "@/utils/supabase/client";
 
 export default function BudgetDashboardPage({
   params,
@@ -12,7 +13,8 @@ export default function BudgetDashboardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { events } = useEvents();
+  const { events, refreshEvents } = useEvents();
+  const supabase = createClient();
 
   const [event, setEvent] = useState<any>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -21,6 +23,8 @@ export default function BudgetDashboardPage({
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [newBudgetTotal, setNewBudgetTotal] = useState("");
   
   const [newExpense, setNewExpense] = useState({
     description: "",
@@ -30,31 +34,45 @@ export default function BudgetDashboardPage({
     status: "Payé"
   });
 
-  useEffect(() => {
-    // Simulate API fetch using Context Events
-    const fetchBudget = async () => {
-      const eventData = events.find(e => e.id === id);
-      if (eventData) {
-        setEvent(eventData);
-        // Simulate some initial expenses based on the spent budget
-        if (eventData.budget?.spent > 0) {
-          setExpenses([
-            {
-              id: "exp-1",
-              description: "Acompte Salle & Traiteur",
-              category: "Lieu & Traiteur",
-              date: "2026-05-15",
-              amount: eventData.budget.spent,
-              status: "Payé"
-            }
-          ]);
-        }
-      }
-      setLoading(false);
-    };
+  const fetchData = async () => {
+    const eventData = events.find(e => e.id === id);
+    if (eventData) {
+      setEvent(eventData);
+    }
+    
+    // Fetch transactions
+    const { data } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('event_id', id)
+      .eq('type', 'depense')
+      .order('date', { ascending: false });
+      
+    if (data) {
+      setExpenses(data.map(t => ({
+        id: t.id,
+        description: t.description,
+        category: t.categorie || 'Autre',
+        date: t.date,
+        amount: Number(t.montant),
+        status: t.status || 'En attente'
+      })));
+    }
+    setLoading(false);
+  };
 
-    fetchBudget();
-  }, [id]);
+  useEffect(() => {
+    fetchData();
+  }, [id, events]);
+
+  const handleUpdateBudget = async () => {
+    if (!newBudgetTotal) return;
+    setIsSubmitting(true);
+    await supabase.from('events').update({ budget_total: Number(newBudgetTotal) }).eq('id', id);
+    await refreshEvents();
+    setIsEditingBudget(false);
+    setIsSubmitting(false);
+  };
 
   const globalBudget = event?.budget?.total || 0;
   
@@ -85,14 +103,14 @@ export default function BudgetDashboardPage({
     return (
       <div className="p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
         <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl max-w-md text-center">
-          <div className="w-20 h-20 bg-[#F9F5EC] text-[#B8860B] rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
           <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
           <p className="text-gray-500 mb-8 text-sm leading-relaxed">
             La gestion budgétaire avancée est exclusivement réservée aux événements utilisant la formule Gold. Gérez vos dépenses et maîtrisez vos coûts en toute simplicité.
           </p>
-          <button className="w-full bg-[#B8860B] hover:bg-[#996B00] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#B8860B]/20 transition-colors">
+          <button className="w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors">
             Passer à la formule Gold
           </button>
           <div className="mt-4">
@@ -125,7 +143,8 @@ export default function BudgetDashboardPage({
 
   const handleDeleteExpense = async (expenseId: string) => {
     if (confirm("Êtes-vous sûr de vouloir supprimer cette dépense ?")) {
-      setExpenses(expenses.filter(e => e.id !== expenseId));
+      await supabase.from('transactions').delete().eq('id', expenseId);
+      await fetchData();
     }
   };
 
@@ -135,24 +154,27 @@ export default function BudgetDashboardPage({
 
     setIsSubmitting(true);
     
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const payload = {
-      id: editingExpenseId || `exp-${Date.now()}`,
-      event_id: id,
-      description: newExpense.description,
-      category: newExpense.category,
-      date: newExpense.date,
-      amount: parseFloat(newExpense.amount),
-      status: newExpense.status
-    };
-
     if (editingExpenseId) {
-      setExpenses(expenses.map(exp => exp.id === editingExpenseId ? payload : exp));
+      await supabase.from('transactions').update({
+        description: newExpense.description,
+        categorie: newExpense.category,
+        date: newExpense.date,
+        montant: Number(newExpense.amount),
+        status: newExpense.status
+      }).eq('id', editingExpenseId);
     } else {
-      setExpenses([payload, ...expenses]);
+      await supabase.from('transactions').insert([{
+        event_id: id,
+        type: 'depense',
+        description: newExpense.description,
+        categorie: newExpense.category,
+        date: newExpense.date,
+        montant: Number(newExpense.amount),
+        status: newExpense.status
+      }]);
     }
+
+    await fetchData();
     
     setIsSubmitting(false);
     setIsAddExpenseModalOpen(false);
@@ -169,8 +191,8 @@ export default function BudgetDashboardPage({
   };
 
   const categoryColors: Record<string, string> = {
-    "Lieu & Traiteur": "#D4AF37",
-    "Photo & Vidéo": "#111111",
+    "Lieu & Traiteur": "#b8924a",
+    "Photo & Vidéo": "#2b2118",
     "Décoration": "#E5E5E5",
     "Animation": "#8B5CF6",
     "Tenues": "#EC4899",
@@ -190,7 +212,7 @@ export default function BudgetDashboardPage({
         </div>
         <button 
           onClick={openAddModal}
-          className="flex items-center gap-2 bg-[#B8860B] hover:bg-[#996B00] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md shadow-[#B8860B]/20 transition-colors"
+          className="flex items-center gap-2 bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md shadow-[#8f6f33]/20 transition-colors"
         >
           <Plus size={16} /> Ajouter une dépense
         </button>
@@ -209,8 +231,33 @@ export default function BudgetDashboardPage({
             <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2.5 py-1 rounded-full">ESTIMATION</span>
           </div>
           <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">Budget global estimé</p>
-            <h3 className="text-3xl font-serif font-bold text-gray-900">{formatCurrency(globalBudget)} <span className="text-lg text-gray-400">FCFA</span></h3>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm text-gray-500 font-medium">Budget global estimé</p>
+              <button onClick={() => setIsEditingBudget(!isEditingBudget)} className="text-gray-400 hover:text-[#b8924a] transition-colors" title="Modifier le budget">
+                <Edit2 size={14} />
+              </button>
+            </div>
+            
+            {isEditingBudget ? (
+              <div className="flex items-center gap-2 mt-2">
+                <input 
+                  type="number" 
+                  placeholder="Montant..." 
+                  className="px-3 py-1.5 border border-gray-200 rounded-md text-sm outline-none w-32"
+                  value={newBudgetTotal}
+                  onChange={(e) => setNewBudgetTotal(e.target.value)}
+                />
+                <button 
+                  onClick={handleUpdateBudget}
+                  disabled={isSubmitting || !newBudgetTotal}
+                  className="bg-[#b8924a] text-white px-3 py-1.5 rounded-md text-sm font-semibold disabled:opacity-50"
+                >
+                  Ok
+                </button>
+              </div>
+            ) : (
+              <h3 className="text-3xl font-serif font-bold text-gray-900">{formatCurrency(globalBudget)} <span className="text-lg text-gray-400">FCFA</span></h3>
+            )}
           </div>
         </div>
         
@@ -230,21 +277,21 @@ export default function BudgetDashboardPage({
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-[#1A1A1A] to-black p-6 rounded-2xl border border-gray-800 shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-[#D4AF37]">
+        <div className="bg-gradient-to-br from-[#2b2118] to-black p-6 rounded-2xl border border-gray-800 shadow-md relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-[#b8924a]">
             <CheckCircle2 size={80} />
           </div>
           <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 rounded-xl bg-white/10 text-[#D4AF37] flex items-center justify-center shadow-sm backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-white/10 text-[#b8924a] flex items-center justify-center shadow-sm backdrop-blur-sm">
               <Activity size={24} />
             </div>
-            <span className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-[10px] font-bold px-2.5 py-1 rounded-full">RESTANT</span>
+            <span className="bg-[#b8924a]/20 text-[#b8924a] border border-[#b8924a]/30 text-[10px] font-bold px-2.5 py-1 rounded-full">RESTANT</span>
           </div>
           <div>
             <p className="text-sm text-gray-400 font-medium mb-1">Budget restant disponible</p>
             <h3 className="text-3xl font-serif font-bold text-white mb-4">{formatCurrency(remainingBudget)} <span className="text-lg text-gray-500">FCFA</span></h3>
             <div className="w-full bg-white/10 rounded-full h-1.5 mt-2">
-              <div className="bg-gradient-to-r from-[#D4AF37] to-[#F9F5EC] h-1.5 rounded-full transition-all duration-500" style={{ width: `${100 - consumedPercentage}%` }} />
+              <div className="bg-gradient-to-r from-[#b8924a] to-[#f5eee1] h-1.5 rounded-full transition-all duration-500" style={{ width: `${100 - consumedPercentage}%` }} />
             </div>
           </div>
         </div>
@@ -261,7 +308,7 @@ export default function BudgetDashboardPage({
             <div className="flex items-center justify-center mb-8 pt-4">
               <div className="relative w-40 h-40 rounded-full flex items-center justify-center shadow-inner" 
                    style={{
-                     background: 'conic-gradient(#D4AF37 0% 50%, #111111 50% 70%, #E5E5E5 70% 90%, #8B5CF6 90% 100%)'
+                     background: 'conic-gradient(#b8924a 0% 50%, #2b2118 50% 70%, #E5E5E5 70% 90%, #8B5CF6 90% 100%)'
                    }}>
                 <div className="w-28 h-28 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-sm">
                   <span className="text-xl font-bold">{consumedPercentage}%</span>
@@ -334,7 +381,7 @@ export default function BudgetDashboardPage({
                       <td className="py-4 text-right font-bold text-gray-900">{formatCurrency(expense.amount)} F</td>
                       <td className="py-4 text-center">
                         <div className="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEditModal(expense)} className="p-1.5 text-gray-500 hover:text-[#B8860B] hover:bg-[#F9F5EC] rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Modifier">
+                          <button onClick={() => openEditModal(expense)} className="p-1.5 text-gray-500 hover:text-[#8f6f33] hover:bg-[#f5eee1] rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Modifier">
                             <Edit2 size={14} />
                           </button>
                           <button onClick={() => handleDeleteExpense(expense.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Supprimer">
@@ -371,7 +418,7 @@ export default function BudgetDashboardPage({
                   type="text" 
                   required
                   placeholder="Ex: Acompte Traiteur, Location Sono..." 
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                   value={newExpense.description}
                   onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
                 />
@@ -385,7 +432,7 @@ export default function BudgetDashboardPage({
                     required
                     min="0"
                     placeholder="Ex: 150000" 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 font-mono"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50 font-mono"
                     value={newExpense.amount}
                     onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
                   />
@@ -393,7 +440,7 @@ export default function BudgetDashboardPage({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Statut</label>
                   <select 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 font-semibold"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50 font-semibold"
                     value={newExpense.status}
                     onChange={(e) => setNewExpense({...newExpense, status: e.target.value})}
                   >
@@ -407,7 +454,7 @@ export default function BudgetDashboardPage({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Catégorie</label>
                   <select 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                     value={newExpense.category}
                     onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
                   >
@@ -424,7 +471,7 @@ export default function BudgetDashboardPage({
                   <input 
                     type="date" 
                     required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                     value={newExpense.date}
                     onChange={(e) => setNewExpense({...newExpense, date: e.target.value})}
                   />

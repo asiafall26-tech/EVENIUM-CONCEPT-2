@@ -4,9 +4,7 @@ import { updateSession } from '@/utils/supabase/middleware'
 import { NextResponse } from 'next/server'
 
 export default async function proxy(request: NextRequest) {
-  // Désactivé temporairement car Supabase est en cours de reconfiguration
-  // return await updateSession(request)
-  return NextResponse.next()
+  return await updateSession(request)
 }
 
 export const config = {

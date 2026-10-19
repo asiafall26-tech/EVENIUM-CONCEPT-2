@@ -1,0 +1,312 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Aïssatou & Moussa, perles</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;1,6..96,400;1,6..96,500&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<style>
+/* Layout: three tall paper panels side by side on desktop, stacked on phone; lace-and-pearl ground, script headings with heart dividers */
+:root{
+  --ground:#e9dbd0;
+  --paper:#fbf6ee;
+  --cocoa:#6e4e47;
+  --ink:#4a3430;
+  --blush:#e8c4bd;
+  --olive:#8a9a78;
+  --pearl:#f3e6dc;
+  --script:"Alex Brush","Snell Roundhand",cursive;
+  --title:"Bodoni Moda","Didot",Georgia,serif;
+  --serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;padding-inline:16px;color:var(--ink);font-family:var(--serif);font-weight:500;font-size:19px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  background-color:var(--ground);
+  background-image:
+    radial-gradient(circle at 20% 15%,rgba(255,255,255,.7) 0 2px,transparent 3px),
+    radial-gradient(circle at 70% 60%,rgba(255,255,255,.55) 0 1.5px,transparent 2.5px),
+    radial-gradient(circle,rgba(255,255,255,.35) 1px,transparent 1.5px);
+  background-size:140px 140px,90px 90px,14px 14px}
+.wrap{max-width:1100px;margin:0 auto;padding-block:32px 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
+.panel{position:relative;background:var(--paper);padding:36px 24px 40px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;min-width:0;
+  box-shadow:0 18px 40px -22px rgba(74,52,48,.45);overflow:hidden}
+h1,h2{font-family:var(--script);font-weight:400;color:var(--cocoa);margin:0;line-height:1;text-wrap:balance}
+h1{font-size:clamp(3.4rem,14vw,4.6rem);color:var(--ink);line-height:1.1}
+h1 .and{display:block;font-family:var(--title);font-style:italic;font-size:.4em;margin:6px 0;color:var(--cocoa)}
+h2{font-family:var(--title);font-style:italic;font-weight:500;font-size:2.2rem;color:var(--ink)}
+p{margin:0}
+.heart-rule{display:flex;align-items:center;gap:10px;color:var(--cocoa);width:70%}
+.heart-rule::before,.heart-rule::after{content:"";flex:1;height:1px;background:currentColor;opacity:.5}
+.heart-rule svg{width:16px;height:16px}
+.small{font-size:1rem;color:var(--ink);opacity:.85}
+.caps{font-family:var(--title);font-weight:500;font-size:.85rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink)}
+
+.panel > :not(.rose):not(.pearls){position:relative;z-index:1}
+.rose,.pearls{z-index:0;opacity:.85}
+/* pearls */
+.pearls{position:absolute;pointer-events:none;height:22px;
+  background:radial-gradient(circle at 35% 35%,#fff 0 18%,var(--pearl) 45%,#d8c2b4 75%,transparent 77%) 0 0/22px 22px repeat-x}
+.pearls.tr{top:18px;right:-20px;width:150px;transform:rotate(28deg)}
+.pearls.bl{bottom:30px;left:-30px;width:170px;transform:rotate(-24deg)}
+
+/* rose ornament */
+.rose{position:absolute;width:110px;height:110px;pointer-events:none}
+.rose.tl{top:-24px;left:-26px}.rose.br{bottom:-28px;right:-24px;transform:rotate(160deg)}
+
+/* photo */
+.photo{width:100%;max-width:100%;aspect-ratio:4/5;border-radius:140px 140px 6px 6px;overflow:hidden;position:relative;
+  background:linear-gradient(170deg,#f3dfd6,#e5c9bd 60%,#d9b5a8);display:flex;align-items:center;justify-content:center}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo label{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--cocoa);font-size:1rem}
+.photo label svg{width:42px;height:42px}
+.photo input{position:absolute;opacity:0;width:1px;height:1px}
+.note{background:#fffdf8;padding:22px 18px;box-shadow:0 8px 18px -10px rgba(74,52,48,.35);transform:rotate(-1.2deg);margin-top:-60px;position:relative;width:88%;
+  display:flex;flex-direction:column;gap:10px;align-items:center}
+
+/* calendar */
+.cal{border:1px solid rgba(110,78,71,.35);padding:18px 14px;width:100%}
+.cal table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;margin-top:10px}
+.cal th{font-size:.75rem;font-weight:500;letter-spacing:.1em;color:var(--cocoa);padding-bottom:6px}
+.cal td{padding:5px 0;font-size:1rem;position:relative}
+.cal td.day::after{content:"";position:absolute;left:50%;top:50%;width:34px;height:32px;transform:translate(-50%,-52%);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 20.5S2 14.4 2 7.8A4.9 4.9 0 0 1 12 5a4.9 4.9 0 0 1 10 2.8c0 6.6-10 12.7-10 12.7z' fill='none' stroke='%23b36b6b' stroke-width='1.3'/%3E%3C/svg%3E") center/contain no-repeat}
+.big-date{font-family:var(--title);font-style:italic;font-size:1.9rem;color:var(--ink);margin-top:10px}
+
+/* venues */
+.venue{display:flex;flex-direction:column;gap:6px;align-items:center;width:100%}
+.scene{width:100%;aspect-ratio:16/9;max-width:100%;border-radius:6px;position:relative;overflow:hidden}
+.scene.sea{background:linear-gradient(180deg,#f6d9c4 0%,#f1bfa8 38%,#9ec2c9 39%,#7aa6b0 62%,#ead6bf 63%,#e2c8ab 100%)}
+.scene.sea::after{content:"";position:absolute;left:50%;top:39%;width:70px;height:35px;transform:translate(-50%,-100%);border-radius:70px 70px 0 0;background:#fbe4c7}
+.scene.garden{background:linear-gradient(180deg,#3d3a4f 0%,#7a5b6a 55%,#c99b86 100%)}
+.scene.garden i{position:absolute;top:22%;width:6px;height:6px;border-radius:50%;background:#ffe9b5;box-shadow:0 0 10px 3px rgba(255,220,150,.7)}
+.scene.garden b{position:absolute;bottom:12%;width:24%;height:22%;border-radius:50% 50% 0 0;background:#fbf6ee;opacity:.9}
+.venue strong{font-weight:600;font-size:1.15rem;margin-top:6px}
+.btn{display:inline-block;background:var(--cocoa);color:#fbf1ea;border-radius:999px;padding:7px 22px;font:500 1rem var(--serif);text-decoration:none;margin-top:6px}
+.btn:focus-visible,.photo label:focus-within{outline:2px solid var(--cocoa);outline-offset:3px}
+
+/* schedule */
+.sched{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;text-align:left}
+.sched li{display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center}
+.sched svg{width:40px;height:40px;stroke:var(--cocoa);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.sched span{display:block;font-size:1rem}
+.sched time{font-family:var(--title);font-style:italic;font-size:1.35rem;color:var(--cocoa);font-variant-numeric:tabular-nums}
+.closing{font-family:var(--script);font-size:2.1rem;color:var(--ink);transform:rotate(-3deg);line-height:1.2}
+
+/* dress code envelope */
+.env{width:100%;max-width:330px;margin-top:8px;display:flex;flex-direction:column;align-items:center}
+.env .card{position:relative;z-index:1;width:86%;background:#fffdf8;padding:18px 14px;font-size:1rem;box-shadow:0 4px 12px -6px rgba(74,52,48,.3)}
+.env .envbody{position:relative;width:100%;height:170px;margin-top:-28px}
+.env .body{position:absolute;inset:0;z-index:2;background:#f4ece3;
+  clip-path:polygon(0 0,50% 42%,100% 0,100% 100%,0 100%);box-shadow:inset 0 0 0 1px rgba(110,78,71,.12)}
+.env .seal{position:absolute;z-index:3;left:50%;top:42%;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#e3b77f,#b98447 60%,#8f6230);box-shadow:0 3px 8px rgba(74,52,48,.35);display:flex;align-items:center;justify-content:center}
+.env .seal svg{width:30px;height:30px;stroke:#6b4620;fill:none;stroke-width:1.4}
+.env .dots{position:absolute;z-index:3;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:10px}
+.env .dots i{width:40px;height:40px;border-radius:50%}
+
+/* details */
+.details{display:flex;flex-direction:column;gap:20px;text-align:left;width:100%}
+.details div{display:grid;grid-template-columns:50px 1fr;gap:14px}
+.details svg{width:44px;height:44px;stroke:var(--cocoa);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.details strong{display:block;font-weight:600;font-size:1.15rem}
+.details p{font-size:.98rem;color:var(--ink)}
+
+/* countdown */
+.count{display:flex;gap:6px;align-items:flex-start;justify-content:center}
+.count div{display:flex;flex-direction:column;align-items:center}
+.count b{font-family:var(--title);font-weight:500;font-size:2.2rem;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.count small{font-size:.85rem;color:var(--cocoa)}
+.count .sep{font-size:2.2rem;line-height:1}
+.sign{font-family:var(--script);font-size:2.2rem;color:var(--ink);line-height:1.2}
+
+/* ---------- Pink door intro ---------- */
+body.locked{overflow:hidden}
+.doors{position:fixed;inset:0;z-index:100;perspective:1600px;cursor:pointer;
+  background:radial-gradient(60% 50% at 50% 50%,#fff6ef 0%,#f6dcd4 60%,#e9c1b8 100%);
+  transition:opacity .8s ease 1.4s, visibility 0s linear 2.2s}
+.doors.open{opacity:0;visibility:hidden}
+.door{position:absolute;top:0;bottom:0;width:50%;
+  background:linear-gradient(180deg,#f2c4c0 0%,#e9aeab 100%);
+  box-shadow:inset 0 0 0 10px #f7d3cf,inset 0 0 0 12px #d99a96;
+  transition:transform 1.6s cubic-bezier(.6,.05,.25,1);display:flex;flex-direction:column;justify-content:center;gap:4%;padding:12% 9%}
+.door.l{left:0;transform-origin:left center}
+.door.r{right:0;transform-origin:right center}
+.doors.open .door.l{transform:rotateY(-105deg)}
+.doors.open .door.r{transform:rotateY(105deg)}
+.door .pane{flex:1;border:2px solid #d99a96;border-radius:6px;
+  box-shadow:inset 0 0 0 6px #f4c9c5,inset 0 0 0 7px #e0a7a3,0 1px 0 rgba(255,255,255,.6);
+  background:linear-gradient(160deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%)}
+.door .pane.top{flex:1.6;border-radius:120px 120px 6px 6px}
+.door.l .pane.top{border-radius:120px 6px 6px 6px}
+.door.r .pane.top{border-radius:6px 120px 6px 6px}
+.door .knob{position:absolute;top:52%;width:14px;height:44px;border-radius:8px;
+  background:linear-gradient(90deg,#b98447,#f0d39c 50%,#a8763c);box-shadow:0 2px 4px rgba(74,52,48,.35)}
+.door.l .knob{right:16px}.door.r .knob{left:16px}
+.door-seal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;
+  transition:opacity .4s ease}
+.doors.open .door-seal{opacity:0}
+.door-seal button{width:96px;height:96px;border-radius:50%;border:none;cursor:pointer;
+  background:radial-gradient(circle at 35% 30%,#fff,#fbeee8 55%,#efd2c8);box-shadow:0 6px 18px rgba(110,78,71,.3),inset 0 0 0 4px #f2d9cf,inset 0 0 0 5px #d9a69a;
+  font-family:var(--script);font-size:2.2rem;color:var(--ink)}
+.door-seal button:focus-visible{outline:2px solid var(--cocoa);outline-offset:4px}
+.door-seal span{font-family:var(--title);font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;color:#fff;
+  text-shadow:0 1px 3px rgba(110,78,71,.6);white-space:nowrap;animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.4}}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="heart" viewBox="0 0 24 22"><path d="M12 20.5S2 14.4 2 7.8A4.9 4.9 0 0 1 12 5a4.9 4.9 0 0 1 10 2.8c0 6.6-10 12.7-10 12.7z" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="rose" viewBox="0 0 120 120">
+      <path d="M20 90 C35 70 60 75 70 95" fill="none" stroke="#8a9a78" stroke-width="2"/>
+      <ellipse cx="28" cy="98" rx="14" ry="6" transform="rotate(-30 28 98)" fill="#9aab86"/>
+      <ellipse cx="78" cy="96" rx="13" ry="6" transform="rotate(25 78 96)" fill="#8a9a78"/>
+      <circle cx="58" cy="58" r="32" fill="#efcfc6"/>
+      <circle cx="58" cy="58" r="24" fill="#e8bfb5"/>
+      <path d="M44 58c4-12 24-12 28 0-6-4-22-4-28 0zM48 64c6 8 14 8 20 0-6 2-14 2-20 0z" fill="#d9a69a"/>
+      <circle cx="58" cy="58" r="8" fill="#cf968a"/>
+      <circle cx="96" cy="40" r="14" fill="#f6e3dc"/><circle cx="96" cy="40" r="7" fill="#ead0c7"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="doors" id="doors" role="dialog" aria-label="Ouvrir l'invitation">
+  <div class="door l"><div class="pane top"></div><div class="pane"></div><i class="knob"></i></div>
+  <div class="door r"><div class="pane top"></div><div class="pane"></div><i class="knob"></i></div>
+  <div class="door-seal">
+    <button id="openDoors" aria-label="Ouvrir la porte">A&amp;M</button>
+    <span>Touchez pour entrer</span>
+  </div>
+</div>
+
+<main class="wrap">
+  <!-- Panel 1 -->
+  <article class="panel">
+    <svg class="rose br" aria-hidden="true"><use href="#rose"/></svg>
+    <span class="pearls tr" aria-hidden="true"></span>
+    <h1>Aïssatou<span class="and">et</span>Moussa</h1>
+    <div class="heart-rule"><svg><use href="#heart"/></svg></div>
+    <div class="photo" id="photo">
+      <label for="photoInput">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6l1.5-2h5L16 6"/></svg>
+        Ajouter votre photo
+        <input id="photoInput" type="file" accept="image/*">
+      </label>
+    </div>
+    <div class="note">
+      <p>Nous serions heureux de partager avec vous l'un des plus beaux jours de notre vie.</p>
+      <div class="heart-rule"><svg><use href="#heart"/></svg></div>
+      <p>Nous vous attendons à notre mariage !</p>
+    </div>
+    <div class="cal">
+      <p class="caps">Février 2027</p>
+      <table aria-label="Calendrier de février 2027">
+        <thead><tr><th>LU</th><th>MA</th><th>ME</th><th>JE</th><th>VE</th><th>SA</th><th>DI</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr>
+          <tr><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td class="day" aria-label="14, jour du mariage">14</td></tr>
+          <tr><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td></tr>
+          <tr><td>22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td></tr>
+        </tbody>
+      </table>
+      <div class="heart-rule" style="margin:12px auto 0"><svg><use href="#heart"/></svg></div>
+      <p class="big-date">14.02.2027</p>
+      <p class="caps">Notre mariage</p>
+    </div>
+  </article>
+
+  <!-- Panel 2 -->
+  <article class="panel">
+    <span class="pearls bl" aria-hidden="true"></span>
+    <h2>Les lieux</h2>
+    <div class="heart-rule"><svg><use href="#heart"/></svg></div>
+    <div class="venue">
+      <div class="scene sea" aria-hidden="true"></div>
+      <strong>Cérémonie</strong>
+      <p>Villa Les Filaos</p>
+      <p class="small">Route de la Somone, Saly Portudal</p>
+      <a class="btn" href="https://www.google.com/maps/search/?api=1&query=Saly+Portudal+Senegal" target="_blank" rel="noopener">ouvrir la carte</a>
+    </div>
+    <div class="venue">
+      <div class="scene garden" aria-hidden="true"><i style="left:12%"></i><i style="left:32%;top:18%"></i><i style="left:52%"></i><i style="left:72%;top:18%"></i><i style="left:88%"></i><b style="left:12%"></b><b style="left:62%"></b></div>
+      <strong>Dîner de fête</strong>
+      <p>Restaurant « Le Jardin Blanc »</p>
+      <p class="small">Corniche de Saly, Petite-Côte</p>
+      <a class="btn" href="https://www.google.com/maps/search/?api=1&query=Saly+Senegal" target="_blank" rel="noopener">ouvrir la carte</a>
+    </div>
+    <h2 style="margin-top:10px">Programme</h2>
+    <ul class="sched">
+      <li><svg viewBox="0 0 40 40"><circle cx="15" cy="24" r="9"/><circle cx="25" cy="24" r="9"/><path d="M12 13l3-5 3 5"/></svg><div><span>Accueil des invités</span><time>16:00</time></div></li>
+      <li><svg viewBox="0 0 40 40"><path d="M20 34S6 25 6 15a7 7 0 0 1 14-2 7 7 0 0 1 14 2c0 10-14 19-14 19z"/></svg><div><span>Cérémonie</span><time>16:30</time></div></li>
+      <li><svg viewBox="0 0 40 40"><path d="M10 6h8l-1 10a3 3 0 0 1-6 0zM22 6h8l-1 10a3 3 0 0 1-6 0zM14 19v12M26 19v12M10 31h8M22 31h8"/></svg><div><span>Dîner</span><time>18:00</time></div></li>
+      <li><svg viewBox="0 0 40 40"><path d="M8 34h24M10 34V22h20v12M13 22v-6h14v6M20 16v-5M20 8v.5"/></svg><div><span>Gâteau</span><time>21:00</time></div></li>
+      <li><svg viewBox="0 0 40 40"><path d="M14 30V10l16-3v19"/><circle cx="11" cy="30" r="3"/><circle cx="27" cy="26" r="3"/></svg><div><span>Fin de soirée</span><time>23:30</time></div></li>
+    </ul>
+    <p class="closing">Ce sera encore plus beau avec vous !</p>
+    <div class="heart-rule"><svg><use href="#heart"/></svg></div>
+  </article>
+
+  <!-- Panel 3 -->
+  <article class="panel">
+    <svg class="rose tl" aria-hidden="true" style="left:auto;right:-26px"><use href="#rose"/></svg>
+    <h2>Dress code</h2>
+    <div class="heart-rule"><svg><use href="#heart"/></svg></div>
+    <div class="env">
+      <div class="card"><p>Nous serions ravis que vous suiviez les couleurs de notre fête : des tons doux et naturels, beige, poudré, rose, crème et olive.</p></div>
+      <div class="envbody">
+        <div class="body"></div>
+        <div class="seal"><svg viewBox="0 0 24 24"><path d="M12 20V6M12 10l-4-3M12 13l4-3M12 16l-3-2"/></svg></div>
+        <div class="dots"><i style="background:#cdb5a6"></i><i style="background:#ecc6c0"></i><i style="background:#8a9a78"></i><i style="background:#a18a80"></i></div>
+      </div>
+    </div>
+    <h2>Détails</h2>
+    <div class="details">
+      <div><svg viewBox="0 0 40 40"><rect x="7" y="16" width="26" height="18"/><path d="M5 11h30v5H5zM20 11v23M20 11c-3-6-10-6-9-1M20 11c3-6 10-6 9-1"/></svg>
+        <div><strong>Cadeaux</strong><p>Vos vœux sont le plus beau des cadeaux. Si vous souhaitez nous gâter, une participation à notre voyage de noces nous fera très plaisir.</p></div></div>
+      <div><svg viewBox="0 0 40 40"><circle cx="20" cy="14" r="4"/><circle cx="20" cy="7" r="3.5"/><circle cx="20" cy="21" r="3.5"/><circle cx="13" cy="14" r="3.5"/><circle cx="27" cy="14" r="3.5"/><path d="M20 25v12M20 32c-4-1-6-4-6-6M20 30c4-1 6-4 6-6"/></svg>
+        <div><strong>Fleurs</strong><p>Plutôt qu'un bouquet, nous serions touchés que vous participiez à une composition commune aux couleurs de notre journée.</p></div></div>
+      <div><svg viewBox="0 0 40 40"><circle cx="12" cy="10" r="4"/><circle cx="28" cy="10" r="4"/><path d="M6 24l6-9 6 9M9 24v10M15 24v10M22 18h12M28 15v19M24 34h8"/></svg>
+        <div><strong>Enfants</strong><p>Nous adorons vos petits, mais nous souhaitons que vous puissiez vous détendre : notre fête est réservée aux adultes.</p></div></div>
+    </div>
+    <div class="heart-rule"><svg><use href="#heart"/></svg></div>
+    <p>Notre mariage dans</p>
+    <div class="count" aria-live="off">
+      <div><b id="d">000</b><small>jours</small></div><span class="sep">:</span>
+      <div><b id="h">00</b><small>heures</small></div><span class="sep">:</span>
+      <div><b id="m">00</b><small>minutes</small></div>
+    </div>
+    <p class="sign">Avec amour,<br>Aïssatou et Moussa</p>
+    <svg class="rose br" aria-hidden="true"><use href="#rose"/></svg>
+  </article>
+</main>
+
+<script>
+(function(){
+  var doors=document.getElementById('doors');
+  document.body.classList.add('locked');
+  doors.addEventListener('click',function(){
+    if(doors.classList.contains('open'))return;
+    doors.classList.add('open');
+    setTimeout(function(){document.body.classList.remove('locked');},1500);
+  });
+
+  var target=new Date('2027-02-14T16:30:00Z').getTime();
+  function pad(n,l){return String(n).padStart(l,'0');}
+  function tick(){
+    var diff=Math.max(0,target-Date.now());
+    document.getElementById('d').textContent=pad(Math.floor(diff/864e5),3);
+    document.getElementById('h').textContent=pad(Math.floor(diff/36e5)%24,2);
+    document.getElementById('m').textContent=pad(Math.floor(diff/6e4)%60,2);
+  }
+  tick();setInterval(tick,30000);
+
+  var input=document.getElementById('photoInput'),box=document.getElementById('photo');
+  input.addEventListener('change',function(){
+    var f=input.files&&input.files[0]; if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){var img=new Image();img.alt='Photo des mariés';img.src=r.result;box.innerHTML='';box.appendChild(img);};
+    r.readAsDataURL(f);
+  });
+})();
+</script>
+
+</body></html>

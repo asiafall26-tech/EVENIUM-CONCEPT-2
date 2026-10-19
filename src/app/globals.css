@@ -1,23 +1,261 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   CHARTE VISUELLE — faire-part haut de gamme
+   Les couleurs neutres de Tailwind (white, black, gray, stone, neutral…) sont
+   redéfinies ici : toutes les pages existantes héritent du nouveau style
+   sans modification de leur balisage.
+   ========================================================================== */
 @theme inline {
-  --color-primary: #000000;
-  --color-accent: #D4AF37;
-  --color-secondary: #F5F5F5;
-  --color-background: #FFFFFF;
-  
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-playfair);
+  /* Palette de marque */
+  --color-cream: #f5eee1;      /* fond */
+  --color-ivory: #fbf7f0;      /* cartes et blocs */
+  --color-ink: #2b2118;        /* texte */
+  --color-taupe: #6e6255;      /* texte secondaire */
+  --color-gold: #b8924a;       /* accent principal */
+  --color-gold-deep: #8f6f33;  /* doré lisible pour le texte */
+  --color-gold-soft: #d9c08c;
+  --color-bordeaux: #6b1f2a;   /* accent secondaire */
+  --color-sand: #e4d8c4;       /* bordures */
+
+  --color-primary: #2b2118;
+  --color-accent: #b8924a;
+  --color-secondary: #efe6d6;
+  --color-background: #f5eee1;
+  --color-foreground: #2b2118;
+
+  /* Neutres Tailwind → tons crème / brun avec fort contraste et lisibilité */
+  --color-white: #ffffff;
+  --color-black: #17110c;
+  --color-gray-50: #fbf7f0;
+  --color-gray-100: #f5eee1;
+  --color-gray-200: #e5dac7;
+  --color-gray-300: #cfbeaa;
+  --color-gray-400: #786959;
+  --color-gray-500: #544638;
+  --color-gray-600: #3d3126;
+  --color-gray-700: #2a2017;
+  --color-gray-800: #1c150e;
+  --color-gray-900: #140e09;
+  --color-gray-950: #0a0705;
+
+  --color-stone-50: #fbf7f0;
+  --color-stone-100: #f5eee1;
+  --color-stone-200: #e5dac7;
+  --color-stone-300: #cfbeaa;
+  --color-stone-400: #786959;
+  --color-stone-500: #544638;
+  --color-stone-600: #3d3126;
+  --color-stone-700: #2a2017;
+  --color-stone-800: #1c150e;
+  --color-stone-900: #140e09;
+  --color-stone-950: #0a0705;
+
+  --color-neutral-50: #fbf7f0;
+  --color-neutral-100: #f5eee1;
+  --color-neutral-200: #e5dac7;
+  --color-neutral-300: #cfbeaa;
+  --color-neutral-400: #786959;
+  --color-neutral-500: #544638;
+  --color-neutral-600: #3d3126;
+  --color-neutral-700: #2a2017;
+  --color-neutral-800: #1c150e;
+  --color-neutral-900: #140e09;
+  --color-neutral-950: #0a0705;
+
+  --color-slate-50: #fbf7f0;
+  --color-slate-100: #f5eee1;
+  --color-slate-200: #e5dac7;
+  --color-slate-300: #cfbeaa;
+  --color-slate-400: #786959;
+  --color-slate-500: #544638;
+  --color-slate-600: #3d3126;
+  --color-slate-700: #2a2017;
+  --color-slate-800: #1c150e;
+  --color-slate-900: #140e09;
+  --color-slate-950: #0a0705;
+
+  --color-zinc-50: #fbf7f0;
+  --color-zinc-100: #f5eee1;
+  --color-zinc-200: #e5dac7;
+  --color-zinc-300: #cfbeaa;
+  --color-zinc-400: #786959;
+  --color-zinc-500: #544638;
+  --color-zinc-600: #3d3126;
+  --color-zinc-700: #2a2017;
+  --color-zinc-800: #1c150e;
+  --color-zinc-900: #140e09;
+  --color-zinc-950: #0a0705;
+
+  /* Polices */
+  /* Même écriture que le modèle Ivoire : Jost + Cormorant + Parisienne */
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), "Times New Roman", serif;
+  --font-script: var(--font-parisienne), cursive;
+
+  /* Ombres très légères, teintées brun */
+  --shadow-2xs: 0 1px 0 rgb(43 33 24 / 0.03);
+  --shadow-xs: 0 1px 2px rgb(43 33 24 / 0.04);
+  --shadow-sm: 0 1px 3px rgb(43 33 24 / 0.05), 0 1px 2px rgb(43 33 24 / 0.03);
+  --shadow-md: 0 4px 14px -4px rgb(43 33 24 / 0.08);
+  --shadow-lg: 0 10px 28px -10px rgb(43 33 24 / 0.10);
+  --shadow-xl: 0 18px 40px -16px rgb(43 33 24 / 0.12);
+  --shadow-2xl: 0 28px 60px -24px rgb(43 33 24 / 0.16);
+
+  /* Espacement des lettres plus ample (libellés en majuscules) */
+  --tracking-wide: 0.08em;
+  --tracking-wider: 0.2em;
+  --tracking-widest: 0.3em;
+
+  /* Coins arrondis doux */
+  --radius-3xl: 1.25rem;
 }
 
 :root {
-  --background: #FFFFFF;
-  --foreground: #000000;
+  --background: #f5eee1;
+  --foreground: #2b2118;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+@layer base {
+  html {
+    background: var(--background);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Titres : Cormorant Garamond ; les grands titres en italique */
+  h1, h2, h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.2;
+  }
+  h1, h2 {
+    font-style: italic;
+  }
+
+  /* Bordures fines et beiges par défaut */
+  *, ::before, ::after {
+    border-color: var(--color-sand);
+  }
+
+  /* Petits libellés en majuscules : lisibilité optimale */
+  .uppercase {
+    letter-spacing: 0.10em;
+  }
+
+  ::selection {
+    background: rgb(184 146 74 / 0.25);
+    color: var(--color-ink);
+  }
+
+  input, select, textarea {
+    accent-color: var(--color-gold);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #6e6255;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
+  hr {
+    border-color: var(--color-sand);
+  }
+}
+
+/* Titres en gras : lisibilité et présence nette */
+.font-serif.font-bold,
+.font-serif.font-semibold,
+.font-serif.font-extrabold,
+.font-serif.font-black,
+:is(h1, h2, h3):is(.font-bold, .font-semibold, .font-extrabold) {
+  font-weight: 600;
+}
+
+/* Ornement « ✦ » doré entre deux filets fins */
+.ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  color: var(--color-gold);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+.ornament::before,
+.ornament::after {
+  content: "";
+  height: 1px;
+  width: 3.5rem;
+  background: linear-gradient(to right, transparent, var(--color-gold-soft));
+}
+.ornament::after {
+  background: linear-gradient(to left, transparent, var(--color-gold-soft));
+}
+
+/* Reflet doré qui traverse lentement le nom « Evenium » (hero) */
+.hero-shimmer {
+  color: #2b2118;
+  background: linear-gradient(100deg, #2b2118 0%, #2b2118 42%, #c9a45e 50%, #2b2118 58%, #2b2118 100%);
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: heroShimmer 7s ease-in-out 2.2s infinite;
+}
+@keyframes heroShimmer {
+  0% { background-position: 100% 0; }
+  45%, 100% { background-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-shimmer { animation: none; }
+}
+
+/* Barres de défilement discrètes */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d2c3aa transparent;
+}
+
+/* Invitation rendered inside a phone preview iframe: scroll without a visible scrollbar and fill screen */
+html.embedded-preview,
+html.embedded-preview body {
+  scrollbar-width: none;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+html.embedded-preview::-webkit-scrollbar,
+html.embedded-preview body::-webkit-scrollbar {
+  display: none;
+}
+html.embedded-preview main,
+html.embedded-preview [class*="card"],
+html.embedded-preview [class*="col"],
+html.embedded-preview [class*="inv"] {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 @keyframes fadeSlideIn {
@@ -31,8 +269,29 @@ body {
   }
 }
 
+/* Scroll reveal for landing sections (see components/landing/Reveal.tsx) */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal-stagger.is-visible > * {
+  opacity: 1;
+  transform: none;
+}
+.reveal-stagger.is-visible > :nth-child(2) { transition-delay: 0.1s; }
+.reveal-stagger.is-visible > :nth-child(3) { transition-delay: 0.2s; }
+.reveal-stagger.is-visible > :nth-child(4) { transition-delay: 0.3s; }
+.reveal-stagger.is-visible > :nth-child(5) { transition-delay: 0.4s; }
+.reveal-stagger.is-visible > :nth-child(n + 6) { transition-delay: 0.5s; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-stagger > * { opacity: 1; transform: none; transition: none; }
+}
+
+/* No `forwards` fill: a lingering transform would turn this wrapper into the containing block
+   of every position:fixed descendant (modals, overlays) and break full-screen layers. */
 .page-transition {
-  animation: fadeSlideIn 0.35s ease-out forwards;
+  animation: fadeSlideIn 0.35s ease-out;
 }
 
 /* === ANIMATIONS GLOBALES INTERACTIVES (DASHBOARDS) === */

@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { Circle, CheckCircle2, CheckSquare, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+
+type Task = {
+  id: string;
+  titre: string;
+  is_completed: boolean;
+};
 
 export default function ChecklistPage({
   params,
@@ -11,37 +17,51 @@ export default function ChecklistPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const supabase = createClient();
   
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "Définir la date et le lieu", completed: true },
-    { id: 2, text: "Réserver le traiteur", completed: false },
-    { id: 3, text: "Envoyer les invitations", completed: false },
-    { id: 4, text: "Valider le budget prévisionnel", completed: true },
-    { id: 5, text: "Trouver un photographe", completed: false },
-  ]);
-
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newTaskText, setNewTaskText] = useState("");
 
-  const toggleTask = (taskId: number) => {
-    setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
+  useEffect(() => {
+    fetchTasks();
+  }, [id]);
+
+  const fetchTasks = async () => {
+    const { data } = await supabase.from('tasks').select('*').eq('event_id', id).order('created_at', { ascending: true });
+    if (data) setTasks(data);
+    setLoading(false);
   };
 
-  const deleteTask = (taskId: number) => {
+  const toggleTask = async (taskId: string, currentStatus: boolean) => {
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, is_completed: !currentStatus } : t));
+    await supabase.from('tasks').update({ is_completed: !currentStatus }).eq('id', taskId);
+  };
+
+  const deleteTask = async (taskId: string) => {
     setTasks(tasks.filter(t => t.id !== taskId));
+    await supabase.from('tasks').delete().eq('id', taskId);
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskText.trim()) return;
     
-    setTasks([
-      ...tasks,
-      { id: Date.now(), text: newTaskText, completed: false }
-    ]);
+    const text = newTaskText;
     setNewTaskText("");
+    
+    const { data } = await supabase.from('tasks').insert([{
+      event_id: id,
+      titre: text,
+      is_completed: false
+    }]).select().single();
+
+    if (data) {
+      setTasks(prev => [...prev, data]);
+    }
   };
 
-  const completedCount = tasks.filter(t => t.completed).length;
+  const completedCount = tasks.filter(t => t.is_completed).length;
   const progressPercentage = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   return (
@@ -56,7 +76,7 @@ export default function ChecklistPage({
             <ArrowLeft size={16} /> Retour à l'aperçu
           </Link>
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-3">
-            <CheckSquare className="text-[#D4AF37]" size={32} /> Checklist d'organisation
+            <CheckSquare className="text-[#b8924a]" size={32} /> Checklist d'organisation
           </h1>
           <p className="text-gray-500 text-sm">Gérez toutes les tâches de votre événement pas à pas.</p>
         </div>
@@ -75,7 +95,7 @@ export default function ChecklistPage({
         </div>
         <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
           <div 
-            className="bg-[#D4AF37] h-3 rounded-full transition-all duration-500" 
+            className="bg-[#b8924a] h-3 rounded-full transition-all duration-500" 
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -88,7 +108,7 @@ export default function ChecklistPage({
             <input 
               type="text" 
               placeholder="Ex: Confirmer le nombre d'invités..." 
-              className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+              className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
             />
@@ -103,24 +123,26 @@ export default function ChecklistPage({
         </div>
 
         <div className="p-6">
-          {tasks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Aucune tâche pour le moment.</div>
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Chargement...</div>
+          ) : tasks.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Aucune tâche pour le moment. Ajoutez-en une ci-dessus !</div>
           ) : (
             <div className="space-y-3">
               {tasks.map(task => (
                 <div 
                   key={task.id} 
-                  className={`flex items-center gap-4 p-4 rounded-xl border group transition-all ${task.completed ? 'bg-gray-50 border-transparent opacity-75' : 'bg-white border-gray-100 hover:border-[#D4AF37]/50 hover:shadow-sm'}`}
+                  className={`flex items-center gap-4 p-4 rounded-xl border group transition-all ${task.is_completed ? 'bg-gray-50 border-transparent opacity-75' : 'bg-white border-gray-100 hover:border-[#b8924a]/50 hover:shadow-sm'}`}
                 >
-                  <button onClick={() => toggleTask(task.id)} className="shrink-0 transition-transform active:scale-90">
-                    {task.completed ? (
+                  <button onClick={() => toggleTask(task.id, task.is_completed)} className="shrink-0 transition-transform active:scale-90">
+                    {task.is_completed ? (
                       <CheckCircle2 className="text-[#2E7D32]" size={24} />
                     ) : (
-                      <Circle className="text-gray-300 group-hover:text-[#D4AF37]" size={24} />
+                      <Circle className="text-gray-300 group-hover:text-[#b8924a]" size={24} />
                     )}
                   </button>
-                  <span className={`flex-1 text-sm transition-all ${task.completed ? 'text-gray-400 line-through' : 'text-gray-800 font-medium'}`}>
-                    {task.text}
+                  <span className={`flex-1 text-sm transition-all ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-800 font-medium'}`}>
+                    {task.titre}
                   </span>
                   <button 
                     onClick={() => deleteTask(task.id)}

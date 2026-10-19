@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
+import {
   Home, 
   Inbox, 
   MessageSquare, 
@@ -15,49 +15,57 @@ import {
   LayoutList,
   Wallet
 } from "lucide-react";
+import { ContactSupportButton } from "./ContactSupportButton";
+import { SidebarHeading, sidebarIconClass, sidebarLinkClass } from "./layout/DashboardFrame";
+import { badgeLabel, useBadgeStore } from "@/store/BadgeStore";
 
 export function PrestataireSidebarNav() {
   const pathname = usePathname();
+  // Kept up to date (realtime + polling) by NotificationProvider
+  const pendingDemandes = useBadgeStore((s) => s.pendingDemandes);
+  const unreadMessages = useBadgeStore((s) => s.unreadMessages);
+  const unansweredReviews = useBadgeStore((s) => s.unansweredReviews);
 
   const links = [
     { name: "Tableau de bord", href: "/prestataire", icon: Home },
-    { name: "Mes demandes", href: "/prestataire/demandes", icon: Inbox, badge: "3" },
-    { name: "Messages", href: "/prestataire/messages", icon: MessageSquare },
-    { name: "Mes prestations", href: "/prestataire/evenements", icon: Calendar },
-    { name: "Devis", href: "/prestataire/devis", icon: FileText },
+    { name: "Demandes & Devis", href: "/prestataire/demandes", icon: Inbox, badge: badgeLabel(pendingDemandes) },
+    { name: "Mes événements", href: "/prestataire/evenements", icon: Calendar },
     { name: "Planning", href: "/prestataire/planning", icon: CalendarDays },
     { name: "Catalogue d'offres", href: "/prestataire/catalogue", icon: LayoutList },
+    { name: "Messages", href: "/prestataire/messages", icon: MessageSquare, badge: badgeLabel(unreadMessages) },
     { name: "Finance", href: "/prestataire/finances", icon: Wallet },
     { name: "Mon profil", href: "/prestataire/profil", icon: User },
-    { name: "Avis clients", href: "/prestataire/avis", icon: Star },
+    { name: "Avis clients", href: "/prestataire/avis", icon: Star, badge: badgeLabel(unansweredReviews) },
     { name: "Paramètres", href: "/prestataire/settings", icon: Settings },
   ];
 
   return (
     <nav className="space-y-1">
+      <SidebarHeading>Navigation</SidebarHeading>
       {links.map((link) => {
         const isActive = pathname === link.href;
         return (
           <Link 
             key={link.href} 
             href={link.href} 
-            className={`flex items-center justify-between px-4 py-3 rounded-xl font-medium transition-all duration-300 text-sm ${
-              isActive 
-                ? "bg-gradient-to-r from-[#D4AF37] to-[#C5A059] text-white shadow-[0_0_20px_rgba(212,175,55,0.4)]" 
-                : "text-gray-600 hover:bg-[#D4AF37]/5 hover:text-[#B8860B] hover:shadow-[0_0_15px_rgba(212,175,55,0.15)]"
-            }`}
+            className={sidebarLinkClass(isActive)}
           >
-            <div className="flex items-center gap-4">
-              <link.icon size={20} strokeWidth={1.5} className={isActive ? "fill-white/20" : ""} /> {link.name}
+            <div className="flex items-center gap-3 relative">
+              <link.icon size={19} strokeWidth={1.6} className={sidebarIconClass(isActive)} /> 
+              {link.name}
             </div>
-            {link.badge && (
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white text-[#E53935]' : 'bg-[#E53935] text-white'}`}>
+            {link.badge !== undefined && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-in zoom-in ${isActive ? 'bg-[#b8924a] text-[#241b13]' : 'bg-[#E53935] text-white'}`}>
                 {link.badge}
               </span>
             )}
           </Link>
         );
       })}
+      
+      <div className="pt-4 mt-4 border-t border-gray-100">
+        <ContactSupportButton className="px-4 py-2.5 gap-3 hover:bg-white hover:shadow-sm" />
+      </div>
     </nav>
   );
 }

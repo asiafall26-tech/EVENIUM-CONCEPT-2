@@ -35,19 +35,19 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect dashboard and prestataire routes
-  /*
-  if (
-    !user &&
-    (request.nextUrl.pathname.startsWith('/dashboard') ||
-      request.nextUrl.pathname.startsWith('/prestataire'))
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  const { pathname, search } = request.nextUrl
+
+  const isProtectedRoute =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/prestataire') ||
+    pathname.startsWith('/admin')
+
+  if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    url.searchParams.set('redirectTo', `${pathname}${search}`)
     return NextResponse.redirect(url)
   }
-  */
 
   return supabaseResponse
 }

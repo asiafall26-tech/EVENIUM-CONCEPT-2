@@ -1,5 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export interface Prestataire {
   id: string;
@@ -32,83 +33,96 @@ interface PrestataireContextType {
   updateDemandeStatus: (id: string, status: Demande['status']) => void;
 }
 
-const mockPrestataires: Prestataire[] = [
-  { 
-    id: "PR-01",
-    name: "Saveurs d'Afrique", 
-    role: "Traiteur", 
-    rating: 4.8, 
-    phone: "+221 77 111 22 33", 
-    isPlatformProvider: true,
-    zone: "Dakar, Sénégal",
-    description: "Service traiteur haut de gamme spécialisé dans la gastronomie africaine et internationale.",
-    services: ["Buffet de mariage", "Service à table", "Cocktail dinatoire", "Gâteau sur mesure"],
-    priceRange: "À partir de 15 000 FCFA / pax"
-  },
-  { 
-    id: "PR-02",
-    name: "Studio Lumière", 
-    role: "Photographe", 
-    rating: 4.9, 
-    phone: "+221 76 222 33 44", 
-    isPlatformProvider: true,
-    zone: "Sénégal & International",
-    description: "L'art de capturer vos plus beaux moments avec une touche cinématographique.",
-    services: ["Couverture complète (journée)", "Shooting couple", "Drone vidéo", "Album photo premium"],
-    priceRange: "À partir de 100 000 FCFA"
-  },
-  { 
-    id: "PR-03",
-    name: "Sons & Rythmes (DJ)", 
-    role: "Animation", 
-    rating: null, 
-    phone: "+221 70 333 44 55", 
-    isPlatformProvider: false,
-    zone: "Dakar",
-    description: "Prestataire externe gérant l'animation musicale.",
-    services: ["DJ Set", "Sonorisation"],
-    priceRange: "Sur devis"
-  },
-];
-
-const mockDemandes: Demande[] = [
-  { id: "dem-1", eventId: "evt-001", clientName: "Amina Diop", eventType: "Mariage", eventDate: "12 oct. 2026", prestataireId: "PR-01", status: "Nouvelle demande", budget: 1500000 },
-  { id: "dem-2", eventId: "evt-002", clientName: "Moussa Kane", eventType: "Séminaire", eventDate: "5 nov. 2026", prestataireId: "PR-01", status: "En discussion", budget: 800000 },
-];
-
 const PrestataireContext = createContext<PrestataireContextType | undefined>(undefined);
 
 export function PrestataireProvider({ children }: { children: ReactNode }) {
   const [prestataires, setPrestataires] = useState<Prestataire[]>([]);
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const supabase = createClient();
 
-  useEffect(() => {
-    // Load from local storage or initialize with mocks
-    const savedDemandes = localStorage.getItem('evenium_demandes');
-    if (savedDemandes) {
-      setDemandes(JSON.parse(savedDemandes));
-    } else {
-      setDemandes(mockDemandes);
-      localStorage.setItem('evenium_demandes', JSON.stringify(mockDemandes));
+  const fetchPrestataires = async () => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('role', 'prestataire');
+    if (data) {
+      setPrestataires(data.map(p => ({
+        id: p.id,
+        name: p.full_name || "Prestataire",
+        role: p.category || "Service",
+        rating: 5,
+        phone: p.phone || "Non renseigné",
+        isPlatformProvider: true,
+        zone: p.address || "Non renseigné",
+        description: p.description || "",
+        services: p.category ? [p.category] : [],
+        priceRange: "Sur devis"
+      })));
     }
-    
-    // Prestataires catalogue is static for now, but could be dynamic later
-    setPrestataires(mockPrestataires);
-    setIsLoaded(true);
-  }, []);
-
-  const addDemande = (demande: Omit<Demande, 'id'>) => {
-    const newDemande = { ...demande, id: `dem-${Date.now()}` };
-    const updated = [newDemande, ...demandes];
-    setDemandes(updated);
-    localStorage.setItem('evenium_demandes', JSON.stringify(updated));
   };
 
-  const updateDemandeStatus = (id: string, status: Demande['status']) => {
-    const updated = demandes.map(d => d.id === id ? { ...d, status } : d);
-    setDemandes(updated);
-    localStorage.setItem('evenium_demandes', JSON.stringify(updated));
+  const fetchDemandes = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    // We fetch all requests (RLS will filter automatically based on if user is client or provider)
+    const { data, error } = await supabase.from('demandes_devis')
+      .select(`
+        id, event_id, prestataire_id, status, budget_propose,
+        events ( name, type, date, client_id )
+      `);
+      
+    if (data) {
+      // 1. Get current user's profile to know their role
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      
+      // 2. Filter securely in JS just in case RLS is missing or misconfigured
+      let filteredData = data;
+      if (profile?.role === 'client') {
+        filteredData = data.filter((d: any) => d.events?.client_id === user.id);
+      } else if (profile?.role === 'prestataire') {
+        filteredData = data.filter((d: any) => d.prestataire_id === user.id);
+      }
+
+      setDemandes(filteredData.map((d: any) => ({
+        id: d.id,
+        eventId: d.event_id,
+        clientName: d.events?.name || "Client",
+        eventType: d.events?.type || "Événement",
+        eventDate: d.events?.date || "À définir",
+        prestataireId: d.prestataire_id,
+        status: d.status,
+        budget: Number(d.budget_propose)
+      })));
+    }
+  };
+
+  useEffect(() => {
+    const initData = async () => {
+      await fetchPrestataires();
+      await fetchDemandes();
+      setIsLoaded(true);
+    };
+
+    initData();
+  }, []);
+
+  const addDemande = async (demande: Omit<Demande, 'id'>) => {
+    const { data, error } = await supabase.from('demandes_devis').insert([{
+      event_id: demande.eventId,
+      prestataire_id: demande.prestataireId,
+      status: demande.status,
+      budget_propose: demande.budget
+    }]).select().single();
+    
+    if (data) {
+      await fetchDemandes();
+    }
+  };
+
+  const updateDemandeStatus = async (id: string, status: Demande['status']) => {
+    const { error } = await supabase.from('demandes_devis').update({ status }).eq('id', id);
+    if (!error) {
+      await fetchDemandes();
+    }
   };
 
   if (!isLoaded) return null;

@@ -2,159 +2,404 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Modal } from "./Modal";
+import { CheckCircle2, ChevronRight, Crown, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
-const formulas = [
+interface FeatureItem {
+  title: string;
+  desc: string;
+}
+
+interface Formula {
+  id: string;
+  name: string;
+  tagline: {
+    carte: string;
+    animee: string;
+  };
+  badge?: string;
+  prices: {
+    carte: string;
+    animee: string;
+  };
+  features: {
+    carte: FeatureItem[];
+    animee: FeatureItem[];
+  };
+}
+
+const formulas: Formula[] = [
+  {
+    id: "standard",
+    name: "Formule Standard",
+    tagline: {
+      carte: "La carte digitale visuelle épurée & partage direct (sans musique ni animation)",
+      animee: "Le faire-part digital immersif essentiel avec musique d'ambiance & partage direct"
+    },
+    prices: {
+      carte: "3 500",
+      animee: "5 000"
+    },
+    features: {
+      animee: [
+        {
+          title: "Faire-part immersif animé haute couture",
+          desc: "Design animé interactif personnalisé avec musique d'ambiance, ouverture au sceau et photos."
+        },
+        {
+          title: "Accès au Dashboard Organisateur",
+          desc: "Retrouvez votre événement, votre lien officiel et votre QR Code actif à tout moment."
+        },
+        {
+          title: "Lien officiel & QR Code interactif",
+          desc: "Générez et téléchargez votre QR code haute définition et votre carton imprimable."
+        },
+        {
+          title: "Partage illimité WhatsApp & Réseaux",
+          desc: "Lien diffusable partout en 1 clic sans aucune restriction de convives."
+        }
+      ],
+      carte: [
+        {
+          title: "Carte digitale haute couture épurée",
+          desc: "Design visuel soigné et photos haute définition (modèle graphique épuré, sans musique ni animation sonore)."
+        },
+        {
+          title: "Accès au Dashboard Organisateur",
+          desc: "Retrouvez votre événement, votre lien officiel et votre QR Code actif à tout moment."
+        },
+        {
+          title: "Lien officiel & QR Code interactif",
+          desc: "Générez et téléchargez votre QR code haute définition et votre carton imprimable."
+        },
+        {
+          title: "Partage illimité WhatsApp & Réseaux",
+          desc: "Lien diffusable partout en 1 clic sans aucune restriction de convives."
+        }
+      ]
+    },
+  },
   {
     id: "premium",
-    name: "Premium",
-    description: "L'essentiel pour vos invitations",
+    name: "Formule Premium",
+    tagline: {
+      carte: "L'art de la carte digitale épurée & le suivi des convives en temps réel",
+      animee: "L'art de l'invitation animée avec musique & le suivi en temps réel"
+    },
     prices: {
       carte: "7 500",
       animee: "10 000"
     },
-    color: "bg-white",
-    textColor: "text-gray-900",
-    button: "border border-gray-200 hover:bg-gray-50 text-gray-900",
-    features: [
-      "Invitation éditable",
-      "Tableau de bord pour le suivi des réponses"
-    ],
-    details: []
+    features: {
+      animee: [
+        {
+          title: "Tout le pack Standard inclus",
+          desc: "Faire-part animé haute couture, musique, Dashboard, lien officiel et QR Code actif."
+        },
+        {
+          title: "Suivi des confirmations (RSVP) en direct",
+          desc: "Collecte instantanée des présences, régimes et messages des convives sur votre dashboard."
+        },
+        {
+          title: "Programme & Itinéraire Google Maps",
+          desc: "Déroulé chronologique du Jour J et guidage GPS direct vers votre réception."
+        },
+        {
+          title: "Musique d'ambiance & Galerie enrichie",
+          desc: "Personnalisation audio immersive et album photos haute définition illimité."
+        }
+      ],
+      carte: [
+        {
+          title: "Tout le pack Standard inclus",
+          desc: "Carte statique haute couture, Dashboard, lien officiel et QR Code actif."
+        },
+        {
+          title: "Suivi des confirmations (RSVP) en direct",
+          desc: "Collecte instantanée des présences, régimes et messages des convives sur votre dashboard."
+        },
+        {
+          title: "Programme & Itinéraire Google Maps",
+          desc: "Déroulé chronologique du Jour J et guidage GPS direct vers votre réception."
+        },
+        {
+          title: "Galerie photos enrichie (sans musique)",
+          desc: "Album photos haute définition illimité (les cartes statiques ne peuvent pas comporter de musique ni de son)."
+        }
+      ]
+    },
   },
   {
     id: "gold",
-    name: "Gold",
-    description: "La plateforme d'organisation complète",
+    name: "Formule Gold VIP",
+    tagline: {
+      carte: "La plateforme complète pour organiser tout votre événement avec carte statique",
+      animee: "La plateforme complète pour organiser tout votre événement avec invitation animée"
+    },
+    badge: "Recommandée",
     prices: {
       carte: "15 000",
       animee: "20 000"
     },
-    badge: "Le plus complet",
-    color: "bg-gray-900",
-    textColor: "text-white",
-    button: "bg-[#B8860B] hover:bg-[#996B00] text-white border border-[#B8860B]",
-    features: [
-      "Invitation éditable",
-      "Tableau de bord pour le suivi des réponses",
-      "Accès à un réseau de prestataires",
-      "Gestion du budget",
-      "To do list"
-    ],
-    details: []
+    features: {
+      animee: [
+        {
+          title: "Tout le pack Premium inclus",
+          desc: "Faire-part animé avec musique d'ambiance, suivi RSVP en direct et QR Code."
+        },
+        {
+          title: "Gestion budgétaire & Dépenses en direct",
+          desc: "Suivi des acomptes, calcul automatique du solde et alertes de dépassement."
+        },
+        {
+          title: "Checklist & Planning intelligent du Jour J",
+          desc: "Rétroplanning chronologique pour maîtriser chaque tâche sans rien oublier."
+        },
+        {
+          title: "Annuaire prestataires & Assistance 7j/7",
+          desc: "Accès aux meilleurs prestataires certifiés Evenium à 0% de commission et support prioritaire dédié."
+        }
+      ],
+      carte: [
+        {
+          title: "Tout le pack Premium inclus",
+          desc: "Carte statique élégante (sans son), galerie photos, suivi RSVP en direct et QR Code."
+        },
+        {
+          title: "Gestion budgétaire & Dépenses en direct",
+          desc: "Suivi des acomptes, calcul automatique du solde et alertes de dépassement."
+        },
+        {
+          title: "Checklist & Planning intelligent du Jour J",
+          desc: "Rétroplanning chronologique pour maîtriser chaque tâche sans rien oublier."
+        },
+        {
+          title: "Annuaire prestataires & Assistance 7j/7",
+          desc: "Accès aux meilleurs prestataires certifiés Evenium à 0% de commission et support prioritaire dédié."
+        }
+      ]
+    },
   }
 ];
 
 export default function PricingSection() {
-  const [invitationType, setInvitationType] = useState<"carte" | "animee">("carte");
+  const [invitationType, setInvitationType] = useState<"carte" | "animee">("animee");
 
   return (
-    <section id="tarifs" className="py-24 md:py-32 px-6 lg:px-8 bg-white overflow-hidden border-t border-gray-100">
-      <div className="max-w-6xl mx-auto">
+    <section id="tarifs" className="relative py-14 md:py-20 px-4 sm:px-6 lg:px-8 bg-white overflow-hidden">
+      <div aria-hidden className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-[#b8924a]/10 blur-[100px] pointer-events-none" />
+      
+      <div className="relative max-w-6xl mx-auto">
         
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
-          <div className="max-w-2xl">
-            <h2 className="font-serif text-4xl md:text-5xl text-gray-900 mb-6 leading-tight">
-              Investissez et Organisez dans <br className="hidden md:block" />
-              <span className="text-[#D4AF37] italic">la tranquillité d'esprit.</span>
-            </h2>
-            <p className="text-gray-500 text-lg">Deux formules pensées pour s'adapter à l'envergure de votre événement. Transparence totale, aucun frais caché.</p>
-          </div>
-          
-          {/* Toggle ultra-minimaliste */}
-          <div className="bg-gray-50 p-1.5 rounded-full inline-flex self-start md:self-end">
+        {/* En-tête compact */}
+        <div className="text-center max-w-xl mx-auto mb-10">
+          <span className="inline-flex items-center gap-2 text-[#8f6f33] bg-[#fbf7f0] border border-[#b8924a]/30 px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-3">
+            <Sparkles size={12} className="text-[#b8924a]" />
+            Tarifs clairs &amp; sans surprise
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-3">
+            Choisissez la formule adaptée à votre événement
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-500 mb-6">
+            Paiement unique, aucun abonnement, accès immédiat à votre invitation.
+          </p>
+
+          {/* Toggle compact et élégant */}
+          <div className="bg-[#fbf7f0] border border-[#b8924a]/30 p-1 rounded-full inline-flex shadow-xs">
             <button
-              onClick={() => setInvitationType("carte")}
-              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${invitationType === 'carte' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-            >
-              Invitations classiques
-            </button>
-            <button
+              type="button"
               onClick={() => setInvitationType("animee")}
-              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${invitationType === 'animee' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                invitationType === 'animee'
+                  ? 'bg-black text-[#b8924a] shadow-sm'
+                  : 'text-gray-600 hover:text-black'
+              }`}
             >
-              Invitations animées
+              ✨ Faire-part immersif animé
+            </button>
+            <button
+              type="button"
+              onClick={() => setInvitationType("carte")}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                invitationType === 'carte'
+                  ? 'bg-black text-[#b8924a] shadow-sm'
+                  : 'text-gray-600 hover:text-black'
+              }`}
+            >
+              📄 Carte statique classique
             </button>
           </div>
+
+          {/* Notification explicite sur les sons / fonctionnalités */}
+          {invitationType === 'carte' ? (
+            <div className="mt-4 max-w-lg mx-auto p-3 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs flex items-center justify-center gap-2 shadow-xs">
+              <span className="text-base">📄</span>
+              <p className="text-left sm:text-center">
+                <strong>Format Carte Statique :</strong> Modèle visuel épuré. Les cartes statiques <u>ne peuvent pas comporter de musique ni de son</u>.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 max-w-lg mx-auto p-3 rounded-2xl bg-[#fbf7f0] border border-[#b8924a]/30 text-gray-800 text-xs flex items-center justify-center gap-2 shadow-xs">
+              <span className="text-base">✨</span>
+              <p className="text-left sm:text-center">
+                <strong className="text-[#8f6f33]">Format Animé Immersif :</strong> Scénographie interactive avec ouverture au sceau, <u>musique d&apos;ambiance</u> et effets animés.
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+        {/* Grille des 3 formules proportionnées */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-stretch">
           
-          {/* Formule PREMIUM */}
+          {/* Formule STANDARD */}
           <motion.div 
-            whileHover={{ y: -5 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="flex flex-col p-10 md:p-12 rounded-[2rem] bg-white border border-gray-200 hover:border-gray-300 transition-colors shadow-sm"
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="flex flex-col p-6 rounded-3xl bg-white border border-gray-200/90 hover:border-[#b8924a]/40 transition-colors shadow-sm hover:shadow-lg justify-between"
           >
-            <h3 className="font-serif text-3xl text-gray-900 mb-2">Premium</h3>
-            <p className="text-gray-500 mb-10 h-12">L'essentiel pour centraliser la gestion de vos invités et le design.</p>
-            
-            <div className="flex items-baseline gap-2 mb-10 pb-10 border-b border-gray-100">
-              <span className="text-5xl font-light text-gray-900 tracking-tight">{formulas[0].prices[invitationType]}</span>
-              <span className="text-gray-400 font-medium">FCFA</span>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900">
+                  {formulas[0].name}
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+                {formulas[0].tagline[invitationType]}
+              </p>
+              
+              <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-gray-100">
+                <span className="text-3xl sm:text-4xl font-serif font-bold text-gray-950 tracking-tight">
+                  {formulas[0].prices[invitationType]}
+                </span>
+                <span className="text-xs font-medium text-gray-400">FCFA / événement</span>
+              </div>
+              
+              <ul className="space-y-3.5 mb-6">
+                {formulas[0].features[invitationType].map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
+                        {feature.title}
+                      </p>
+                      <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                        {feature.desc}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-            
-            <ul className="space-y-5 flex-1 mb-12">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 size={20} className="text-[#D4AF37] shrink-0 mt-0.5" />
-                <span className="text-gray-700">{invitationType === 'carte' ? "Génération d'invitations statiques" : "Génération d'invitations animées"}</span>
-              </li>
-              {formulas[0].features.map((feature, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 size={20} className="text-[#D4AF37] shrink-0 mt-0.5" />
-                  <span className="text-gray-700">{feature}</span>
-                </li>
-              ))}
-            </ul>
 
             <Link 
               href="/create"
-              className="w-full py-4 text-center rounded-full font-semibold text-gray-900 border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 text-center rounded-xl font-bold text-xs sm:text-sm text-gray-900 border border-gray-300 hover:bg-black hover:text-[#b8924a] hover:border-black transition-all flex items-center justify-center gap-2 shadow-xs"
+            >
+              Choisir Standard
+            </Link>
+          </motion.div>
+
+          {/* Formule PREMIUM */}
+          <motion.div 
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="flex flex-col p-6 rounded-3xl bg-white border-2 border-[#b8924a]/40 shadow-sm hover:shadow-lg justify-between relative"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900">
+                  {formulas[1].name}
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+                {formulas[1].tagline[invitationType]}
+              </p>
+              
+              <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-gray-100">
+                <span className="text-3xl sm:text-4xl font-serif font-bold text-gray-950 tracking-tight">
+                  {formulas[1].prices[invitationType]}
+                </span>
+                <span className="text-xs font-medium text-gray-400">FCFA / événement</span>
+              </div>
+              
+              <ul className="space-y-3.5 mb-6">
+                {formulas[1].features[invitationType].map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
+                        {feature.title}
+                      </p>
+                      <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                        {feature.desc}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <Link 
+              href="/create"
+              className="w-full py-3 text-center rounded-xl font-bold text-xs sm:text-sm text-gray-900 border border-gray-300 hover:bg-black hover:text-[#b8924a] hover:border-black transition-all flex items-center justify-center gap-2 shadow-xs"
             >
               Choisir Premium
             </Link>
           </motion.div>
 
-          {/* Formule GOLD */}
+          {/* Formule GOLD VIP */}
           <motion.div 
-            whileHover={{ y: -5 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="flex flex-col p-10 md:p-12 rounded-[2rem] bg-[#FCFBF8] border border-[#D4AF37]/30 shadow-lg shadow-[#D4AF37]/5 relative"
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="flex flex-col p-6 rounded-3xl bg-[#241b13] border border-[#b8924a]/50 shadow-xl relative overflow-hidden text-white justify-between"
           >
-            {/* Ruban discret */}
-            <div className="absolute top-8 right-8 text-xs font-bold uppercase tracking-widest text-[#D4AF37] bg-white px-3 py-1 rounded-full border border-[#D4AF37]/20">
-              Recommandé
+            <div aria-hidden className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-[#b8924a]/20 blur-[70px] pointer-events-none" />
+            
+            {/* Badge Recommandé */}
+            <div className="absolute top-5 right-5 text-[9px] font-bold uppercase tracking-wider text-[#241b13] bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+              <Crown size={11} /> {formulas[2].badge}
             </div>
 
-            <h3 className="font-serif text-3xl text-[#D4AF37] mb-2">Gold</h3>
-            <p className="text-gray-500 mb-10 h-12">L'organisation de A à Z. Accès complet à tous nos outils et prestataires.</p>
-            
-            <div className="flex items-baseline gap-2 mb-10 pb-10 border-b border-[#D4AF37]/20">
-              <span className="text-5xl font-light text-gray-900 tracking-tight">{formulas[1].prices[invitationType]}</span>
-              <span className="text-gray-400 font-medium">FCFA</span>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#b8924a]">
+                  {formulas[2].name}
+                </h3>
+              </div>
+              <p className="text-xs text-white/60 mb-5 leading-relaxed">
+                {formulas[2].tagline[invitationType]}
+              </p>
+              
+              <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-white/10">
+                <span className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight">
+                  {formulas[2].prices[invitationType]}
+                </span>
+                <span className="text-xs font-medium text-white/50">FCFA / événement</span>
+              </div>
+              
+              <ul className="space-y-3.5 mb-6">
+                {formulas[2].features[invitationType].map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold text-white leading-snug">
+                        {feature.title}
+                      </p>
+                      <p className="text-[11px] text-white/60 mt-0.5 leading-relaxed">
+                        {feature.desc}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-            
-            <ul className="space-y-5 flex-1 mb-12">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 size={20} className="text-[#D4AF37] shrink-0 mt-0.5" />
-                <span className="text-gray-900 font-medium">{invitationType === 'carte' ? "Génération d'invitations statiques" : "Génération d'invitations animées"}</span>
-              </li>
-              {formulas[1].features.map((feature, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 size={20} className="text-[#D4AF37] shrink-0 mt-0.5" />
-                  <span className="text-gray-900 font-medium">{feature}</span>
-                </li>
-              ))}
-            </ul>
 
             <Link 
               href="/create"
-              className="w-full py-4 text-center rounded-full font-semibold text-white bg-gray-900 hover:bg-black shadow-xl shadow-gray-900/10 transition-colors flex items-center justify-center gap-2 group"
+              className="relative w-full py-3 text-center rounded-xl font-bold text-xs sm:text-sm text-black bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] hover:brightness-110 shadow-md shadow-[#b8924a]/20 transition-all flex items-center justify-center gap-2 group"
             >
-              Choisir Gold
-              <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
+              <span>Choisir Gold VIP</span>
+              <ChevronRight size={15} className="transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
 

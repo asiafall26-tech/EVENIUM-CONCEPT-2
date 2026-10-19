@@ -7,44 +7,106 @@ import { createClient } from '@/utils/supabase/server'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  const redirectTo = formData.get('redirectTo') as string | null
+
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error || !authData.user) {
+    const errorUrl = redirectTo 
+      ? `/login?error=Email ou mot de passe incorrect&redirectTo=${encodeURIComponent(redirectTo)}` 
+      : '/login?error=Email ou mot de passe incorrect'
+    redirect(errorUrl)
   }
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  // Fetch user role from profiles table
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .single()
 
-  if (error) {
-    redirect('/login?error=Email ou mot de passe incorrect')
+  const role = profile?.role || authData.user.user_metadata?.role || 'client'
+
+  // Determine destination
+  let destination = '/dashboard'
+  if (role === 'prestataire') {
+    destination = '/prestataire'
+  } else if (role === 'admin') {
+    destination = '/admin'
   }
 
-  revalidatePath('/dashboard', 'layout')
-  redirect('/dashboard')
+  // Honor redirectTo if it is a valid path appropriate for the user's role
+  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+    if (role === 'admin') {
+      destination = redirectTo
+    } else if (role === 'prestataire' && redirectTo.startsWith('/prestataire')) {
+      destination = redirectTo
+    } else if (role === 'client' && (redirectTo.startsWith('/dashboard') || redirectTo.startsWith('/events'))) {
+      destination = redirectTo
+    }
+  }
+
+  if (role === 'prestataire') {
+    revalidatePath('/prestataire', 'layout')
+  } else if (role === 'admin') {
+    revalidatePath('/admin', 'layout')
+  } else {
+    revalidatePath('/dashboard', 'layout')
+  }
+
+  redirect(destination)
 }
 
 export async function signup(formData: FormData) {
   const supabase = await createClient()
 
+  const role = (formData.get('role') as string) || 'client'
+  const fullName = formData.get('fullName') as string
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  const redirectTo = formData.get('redirectTo') as string | null
+
   const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+    email,
+    password,
     options: {
       data: {
-        full_name: formData.get('fullName') as string,
+        full_name: fullName,
+        role: role,
       }
     }
   }
 
-  const { error } = await supabase.auth.signUp(data)
+  const { data: authData, error } = await supabase.auth.signUp(data)
 
-  if (error) {
-    redirect('/signup?error=Erreur lors de la création du compte')
+  if (error || !authData.user) {
+    const errorUrl = redirectTo 
+      ? `/register?error=Erreur lors de la création du compte&redirectTo=${encodeURIComponent(redirectTo)}` 
+      : '/register?error=Erreur lors de la création du compte'
+    redirect(errorUrl)
   }
 
-  revalidatePath('/dashboard', 'layout')
-  redirect('/dashboard')
+  let destination = role === 'prestataire' ? '/prestataire' : '/dashboard'
+  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+    if (role === 'prestataire' && redirectTo.startsWith('/prestataire')) {
+      destination = redirectTo
+    } else if (role === 'client' && (redirectTo.startsWith('/dashboard') || redirectTo.startsWith('/events'))) {
+      destination = redirectTo
+    }
+  }
+
+  if (role === 'prestataire') {
+    revalidatePath('/prestataire', 'layout')
+  } else {
+    revalidatePath('/dashboard', 'layout')
+  }
+
+  redirect(destination)
 }
 
 export async function loginWithProvider(provider: 'google' | 'apple' | 'github') {

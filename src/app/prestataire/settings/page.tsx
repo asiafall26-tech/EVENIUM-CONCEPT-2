@@ -1,433 +1,318 @@
 "use client";
 
-import { Save, User, Bell, CreditCard, Building2, Link as LinkIcon, Calendar as CalendarIcon, CheckCircle2, Globe, Camera, Briefcase, Music, ImagePlus, X, MapPin } from "lucide-react";
-import { useState } from "react";
+import { Save, Bell, CreditCard, Shield, Map, Lock, Upload, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { DeleteAccountSection } from "@/components/ui/DeleteAccountSection";
 
 export default function PrestataireSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"vitrine" | "contact" | "facturation" | "notifications" | "integrations">("vitrine");
+  const [activeTab, setActiveTab] = useState<"preferences" | "facturation" | "securite">("preferences");
   const [isSaving, setIsSaving] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  
+  // States
+  const [coverageArea, setCoverageArea] = useState("Dakar et environs");
+  const [maxCapacity, setMaxCapacity] = useState("500");
+  const [notifs, setNotifs] = useState({ devis: true, messages: true, paiements: true });
+  const [bankInfo, setBankInfo] = useState({ bankName: "", iban: "", swift: "", accountName: "" });
+  
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-  // Fake states to simulate interactivity
-  const [integrations, setIntegrations] = useState({
-    instagram: false,
-    facebook: false,
-    linkedin: false,
-    tiktok: false,
-    gcal: true
-  });
+  const supabase = createClient();
 
-  const [notifications, setNotifications] = useState({
-    devis: true,
-    messages: true,
-    paiements: true
-  });
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const [gallery, setGallery] = useState([
-    "/mock/food1.jpg", 
-    "/mock/food2.jpg",
-    "/mock/decor1.jpg"
-  ]);
+  const fetchData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (data) {
+      setProfile(data);
+    }
 
-  const handleSave = () => {
+    const meta = user.user_metadata || {};
+    if (meta.coverageArea) setCoverageArea(meta.coverageArea);
+    if (meta.maxCapacity) setMaxCapacity(meta.maxCapacity);
+    if (meta.notifs) setNotifs(meta.notifs);
+    if (meta.bankInfo) setBankInfo(meta.bankInfo);
+  };
+
+  const handleSavePreferences = async () => {
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          coverageArea,
+          maxCapacity,
+          notifs
+        }
+      });
+      if (error) throw error;
+      alert("Préférences de service enregistrées avec succès !");
+    } catch (err: any) {
+      alert("Erreur lors de l'enregistrement : " + err.message);
+    } finally {
       setIsSaving(false);
-      alert("Paramètres enregistrés avec succès !");
-    }, 800);
+    }
   };
 
-  const toggleIntegration = (key: keyof typeof integrations) => {
-    setIntegrations(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleSaveBank = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          bankInfo
+        }
+      });
+      if (error) throw error;
+      alert("Informations bancaires enregistrées avec succès !");
+    } catch (err: any) {
+      alert("Erreur lors de l'enregistrement : " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const toggleNotification = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+    if (password !== confirmPassword) {
+      setPasswordError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    if (password.length < 6) {
+      setPasswordError("Le mot de passe doit contenir au moins 6 caractères.");
+      return;
+    }
 
-  const removeImage = (index: number) => {
-    setGallery(gallery.filter((_, i) => i !== index));
-  };
+    setIsSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: password });
+    setIsSaving(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newImages = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setGallery([...gallery, ...newImages].slice(0, 10)); // Max 10
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      alert("Mot de passe mis à jour avec succès !");
+      setPassword("");
+      setConfirmPassword("");
     }
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+    <div className="p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2">Paramètres du Compte</h1>
-          <p className="text-gray-500 text-sm">Gérez les informations de votre entreprise et vos préférences.</p>
+          <h1 className="font-serif text-3xl font-bold text-black mb-2">Paramètres Avancés</h1>
+          <p className="text-gray-500 text-sm">Gérez vos préférences de service, votre facturation et votre sécurité.</p>
         </div>
-        <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-[#B8860B] hover:bg-[#996B00] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md transition-colors disabled:opacity-70">
-          <Save size={16} /> {isSaving ? "Enregistrement..." : "Enregistrer"}
-        </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Navigation Sidebar */}
-        <div className="w-full md:w-64 shrink-0">
-          <nav className="space-y-1">
-            <button 
-              onClick={() => setActiveTab("vitrine")}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 font-semibold rounded-lg text-sm transition-colors ${activeTab === 'vitrine' ? 'bg-gray-50 text-black' : 'text-gray-500 hover:bg-gray-50 hover:text-black'}`}
-            >
-              <Building2 size={18} className={activeTab === 'vitrine' ? 'text-[#B8860B]' : ''} /> Ma Vitrine
-            </button>
-            <button 
-              onClick={() => setActiveTab("contact")}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 font-semibold rounded-lg text-sm transition-colors ${activeTab === 'contact' ? 'bg-gray-50 text-black' : 'text-gray-500 hover:bg-gray-50 hover:text-black'}`}
-            >
-              <User size={18} className={activeTab === 'contact' ? 'text-[#B8860B]' : ''} /> Contact principal
-            </button>
-            <button 
-              onClick={() => setActiveTab("facturation")}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 font-semibold rounded-lg text-sm transition-colors ${activeTab === 'facturation' ? 'bg-gray-50 text-black' : 'text-gray-500 hover:bg-gray-50 hover:text-black'}`}
-            >
-              <CreditCard size={18} className={activeTab === 'facturation' ? 'text-[#B8860B]' : ''} /> Facturation & RIB
-            </button>
-            <button 
-              onClick={() => setActiveTab("notifications")}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 font-semibold rounded-lg text-sm transition-colors ${activeTab === 'notifications' ? 'bg-gray-50 text-black' : 'text-gray-500 hover:bg-gray-50 hover:text-black'}`}
-            >
-              <Bell size={18} className={activeTab === 'notifications' ? 'text-[#B8860B]' : ''} /> Notifications
-            </button>
-            <button 
-              onClick={() => setActiveTab("integrations")}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 font-semibold rounded-lg text-sm transition-colors ${activeTab === 'integrations' ? 'bg-gray-50 text-black' : 'text-gray-500 hover:bg-gray-50 hover:text-black'}`}
-            >
-              <LinkIcon size={18} className={activeTab === 'integrations' ? 'text-[#B8860B]' : ''} /> Intégrations
-            </button>
-          </nav>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        
+        {/* Navigation Latérale */}
+        <div className="space-y-2">
+          <button 
+            onClick={() => setActiveTab("preferences")}
+            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all text-left font-medium ${activeTab === 'preferences' ? 'bg-black text-white shadow-xl translate-x-2' : 'bg-transparent hover:bg-white text-gray-600 hover:shadow-sm hover:translate-x-1'}`}
+          >
+            <Map size={18} className={activeTab === 'preferences' ? 'text-[#b8924a]' : ''} />
+            Service & Notifications
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab("facturation")}
+            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all text-left font-medium ${activeTab === 'facturation' ? 'bg-black text-white shadow-xl translate-x-2' : 'bg-transparent hover:bg-white text-gray-600 hover:shadow-sm hover:translate-x-1'}`}
+          >
+            <CreditCard size={18} className={activeTab === 'facturation' ? 'text-[#b8924a]' : ''} />
+            Coordonnées Bancaires
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab("securite")}
+            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all text-left font-medium ${activeTab === 'securite' ? 'bg-black text-white shadow-xl translate-x-2' : 'bg-transparent hover:bg-white text-gray-600 hover:shadow-sm hover:translate-x-1'}`}
+          >
+            <Lock size={18} className={activeTab === 'securite' ? 'text-[#b8924a]' : ''} />
+            Sécurité & Mot de passe
+          </button>
         </div>
 
-        {/* Form Content */}
-        <div className="flex-1 space-y-6">
+        {/* Contenu Principal */}
+        <div className="md:col-span-3">
           
-          {/* TAB: VITRINE */}
-          {activeTab === "vitrine" && (
-            <>
-              {/* Informations Générales */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Identité de l'entreprise</h2>
-                
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-                  <div className="relative group cursor-pointer">
-                    <div className="w-24 h-24 rounded-2xl bg-white flex items-center justify-center font-serif font-bold text-3xl text-[#B8860B] border border-gray-200 shadow-sm overflow-hidden transition-colors hover:border-[#D4AF37]">
-                      SA
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white text-xs font-medium">Modifier</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Logo de l'entreprise</h3>
-                    <p className="text-xs text-gray-500 mb-3 max-w-sm">Ce logo apparaîtra sur votre fiche dans l'annuaire. Format recommandé : 512x512px.</p>
-                    <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-                      Importer un logo
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de l'entreprise</label>
-                    <input type="text" defaultValue="Saveurs d'Afrique" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Catégorie principale</label>
-                      <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]">
-                        <option value="traiteur">Traiteur & Restauration</option>
-                        <option value="photo">Photographie & Vidéo</option>
-                        <option value="deco">Décoration & Fleurs</option>
-                        <option value="dj">Animation & DJ</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">NINEA / SIRET</label>
-                      <input type="text" defaultValue="123456789" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Description de la vitrine (À propos)</label>
-                    <textarea rows={4} defaultValue="Service traiteur haut de gamme spécialisé dans la gastronomie africaine et internationale. Nous sublimons vos réceptions avec des mets raffinés." className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37] resize-none" />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tarif de base (À partir de)</label>
-                    <input type="text" defaultValue="15 000 FCFA / personne" placeholder="Ex: 50 000 FCFA ou Sur devis" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Localisation & Coordonnées */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Zone d'intervention & Coordonnées</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"><MapPin size={14}/> Pays</label>
-                    <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]">
-                      <option value="Sénégal">Sénégal</option>
-                      <option value="Côte d'Ivoire">Côte d'Ivoire</option>
-                      <option value="France">France</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"><MapPin size={14}/> Région</label>
-                    <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]">
-                      <option value="Dakar">Dakar</option>
-                      <option value="Thiès">Thiès</option>
-                      <option value="Saint-Louis">Saint-Louis</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"><MapPin size={14}/> Ville</label>
-                    <input type="text" defaultValue="Dakar (Point E)" placeholder="Ex: Saly" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                  </div>
-                </div>
-
+          {/* TAB 1 : PREFERENCES */}
+          {activeTab === "preferences" && (
+            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                <h2 className="text-xl font-serif font-bold mb-6 flex items-center gap-2">
+                  <Map className="text-[#b8924a]" size={20} /> Zone et Capacité
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Téléphone public (affiché aux clients)</label>
-                    <input type="tel" defaultValue="+221 77 111 22 33" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rayon d'action (Villes couvertes)</label>
+                    <input 
+                      type="text" 
+                      value={coverageArea}
+                      onChange={(e) => setCoverageArea(e.target.value)}
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] focus:bg-white transition-all"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email de contact public</label>
-                    <input type="email" defaultValue="contact@saveursdafrique.sn" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Capacité maximale (invités/personnes)</label>
+                    <input 
+                      type="number" 
+                      value={maxCapacity}
+                      onChange={(e) => setMaxCapacity(e.target.value)}
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] focus:bg-white transition-all"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Galerie / Réalisations */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-100">
-                <div className="flex justify-between items-end mb-6">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">Galerie & Réalisations</h2>
-                    <p className="text-gray-500 text-sm">Ajoutez des photos de votre travail pour séduire de futurs clients.</p>
-                  </div>
-                  <label className="flex items-center gap-2 bg-[#F9F5EC] hover:bg-[#E8DCC4] text-[#B8860B] px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
-                    <ImagePlus size={16} /> Ajouter une photo
-                  </label>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {gallery.map((img, idx) => (
-                    <div key={idx} className="aspect-square bg-gray-100 rounded-xl relative group overflow-hidden border border-gray-200 bg-cover bg-center" style={{ backgroundImage: img.startsWith('blob:') ? `url(${img})` : 'none' }}>
-                      <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                        {!img.startsWith('blob:') && <Camera className="text-gray-300" size={24} />}
-                      </div>
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button onClick={() => removeImage(idx)} className="bg-white/20 hover:bg-red-500/80 backdrop-blur-sm text-white p-2 rounded-full transition-colors">
-                          <X size={16} />
-                        </button>
-                      </div>
+              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                <h2 className="text-xl font-serif font-bold mb-6 flex items-center gap-2">
+                  <Bell className="text-[#b8924a]" size={20} /> Alertes & Notifications
+                </h2>
+                <div className="space-y-4">
+                  <label className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 cursor-pointer transition-colors">
+                    <div>
+                      <h4 className="font-bold text-gray-900">Nouvelles demandes de devis</h4>
+                      <p className="text-sm text-gray-500">M'alerter par email lorsqu'un client me sollicite.</p>
                     </div>
-                  ))}
-                  
-                  {/* Upload button box */}
-                  <label className="aspect-square bg-gray-50 border-2 border-dashed border-gray-200 hover:border-[#D4AF37] hover:bg-gray-100 transition-colors rounded-xl flex flex-col items-center justify-center group outline-none cursor-pointer">
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
-                    <ImagePlus size={24} className="text-gray-400 group-hover:text-[#B8860B] mb-2" />
-                    <span className="text-xs font-medium text-gray-500 group-hover:text-[#B8860B]">Parcourir</span>
+                    <div className={`w-14 h-8 rounded-full flex items-center transition-colors p-1 ${notifs.devis ? 'bg-black' : 'bg-gray-200'}`} onClick={() => setNotifs({...notifs, devis: !notifs.devis})}>
+                      <div className={`w-6 h-6 rounded-full bg-white transition-transform ${notifs.devis ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                    </div>
+                  </label>
+                  <label className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 cursor-pointer transition-colors">
+                    <div>
+                      <h4 className="font-bold text-gray-900">Nouveaux messages</h4>
+                      <p className="text-sm text-gray-500">M'alerter par email en cas de nouveau message chat.</p>
+                    </div>
+                    <div className={`w-14 h-8 rounded-full flex items-center transition-colors p-1 ${notifs.messages ? 'bg-black' : 'bg-gray-200'}`} onClick={() => setNotifs({...notifs, messages: !notifs.messages})}>
+                      <div className={`w-6 h-6 rounded-full bg-white transition-transform ${notifs.messages ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                    </div>
+                  </label>
+                  <label className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 cursor-pointer transition-colors">
+                    <div>
+                      <h4 className="font-bold text-gray-900">Paiements validés</h4>
+                      <p className="text-sm text-gray-500">Confirmation lorsqu'un paiement Evenium est validé.</p>
+                    </div>
+                    <div className={`w-14 h-8 rounded-full flex items-center transition-colors p-1 ${notifs.paiements ? 'bg-black' : 'bg-gray-200'}`} onClick={() => setNotifs({...notifs, paiements: !notifs.paiements})}>
+                      <div className={`w-6 h-6 rounded-full bg-white transition-transform ${notifs.paiements ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                    </div>
                   </label>
                 </div>
-                <p className="text-xs text-gray-400 mt-4">Formats acceptés : JPG, PNG, WEBP. Jusqu'à 10 photos.</p>
               </div>
-            </>
+
+              <div className="flex justify-end">
+                <button onClick={handleSavePreferences} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-8 py-4 rounded-full font-bold shadow-lg hover:-translate-y-1 hover:bg-[#8f6f33] hover:shadow-xl transition-all disabled:opacity-50">
+                  <Save size={20} /> {isSaving ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              </div>
+            </div>
           )}
 
-          {/* TAB: CONTACT PRINCIPAL */}
-          {activeTab === "contact" && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Contact principal</h2>
-              <p className="text-gray-500 text-sm mb-6">La personne à contacter pour les négociations et la planification.</p>
+          {/* TAB 2 : FACTURATION */}
+          {activeTab === "facturation" && (
+            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+              <div className="bg-gradient-to-br from-gray-900 to-black p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden text-white">
+                <div className="absolute right-0 top-0 opacity-10">
+                  <CreditCard size={200} />
+                </div>
+                <h2 className="text-xl font-serif font-bold mb-2 relative z-10">Coordonnées de virement</h2>
+                <p className="text-gray-400 text-sm mb-8 relative z-10 max-w-md">
+                  Ces informations sont utilisées par Evenium pour vous reverser les paiements effectués par vos clients.
+                </p>
 
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Prénom</label>
-                    <input type="text" defaultValue="Amadou" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Nom de la Banque</label>
+                    <input 
+                      type="text" 
+                      value={bankInfo.bankName}
+                      onChange={e => setBankInfo({...bankInfo, bankName: e.target.value})}
+                      placeholder="Ex: Ecobank"
+                      className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-[#b8924a] transition-all"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom</label>
-                    <input type="text" defaultValue="Fall" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Titulaire du compte</label>
+                    <input 
+                      type="text" 
+                      value={bankInfo.accountName}
+                      onChange={e => setBankInfo({...bankInfo, accountName: e.target.value})}
+                      className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-[#b8924a] transition-all"
+                    />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Poste occupé</label>
-                    <input type="text" defaultValue="Gérant & Chef de Projet" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
+                    <label className="block text-sm font-medium text-gray-400 mb-2">IBAN ou Numéro de compte complet</label>
+                    <input 
+                      type="text" 
+                      value={bankInfo.iban}
+                      onChange={e => setBankInfo({...bankInfo, iban: e.target.value})}
+                      className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#b8924a] transition-all"
+                    />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Téléphone direct</label>
-                    <input type="tel" defaultValue="+221 77 999 88 77" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email direct</label>
-                    <input type="email" defaultValue="amadou.fall@saveursdafrique.sn" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                  </div>
+                </div>
+
+                <div className="mt-8 flex justify-end relative z-10">
+                  <button onClick={handleSaveBank} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-[#8f6f33] transition-all disabled:opacity-50">
+                    <Upload size={20} /> {isSaving ? "Enregistrement..." : "Mettre à jour le RIB"}
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB: FACTURATION */}
-          {activeTab === "facturation" && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Facturation & RIB</h2>
-              <p className="text-gray-500 text-sm mb-6">Paramétrez vos informations bancaires pour recevoir vos paiements.</p>
+          {/* TAB 3 : SECURITE */}
+          {activeTab === "securite" && (
+            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-bl-full -z-0"></div>
+                <h2 className="text-xl font-serif font-bold mb-2 flex items-center gap-2 relative z-10">
+                  <Lock className="text-red-500" size={20} /> Modifier le mot de passe
+                </h2>
+                <p className="text-gray-500 text-sm mb-6 relative z-10">Si votre mot de passe a été généré par un administrateur, nous vous recommandons fortement de le changer ici.</p>
 
-              <div className="space-y-8">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4 border-b border-gray-100 pb-2">Coordonnées Bancaires (RIB)</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Titulaire du compte</label>
-                      <input type="text" defaultValue="SARL Saveurs d'Afrique" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
+                <form onSubmit={handleUpdatePassword} className="space-y-6 relative z-10 max-w-md">
+                  {passwordError && (
+                    <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
+                      {passwordError}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de la Banque</label>
-                      <input type="text" defaultValue="Ecobank Sénégal" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Code BIC / SWIFT</label>
-                      <input type="text" defaultValue="ECOCSNSN" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">IBAN</label>
-                      <input type="text" defaultValue="SN08 0000 0000 0000 0000 0000" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37] font-mono" />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4 border-b border-gray-100 pb-2">Paiements Mobile Money</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Numéro Wave</label>
-                      <input type="tel" defaultValue="+221 76 000 00 00" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Numéro Orange Money</label>
-                      <input type="tel" defaultValue="+221 77 000 00 00" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB: NOTIFICATIONS */}
-          {activeTab === "notifications" && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Préférences de Notifications</h2>
-              <p className="text-gray-500 text-sm mb-6">Contrôlez les alertes que vous recevez pour ne rien manquer d'important.</p>
-
-              <div className="space-y-6">
-                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 space-y-5">
-                  <label className="flex items-start gap-4 cursor-pointer" onClick={() => toggleNotification('devis')}>
-                    <input type="checkbox" checked={notifications.devis} readOnly className="mt-1 w-4 h-4 text-[#D4AF37] rounded border-gray-300 focus:ring-[#D4AF37]" />
-                    <div>
-                      <div className="font-semibold text-sm text-gray-900">Nouvelles demandes de devis</div>
-                      <div className="text-xs text-gray-500 mt-1">Être alerté dès qu'un organisateur vous contacte via le catalogue.</div>
-                    </div>
-                  </label>
-                  
-                  <div className="h-px bg-gray-200 w-full"></div>
-
-                  <label className="flex items-start gap-4 cursor-pointer" onClick={() => toggleNotification('messages')}>
-                    <input type="checkbox" checked={notifications.messages} readOnly className="mt-1 w-4 h-4 text-[#D4AF37] rounded border-gray-300 focus:ring-[#D4AF37]" />
-                    <div>
-                      <div className="font-semibold text-sm text-gray-900">Nouveaux messages</div>
-                      <div className="text-xs text-gray-500 mt-1">Être prévenu lors de la réception d'un message sur l'Espace Chat.</div>
-                    </div>
-                  </label>
-
-                  <div className="h-px bg-gray-200 w-full"></div>
-
-                  <label className="flex items-start gap-4 cursor-pointer" onClick={() => toggleNotification('paiements')}>
-                    <input type="checkbox" checked={notifications.paiements} readOnly className="mt-1 w-4 h-4 text-[#D4AF37] rounded border-gray-300 focus:ring-[#D4AF37]" />
-                    <div>
-                      <div className="font-semibold text-sm text-gray-900">Confirmation de paiement / Acompte</div>
-                      <div className="text-xs text-gray-500 mt-1">Recevoir une notification lorsque l'organisateur effectue un paiement pour vos services.</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB: INTEGRATIONS */}
-          {activeTab === "integrations" && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Intégrations & Réseaux</h2>
-              <p className="text-gray-500 text-sm mb-6">Connectez vos réseaux sociaux et vos outils externes pour enrichir votre fiche prestataire.</p>
-
-              <div className="space-y-4">
-                {[
-                  { id: 'instagram', name: 'Instagram', desc: 'Affichez vos dernières réalisations', icon: Camera, color: 'text-pink-600', bg: 'bg-pink-100' },
-                  { id: 'facebook', name: 'Facebook', desc: 'Liez votre page professionnelle', icon: Globe, color: 'text-blue-600', bg: 'bg-blue-100' },
-                  { id: 'linkedin', name: 'LinkedIn', desc: 'Mettez en avant votre réseau B2B', icon: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-100' },
-                  { id: 'tiktok', name: 'TikTok', desc: "Montrez l'envers du décor en vidéo", icon: Music, color: 'text-gray-900', bg: 'bg-gray-200' },
-                ].map((social) => {
-                  const isConnected = integrations[social.id as keyof typeof integrations];
-                  return (
-                    <div key={social.id} className={`flex flex-col md:flex-row items-center justify-between p-4 border rounded-xl transition-colors ${isConnected ? 'border-[#D4AF37]/30 bg-[#F9F5EC]' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}>
-                      <div className="flex items-center gap-4 mb-4 md:mb-0">
-                        <div className={`w-10 h-10 rounded-lg ${isConnected ? 'bg-white text-[#B8860B] shadow-sm' : `${social.bg} ${social.color}`} flex items-center justify-center`}>
-                          <social.icon size={20} />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-sm text-gray-900">{social.name}</h4>
-                          <p className="text-xs text-gray-500">{social.desc}</p>
-                        </div>
-                      </div>
-                      {isConnected ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-green-600 flex items-center gap-1"><CheckCircle2 size={14}/> Connecté</span>
-                          <button onClick={() => toggleIntegration(social.id as any)} className="px-3 py-1.5 text-gray-500 text-xs font-semibold hover:text-red-500 transition-colors">
-                            Déconnecter
-                          </button>
-                        </div>
-                      ) : (
-                        <button onClick={() => toggleIntegration(social.id as any)} className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
-                          Connecter
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-
-                <div className={`flex flex-col md:flex-row items-center justify-between p-4 border rounded-xl transition-colors ${integrations.gcal ? 'border-[#D4AF37]/30 bg-[#F9F5EC]' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}>
-                  <div className="flex items-center gap-4 mb-4 md:mb-0">
-                    <div className={`w-10 h-10 rounded-lg ${integrations.gcal ? 'bg-white text-[#B8860B] shadow-sm' : 'bg-gray-200 text-gray-600'} flex items-center justify-center`}>
-                      <CalendarIcon size={20} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-900">Google Calendar</h4>
-                      <p className="text-xs text-gray-500">Synchronisé avec votre planning Evenium</p>
-                    </div>
-                  </div>
-                  {integrations.gcal ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-green-600 flex items-center gap-1"><CheckCircle2 size={14}/> Connecté</span>
-                      <button onClick={() => toggleIntegration('gcal')} className="px-3 py-1.5 text-gray-500 text-xs font-semibold hover:text-red-500 transition-colors">
-                        Déconnecter
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={() => toggleIntegration('gcal')} className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
-                      Connecter
-                    </button>
                   )}
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nouveau mot de passe</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirmez le mot de passe</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                  
+                  <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-gray-900 transition-all disabled:opacity-50">
+                    <Shield size={20} /> {isSaving ? "Modification..." : "Modifier mon mot de passe"}
+                  </button>
+                </form>
               </div>
+
+              {/* Zone de Danger : Suppression du compte prestataire */}
+              <DeleteAccountSection role="prestataire" />
             </div>
           )}
 

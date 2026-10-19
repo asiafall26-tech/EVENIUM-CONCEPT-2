@@ -1,10 +1,12 @@
 "use client";
 
-import { Users, Plus, Search, MoreHorizontal, Mail, CheckCircle, Clock, XCircle, ChevronDown, ArrowRight, Edit2, Trash2, X, FileText, User } from "lucide-react";
+import { Users, Plus, Search, MoreHorizontal, Mail, CheckCircle, Clock, XCircle, ChevronDown, ArrowRight, Edit2, Trash2, X, FileText, User, MessageCircle, Copy, Share2, Sparkles, Send, Lock } from "lucide-react";
 import Link from "next/link";
-import { use, useState, useMemo } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { markRsvpSeen } from "@/store/BadgeStore";
 
 export default function ParticipantsDashboardPage({
   params,
@@ -14,13 +16,39 @@ export default function ParticipantsDashboardPage({
   const { id } = use(params);
   const { events } = useEvents();
   const event = events.find((e) => e.id === id);
+  const supabase = createClient();
 
   if (!event) {
     notFound();
   }
+
+  if (event.plan === "Standard") {
+    return (
+      <div className="p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl max-w-md text-center">
+          <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock size={32} />
+          </div>
+          <h2 className="font-serif text-2xl font-bold text-black mb-3">Réservé aux Formules Premium &amp; Gold</h2>
+          <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+            Le suivi des confirmations RSVP en temps réel et la gestion de la liste des invités sont accessibles à partir de la formule Premium. En formule Standard, vous bénéficiez du téléchargement direct du lien de votre invitation.
+          </p>
+          <Link href={`/dashboard/events/${event.id}`} className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors">
+            Voir mon lien d&apos;invitation ou Évoluer
+          </Link>
+          <div className="mt-4">
+             <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
+               Retour à l&apos;aperçu
+             </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingParticipantId, setEditingParticipantId] = useState<number | null>(null);
+  const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [newParticipant, setNewParticipant] = useState({
     name: "",
@@ -30,13 +58,113 @@ export default function ParticipantsDashboardPage({
     status: "En attente"
   });
 
-  const [participants, setParticipants] = useState([
-    { id: 1, name: "Fatou Diop", phone: "+221 77 123 45 67", email: "fatou@mail.com", group: "Famille", status: "Confirmé", dateSent: "21 sept. 2026" },
-    { id: 2, name: "Ousmane Fall", phone: "+221 77 987 65 43", email: "ousmane@mail.com", group: "Amis", status: "En attente", dateSent: "21 sept. 2026" },
-    { id: 3, name: "Aïssatou Ndiaye", phone: "+221 76 555 44 33", email: "aissa@mail.com", group: "Famille", status: "Confirmé", dateSent: "20 sept. 2026" },
-    { id: 4, name: "Mamadou Sy", phone: "+221 70 111 22 33", email: "m.sy@mail.com", group: "Amis", status: "Refusé", dateSent: "20 sept. 2026" },
-    { id: 5, name: "Coumba Kane", phone: "+221 78 444 55 66", email: "coumba@mail.com", group: "Collègues", status: "Confirmé", dateSent: "19 sept. 2026" },
-  ]);
+  const [participants, setParticipants] = useState<any[]>([]);
+
+  // WhatsApp Share State
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [whatsAppGuest, setWhatsAppGuest] = useState<{ id?: string; name: string; phone?: string } | null>(null);
+  const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
+  const [waPhoneInput, setWaPhoneInput] = useState("");
+  const [waCopied, setWaCopied] = useState(false);
+
+  const getShareUrl = () => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/invite/${id}`;
+    }
+    return `/invite/${id}`;
+  };
+
+  const generateWhatsAppMessage = (guestName?: string, tone: "chaleureux" | "prestige" | "court" = "chaleureux") => {
+    const link = getShareUrl();
+    const greeting = guestName ? `Bonjour ${guestName} !` : "Bonjour !";
+    const dateText = event.date ? ` le *${event.date}*` : "";
+    const locationText = event.location ? ` à *${event.location}*` : "";
+
+    if (tone === "prestige") {
+      return `🎩 *INVITATION OFFICIELLE*\n\n` +
+        `${greeting}\n\n` +
+        `Vous êtes cordialement invité(e) à célébrer *${event.name}*${dateText}${locationText}.\n\n` +
+        `Veuillez découvrir votre carton d'invitation d'honneur et enregistrer votre confirmation de présence via ce lien :\n` +
+        `👉 ${link}\n\n` +
+        `Au plaisir de vous accueillir parmi nous.`;
+    }
+
+    if (tone === "court") {
+      return `✨ *Invitation - ${event.name}*\n\n` +
+        `${greeting}\n\n` +
+        `Voici le lien de votre invitation interactive pour le ${event.date || "jour J"} :\n` +
+        `👉 ${link}\n\n` +
+        `Merci de confirmer votre présence directement sur le lien. À très bientôt ! 🎉`;
+    }
+
+    // Chaleureux par défaut
+    return `✨ *VOUS ÊTES INVITÉ(E) !* ✨\n\n` +
+      `${greeting}\n\n` +
+      `Nous avons l'immense joie de vous convier à célébrer *${event.name}*${dateText}${locationText} !\n\n` +
+      `Découvrez votre invitation interactive et confirmez votre présence en quelques secondes ici :\n` +
+      `👉 ${link}\n\n` +
+      `Nous avons hâte de partager ce moment inoubliable avec vous ! 🎉🥂`;
+  };
+
+  const openWhatsAppModalForGuest = (guest: { id?: string; name: string; phone?: string }) => {
+    setWhatsAppGuest(guest);
+    setWaPhoneInput(guest.phone || "");
+    setIsWhatsAppModalOpen(true);
+  };
+
+  const openWhatsAppModalGlobal = () => {
+    setWhatsAppGuest(null);
+    setWaPhoneInput("");
+    setIsWhatsAppModalOpen(true);
+  };
+
+  const handleDirectSendWhatsApp = () => {
+    const guestName = whatsAppGuest?.name;
+    const text = generateWhatsAppMessage(guestName, waTone);
+    const targetPhone = (waPhoneInput || whatsAppGuest?.phone || "").replace(/[^0-9]/g, "");
+    const encoded = encodeURIComponent(text);
+
+    const url = targetPhone
+      ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`
+      : `https://api.whatsapp.com/send?text=${encoded}`;
+
+    window.open(url, "_blank");
+  };
+
+  const handleCopyWhatsAppText = () => {
+    const guestName = whatsAppGuest?.name;
+    const text = generateWhatsAppMessage(guestName, waTone);
+    navigator.clipboard.writeText(text);
+    setWaCopied(true);
+    setTimeout(() => setWaCopied(false), 2500);
+  };
+
+  const fetchGuests = async () => {
+    const { data } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('event_id', id)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      setParticipants(data.map(g => ({
+        id: g.id,
+        name: g.nom,
+        phone: g.telephone || "",
+        email: g.email || "",
+        group: "Famille", // Fallback local since we didn't add it in DB
+        status: g.statut_rsvp || "En attente",
+        dateSent: new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+      })));
+    }
+    setLoading(false);
+    // The answers are on screen: they are no longer "new" in the menu
+    markRsvpSeen(id);
+  };
+
+  useEffect(() => {
+    fetchGuests();
+  }, [id]);
 
   const stats = useMemo(() => {
     const total = participants.length;
@@ -79,31 +207,40 @@ export default function ParticipantsDashboardPage({
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Voulez-vous vraiment supprimer ce participant ?")) {
-      setParticipants(participants.filter(p => p.id !== id));
+      await supabase.from('guests').delete().eq('id', id);
+      await fetchGuests();
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newParticipant.name) return;
 
+    setIsSubmitting(true);
+
     if (editingParticipantId) {
-      setParticipants(participants.map(p => 
-        p.id === editingParticipantId 
-          ? { ...p, ...newParticipant } 
-          : p
-      ));
+      await supabase.from('guests').update({
+        nom: newParticipant.name,
+        email: newParticipant.email,
+        telephone: newParticipant.phone,
+        statut_rsvp: newParticipant.status
+      }).eq('id', editingParticipantId);
     } else {
-      const p = {
-        id: Date.now(),
-        ...newParticipant,
-        dateSent: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-      };
-      setParticipants([p, ...participants]);
+      await supabase.from('guests').insert([{
+        event_id: id,
+        nom: newParticipant.name,
+        email: newParticipant.email,
+        telephone: newParticipant.phone,
+        statut_rsvp: newParticipant.status
+      }]);
     }
     
+    await fetchGuests();
+    setIsSubmitting(false);
     setIsModalOpen(false);
   };
 
@@ -128,15 +265,21 @@ export default function ParticipantsDashboardPage({
           <h1 className="font-serif text-3xl font-bold text-black mb-2">Suivi des Participants</h1>
           <p className="text-gray-500 text-sm">Gérez la liste de vos invités et suivez l'historique des réponses (RSVP).</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={openWhatsAppModalGlobal}
+            className="flex items-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-[#25D366]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <MessageCircle size={17} /> Partager sur WhatsApp
+          </button>
           <button 
             onClick={handleRelance}
             disabled={isRelancing || stats.pending === 0}
-            className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Mail size={16} /> {isRelancing ? "Envoi en cours..." : "Relancer les indécis"}
           </button>
-          <button onClick={openAddModal} className="flex items-center gap-2 bg-[#B8860B] hover:bg-[#996B00] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md shadow-[#B8860B]/20 transition-colors">
+          <button onClick={openAddModal} className="flex items-center gap-2 bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-[#8f6f33]/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
             <Plus size={16} /> Ajouter un invité
           </button>
         </div>
@@ -226,9 +369,9 @@ export default function ParticipantsDashboardPage({
           <div className="flex gap-3">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input type="text" placeholder="Rechercher un invité..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent" />
+              <input type="text" placeholder="Rechercher un invité..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a] focus:border-transparent" />
             </div>
-            <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]">
+            <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
               <option>Tous les statuts</option>
               <option>Confirmé</option>
               <option>En attente</option>
@@ -250,7 +393,11 @@ export default function ParticipantsDashboardPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {participants.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-500">Chargement des invités...</td>
+                </tr>
+              ) : participants.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-gray-500">Aucun participant enregistré.</td>
                 </tr>
@@ -279,8 +426,16 @@ export default function ParticipantsDashboardPage({
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <div className="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEditModal(p)} className="p-1.5 text-gray-500 hover:text-[#B8860B] hover:bg-[#F9F5EC] rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Modifier">
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => openWhatsAppModalForGuest(p)} 
+                          className="px-2.5 py-1.5 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-lg text-xs font-semibold transition-all hover:scale-105 shadow-sm flex items-center gap-1.5 shadow-[#25D366]/20" 
+                          title={`Envoyer l'invitation à ${p.name} sur WhatsApp`}
+                        >
+                          <MessageCircle size={13} />
+                          <span>WhatsApp</span>
+                        </button>
+                        <button onClick={() => openEditModal(p)} className="p-1.5 text-gray-500 hover:text-[#8f6f33] hover:bg-[#f5eee1] rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Modifier">
                           <Edit2 size={14} />
                         </button>
                         <button onClick={() => handleDelete(p.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Supprimer">
@@ -320,7 +475,7 @@ export default function ParticipantsDashboardPage({
                   type="text" 
                   required
                   placeholder="Ex: Amadou Diallo" 
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                   value={newParticipant.name}
                   onChange={(e) => setNewParticipant({...newParticipant, name: e.target.value})}
                 />
@@ -332,7 +487,7 @@ export default function ParticipantsDashboardPage({
                   <input 
                     type="email" 
                     placeholder="Ex: email@domaine.com" 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                     value={newParticipant.email}
                     onChange={(e) => setNewParticipant({...newParticipant, email: e.target.value})}
                   />
@@ -342,7 +497,7 @@ export default function ParticipantsDashboardPage({
                   <input 
                     type="tel" 
                     placeholder="Ex: +221 77..." 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                     value={newParticipant.phone}
                     onChange={(e) => setNewParticipant({...newParticipant, phone: e.target.value})}
                   />
@@ -353,7 +508,7 @@ export default function ParticipantsDashboardPage({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Groupe</label>
                   <select 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                     value={newParticipant.group}
                     onChange={(e) => setNewParticipant({...newParticipant, group: e.target.value})}
                   >
@@ -367,7 +522,7 @@ export default function ParticipantsDashboardPage({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Statut RSVP</label>
                   <select 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 font-semibold"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50 font-semibold"
                     value={newParticipant.status}
                     onChange={(e) => setNewParticipant({...newParticipant, status: e.target.value})}
                   >
@@ -388,12 +543,165 @@ export default function ParticipantsDashboardPage({
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 bg-black text-white hover:bg-gray-900 px-4 py-3 rounded-xl text-sm font-bold shadow-lg shadow-black/10 transition-colors"
+                  disabled={isSubmitting || !newParticipant.name}
+                  className="flex-1 bg-black text-white hover:bg-gray-900 px-4 py-3 rounded-xl text-sm font-bold shadow-lg shadow-black/10 transition-colors disabled:opacity-50"
                 >
-                  {editingParticipantId ? "Enregistrer" : "Ajouter"}
+                  {isSubmitting ? "Sauvegarde..." : editingParticipantId ? "Enregistrer" : "Ajouter"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* WHATSAPP SHARE MODAL (Option A : Clic-to-Chat Direct) */}
+      {isWhatsAppModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+            
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#25D366]/10 to-transparent">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#25D366] text-white flex items-center justify-center shadow-lg shadow-[#25D366]/30">
+                  <MessageCircle size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-xl text-gray-900">
+                    {whatsAppGuest ? `Inviter ${whatsAppGuest.name}` : "Partager sur WhatsApp"}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    {whatsAppGuest
+                      ? (whatsAppGuest.phone ? `Numéro : ${whatsAppGuest.phone}` : "Sélectionnez le contact dans WhatsApp")
+                      : "Envoyez l'invitation à vos contacts ou dans un groupe"}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsWhatsAppModalOpen(false)}
+                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              
+              {/* Optional Phone Input */}
+              {whatsAppGuest && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    Numéro de téléphone du destinataire (optionnel)
+                  </label>
+                  <input
+                    type="tel"
+                    value={waPhoneInput}
+                    onChange={(e) => setWaPhoneInput(e.target.value)}
+                    placeholder="Ex: +225 07 00 00 00 00 ou 06 12 34 56 78"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] transition-colors"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Avec l'indicatif pays, WhatsApp s'ouvrira directement sur la discussion avec cet invité.
+                  </p>
+                </div>
+              )}
+
+              {/* Tone / Template Selector */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                  Style du message
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWaTone("chaleureux")}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                      waTone === "chaleureux"
+                        ? "bg-[#25D366]/10 border-[#25D366] text-[#128C7E]"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    ✨ Chaleureux
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWaTone("prestige")}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                      waTone === "prestige"
+                        ? "bg-[#b8924a]/10 border-[#b8924a] text-[#8f6f33]"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    🎩 Prestige
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWaTone("court")}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                      waTone === "court"
+                        ? "bg-black text-white border-black"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    ⚡ Express
+                  </button>
+                </div>
+              </div>
+
+              {/* Message Live Preview */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Aperçu du message WhatsApp
+                  </label>
+                  <span className="text-[11px] text-gray-400">Prêt à envoyer</span>
+                </div>
+                <div className="p-4 bg-[#EFEAE2] rounded-2xl border border-gray-200/80 shadow-inner text-sm font-sans text-gray-800 whitespace-pre-line leading-relaxed">
+                  <div className="bg-white p-3.5 rounded-xl shadow-sm border border-black/5 text-gray-800">
+                    {generateWhatsAppMessage(whatsAppGuest?.name, waTone)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Information Reassurance */}
+              <div className="bg-green-50 border border-green-200/60 rounded-xl p-3 flex items-start gap-2.5 text-xs text-green-900">
+                <span className="text-base leading-none">💡</span>
+                <p>
+                  <strong>Envoi direct &amp; sécurisé :</strong> Le message est envoyé depuis votre propre compte WhatsApp. Vos invités reconnaissent votre numéro en toute confiance.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={handleCopyWhatsAppText}
+                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                {waCopied ? (
+                  <>
+                    <CheckCircle size={16} className="text-green-600" />
+                    <span className="text-green-600">Texte copié !</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} />
+                    <span>Copier le texte</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDirectSendWhatsApp}
+                className="flex-1 py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#25D366]/30 flex items-center justify-center gap-2"
+              >
+                <MessageCircle size={18} />
+                <span>Ouvrir WhatsApp</span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}

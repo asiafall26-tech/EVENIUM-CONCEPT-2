@@ -2,22 +2,90 @@
 
 import { FileText, CalendarCheck, Clock, CheckCircle, ChevronDown, Plus, MoreHorizontal, MapPin, Star, BadgeCheck, Edit2, X } from "lucide-react";
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { usePrestataires } from "@/store/PrestataireContext";
+import { createClient } from "@/utils/supabase/client";
 
 export default function PrestataireDashboardPage() {
-  const { demandes } = usePrestataires();
+  const [userName, setUserName] = useState("Prestataire");
+  const [demandes, setDemandes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newDemande, setNewDemande] = useState({ client: "", type: "Mariage", date: "", budget: "" });
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Fetch profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        if (profile?.full_name) {
+          setUserName(profile.full_name);
+        } else if (user.user_metadata?.full_name) {
+          setUserName(user.user_metadata.full_name);
+        } else if (user.email) {
+          setUserName(user.email.split('@')[0]);
+        }
+
+        // Fetch real demandes_devis for this provider ONLY
+        const { data: realDemandes } = await supabase
+          .from('demandes_devis')
+          .select('*, events(name, type, date, location, client_id)')
+          .eq('prestataire_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (realDemandes && realDemandes.length > 0) {
+          const formattedDemandes = realDemandes.map((d: any) => ({
+            id: d.id,
+            clientName: d.client_name || d.events?.name || 'Client',
+            eventType: d.event_type || d.events?.type || 'Événement',
+            eventDate: d.event_date || (d.events?.date ? new Date(d.events.date).toLocaleDateString('fr-FR') : 'Date à définir'),
+            budget: Number(d.budget_indicatif || d.budget_propose || 0),
+            status: d.status || 'Nouvelle'
+          }));
+          setDemandes(formattedDemandes);
+        } else {
+          setDemandes([]);
+        }
+      } else {
+        setDemandes([]);
+      }
+      setLoading(false);
+    };
+    fetchData();
+
+    let channel: any;
+    
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase.channel('prestataire_dashboard_sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'demandes_devis', filter: `prestataire_id=eq.${user.id}` }, () => {
+          fetchData();
+        })
+        .subscribe();
+    };
+
+    setupRealtime();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
 
   const stats = useMemo(() => {
     const total = demandes.length;
-    const nouvelles = demandes.filter(d => d.status === "Nouvelle demande").length;
+    const nouvelles = demandes.filter(d => d.status === "Nouvelle" || d.status === "Nouvelle demande" || d.status === "En attente" || d.status === "À traiter").length;
     const discussion = demandes.filter(d => d.status === "En discussion").length;
-    const devis = demandes.filter(d => d.status === "Devis envoyé").length;
-    const confirmees = demandes.filter(d => d.status === "Confirmé").length;
-    const realisees = demandes.filter(d => d.status === "Réalisé").length;
+    const devis = demandes.filter(d => d.status === "Devis envoyé" || d.status === "Devis en préparation").length;
+    const confirmees = demandes.filter(d => d.status === "Confirmé" || d.status === "Accepté").length;
+    const realisees = demandes.filter(d => d.status === "Réalisé" || d.status === "Terminé").length;
 
     const calcPct = (count: number) => total > 0 ? Math.round((count / total) * 100) : 0;
 
@@ -33,40 +101,27 @@ export default function PrestataireDashboardPage() {
 
   const getStatusStyle = (status: string) => {
     switch(status) {
-      case "Nouvelle demande": return "bg-[#FFF8E1] text-[#F57F17]";
+      case "Nouvelle":
+      case "Nouvelle demande":
+      case "En attente":
+      case "À traiter":
+        return "bg-[#FFF8E1] text-[#F57F17]";
       case "En discussion": return "bg-[#E3F2FD] text-[#1976D2]";
-      case "Devis envoyé": return "bg-[#F3E5F5] text-[#7B1FA2]";
-      case "Confirmé": return "bg-[#E8F5E9] text-[#2E7D32]";
-      case "Réalisé": return "bg-gray-100 text-[#607D8B]";
+      case "Devis envoyé":
+      case "Devis en préparation":
+        return "bg-[#F3E5F5] text-[#7B1FA2]";
+      case "Confirmé":
+      case "Accepté":
+        return "bg-[#E8F5E9] text-[#2E7D32]";
+      case "Réalisé":
+      case "Terminé":
+        return "bg-gray-100 text-[#607D8B]";
+      case "Refusé":
+      case "Annulé par le client":
+        return "bg-red-50 text-red-600";
       default: return "bg-gray-100 text-gray-600";
     }
   };
-
-  const handleAddDemande = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDemande.client || !newDemande.budget) return;
-    
-    const init = newDemande.client.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2) || "NC";
-    
-    setDemandes([{
-      id: Date.now(),
-      client: newDemande.client,
-      init,
-      type: newDemande.type,
-      date: newDemande.date || new Date().toLocaleDateString('fr-FR'),
-      budget: parseInt(newDemande.budget.replace(/\D/g, '')) || 0,
-      status: "Nouvelle demande"
-    }, ...demandes]);
-    
-    setIsAddModalOpen(false);
-    setNewDemande({ client: "", type: "Mariage", date: "", budget: "" });
-  };
-
-  const messages = [
-    { init: "AD", name: "Amina Diop", time: "10:24", msg: "Bonjour, pouvez-vous me faire une pro...", unread: false },
-    { init: "MK", name: "Moussa Kane", time: "Hier", msg: "Merci pour votre devis, c'est parfait !", unread: true },
-    { init: "SF", name: "Sophie Fall", time: "Hier", msg: "Pouvez-vous proposer un menu végéta...", unread: false },
-  ];
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount) + " FCFA";
@@ -74,26 +129,32 @@ export default function PrestataireDashboardPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
-            Bonjour, Saveurs d'Afrique <span>👋</span>
-          </h1>
-          <p className="text-gray-500 text-sm">Voici un aperçu de votre activité sur Evenium.</p>
+      {/* BANNER PRESTATAIRE */}
+      <div className="relative flex flex-col md:flex-row items-center justify-between bg-gradient-to-r from-[#F9F3E9] to-[#fbf7f0] p-6 md:p-0 rounded-3xl border border-[#e4d8c4]/50 shadow-sm overflow-hidden h-[340px] mb-8">
+        
+        {/* Left Side: Image container safely containing the woman without cropping */}
+        <div className="relative w-full md:w-[55%] h-[200px] md:h-full flex-shrink-0 order-2 md:order-1 flex items-end justify-start">
+          <img 
+            src="/images/welcome-banner-prestataire.jpg" 
+            alt="Bienvenue sur Evenium" 
+            className="w-full h-full object-contain object-bottom md:object-left-bottom"
+          />
+          {/* Gradient to smooth out the right edge if image doesn't fill entirely */}
+          <div className="hidden md:block absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-[#fbf7f0] via-[#fbf7f0]/80 to-transparent pointer-events-none"></div>
         </div>
-        <div className="flex items-center gap-4">
-          <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-[#B8860B] hover:bg-[#996B00] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md shadow-[#B8860B]/20 transition-colors">
-            <Plus size={16} /> Nouvelle demande
-          </button>
-          <div className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm cursor-pointer shadow-sm hover:border-[#D4AF37]/50 transition-colors">
-            <CalendarCheck size={16} className="text-gray-500" />
-            <div className="text-left leading-tight">
-              <div className="text-[10px] text-gray-400 font-medium">Semaine du</div>
-              <div className="font-medium text-gray-800">15 - 21 sept. 2026</div>
-            </div>
-            <ChevronDown size={14} className="text-gray-400 ml-2" />
+        
+        {/* Right Side: Content */}
+        <div className="w-full md:w-[45%] z-10 flex flex-col justify-center items-center md:items-start text-center md:text-left order-1 md:order-2 md:pr-12 lg:pr-16 mt-4 md:mt-0">
+          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/90 backdrop-blur-sm border border-[#b8924a]/40 text-[#8f6f33] text-sm font-black rounded-full mb-4 shadow-md uppercase tracking-[0.15em] transform hover:scale-105 transition-transform">
+            Bienvenue !
           </div>
+          <h1 className="font-serif text-2xl md:text-3xl font-black text-gray-900 mb-4 leading-tight truncate w-full max-w-[280px] md:max-w-[400px]">
+            Bonjour, <br className="hidden md:block" />
+            <span className="text-[#8f6f33]">{userName}</span> 👋
+          </h1>
+          <p className="text-gray-600 text-sm md:text-base font-medium mb-2 max-w-md">
+            Faites rayonner votre savoir-faire, rencontrez de nouveaux clients et transformez vos talents en opportunités.
+          </p>
         </div>
       </div>
 
@@ -148,7 +209,7 @@ export default function PrestataireDashboardPage() {
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-semibold text-lg text-black">Dernières demandes</h2>
-            <button className="text-sm font-medium text-[#B8860B] flex items-center gap-1 hover:underline">Voir toutes &rarr;</button>
+            <Link href="/prestataire/demandes" className="text-sm font-medium text-[#8f6f33] flex items-center gap-1 hover:underline">Voir toutes &rarr;</Link>
           </div>
           
           <div className="overflow-x-auto flex-1">
@@ -164,27 +225,59 @@ export default function PrestataireDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {demandes.slice(0, 5).map((d) => (
-                  <tr key={d.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 font-medium text-gray-800 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
-                        {d.clientName ? d.clientName.substring(0, 2).toUpperCase() : 'C'}
+                {demandes.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 px-6 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-md mx-auto text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-[#FDF9F0] border border-[#e4d8c4] flex items-center justify-center text-[#8f6f33] mb-3 shadow-sm">
+                          <FileText size={24} />
+                        </div>
+                        <h4 className="font-serif text-base font-bold text-gray-900 mb-1">
+                          Aucune demande pour le moment
+                        </h4>
+                        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                          Vos demandes de devis et sollicitations d&apos;organisateurs apparaîtront ici en direct dès qu&apos;un client vous contacte.
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <Link 
+                            href="/prestataire/catalogue" 
+                            className="px-4 py-2 bg-black text-white rounded-full text-xs font-semibold hover:bg-[#b8924a] hover:text-black transition-all shadow-sm"
+                          >
+                            Ajouter une offre
+                          </Link>
+                          <Link 
+                            href="/prestataire/profil" 
+                            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-full text-xs font-semibold hover:bg-gray-50 transition-all"
+                          >
+                            Mon profil
+                          </Link>
+                        </div>
                       </div>
-                      {d.clientName}
-                    </td>
-                    <td className="py-4 text-gray-600">{d.eventType}</td>
-                    <td className="py-4 text-gray-500">{d.eventDate}</td>
-                    <td className="py-4 font-medium text-gray-800">{formatMoney(d.budget)}</td>
-                    <td className="py-4">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${getStatusStyle(d.status)}`}>
-                        {d.status}
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <button className="px-3 py-1 text-xs font-semibold text-[#B8860B] border border-[#B8860B]/30 rounded hover:bg-[#F9F5EC] transition-colors">Voir</button>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  demandes.slice(0, 5).map((d) => (
+                    <tr key={d.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="py-4 font-medium text-gray-800 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                          {d.clientName ? d.clientName.substring(0, 2).toUpperCase() : 'C'}
+                        </div>
+                        {d.clientName}
+                      </td>
+                      <td className="py-4 text-gray-600">{d.eventType}</td>
+                      <td className="py-4 text-gray-500">{d.eventDate}</td>
+                      <td className="py-4 font-medium text-gray-800">{formatMoney(d.budget)}</td>
+                      <td className="py-4">
+                        <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${getStatusStyle(d.status)}`}>
+                          {d.status}
+                        </span>
+                      </td>
+                      <td className="py-4 text-right">
+                        <Link href="/prestataire/demandes" className="px-3 py-1 text-xs font-semibold text-[#8f6f33] border border-[#8f6f33]/30 rounded hover:bg-[#f5eee1] transition-colors inline-block">Voir</Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -211,8 +304,11 @@ export default function PrestataireDashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="w-40 h-40 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                <span className="text-sm text-gray-400">Aucune donnée</span>
+              <div className="relative w-40 h-40 rounded-full border-4 border-dashed border-gray-200 flex items-center justify-center shrink-0 mb-6">
+                <div className="w-28 h-28 bg-gray-50/50 rounded-full flex flex-col items-center justify-center">
+                  <span className="text-3xl font-bold text-gray-400">0</span>
+                  <span className="text-[11px] text-gray-400 font-medium uppercase mt-1 tracking-wider">Demande</span>
+                </div>
               </div>
             )}
             
@@ -237,67 +333,6 @@ export default function PrestataireDashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Modal d'ajout */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="font-bold text-lg text-gray-900">Nouvelle demande simulée</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-black transition-colors bg-white rounded-full p-1.5 shadow-sm border border-gray-200">
-                <X size={18} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddDemande} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom du client</label>
-                <input 
-                  type="text" required
-                  placeholder="Ex: Babacar Ndiaye" 
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#D4AF37]/50 outline-none"
-                  value={newDemande.client} onChange={e => setNewDemande({...newDemande, client: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Type d'événement</label>
-                <select 
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#D4AF37]/50 outline-none"
-                  value={newDemande.type} onChange={e => setNewDemande({...newDemande, type: e.target.value})}
-                >
-                  <option value="Mariage">Mariage</option>
-                  <option value="Anniversaire">Anniversaire</option>
-                  <option value="Baptême">Baptême</option>
-                  <option value="Séminaire">Séminaire d'entreprise</option>
-                  <option value="Soirée de Gala">Soirée de Gala</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Date prévue</label>
-                  <input 
-                    type="date" required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#D4AF37]/50 outline-none"
-                    value={newDemande.date} onChange={e => setNewDemande({...newDemande, date: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Budget estimé (FCFA)</label>
-                  <input 
-                    type="number" required min="0" step="10000"
-                    placeholder="500000" 
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#D4AF37]/50 outline-none font-mono"
-                    value={newDemande.budget} onChange={e => setNewDemande({...newDemande, budget: e.target.value})}
-                  />
-                </div>
-              </div>
-              <button type="submit" className="w-full py-3 mt-4 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors shadow-lg">
-                Ajouter la demande
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

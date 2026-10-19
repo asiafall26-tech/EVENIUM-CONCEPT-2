@@ -44,25 +44,25 @@ export default function EventSettingsPage({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input type="text" defaultValue={event.date} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4AF37] outline-none" />
+                <input type="text" defaultValue={event.date} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b8924a] outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Lieu</label>
-                <input type="text" defaultValue={event.location} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4AF37] outline-none" />
+                <input type="text" defaultValue={event.location} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b8924a] outline-none" />
               </div>
             </div>
           </section>
 
           <section className="pt-6 border-t border-gray-100">
             <h2 className="text-lg font-semibold mb-4 text-black">Abonnement actuel</h2>
-            <div className="bg-[#F9F5EC] border border-[#D4AF37]/30 rounded-xl p-4 flex justify-between items-center">
+            <div className="bg-[#f5eee1] border border-[#b8924a]/30 rounded-xl p-4 flex justify-between items-center">
               <div>
-                <p className="font-semibold text-[#B8860B]">Formule {event.plan}</p>
+                <p className="font-semibold text-[#8f6f33]">Formule {event.plan}</p>
                 <p className="text-sm text-gray-600">Facturé annuellement. Renouvellement le 12 Dec 2026.</p>
               </div>
               <button 
                 onClick={() => alert("Votre demande de changement de formule a bien été envoyée aux administrateurs. Nous vous recontacterons très vite !")}
-                className="text-sm font-medium text-[#B8860B] bg-white px-4 py-2 rounded-lg border border-[#D4AF37]/30 hover:bg-[#D4AF37]/10 transition-colors"
+                className="text-sm font-medium text-[#8f6f33] bg-white px-4 py-2 rounded-lg border border-[#b8924a]/30 hover:bg-[#b8924a]/10 transition-colors"
               >
                 Demander un changement
               </button>
