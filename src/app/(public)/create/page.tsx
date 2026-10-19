@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import EventQRCode from '@/components/ui/EventQRCode';
+import { EVENT_TYPES, type EventTypeName } from '@/lib/eventTypes';
 
 // Full Studio components
 import VeloursStudio from '@/components/invitations/velours/VeloursStudio';
@@ -113,13 +114,34 @@ const CATALOG_MODELS: ModelItem[] = [
 ];
 
 // Types d'événements
-const EVENT_CATEGORIES = [
-  { id: "Mariage", label: "Mariage", icon: "💍", desc: "Mariage civil, religieux, réceptions", count: 4 },
-  { id: "Tous", label: "Tous les modèles", icon: "✨", desc: "Voir l'ensemble de la collection", count: 4 },
-  { id: "Henné", label: "Henné & Fiançailles", icon: "🌿", desc: "Cérémonies traditionnelles", isSoon: true },
-  { id: "Baptême", label: "Baptême & Naissance", icon: "👶", desc: "Célébrations de naissance", isSoon: true },
-  { id: "Anniversaire", label: "Anniversaire", icon: "🎂", desc: "Fêtes et moments précieux", isSoon: true },
-  { id: "Gala", label: "Gala & Soirée", icon: "🥂", desc: "Soirées privées et réceptions", isSoon: true }
+// Icônes des types d'événements (liste complète : src/lib/eventTypes.ts)
+const EVENT_ICONS: Record<EventTypeName, string> = {
+  "Mariage": "💍",
+  "Baptême": "👶",
+  "Henné time": "🌿",
+  "Baby shower": "🍼",
+  "Fiançailles": "💐",
+  "Enterrement de vie de jeune fille": "👑",
+  "Anniversaire": "🎂",
+  "Gala": "🥂",
+  "Soirée": "🌙",
+  "Conférence": "🎤",
+  "Réception": "🍾",
+  "Dîner": "🍽️",
+  "Brunch": "🥐",
+  "Yendou": "🪘",
+};
+
+// L'id est le type enregistré sur l'événement ; « Bientôt » tant qu'aucun modèle n'est compatible
+const EVENT_CATEGORIES: { id: string; label: string; icon: string; isSoon?: boolean }[] = [
+  { id: "Mariage", label: "Mariage", icon: EVENT_ICONS["Mariage"] },
+  { id: "Tous", label: "Tous les modèles", icon: "✨" },
+  ...EVENT_TYPES.filter((t) => t !== "Mariage").map((t) => ({
+    id: t,
+    label: t,
+    icon: EVENT_ICONS[t],
+    isSoon: !CATALOG_MODELS.some((m) => m.compatibleEvents.includes(t)),
+  })),
 ];
 
 function CreateExpressStudioContent() {
