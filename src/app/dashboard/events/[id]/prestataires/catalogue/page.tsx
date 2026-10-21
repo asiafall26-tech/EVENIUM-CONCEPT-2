@@ -11,7 +11,7 @@ import { PRESTATION_TYPES } from "@/lib/devis/categories";
 import { offerEventTypes, offerPrestations, offerTagLine } from "@/lib/offres";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
-import { COUNTRY_NAMES, WHOLE_COUNTRY, locationLabel, zonesOf } from "@/lib/zones";
+import { COUNTRIES, COUNTRY_NAMES, WHOLE_COUNTRY, locationLabel, zonesOf } from "@/lib/zones";
 
 const ALL_EVENTS = "Tous événements";
 
@@ -112,9 +112,20 @@ export default function CataloguePrestatairesPage({
   const knownPrestations = new Set<string>(prestataires.flatMap((p) => [...p.prestations, ...p.services.flatMap((s: any) => offerPrestations(s))]));
   const customPrestations = [...knownPrestations].filter((x) => !PRESTATION_TYPES.includes(x)).sort();
   const countries = [...new Set([...COUNTRY_NAMES.filter((c) => prestataires.some((p) => p.country === c)), ...prestataires.map((p) => p.country).filter(Boolean)])];
+  
+  // Extraction de toutes les zones disponibles (par pays si pays choisi, sinon l'ensemble des zones)
+  const allAvailableZones = [...new Set([
+    ...COUNTRIES.flatMap((c) => c.zones),
+    ...prestataires.flatMap((p) => p.zones).filter(Boolean)
+  ])].filter((z: string) => z !== WHOLE_COUNTRY).sort();
+
   const zones = countryFilter
-    ? [...new Set([...zonesOf(countryFilter), ...prestataires.filter((p) => p.country === countryFilter).flatMap((p) => p.zones).filter((z: string) => z !== WHOLE_COUNTRY)])]
-    : [];
+    ? [...new Set([
+        ...zonesOf(countryFilter),
+        ...prestataires.filter((p) => p.country === countryFilter).flatMap((p) => p.zones).filter((z: string) => z !== WHOLE_COUNTRY)
+      ])].sort()
+    : allAvailableZones;
+
   const activeFilters = [activeEventType, prestationFilter, countryFilter, zoneFilter].filter(Boolean).length;
 
   const filteredProviders = prestataires.filter((p) => {
@@ -127,8 +138,19 @@ export default function CataloguePrestatairesPage({
       p.services.some((s: any) => offerEventTypes(s).includes(activeEventType)) ||
       (eventTypeFilter === null && p.eventTypes.length === 0);
     const matchesPrestation = !prestationFilter || p.prestations.includes(prestationFilter) || p.services.some((s: any) => offerPrestations(s).includes(prestationFilter));
-    const matchesCountry = !countryFilter || p.country === countryFilter;
-    const matchesZone = !zoneFilter || p.zones.includes(zoneFilter) || p.zones.includes(WHOLE_COUNTRY);
+    
+    const matchesCountry =
+      !countryFilter ||
+      (p.country && p.country.toLowerCase() === countryFilter.toLowerCase()) ||
+      (p.zone && p.zone.toLowerCase().includes(countryFilter.toLowerCase()));
+
+    const targetZone = zoneFilter.toLowerCase().trim();
+    const matchesZone =
+      !zoneFilter ||
+      p.zones.some((z: string) => (z || "").toLowerCase() === targetZone || (z || "").toLowerCase() === WHOLE_COUNTRY.toLowerCase()) ||
+      (p.zone && (p.zone || "").toLowerCase().includes(targetZone)) ||
+      (p.address && (p.address || "").toLowerCase().includes(targetZone));
+
     return matchesSearch && matchesEvent && matchesPrestation && matchesCountry && matchesZone;
   });
 
@@ -208,8 +230,22 @@ export default function CataloguePrestatairesPage({
           </label>
           <label className="block">
             <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Zone d'intervention</span>
-            <select value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)} disabled={!countryFilter} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a] disabled:opacity-50">
-              <option value="">{countryFilter ? "Toutes les zones" : "Choisissez un pays"}</option>
+            <select
+              value={zoneFilter}
+              onChange={(e) => {
+                const val = e.target.value;
+                setZoneFilter(val);
+                // Si l'utilisateur choisit une zone sans avoir sélectionné de pays, déduire le pays automatiquement
+                if (val && !countryFilter) {
+                  const matchCountry = COUNTRIES.find((c) => c.zones.some((z) => z.toLowerCase() === val.toLowerCase()));
+                  if (matchCountry) {
+                    setCountryFilter(matchCountry.name);
+                  }
+                }
+              }}
+              className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
+            >
+              <option value="">{countryFilter ? `Toutes les zones (${countryFilter})` : "Toutes les zones"}</option>
               {zones.map((z) => <option key={z} value={z}>{z}</option>)}
             </select>
           </label>

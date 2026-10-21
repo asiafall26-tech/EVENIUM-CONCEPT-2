@@ -126,35 +126,239 @@ export default function InvitationsDashboardPage({
   const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
   const [waCopiedText, setWaCopiedText] = useState(false);
 
+  const formatEventDate = (dateStr?: string) => {
+    if (!dateStr || dateStr === "À définir") return "";
+    try {
+      const parsed = new Date(dateStr);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      }
+    } catch {}
+    return dateStr;
+  };
+
   const generateWhatsAppMessage = (tone: "chaleureux" | "prestige" | "court" = "chaleureux") => {
     const link = shareUrl;
-    const dateText = event.date ? ` le *${event.date}*` : "";
-    const locationText = event.location ? ` à *${event.location}*` : "";
+    const dateFormatted = formatEventDate(event.date);
+    const whenText = dateFormatted ? (event.time && event.time !== "À définir" ? `${dateFormatted} à ${event.time}` : dateFormatted) : "";
+    const whereText = event.location && event.location !== "À définir" ? event.location : "";
+    const type = (event.type || "").toLowerCase().trim();
 
-    if (tone === "prestige") {
-      return `🎩 *INVITATION OFFICIELLE*\n\n` +
+    // 1. Mariage, Fiançailles, Henné
+    if (type.includes("mariage") || type.includes("fiançaille") || type.includes("henné") || type.includes("henne")) {
+      if (tone === "prestige") {
+        return (
+          `⚜️ *INVITATION OFFICIELLE D'HONNEUR · UNION ROYALE* ⚜️\n\n` +
+          `Chers invités d'honneur,\n\n` +
+          `À l'occasion de la célébration des noces de :\n` +
+          `👑 *${event.name}*\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `🏛️ *${whereText}*\n` : "") +
+          `\nNous avons l'insigne privilège de solliciter l'honneur de votre présence pour célébrer cet instant solennel et mémorable.\n\n` +
+          `Veuillez accéder à votre faire-part scénarisé de haute couture digitale et enregistrer votre confirmation nominative :\n` +
+          `👉 ${link}\n\n` +
+          `Dans l'impatience de partager cette journée d'exception et de félicité à vos côtés.\n` +
+          `Avec nos sentiments les plus distingués. 🥂🤍`
+        );
+      }
+      if (tone === "court") {
+        return (
+          `💍 *ON SE DIT OUI ! · SAVE THE DATE* ✨\n\n` +
+          `Grande nouvelle : *${event.name}* approche à grands pas !\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `📍 *${whereText}*\n` : "") +
+          `\nRetrouvez tous les détails, le programme et votre carton interactif ici :\n` +
+          `👉 ${link}\n\n` +
+          `Merci de confirmer votre présence en 1 clic sur le lien pour que tout soit parfait. On a tellement hâte de vous retrouver ! 🎉🍾`
+        );
+      }
+      // Chaleureux
+      return (
+        `✨ *UNE HISTOIRE D'AMOUR S'ÉCRIT... ET VOUS EN FAITES PARTIE !* 💍\n\n` +
         `Bonjour !\n\n` +
-        `Vous êtes cordialement invité(e) à célébrer *${event.name}*${dateText}${locationText}.\n\n` +
-        `Veuillez découvrir votre carton d'invitation d'honneur et enregistrer votre confirmation de présence via ce lien :\n` +
+        `C'est le cœur rempli d'émotion et d'allégresse que nous vous convions à célébrer notre union :\n` +
+        `🕊️ *${event.name}*\n` +
+        (whenText ? `📅 *${whenText}*\n` : "") +
+        (whereText ? `📍 *${whereText}*\n` : "") +
+        `\nNous avons imaginé pour vous une invitation interactive d'exception. Découvrez notre univers, notre programme et partagez ce grand bonheur avec nous :\n` +
         `👉 ${link}\n\n` +
-        `Au plaisir de vous accueillir parmi nous.`;
+        `Merci de confirmer votre présence directement sur le lien. Votre sourire à nos côtés rendra cette journée inoubliable ! Avec toute notre tendresse 🤍🥂`
+      );
     }
 
+    // 2. Anniversaire
+    if (type.includes("anniversaire")) {
+      if (tone === "prestige") {
+        return (
+          `⚜️ *RÉCEPTION PRIVÉE · JUBILÉ D'EXCEPTION* 🥂\n\n` +
+          `Cher(e) invité(e) d'honneur,\n\n` +
+          `À l'occasion d'une célébration marquante et privilégiée, vous êtes convié(e) à la réception d'apparat donnée pour :\n` +
+          `✨ *${event.name}*\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `🏛️ *${whereText}*\n` : "") +
+          `\nAccédez à votre invitation interactive officielle et confirmez votre venue via le salon numérique dédié :\n` +
+          `👉 ${link}\n\n` +
+          `Dans la joie partagée de porter un toast à ce nouveau chapitre sous le signe du raffinement et de l'élégance.`
+        );
+      }
+      if (tone === "court") {
+        return (
+          `⚡ *IT'S PARTY TIME !* 🎂🥳\n\n` +
+          `C'est officiel : on se retrouve tous pour fêter *${event.name}* !\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `📍 *${whereText}*\n` : "") +
+          `\nVotre invitation interactive et le formulaire de réponse rapide sont juste ici :\n` +
+          `👉 ${link}\n\n` +
+          `Confirmez vite votre présence sur le lien, ambiance garantie ! 🍾🔥`
+        );
+      }
+      // Chaleureux
+      return (
+        `🎂 *UNE NOUVELLE BOUGIE, UNE FÊTE INOUBLIABLE !* ✨\n\n` +
+        `Bonjour !\n\n` +
+        `Parce que les plus beaux moments de la vie ne valent que s'ils sont partagés avec les personnes chères, je vous invite chaleureusement à célébrer :\n` +
+        `🎉 *${event.name}*\n` +
+        (whenText ? `📅 *${whenText}*\n` : "") +
+        (whereText ? `📍 *${whereText}*\n` : "") +
+        `\nOuvrez votre invitation interactive pour plonger dans l'ambiance et découvrir toutes les surprises qui vous attendent :\n` +
+        `👉 ${link}\n\n` +
+        `Confirmez votre présence en quelques secondes sur le lien. Préparez vos plus beaux sourires, nous allons créer des souvenirs inoubliables ! 🥳🥂`
+      );
+    }
+
+    // 3. Baptême, Baby shower, Naissance
+    if (type.includes("baptême") || type.includes("bapteme") || type.includes("baby") || type.includes("naissance")) {
+      if (tone === "prestige") {
+        return (
+          `🕊️ *SOLENNITÉ & BÉNÉDICTION FAMILIALE* ⚜️\n\n` +
+          `Chers proches et amis précieux,\n\n` +
+          `La famille a l'insigne honneur de solliciter votre présence bienveillante à la cérémonie et réception en l'honneur de :\n` +
+          `🌿 *${event.name}*\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `🏛️ *${whereText}*\n` : "") +
+          `\nVeuillez consulter votre carton officiel d'honneur et renseigner la confirmation de votre maisonnée :\n` +
+          `👉 ${link}\n\n` +
+          `Que cette journée bénie rassemble nos cœurs dans la paix, la gratitude et la joie la plus pure. 🤍`
+        );
+      }
+      if (tone === "court") {
+        return (
+          `🍼 *CÉLÉBRATION EN FAMILLE !* ✨👶\n\n` +
+          `Nous avons hâte de vous retrouver pour fêter *${event.name}* !\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `📍 *${whereText}*\n` : "") +
+          `\nTous les détails et la confirmation en ligne rapide sont ici :\n` +
+          `👉 ${link}\n\n` +
+          `Merci de valider votre présence en un clin d'œil. À très bientôt pour ce moment de pur bonheur ! 🤍🎉`
+        );
+      }
+      // Chaleureux
+      return (
+        `🕊️ *UN PETIT TRÉSOR, UNE BÉNÉDICTION IMMENSE !* 🌸\n\n` +
+        `Bonjour !\n\n` +
+        `Une nouvelle étoile illumine nos vies. C'est avec une tendresse infinie que nous vous invitons à entourer notre trésor pour :\n` +
+        `✨ *${event.name}*\n` +
+        (whenText ? `📅 *${whenText}*\n` : "") +
+        (whereText ? `📍 *${whereText}*\n` : "") +
+        `\nDécouvrez votre invitation interactive délicatement personnalisée et confirmez votre venue en un instant :\n` +
+        `👉 ${link}\n\n` +
+        `Votre présence, vos sourires et vos prières à nos côtés sont notre plus doux cadeau. Avec tout notre amour 🤍🍼`
+      );
+    }
+
+    // 4. Gala, Soirée, Dîner, Réception, Brunch, Yendou, EVJF
+    if (
+      type.includes("gala") ||
+      type.includes("soirée") ||
+      type.includes("soiree") ||
+      type.includes("dîner") ||
+      type.includes("diner") ||
+      type.includes("réception") ||
+      type.includes("reception") ||
+      type.includes("brunch") ||
+      type.includes("yendou") ||
+      type.includes("jeune fille")
+    ) {
+      if (tone === "prestige") {
+        return (
+          `⚜️ *SOIRÉE DE PRESTIGE & RÉCEPTION PRIVÉE* 🎩✨\n\n` +
+          `Chers invités d'exception,\n\n` +
+          `Nous avons le plaisir exclusif de solliciter votre distinction pour la prestigieuse réception :\n` +
+          `🌟 *${event.name}*\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `🏛️ *${whereText}*\n` : "") +
+          `\nAccédez à votre invitation d'apparat et validez votre accréditation nominative via ce portail sécurisé :\n` +
+          `👉 ${link}\n\n` +
+          `Nous nous réjouissons d'ores et déjà de l'éclat de votre présence parmi nos convives d'honneur. Tenue de circonstance recommandée.`
+        );
+      }
+      if (tone === "court") {
+        return (
+          `⚡ *SAVE THE DATE · RENDEZ-VOUS EXCLUSIF !* 🍾✨\n\n` +
+          `C'est l'événement à ne pas rater : *${event.name}* !\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `📍 *${whereText}*\n` : "") +
+          `\nProgramme, lieu et confirmation express sur ce lien :\n` +
+          `👉 ${link}\n\n` +
+          `Bloquez votre date et confirmez en 1 clic. À très vite pour fêter ça ! 🎉🥂`
+        );
+      }
+      // Chaleureux
+      return (
+        `🥂 *L'ART DE SE RETROUVER · UN MOMENT DE PURE CONVIVIALITÉ* ✨\n\n` +
+        `Bonjour !\n\n` +
+        `Rien n'est plus beau qu'une fête réussie entourée des personnes qui comptent. Nous vous convions chaleureusement à :\n` +
+        `✨ *${event.name}*\n` +
+        (whenText ? `📅 *${whenText}*\n` : "") +
+        (whereText ? `📍 *${whereText}*\n` : "") +
+        `\nDécouvrez l'ambiance, les surprises et réservez votre place sur votre invitation interactive :\n` +
+        `👉 ${link}\n\n` +
+        `Confirmez votre présence sur le lien en quelques secondes. Hâte de trinquer ensemble ! 🍾🥂`
+      );
+    }
+
+    // 5. Conférence, Séminaire, Corporate ou Autre par défaut
+    if (tone === "prestige") {
+      return (
+        `⚜️ *INVITATION OFFICIELLE PROTOCOLAIRE* ⚜️\n\n` +
+        `Madame, Monsieur,\n\n` +
+        `Nous avons l'honneur de vous convier à l'événement de distinction :\n` +
+        `🏛️ *${event.name}*\n` +
+        (whenText ? `📅 *${whenText}*\n` : "") +
+        (whereText ? `📍 *${whereText}*\n` : "") +
+        `\nVeuillez consulter votre carton officiel et enregistrer votre présence via le lien interactif sécurisé :\n` +
+        `👉 ${link}\n\n` +
+        `Dans l'attente de vous accueillir parmi nos hôtes d'honneur, nous vous prions d'agréer nos salutations les plus distinguées.`
+      );
+    }
     if (tone === "court") {
-      return `✨ *Invitation - ${event.name}*\n\n` +
-        `Bonjour !\n` +
-        `Voici le lien de votre invitation interactive pour le ${event.date || "jour J"} :\n` +
+      return (
+        `⚡ *INVITATION · ${event.name.toUpperCase()}* ✨\n\n` +
+        `Bonjour ! Votre invitation interactive pour *${event.name}* est en ligne :\n` +
+        (whenText ? `📅 *${whenText}*\n` : "") +
+        (whereText ? `📍 *${whereText}*\n` : "") +
+        `\nConsultez tous les détails et confirmez votre présence en 1 clic :\n` +
         `👉 ${link}\n\n` +
-        `Merci de confirmer votre présence directement sur le lien. À très vite ! 🎉`;
+        `Merci pour votre réponse rapide et à très bientôt ! 🎉`
+      );
     }
-
     // Chaleureux par défaut
-    return `✨ *VOUS ÊTES INVITÉ(E) !* ✨\n\n` +
+    return (
+      `✨ *VOUS ÊTES CORDIALEMENT INVITÉ(E) !* ✨\n\n` +
       `Bonjour !\n\n` +
-      `Nous avons l'immense joie de vous convier à célébrer *${event.name}*${dateText}${locationText} !\n\n` +
-      `Découvrez votre invitation interactive et confirmez votre présence en quelques secondes ici :\n` +
+      `Nous avons l'immense joie de vous convier à partager un événement unique et marquant :\n` +
+      `🌟 *${event.name}*\n` +
+      (whenText ? `📅 *${whenText}*\n` : "") +
+      (whereText ? `📍 *${whereText}*\n` : "") +
+      `\nDécouvrez votre invitation interactive scénarisée et confirmez votre venue en toute simplicité :\n` +
       `👉 ${link}\n\n` +
-      `Nous avons hâte de partager ce moment inoubliable avec vous ! 🎉🥂`;
+      `Votre présence à nos côtés sera un véritable privilège. Au plaisir de vous accueillir ! 🎉🥂`
+    );
   };
 
   const handleCopyFullMessage = () => {
@@ -232,17 +436,9 @@ export default function InvitationsDashboardPage({
       </div>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2">L'Invitation - {event.name}</h1>
-          <p className="text-gray-500 text-sm">Votre invitation est prête. Partagez le lien avec vos invités.</p>
-        </div>
-        <button 
-          onClick={() => setIsShareModalOpen(true)}
-          className="flex items-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-lg shadow-[#25D366]/30 transition-colors"
-        >
-          <MessageCircle size={18} /> Partager sur WhatsApp
-        </button>
+      <div className="mb-8">
+        <h1 className="font-serif text-3xl font-bold text-black mb-2">L'Invitation - {event.name}</h1>
+        <p className="text-gray-500 text-sm">Votre invitation est prête. Partagez le lien avec vos invités.</p>
       </div>
 
       {/* Purchased Invitation Model */}
@@ -313,7 +509,7 @@ export default function InvitationsDashboardPage({
               onClick={() => window.open(shareUrl, '_blank')}
               className="bg-black hover:bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-black/10"
             >
-              <Eye size={18} /> Voir le mini-site
+              <Eye size={18} /> Voir l&apos;invitation en direct
             </button>
             {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
               <button
@@ -393,25 +589,15 @@ export default function InvitationsDashboardPage({
             </div>
 
             {/* Bouton Partager WhatsApp direct */}
-            <div className="pt-2 flex flex-wrap gap-3">
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={() => setIsShareModalOpen(true)}
-                className="py-3 px-5 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-[#25D366]/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="py-3 px-6 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-[#25D366]/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                <MessageCircle size={17} />
-                <span>Partager le message WhatsApp</span>
+                <MessageCircle size={18} />
+                <span>Partager sur WhatsApp</span>
               </button>
-              
-              <a
-                href={shareUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-3 px-5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all"
-              >
-                <Eye size={17} className="text-[#d4af37]" />
-                <span>Tester l&apos;invitation en direct</span>
-              </a>
             </div>
           </div>
 
