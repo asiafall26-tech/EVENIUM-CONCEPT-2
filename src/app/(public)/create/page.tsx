@@ -1001,22 +1001,6 @@ function CreateExpressStudioContent() {
                     </div>
                   </div>
 
-                  {/* Bouton majeur en tête : Accès au Dashboard */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsCheckoutModalOpen(false);
-                      const targetId = standardSuccessEvent.id;
-                      setStandardSuccessEvent(null);
-                      window.location.href = `/dashboard/events/${targetId}`;
-                    }}
-                    className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-sm sm:text-base shadow-xl shadow-[#b8924a]/25 hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2.5 border border-[#b8924a]/60 cursor-pointer"
-                  >
-                    <LayoutDashboard size={18} />
-                    <span>Accéder à mon Dashboard Organisateur</span>
-                    <ArrowRight size={16} />
-                  </button>
-
                   {/* Le lien officiel */}
                   <div className="pt-1">
                     <label className="block text-[11px] font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
