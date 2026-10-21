@@ -101,6 +101,9 @@ export function NotificationProvider() {
 
   // Initial load, refresh on sign-in/out and when the tab comes back to the foreground
   useEffect(() => {
+    const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/prestataire') || pathname.startsWith('/admin');
+    if (!isPrivate) return;
+
     refresh();
     const onFocus = () => refresh();
     window.addEventListener('focus', onFocus);
@@ -109,7 +112,7 @@ export function NotificationProvider() {
       window.removeEventListener('focus', onFocus);
       auth.subscription.unsubscribe();
     };
-  }, [supabase, refresh]);
+  }, [supabase, refresh, pathname]);
 
   useEffect(() => {
     if (!userId) return;

@@ -24,6 +24,14 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
   const fetchEvents = async () => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (!p.startsWith('/dashboard') && !p.startsWith('/admin')) {
+        setIsLoaded(true);
+        return;
+      }
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setEvents([]);

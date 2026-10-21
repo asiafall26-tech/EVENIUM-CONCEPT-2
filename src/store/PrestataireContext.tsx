@@ -99,6 +99,13 @@ export function PrestataireProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initData = async () => {
+      if (typeof window !== 'undefined') {
+        const p = window.location.pathname;
+        if (!p.startsWith('/prestataire') && !p.startsWith('/dashboard') && !p.startsWith('/admin')) {
+          setIsLoaded(true);
+          return;
+        }
+      }
       await fetchPrestataires();
       await fetchDemandes();
       setIsLoaded(true);
