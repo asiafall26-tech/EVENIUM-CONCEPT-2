@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, ArrowLeft, CheckCircle2, Home, Crown, Lock } from "lucide-react";
+import { Sparkles, ArrowLeft, CheckCircle2, Crown, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
@@ -73,27 +73,8 @@ export default function InvitationEndCta({
   };
 
   return (
-    <>
-      {/* Floating return shortcut for standalone visitor convenience (only on public demo routes, not in /create) */}
-      {!isCreate && (
-        <div className="fixed top-4 left-4 z-40 pointer-events-auto">
-          <Link
-            href="/"
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md shadow-lg transition-all active:scale-95 border ${
-              isDark
-                ? "bg-black/60 hover:bg-black/85 text-white/90 border-white/15 hover:border-[#D4AF37]/50"
-                : "bg-white/80 hover:bg-white text-gray-900 border-black/10 hover:border-[#D4AF37]/60"
-            }`}
-            title="Retourner à l'accueil"
-          >
-            <Home size={13} className="text-[#D4AF37]" />
-            <span>Accueil</span>
-          </Link>
-        </div>
-      )}
-
-      {/* Luxury End of Invitation CTA block */}
-      <section
+    /* Luxury End of Invitation CTA block */
+    <section
         className={`w-full py-12 sm:py-16 px-3 sm:px-6 text-center transition-all relative z-10 ${
           isDark
             ? "bg-gradient-to-b from-transparent via-black/60 to-black/90 text-white border-t border-[#D4AF37]/25"
@@ -230,6 +211,5 @@ export default function InvitationEndCta({
           </div>
         </div>
       </section>
-    </>
   );
 }
