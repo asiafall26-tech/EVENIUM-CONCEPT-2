@@ -34,10 +34,6 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   const { pathname, search } = request.nextUrl
 
   const isProtectedRoute =
@@ -45,11 +41,21 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/prestataire') ||
     pathname.startsWith('/admin')
 
-  if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('redirectTo', `${pathname}${search}`)
-    return NextResponse.redirect(url)
+  // Only query Supabase auth in middleware if accessing a protected route
+  // or if an active auth cookie is present that needs session refreshing.
+  const hasAuthCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-'))
+
+  if (isProtectedRoute || hasAuthCookie) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user && isProtectedRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('redirectTo', `${pathname}${search}`)
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
