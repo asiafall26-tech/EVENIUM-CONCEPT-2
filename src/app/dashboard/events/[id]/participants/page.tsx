@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Plus, Search, MoreHorizontal, Mail, CheckCircle, Clock, XCircle, ChevronDown, ArrowRight, Edit2, Trash2, X, FileText, User, MessageCircle, Copy, Share2, Sparkles, Send, Lock } from "lucide-react";
+import { Users, Plus, Search, MoreHorizontal, Mail, CheckCircle, Clock, XCircle, ChevronDown, ArrowRight, Edit2, Trash2, X, FileText, User, MessageCircle, Copy, Share2, Sparkles, Send, Lock, Bell } from "lucide-react";
 import Link from "next/link";
 import { use, useState, useEffect, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
@@ -283,7 +283,84 @@ export default function ParticipantsDashboardPage({
     setIsModalOpen(false);
   };
 
-  const [isRelancing, setIsRelancing] = useState(false);
+  // Relance Modal States
+  const [isRelanceModalOpen, setIsRelanceModalOpen] = useState(false);
+  const [relanceGuest, setRelanceGuest] = useState<{ id?: string; name: string; phone?: string; email?: string } | null>(null);
+  const [relanceTone, setRelanceTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
+  const [relanceCopied, setRelanceCopied] = useState(false);
+  const [isSendingRelanceEmail, setIsSendingRelanceEmail] = useState(false);
+  const [relanceNotification, setRelanceNotification] = useState<string | null>(null);
+
+  const pendingGuests = useMemo(() => {
+    return participants.filter(p => p.status === "En attente");
+  }, [participants]);
+
+  const generateRelanceMessage = (guestName?: string, tone: "chaleureux" | "prestige" | "court" = "chaleureux") => {
+    const link = getShareUrl();
+    const greeting = guestName ? `Bonjour ${guestName} !` : "Bonjour !";
+    const dateText = event.date ? ` prévu le *${event.date}*` : "";
+
+    if (tone === "prestige") {
+      return (
+        `⚜️ *RAPPEL DISTINGUÉ · ${event.name.toUpperCase()}*\n\n` +
+        `${greeting}\n\n` +
+        `À l'approche de la prestigieuse réception *${event.name}*${dateText}, nous serions particulièrement honorés de vous compter parmi nos invités de marque.\n\n` +
+        `Afin de nous permettre de parfaire notre organisation et vos cartons d'honneur, nous vous remercions de bien vouloir confirmer votre présence via ce lien sécurisé :\n` +
+        `👉 ${link}\n\n` +
+        `Dans l'attente du plaisir de vous compter parmi nous.`
+      );
+    }
+
+    if (tone === "court") {
+      return (
+        `⚡ *RAPPEL EXPRESS · ${event.name.toUpperCase()}* 🥂\n\n` +
+        `${greeting}\n` +
+        `Petit rappel amical : nous finalisons la liste des convives pour *${event.name}*${dateText}.\n` +
+        `Merci de confirmer ta présence en 1 clic ici :\n` +
+        `👉 ${link}\n\n` +
+        `À très vite ! 🎉`
+      );
+    }
+
+    // Chaleureux par défaut
+    return (
+      `✨ *PETIT RAPPEL AMICAL · ${event.name}* ✨\n\n` +
+      `${greeting}\n\n` +
+      `Nous sommes en plein dans les préparatifs de *${event.name}*${dateText} et nous serions tellement heureux de t'avoir à nos côtés pour faire la fête !\n\n` +
+      `Peux-tu s'il te plaît nous confirmer ta présence en quelques secondes sur ton invitation ?\n` +
+      `👉 ${link}\n\n` +
+      `Merci d'avance et hâte de célébrer ce moment inoubliable ensemble ! 🎉🥂`
+    );
+  };
+
+  const handleCopyRelanceText = () => {
+    const text = generateRelanceMessage(relanceGuest?.name, relanceTone);
+    navigator.clipboard.writeText(text);
+    setRelanceCopied(true);
+    setTimeout(() => setRelanceCopied(false), 2500);
+  };
+
+  const handleSendRelanceWhatsApp = (guest?: { name: string; phone?: string }) => {
+    const g = guest || relanceGuest;
+    const text = generateRelanceMessage(g?.name, relanceTone);
+    const targetPhone = (g?.phone || "").replace(/[^0-9]/g, "");
+    const encoded = encodeURIComponent(text);
+    const url = targetPhone
+      ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`
+      : `https://api.whatsapp.com/send?text=${encoded}`;
+    window.open(url, "_blank");
+  };
+
+  const handleSendRelanceEmails = () => {
+    setIsSendingRelanceEmail(true);
+    setTimeout(() => {
+      setIsSendingRelanceEmail(false);
+      setRelanceNotification(`Les rappels ont été envoyés avec succès à ${pendingGuests.length} invité(s) indécis !`);
+      setTimeout(() => setRelanceNotification(null), 5000);
+      setIsRelanceModalOpen(false);
+    }, 1200);
+  };
+
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"Tous" | "Confirmé" | "En attente" | "Refusé">("Tous");
   const visibleParticipants = participants.filter((p) => {
@@ -291,14 +368,6 @@ export default function ParticipantsDashboardPage({
     const matchesQuery = !q || [p.name, p.email, p.phone, p.group].some((v) => String(v ?? "").toLowerCase().includes(q));
     return matchesQuery && (statusFilter === "Tous" || p.status === statusFilter);
   });
-
-  const handleRelance = () => {
-    setIsRelancing(true);
-    setTimeout(() => {
-      setIsRelancing(false);
-      alert(`Les rappels ont été envoyés avec succès à ${stats.pending} invité(s) en attente !`);
-    }, 1500);
-  };
 
   return (
     <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6">
@@ -309,7 +378,7 @@ export default function ParticipantsDashboardPage({
           <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight">Mes invités</h1>
           <p className="text-gray-500 text-sm mt-1">Ajoutez vos invités, envoyez l&apos;invitation et suivez leurs réponses.</p>
         </div>
-        <button onClick={openAddModal} className="inline-flex items-center justify-center gap-2 bg-black text-[#f5eee1] px-5 py-3 rounded-full text-sm font-semibold shadow-md">
+        <button onClick={openAddModal} className="inline-flex items-center justify-center gap-2 bg-black text-[#f5eee1] px-5 py-3 rounded-full text-sm font-semibold shadow-md cursor-pointer">
           <Plus size={17} /> Ajouter un invité
         </button>
       </div>
@@ -344,18 +413,28 @@ export default function ParticipantsDashboardPage({
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button
             onClick={openWhatsAppModalGlobal}
-            className="flex items-center justify-center gap-2 bg-[#25D366] text-white px-4 py-3 rounded-xl text-sm font-semibold"
+            className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
           >
             <MessageCircle size={17} /> Partager sur WhatsApp
           </button>
           <button
-            onClick={handleRelance}
-            disabled={isRelancing || stats.pending === 0}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-xl text-sm font-medium disabled:opacity-50"
+            type="button"
+            onClick={() => {
+              setRelanceGuest(null);
+              setIsRelanceModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-4 py-3 rounded-xl text-sm font-semibold shadow-sm transition-colors cursor-pointer"
           >
-            <Mail size={16} /> {isRelancing ? "Envoi en cours..." : `Relancer les indécis (${stats.pending})`}
+            <Bell size={16} /> Relancer les indécis ({stats.pending})
           </button>
         </div>
+
+        {relanceNotification && (
+          <div className="mt-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-semibold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle size={16} className="text-emerald-600 shrink-0" />
+            <span>{relanceNotification}</span>
+          </div>
+        )}
       </section>
 
       {/* Liste */}
@@ -423,6 +502,19 @@ export default function ParticipantsDashboardPage({
                   </p>
                 </div>
                 <div className="shrink-0 flex items-center gap-1">
+                  {p.status === "En attente" && (
+                    <button
+                      onClick={() => {
+                        setRelanceGuest(p);
+                        setIsRelanceModalOpen(true);
+                      }}
+                      className="w-9 h-9 rounded-full bg-[#8f6f33]/15 text-[#8f6f33] hover:bg-[#8f6f33] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                      title={`Relancer ${p.name}`}
+                      aria-label={`Relancer ${p.name}`}
+                    >
+                      <Bell size={15} />
+                    </button>
+                  )}
                   <button
                     onClick={() => openWhatsAppModalForGuest(p)}
                     className="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center"
@@ -693,7 +785,186 @@ export default function ParticipantsDashboardPage({
                 <span>Ouvrir WhatsApp</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
 
+      {/* MODALE DE RELANCE DES INDÉCIS */}
+      {isRelanceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#b8924a]/15 via-white to-transparent">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#8f6f33] text-white flex items-center justify-center shadow-lg shadow-[#8f6f33]/30">
+                  <Bell size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-xl text-gray-900">
+                    {relanceGuest ? `Relancer ${relanceGuest.name}` : `Relancer les indécis (${pendingGuests.length})`}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    {relanceGuest
+                      ? "Envoyez un message de rappel personnalisé à cet invité"
+                      : "Rappelez aux invités en attente de confirmer leur présence"}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsRelanceModalOpen(false);
+                  setRelanceGuest(null);
+                }}
+                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              {pendingGuests.length === 0 && !relanceGuest ? (
+                <div className="text-center py-8 space-y-3">
+                  <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                    <CheckCircle size={28} />
+                  </div>
+                  <h4 className="font-serif text-xl font-bold text-gray-900">Aucun invité indécis !</h4>
+                  <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                    Tous vos invités actuels ont déjà répondu ou vous n&apos;avez aucun invité avec le statut &quot;En attente&quot;.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRelanceModalOpen(false);
+                      openAddModal();
+                    }}
+                    className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-black text-[#f5eee1] text-xs font-bold uppercase tracking-wider cursor-pointer"
+                  >
+                    <Plus size={14} /> Ajouter un invité
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Style selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                      Style du message de rappel
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRelanceTone("chaleureux")}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                          relanceTone === "chaleureux"
+                            ? "bg-[#b8924a]/15 border-[#b8924a] text-[#8f6f33]"
+                            : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        ✨ Chaleureux
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRelanceTone("prestige")}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                          relanceTone === "prestige"
+                            ? "bg-black text-white border-black"
+                            : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        🎩 Prestige
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRelanceTone("court")}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                          relanceTone === "court"
+                            ? "bg-[#25D366]/15 border-[#25D366] text-[#128C7E]"
+                            : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        ⚡ Express
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Message preview */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Aperçu du rappel
+                      </label>
+                      <span className="text-[11px] text-[#8f6f33] font-semibold">Message personnalisé</span>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs sm:text-sm text-gray-800 whitespace-pre-wrap font-sans leading-relaxed">
+                      {generateRelanceMessage(relanceGuest?.name, relanceTone)}
+                    </div>
+                  </div>
+
+                  {/* Actions principales */}
+                  <div className="space-y-2.5 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => handleSendRelanceWhatsApp()}
+                        className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/25 transition-all cursor-pointer"
+                      >
+                        <MessageCircle size={18} />
+                        <span>Relancer sur WhatsApp</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleCopyRelanceText}
+                        className={`w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          relanceCopied
+                            ? "bg-emerald-600 text-white"
+                            : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                        }`}
+                      >
+                        {relanceCopied ? <CheckCircle size={18} /> : <Copy size={18} />}
+                        <span>{relanceCopied ? "Message copié !" : "Copier le message"}</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSendRelanceEmails}
+                      disabled={isSendingRelanceEmail}
+                      className="w-full py-3 px-4 rounded-xl bg-black hover:bg-gray-900 text-[#f5eee1] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Mail size={16} />
+                      <span>{isSendingRelanceEmail ? "Envoi des rappels en cours..." : `Envoyer un rappel email aux ${pendingGuests.length} indécis`}</span>
+                    </button>
+                  </div>
+
+                  {/* Liste des indécis avec action individuelle rapide */}
+                  {!relanceGuest && pendingGuests.length > 0 && (
+                    <div className="pt-3 border-t border-gray-100">
+                      <p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2.5">
+                        Relance individuelle par invité ({pendingGuests.length}) :
+                      </p>
+                      <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                        {pendingGuests.map((guest) => (
+                          <div key={guest.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-100 text-xs">
+                            <div className="min-w-0 pr-2">
+                              <p className="font-semibold text-gray-900 truncate">{guest.name}</p>
+                              <p className="text-gray-500 truncate">{guest.phone || guest.email || "Sans coordonnées"}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleSendRelanceWhatsApp(guest)}
+                              className="px-3 py-1.5 rounded-lg bg-[#25D366] text-white font-bold flex items-center gap-1 shrink-0 hover:bg-[#128C7E] transition-colors cursor-pointer"
+                            >
+                              <MessageCircle size={13} /> Relancer
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -110,36 +110,48 @@ export default function CataloguePrestatairesPage({
       };
     });
 
-    const fallbackMock = mockProviders.map((m: any) => ({
-      id: m.id,
-      name: m.name,
-      role: m.category,
-      eventTypes: [...EVENT_TYPES],
-      prestations: [m.category, ...(m.services || [])],
-      country: m.zone && (m.zone.includes("Dakar") || m.zone.includes("Sénégal") || m.zone.includes("Saly") || m.zone.includes("Diamniadio") || m.zone.includes("Thiès") || m.zone.includes("Mbour")) ? "Sénégal" : "France",
-      zones: [m.zone],
-      description: m.description,
-      rating: m.rating || 5,
-      reviews: 14,
-      zone: m.zone || "Dakar",
-      priceRange: m.priceRange || "Sur devis",
-      phone: m.phone || "Non renseigné",
-      website: null,
-      instagram: null,
-      experience: "Prestataire Partenaire Evenium",
-      avatar_url: m.gallery?.[0] || null,
-      cover_url: m.gallery?.[1] || m.gallery?.[0] || null,
-      isPlatformProvider: m.isPlatformProvider !== false,
-      services: (m.services || []).map((s: string, idx: number) => ({
-        id: `${m.id}-srv-${idx}`,
-        nom_service: s,
-        description: `Prestation sur-mesure d'excellence proposée par ${m.name}.`,
-        tarif_indicatif: m.priceRange,
-        status: 'Publié'
-      })),
-      gallery: m.gallery || [],
-      rubriques: null
-    }));
+    const fallbackMock = mockProviders.map((m: any) => {
+      let inferredCountry = "Sénégal";
+      const zLower = (m.zone || "").toLowerCase();
+      if (zLower.includes("abidjan") || zLower.includes("cocody") || zLower.includes("côte d'ivoire") || zLower.includes("yamoussoukro")) {
+        inferredCountry = "Côte d'Ivoire";
+      } else if (zLower.includes("paris") || zLower.includes("france") || zLower.includes("lyon") || zLower.includes("marseille")) {
+        inferredCountry = "France";
+      } else if (zLower.includes("bamako") || zLower.includes("mali")) {
+        inferredCountry = "Mali";
+      }
+
+      return {
+        id: m.id,
+        name: m.name,
+        role: m.category,
+        eventTypes: [...EVENT_TYPES],
+        prestations: [m.category, ...(m.services || [])],
+        country: inferredCountry,
+        zones: [m.zone],
+        description: m.description,
+        rating: m.rating || 5,
+        reviews: 14,
+        zone: m.zone || "Dakar",
+        priceRange: m.priceRange || "Sur devis",
+        phone: m.phone || "Non renseigné",
+        website: null,
+        instagram: null,
+        experience: "Prestataire Partenaire Evenium",
+        avatar_url: m.gallery?.[0] || null,
+        cover_url: m.gallery?.[1] || m.gallery?.[0] || null,
+        isPlatformProvider: m.isPlatformProvider !== false,
+        services: (m.services || []).map((s: string, idx: number) => ({
+          id: `${m.id}-srv-${idx}`,
+          nom_service: s,
+          description: `Prestation sur-mesure d'excellence proposée par ${m.name}.`,
+          tarif_indicatif: m.priceRange,
+          status: 'Publié'
+        })),
+        gallery: m.gallery || [],
+        rubriques: null
+      };
+    });
 
     // Tous les prestataires ayant intégré notre organisation
     const allProviders = [
@@ -154,19 +166,18 @@ export default function CataloguePrestatairesPage({
   // Prestations et pays réellement proposés par les prestataires
   const knownPrestations = new Set<string>(prestataires.flatMap((p) => [...p.prestations, ...p.services.flatMap((s: any) => offerPrestations(s))]));
   const customPrestations = [...knownPrestations].filter((x) => !PRESTATION_TYPES.includes(x)).sort();
-  const countries = [...new Set([...COUNTRY_NAMES.filter((c) => prestataires.some((p) => p.country === c)), ...prestataires.map((p) => p.country).filter(Boolean)])];
   
-  // Extraction de toutes les zones disponibles (par pays si pays choisi, sinon l'ensemble des zones)
+  // Tous les pays officiellement proposés dans l'annuaire Evenium
+  const countries = COUNTRY_NAMES;
+  
+  // Extraction de toutes les zones : SELON LE PAYS CHOISI, AFFICHER UNIQUEMENT LES ZONES DE CE PAYS
   const allAvailableZones = [...new Set([
     ...COUNTRIES.flatMap((c) => c.zones),
     ...prestataires.flatMap((p) => p.zones).filter(Boolean)
   ])].filter((z: string) => z !== WHOLE_COUNTRY).sort();
 
   const zones = countryFilter
-    ? [...new Set([
-        ...zonesOf(countryFilter),
-        ...prestataires.filter((p) => p.country === countryFilter).flatMap((p) => p.zones).filter((z: string) => z !== WHOLE_COUNTRY)
-      ])].sort()
+    ? [...new Set(zonesOf(countryFilter))].sort()
     : allAvailableZones;
 
   const activeFilters = [activeEventType, prestationFilter, countryFilter, zoneFilter].filter(Boolean).length;
@@ -194,15 +205,21 @@ export default function CataloguePrestatairesPage({
       (p.role && p.role.toLowerCase().includes(prestationFilter.toLowerCase())) ||
       (p.services && p.services.some((s: any) => offerPrestations(s).includes(prestationFilter) || (s.nom_service && s.nom_service.toLowerCase().includes(prestationFilter.toLowerCase()))));
     
+    const countryZones = countryFilter ? zonesOf(countryFilter) : [];
+    const countryLower = countryFilter.toLowerCase().trim();
     const matchesCountry =
       !countryFilter ||
-      (p.country && p.country.toLowerCase() === countryFilter.toLowerCase()) ||
-      (p.zone && p.zone.toLowerCase().includes(countryFilter.toLowerCase()));
+      (p.country && p.country.toLowerCase().includes(countryLower)) ||
+      (p.zone && p.zone.toLowerCase().includes(countryLower)) ||
+      (p.address && p.address.toLowerCase().includes(countryLower)) ||
+      (p.zones && p.zones.some((z: string) => countryZones.some((cz) => cz.toLowerCase() === (z || "").toLowerCase()))) ||
+      (p.zone && countryZones.some((cz) => p.zone.toLowerCase().includes(cz.toLowerCase()))) ||
+      (p.address && countryZones.some((cz) => p.address.toLowerCase().includes(cz.toLowerCase())));
 
     const targetZone = zoneFilter.toLowerCase().trim();
     const matchesZone =
       !zoneFilter ||
-      p.zones.some((z: string) => (z || "").toLowerCase() === targetZone || (z || "").toLowerCase() === WHOLE_COUNTRY.toLowerCase()) ||
+      (p.zones && p.zones.some((z: string) => (z || "").toLowerCase() === targetZone || (z || "").toLowerCase() === WHOLE_COUNTRY.toLowerCase())) ||
       (p.zone && (p.zone || "").toLowerCase().includes(targetZone)) ||
       (p.address && (p.address || "").toLowerCase().includes(targetZone));
 
