@@ -91,6 +91,15 @@ export async function signup(formData: FormData) {
     redirect(errorUrl)
   }
 
+  if (authData.user && fullName) {
+    await supabase.from('profiles').upsert({
+      id: authData.user.id,
+      full_name: fullName.trim(),
+      email: email,
+      role: role
+    }, { onConflict: 'id' })
+  }
+
   let destination = role === 'prestataire' ? '/prestataire' : '/dashboard'
   if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
     if (role === 'prestataire' && redirectTo.startsWith('/prestataire')) {

@@ -11,8 +11,7 @@ import { PRESTATION_TYPES } from "@/lib/devis/categories";
 import { offerEventTypes, offerPrestations, offerTagLine } from "@/lib/offres";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
-import { COUNTRIES, COUNTRY_NAMES, WHOLE_COUNTRY, locationLabel, zonesOf } from "@/lib/zones";
-import { mockProviders } from "@/data/mock/prestataires";
+import { MAIN_COUNTRIES, WHOLE_COUNTRY, locationLabel, regionsOf, quartiersOf, zonesOf } from "@/lib/zones";
 
 const ALL_EVENTS = "Tous événements";
 
@@ -30,7 +29,8 @@ export default function CataloguePrestatairesPage({
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("");
   const [prestationFilter, setPrestationFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
-  const [zoneFilter, setZoneFilter] = useState("");
+  const [regionFilter, setRegionFilter] = useState("");
+  const [quartierFilter, setQuartierFilter] = useState("");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [providerStatus, setProviderStatus] = useState<Record<string, string>>({});
   const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
@@ -41,7 +41,7 @@ export default function CataloguePrestatairesPage({
 
   const { events } = useEvents();
   const event = events.find(e => e.id === id);
-  // Par défaut : tous les prestataires qui ont intégré notre organisation sont affichés directement !
+  // Par défaut : tous les prestataires réels ayant intégré notre organisation sont affichés directement
   const activeEventType = eventTypeFilter;
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -56,6 +56,7 @@ export default function CataloguePrestatairesPage({
 
   const fetchData = async () => {
     setLoading(true);
+    // Uniquement les vrais prestataires réels issus de la base de données
     const { data: profs } = await supabase
       .from('profiles')
       .select('*, services(*)')
@@ -86,13 +87,13 @@ export default function CataloguePrestatairesPage({
       const activity = activityFromProfile(p);
       return {
         id: p.id,
-        name: p.full_name || 'Prestataire Anonyme',
+        name: p.full_name || 'Prestataire Evenium',
         role: providerHeadline(p),
         eventTypes: activity.event_types,
         prestations: activity.services,
         country: activity.country,
         zones: activity.zones,
-        description: p.description || 'Aucune description',
+        description: p.description || 'Prestataire partenaire de la plateforme Evenium.',
         rating: 5,
         reviews: 0,
         zone: locationLabel(activity.country, activity.zones) || p.address || 'Non renseigné',
@@ -110,77 +111,19 @@ export default function CataloguePrestatairesPage({
       };
     });
 
-    const fallbackMock = mockProviders.map((m: any) => {
-      let inferredCountry = "Sénégal";
-      const zLower = (m.zone || "").toLowerCase();
-      if (zLower.includes("abidjan") || zLower.includes("cocody") || zLower.includes("côte d'ivoire") || zLower.includes("yamoussoukro")) {
-        inferredCountry = "Côte d'Ivoire";
-      } else if (zLower.includes("paris") || zLower.includes("france") || zLower.includes("lyon") || zLower.includes("marseille")) {
-        inferredCountry = "France";
-      } else if (zLower.includes("bamako") || zLower.includes("mali")) {
-        inferredCountry = "Mali";
-      }
-
-      return {
-        id: m.id,
-        name: m.name,
-        role: m.category,
-        eventTypes: [...EVENT_TYPES],
-        prestations: [m.category, ...(m.services || [])],
-        country: inferredCountry,
-        zones: [m.zone],
-        description: m.description,
-        rating: m.rating || 5,
-        reviews: 14,
-        zone: m.zone || "Dakar",
-        priceRange: m.priceRange || "Sur devis",
-        phone: m.phone || "Non renseigné",
-        website: null,
-        instagram: null,
-        experience: "Prestataire Partenaire Evenium",
-        avatar_url: m.gallery?.[0] || null,
-        cover_url: m.gallery?.[1] || m.gallery?.[0] || null,
-        isPlatformProvider: m.isPlatformProvider !== false,
-        services: (m.services || []).map((s: string, idx: number) => ({
-          id: `${m.id}-srv-${idx}`,
-          nom_service: s,
-          description: `Prestation sur-mesure d'excellence proposée par ${m.name}.`,
-          tarif_indicatif: m.priceRange,
-          status: 'Publié'
-        })),
-        gallery: m.gallery || [],
-        rubriques: null
-      };
-    });
-
-    // Tous les prestataires ayant intégré notre organisation
-    const allProviders = [
-      ...dbProviders,
-      ...fallbackMock.filter(m => !dbProviders.some(d => d.name.toLowerCase() === m.name.toLowerCase()))
-    ];
-
-    setPrestataires(allProviders);
+    // Données 100% réelles : aucun faux prestataire
+    setPrestataires(dbProviders);
     setLoading(false);
   };
 
-  // Prestations et pays réellement proposés par les prestataires
-  const knownPrestations = new Set<string>(prestataires.flatMap((p) => [...p.prestations, ...p.services.flatMap((s: any) => offerPrestations(s))]));
-  const customPrestations = [...knownPrestations].filter((x) => !PRESTATION_TYPES.includes(x)).sort();
+  // Pays principaux demandés : Sénégal, Côte d'Ivoire, France
+  const countries = MAIN_COUNTRIES;
   
-  // Tous les pays officiellement proposés dans l'annuaire Evenium
-  const countries = COUNTRY_NAMES;
-  
-  // Extraction de toutes les zones : SELON LE PAYS CHOISI, AFFICHER UNIQUEMENT LES ZONES DE CE PAYS
-  const allAvailableZones = [...new Set([
-    ...COUNTRIES.flatMap((c) => c.zones),
-    ...prestataires.flatMap((p) => p.zones).filter(Boolean)
-  ])].filter((z: string) => z !== WHOLE_COUNTRY).sort();
+  // Régions et Quartiers dynamiques selon le pays et la région choisis
+  const regions = regionsOf(countryFilter);
+  const quartiers = quartiersOf(countryFilter, regionFilter);
 
-  const zones = countryFilter
-    ? [...new Set(zonesOf(countryFilter))].sort()
-    : allAvailableZones;
-
-  const activeFilters = [activeEventType, prestationFilter, countryFilter, zoneFilter].filter(Boolean).length;
+  const activeFilters = [activeEventType, prestationFilter, countryFilter, regionFilter, quartierFilter].filter(Boolean).length;
 
   const filteredProviders = prestataires.filter((p) => {
     const term = searchTerm.toLowerCase().trim();
@@ -205,6 +148,7 @@ export default function CataloguePrestatairesPage({
       (p.role && p.role.toLowerCase().includes(prestationFilter.toLowerCase())) ||
       (p.services && p.services.some((s: any) => offerPrestations(s).includes(prestationFilter) || (s.nom_service && s.nom_service.toLowerCase().includes(prestationFilter.toLowerCase()))));
     
+    // Filtre précis Pays
     const countryZones = countryFilter ? zonesOf(countryFilter) : [];
     const countryLower = countryFilter.toLowerCase().trim();
     const matchesCountry =
@@ -216,21 +160,35 @@ export default function CataloguePrestatairesPage({
       (p.zone && countryZones.some((cz) => p.zone.toLowerCase().includes(cz.toLowerCase()))) ||
       (p.address && countryZones.some((cz) => p.address.toLowerCase().includes(cz.toLowerCase())));
 
-    const targetZone = zoneFilter.toLowerCase().trim();
-    const matchesZone =
-      !zoneFilter ||
-      (p.zones && p.zones.some((z: string) => (z || "").toLowerCase() === targetZone || (z || "").toLowerCase() === WHOLE_COUNTRY.toLowerCase())) ||
-      (p.zone && (p.zone || "").toLowerCase().includes(targetZone)) ||
-      (p.address && (p.address || "").toLowerCase().includes(targetZone));
+    // Filtre précis Région
+    const regionLower = regionFilter.toLowerCase().trim();
+    const regionQuartiers = countryFilter ? quartiersOf(countryFilter, regionFilter) : [];
+    const matchesRegion =
+      !regionFilter ||
+      (p.zone && p.zone.toLowerCase().includes(regionLower)) ||
+      (p.address && p.address.toLowerCase().includes(regionLower)) ||
+      (p.zones && p.zones.some((z: string) => (z || "").toLowerCase().includes(regionLower) || (z || "").toLowerCase() === WHOLE_COUNTRY.toLowerCase())) ||
+      (p.zones && p.zones.some((z: string) => regionQuartiers.some((rq) => rq.toLowerCase() === (z || "").toLowerCase()))) ||
+      (p.zone && regionQuartiers.some((rq) => p.zone.toLowerCase().includes(rq.toLowerCase()))) ||
+      (p.address && regionQuartiers.some((rq) => p.address.toLowerCase().includes(rq.toLowerCase())));
 
-    return matchesSearch && matchesEvent && matchesPrestation && matchesCountry && matchesZone;
+    // Filtre précis Quartier
+    const quartierLower = quartierFilter.toLowerCase().trim();
+    const matchesQuartier =
+      !quartierFilter ||
+      (p.zone && p.zone.toLowerCase().includes(quartierLower)) ||
+      (p.address && p.address.toLowerCase().includes(quartierLower)) ||
+      (p.zones && p.zones.some((z: string) => (z || "").toLowerCase().includes(quartierLower) || (z || "").toLowerCase() === WHOLE_COUNTRY.toLowerCase()));
+
+    return matchesSearch && matchesEvent && matchesPrestation && matchesCountry && matchesRegion && matchesQuartier;
   });
 
   const resetFilters = () => {
     setEventTypeFilter("");
     setPrestationFilter("");
     setCountryFilter("");
-    setZoneFilter("");
+    setRegionFilter("");
+    setQuartierFilter("");
     setSearchTerm("");
   };
 
@@ -409,53 +367,63 @@ export default function CataloguePrestatairesPage({
           </div>
         </div>
 
-        {/* Volet détaillé des 4 filtres (accessible via le bouton "Rechercher avec les filtres") */}
+        {/* Volet détaillé des 5 filtres précis : Événement, Prestation, Pays, Région, Quartier */}
         {isFiltersOpen && (
-          <div className="pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-in fade-in duration-200">
+          <div className="pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 animate-in fade-in duration-200">
             <label className="block">
-              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Type d'événement</span>
-              <select value={activeEventType} onChange={(e) => setEventTypeFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5 font-bold">Événement</span>
+              <select value={activeEventType} onChange={(e) => setEventTypeFilter(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
                 <option value="">Tous les événements</option>
                 {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </label>
             <label className="block">
-              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Prestation</span>
-              <select value={prestationFilter} onChange={(e) => setPrestationFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5 font-bold">Prestation</span>
+              <select value={prestationFilter} onChange={(e) => setPrestationFilter(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
                 <option value="">Toutes les prestations</option>
                 {PRESTATION_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
-                {customPrestations.length > 0 && (
-                  <optgroup label="Autres prestations">
-                    {customPrestations.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </optgroup>
-                )}
               </select>
             </label>
             <label className="block">
-              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Pays</span>
-              <select value={countryFilter} onChange={(e) => { setCountryFilter(e.target.value); setZoneFilter(""); }} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5 font-bold">Pays</span>
+              <select
+                value={countryFilter}
+                onChange={(e) => {
+                  setCountryFilter(e.target.value);
+                  setRegionFilter("");
+                  setQuartierFilter("");
+                }}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
+              >
                 <option value="">Tous les pays</option>
                 {countries.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </label>
             <label className="block">
-              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Zone d'intervention</span>
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5 font-bold">Région</span>
               <select
-                value={zoneFilter}
+                value={regionFilter}
+                disabled={!countryFilter}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  setZoneFilter(val);
-                  if (val && !countryFilter) {
-                    const matchCountry = COUNTRIES.find((c) => c.zones.some((z) => z.toLowerCase() === val.toLowerCase()));
-                    if (matchCountry) {
-                      setCountryFilter(matchCountry.name);
-                    }
-                  }
+                  setRegionFilter(e.target.value);
+                  setQuartierFilter("");
                 }}
-                className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a] disabled:opacity-50 disabled:bg-gray-100"
               >
-                <option value="">{countryFilter ? `Toutes les zones (${countryFilter})` : "Toutes les zones"}</option>
-                {zones.map((z) => <option key={z} value={z}>{z}</option>)}
+                <option value="">{countryFilter ? `Toutes les régions (${countryFilter})` : "Choisissez un pays"}</option>
+                {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5 font-bold">Quartier / Ville</span>
+              <select
+                value={quartierFilter}
+                disabled={!countryFilter}
+                onChange={(e) => setQuartierFilter(e.target.value)}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a] disabled:opacity-50 disabled:bg-gray-100"
+              >
+                <option value="">{regionFilter ? `Tous les quartiers (${regionFilter})` : (countryFilter ? `Tous les quartiers (${countryFilter})` : "Choisissez un pays/région")}</option>
+                {quartiers.map((q) => <option key={q} value={q}>{q}</option>)}
               </select>
             </label>
           </div>
@@ -464,7 +432,7 @@ export default function CataloguePrestatairesPage({
         {/* Compteur et statut */}
         <div className="flex items-center justify-between text-xs sm:text-sm pt-2 text-gray-500">
           <span>
-            <strong className="text-gray-900 font-semibold">{filteredProviders.length}</strong> prestataire{filteredProviders.length > 1 ? "s" : ""} qui ont intégré notre organisation {activeFilters > 0 || searchTerm ? "correspondant à vos critères" : "affichés directement"}
+            <strong className="text-gray-900 font-semibold">{filteredProviders.length}</strong> prestataire{filteredProviders.length > 1 ? "s" : ""} officiel{filteredProviders.length > 1 ? "s" : ""} Evenium {activeFilters > 0 || searchTerm ? "correspondant à vos critères" : "affichés directement"}
           </span>
           {(activeFilters > 0 || searchTerm) && (
             <button type="button" onClick={resetFilters} className="text-[#8f6f33] font-semibold hover:underline cursor-pointer">
@@ -474,11 +442,38 @@ export default function CataloguePrestatairesPage({
         </div>
       </div>
 
-      {!loading && filteredProviders.length === 0 && (
+      {!loading && prestataires.length === 0 && (
+        <div className="text-center py-16 px-6 bg-white rounded-3xl border border-gray-100 shadow-sm mb-8 max-w-2xl mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-[#b8924a]/10 text-[#8f6f33] flex items-center justify-center mx-auto mb-4">
+            <Briefcase size={28} />
+          </div>
+          <h3 className="font-serif text-2xl text-gray-900 mb-2">Annuaire Evenium officiel</h3>
+          <p className="text-sm text-gray-600 leading-relaxed mb-6">
+            L&apos;annuaire Evenium ne référence que les prestataires certifiés et vérifiés ayant complété leur adhésion. Aucun prestataire fictif n&apos;est affiché.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/espace-prestataire/inscription"
+              target="_blank"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-black text-[#f5eee1] text-xs font-bold uppercase tracking-wider shadow-md hover:bg-gray-900 transition-colors"
+            >
+              <Plus size={16} /> Inviter ou inscrire un prestataire
+            </Link>
+            <Link
+              href={`/dashboard/events/${id}/prestataires`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200 transition-colors"
+            >
+              Retour à mes prestataires
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {!loading && prestataires.length > 0 && filteredProviders.length === 0 && (
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200 mb-8">
-          <p className="font-serif text-2xl text-gray-900">Aucun prestataire ne correspond</p>
+          <p className="font-serif text-2xl text-gray-900">Aucun prestataire ne correspond à vos filtres</p>
           <p className="text-sm text-gray-500 mt-2">Élargissez votre recherche : retirez un filtre ou choisissez une autre zone.</p>
-          <button type="button" onClick={resetFilters} className="mt-5 px-5 py-2.5 rounded-full bg-black text-[#f5eee1] text-xs uppercase tracking-[0.2em]">Voir tous les prestataires</button>
+          <button type="button" onClick={resetFilters} className="mt-5 px-5 py-2.5 rounded-full bg-black text-[#f5eee1] text-xs uppercase tracking-[0.2em] cursor-pointer">Voir tous les prestataires</button>
         </div>
       )}
 

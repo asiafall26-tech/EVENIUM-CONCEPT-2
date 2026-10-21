@@ -35,10 +35,12 @@ export default function DashboardPage() {
       if (data?.user) {
         // Obtenir le nom depuis la table profiles qui est la source de vérité
         const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', data.user.id).maybeSingle();
-        if (profile?.full_name) {
-          setUserName(profile.full_name);
-        } else if (data.user.user_metadata?.full_name) {
-          setUserName(data.user.user_metadata.full_name);
+        if (profile?.full_name?.trim()) {
+          setUserName(profile.full_name.trim());
+        } else if (data.user.user_metadata?.full_name?.trim()) {
+          setUserName(data.user.user_metadata.full_name.trim());
+        } else if (data.user.email) {
+          setUserName(data.user.email.split('@')[0]);
         }
       }
     });
@@ -66,7 +68,7 @@ export default function DashboardPage() {
   const confirmedGuests = events.reduce((acc, curr) => acc + (curr.guests?.confirmed || 0), 0);
   const rsvpRate = totalGuests > 0 ? Math.round((confirmedGuests / totalGuests) * 100) : 0;
 
-  const firstName = userName.trim().split(/\s+/)[0] || "";
+  const displayName = userName.trim();
   const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
   const hour = new Date().getHours();
   const hello = hour < 18 ? "Bonjour" : "Bonsoir";
@@ -101,9 +103,9 @@ export default function DashboardPage() {
           <p className="text-[11px] uppercase tracking-[0.3em] text-[#8f6f33] first-letter:uppercase">{today}</p>
           <h1 className="font-serif text-3xl sm:text-5xl text-gray-900 mt-3 leading-tight">
             {hello}
-            {firstName && (
+            {displayName && (
               <>
-                , <span className="text-[#8f6f33]">{firstName}</span>
+                , <span className="text-[#8f6f33]">{displayName}</span>
               </>
             )}
           </h1>

@@ -481,6 +481,17 @@ function CreateExpressStudioContent() {
         throw new Error("Impossible d'authentifier la session. Veuillez réessayer.");
       }
 
+      if (user?.id && fullName?.trim()) {
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            full_name: fullName.trim(),
+            email: email,
+            role: 'client'
+          }, { onConflict: 'id' });
+      }
+
       // 2. Insérer le nouvel événement dérivé des informations de l'invitation
       const eventPayload: any = {
         client_id: user.id,

@@ -73,12 +73,17 @@ export default function PrestataireExterneInscription() {
 
       if (authError) throw authError;
 
-      // 2.5. Mettre à jour le statut is_evenium_certified à false pour cet utilisateur externe
+      // 2.5. Sauvegarder immédiatement le profil avec le nom et les coordonnées
       if (authData?.user) {
         await supabase
           .from('profiles')
-          .update({ is_evenium_certified: false })
-          .eq('id', authData.user.id);
+          .upsert({
+            id: authData.user.id,
+            full_name: formData.name,
+            email: formData.email,
+            role: 'prestataire',
+            is_evenium_certified: false
+          }, { onConflict: 'id' });
         await saveActivity(supabase, authData.user.id, activity);
       }
 

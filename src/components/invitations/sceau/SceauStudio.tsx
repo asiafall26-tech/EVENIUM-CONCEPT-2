@@ -377,7 +377,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
           </div>
 
           {/* Active Menu Content Area */}
-          <div className="flex-1 min-h-0 lg:overflow-y-auto p-4 sm:p-6 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
             {/* 1. Mariés & Accueil */}
             {(activeMenu === "general" || activeMenu === "all") && (
               <section className="space-y-4">

@@ -23,11 +23,11 @@ export default function PrestataireDashboardPage() {
           .from('profiles')
           .select('full_name')
           .eq('id', user.id)
-          .single();
-        if (profile?.full_name) {
-          setUserName(profile.full_name);
-        } else if (user.user_metadata?.full_name) {
-          setUserName(user.user_metadata.full_name);
+          .maybeSingle();
+        if (profile?.full_name?.trim()) {
+          setUserName(profile.full_name.trim());
+        } else if (user.user_metadata?.full_name?.trim()) {
+          setUserName(user.user_metadata.full_name.trim());
         } else if (user.email) {
           setUserName(user.email.split('@')[0]);
         }

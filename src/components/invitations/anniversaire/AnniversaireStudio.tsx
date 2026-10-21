@@ -112,7 +112,7 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 lg:overflow-y-auto p-4 sm:p-6 space-y-8">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-8">
           {show("cover") && (
             <Section n={1} title="Page 1 · Couverture" desc="Titre manuscrit, prénom et photo de la couverture.">
               <div className={box}>
