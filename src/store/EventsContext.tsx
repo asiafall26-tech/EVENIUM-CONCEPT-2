@@ -1,10 +1,12 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { Event, PlanType, FormatType, EventType } from '@/data/mock/events';
 import { createClient } from '@/utils/supabase/client';
 
 interface EventsContextType {
   events: Event[];
+  isLoaded: boolean;
   addEvent: (event: Partial<Event>, extraRow?: Record<string, unknown>) => Promise<string | null>;
   /** Met à jour des colonnes de l'événement (détails, date, lieu…) */
   updateEventFields: (id: string, row: Record<string, unknown>) => Promise<void>;
@@ -21,6 +23,7 @@ const EventsContext = createContext<EventsContextType | undefined>(undefined);
 export function EventsProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const pathname = usePathname();
   const supabase = createClient();
 
   const fetchEvents = async () => {
@@ -105,8 +108,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+      fetchEvents();
+    }
+  }, [pathname]);
 
   const addEvent = async (event: Partial<Event>, extraRow?: Record<string, unknown>): Promise<string | null> => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -218,10 +223,8 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     await fetchEvents();
   };
 
-  if (!isLoaded) return null; // Avoid hydration mismatch
-
   return (
-    <EventsContext.Provider value={{ events, addEvent, updateEventFields, updateEventPlan, updateEventStatus, updateEventInvitation, updateEventInvitationContent, deleteEvent, refreshEvents }}>
+    <EventsContext.Provider value={{ events, isLoaded, addEvent, updateEventFields, updateEventPlan, updateEventStatus, updateEventInvitation, updateEventInvitationContent, deleteEvent, refreshEvents }}>
       {children}
     </EventsContext.Provider>
   );

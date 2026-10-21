@@ -19,7 +19,7 @@ export default function GlobalSettingsPage() {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
         if (data) {
           setProfile({ ...data, email: user.email });
         } else {

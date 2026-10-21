@@ -13,7 +13,7 @@ export default function EventSettingsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { events, updateEventStatus, updateEventFields } = useEvents();
+  const { events, isLoaded, updateEventStatus, updateEventFields } = useEvents();
   const event = events.find((e) => e.id === id);
 
   const [details, setDetails] = useState<EventDetails>(() => eventDetailsFromRow(event));
@@ -23,7 +23,16 @@ export default function EventSettingsPage({
   const [error, setError] = useState<string | null>(null);
 
   if (!event) {
+    if (!isLoaded) {
+      return (
+        <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
+          <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium text-gray-500 animate-pulse">Chargement des paramètres...</p>
+        </div>
+      );
+    }
     notFound();
+    return null;
   }
 
   const required = requiresEventDetails(event.plan);

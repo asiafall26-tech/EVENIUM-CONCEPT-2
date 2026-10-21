@@ -12,19 +12,28 @@ export default function StatistiquesPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { events } = useEvents();
+  const { events, isLoaded } = useEvents();
   const event = events.find((e) => e.id === id);
 
-  if (!event) {
-    notFound();
-  }
-
   const [stats, setStats] = useState({
-    budget: { total: event.budget?.total || 0, spent: 0 },
-    guests: { total: event.guestsCount || 0, confirmed: 0, pending: 0, declined: 0 },
+    budget: { total: event?.budget?.total || 0, spent: 0 },
+    guests: { total: event?.guestsCount || 0, confirmed: 0, pending: 0, declined: 0 },
     tasks: { total: 0, completed: 0 },
     isLoading: true
   });
+
+  if (!event) {
+    if (!isLoaded) {
+      return (
+        <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
+          <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium text-gray-500 animate-pulse">Chargement des statistiques...</p>
+        </div>
+      );
+    }
+    notFound();
+    return null;
+  }
 
   const supabase = createClient();
 

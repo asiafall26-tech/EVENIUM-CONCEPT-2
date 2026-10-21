@@ -1006,8 +1006,9 @@ function CreateExpressStudioContent() {
                     type="button"
                     onClick={() => {
                       setIsCheckoutModalOpen(false);
+                      const targetId = standardSuccessEvent.id;
                       setStandardSuccessEvent(null);
-                      router.push(`/dashboard/events/${standardSuccessEvent.id}`);
+                      window.location.href = `/dashboard/events/${targetId}`;
                     }}
                     className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-sm sm:text-base shadow-xl shadow-[#b8924a]/25 hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2.5 border border-[#b8924a]/60 cursor-pointer"
                   >
@@ -1130,8 +1131,9 @@ function CreateExpressStudioContent() {
                     type="button"
                     onClick={() => {
                       setIsCheckoutModalOpen(false);
+                      const targetId = standardSuccessEvent.id;
                       setStandardSuccessEvent(null);
-                      router.push(`/dashboard/events/${standardSuccessEvent.id}`);
+                      window.location.href = `/dashboard/events/${targetId}`;
                     }}
                     className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-sm shadow-xl shadow-[#b8924a]/25 hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/60 cursor-pointer"
                   >
@@ -1145,7 +1147,7 @@ function CreateExpressStudioContent() {
                     onClick={() => {
                       setIsCheckoutModalOpen(false);
                       setStandardSuccessEvent(null);
-                      router.push('/dashboard');
+                      window.location.href = '/dashboard';
                     }}
                     className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs sm:text-sm border border-gray-300 shadow-xs transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
                   >

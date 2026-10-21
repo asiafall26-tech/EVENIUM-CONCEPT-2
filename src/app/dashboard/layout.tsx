@@ -22,7 +22,7 @@ export default async function DashboardLayout({
     .from('profiles')
     .select('full_name, role')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (profile?.role === 'prestataire') {
     redirect('/prestataire');

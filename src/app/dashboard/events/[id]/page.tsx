@@ -16,11 +16,71 @@ export default function EventDashboardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { events, updateEventPlan } = useEvents();
+  const { events, isLoaded, updateEventPlan, refreshEvents } = useEvents();
+  const supabase = createClient();
   
-  const event = events.find(e => e.id === id);
+  const eventFromContext = events.find(e => e.id === id);
+  const [directEvent, setDirectEvent] = useState<any>(null);
+  const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
+  const [notFoundTriggered, setNotFoundTriggered] = useState(false);
 
-  if (!event) {
+  const event = eventFromContext || directEvent;
+
+  useEffect(() => {
+    if (eventFromContext) {
+      setLoadingDirect(false);
+      return;
+    }
+
+    const fetchDirect = async () => {
+      try {
+        const { data, error } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          setDirectEvent({
+            id: data.id,
+            name: data.name,
+            type: data.type,
+            date: data.date || "À définir",
+            time: data.time || "À définir",
+            location: data.location || "À définir",
+            guestsCount: data.guests_count || 0,
+            plan: data.plan,
+            format: data.format,
+            status: data.status,
+            invitationModelId: data.invitation_model_id,
+            invitationTitle: data.invitation_title,
+            invitationMessage: data.invitation_message,
+            invitationContent: data.invitation_content ?? null,
+            eventDetails: data.event_details ?? null,
+            budget: { total: Number(data.budget_total) || 0, spent: 0 },
+            guests: { total: data.guests_count || 0, confirmed: 0, pending: 0, declined: 0 },
+            tasks: { total: 0, completed: 0 },
+            providersCount: 0
+          });
+          refreshEvents();
+        } else if (isLoaded) {
+          setNotFoundTriggered(true);
+        }
+      } catch {
+        if (isLoaded) setNotFoundTriggered(true);
+      } finally {
+        setLoadingDirect(false);
+      }
+    };
+
+    fetchDirect();
+  }, [id, eventFromContext, isLoaded, supabase, refreshEvents]);
+
+  if (loadingDirect && !event) {
+    return (
+      <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
+        <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium text-gray-500 animate-pulse">Ouverture de votre événement...</p>
+      </div>
+    );
+  }
+
+  if (notFoundTriggered || (!event && !loadingDirect && isLoaded)) {
     notFound();
   }
 
@@ -28,7 +88,6 @@ export default function EventDashboardPage({
   const [budget, setBudget] = useState({ total: 0, spent: 0 });
   const [guests, setGuests] = useState({ total: 0, confirmed: 0, pending: 0 });
   const [tasks, setTasks] = useState({ total: 0, completed: 0 });
-  const supabase = createClient();
 
   useEffect(() => {
     if (!event) return;

@@ -16,6 +16,7 @@ import * as roseOr from "@/components/invitations/rose-or/content";
 import AnniversaireEditorModal from "@/components/invitations/anniversaire/AnniversaireEditorModal";
 import * as anniversaire from "@/components/invitations/anniversaire/content";
 import EventQRCode from "@/components/ui/EventQRCode";
+import { createClient } from "@/utils/supabase/client";
 
 export default function InvitationsDashboardPage({
   params,
@@ -23,8 +24,59 @@ export default function InvitationsDashboardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { events, updateEventInvitation, updateEventInvitationContent } = useEvents();
-  const event = events.find((e) => e.id === id);
+  const { events, isLoaded, updateEventInvitation, updateEventInvitationContent, refreshEvents } = useEvents();
+  const supabase = createClient();
+  
+  const eventFromContext = events.find((e) => e.id === id);
+  const [directEvent, setDirectEvent] = useState<any>(null);
+  const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
+  const [notFoundTriggered, setNotFoundTriggered] = useState(false);
+
+  const event = eventFromContext || directEvent;
+
+  useEffect(() => {
+    if (eventFromContext) {
+      setLoadingDirect(false);
+      return;
+    }
+
+    const fetchDirect = async () => {
+      try {
+        const { data } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          setDirectEvent({
+            id: data.id,
+            name: data.name,
+            type: data.type,
+            date: data.date || "À définir",
+            time: data.time || "À définir",
+            location: data.location || "À définir",
+            guestsCount: data.guests_count || 0,
+            plan: data.plan,
+            format: data.format,
+            status: data.status,
+            invitationModelId: data.invitation_model_id,
+            invitationTitle: data.invitation_title,
+            invitationMessage: data.invitation_message,
+            invitationContent: data.invitation_content ?? null,
+            eventDetails: data.event_details ?? null,
+            budget: { total: Number(data.budget_total) || 0, spent: 0 },
+            guests: { total: data.guests_count || 0, confirmed: 0, pending: 0, declined: 0 },
+            tasks: { total: 0, completed: 0 },
+            providersCount: 0
+          });
+          refreshEvents();
+        } else if (isLoaded) {
+          setNotFoundTriggered(true);
+        }
+      } catch {
+        if (isLoaded) setNotFoundTriggered(true);
+      } finally {
+        setLoadingDirect(false);
+      }
+    };
+    fetchDirect();
+  }, [id, eventFromContext, isLoaded, supabase, refreshEvents]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
@@ -50,7 +102,18 @@ export default function InvitationsDashboardPage({
     }
   }, [event]);
 
-  if (!event) return notFound();
+  if (loadingDirect && !event) {
+    return (
+      <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
+        <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium text-gray-500 animate-pulse">Chargement de votre invitation...</p>
+      </div>
+    );
+  }
+
+  if (notFoundTriggered || (!event && !loadingDirect && isLoaded)) {
+    return notFound();
+  }
 
   const [shareUrl, setShareUrl] = useState("");
 

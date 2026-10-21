@@ -74,7 +74,7 @@ export function PrestataireProvider({ children }: { children: ReactNode }) {
       
     if (data) {
       // 1. Get current user's profile to know their role
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
       
       // 2. Filter securely in JS just in case RLS is missing or misconfigured
       let filteredData = data;

@@ -15,7 +15,7 @@ export default function DashboardPage() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
         // Obtenir le nom depuis la table profiles qui est la source de vérité
-        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', data.user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', data.user.id).maybeSingle();
         if (profile?.full_name) {
           setUserName(profile.full_name);
         } else if (data.user.user_metadata?.full_name) {
