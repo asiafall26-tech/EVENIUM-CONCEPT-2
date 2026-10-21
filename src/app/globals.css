@@ -261,11 +261,9 @@ html.embedded-preview [class*="inv"] {
 @keyframes fadeSlideIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -291,16 +289,16 @@ html.embedded-preview [class*="inv"] {
 /* No `forwards` fill: a lingering transform would turn this wrapper into the containing block
    of every position:fixed descendant (modals, overlays) and break full-screen layers. */
 .page-transition {
-  animation: fadeSlideIn 0.35s ease-out;
+  animation: fadeSlideIn 0.2s ease-out;
 }
 
-/* === ANIMATIONS GLOBALES INTERACTIVES (DASHBOARDS) === */
+/* === ANIMATIONS GLOBALES INTERACTIVES === */
 button, 
 a[href],
 input[type="submit"],
 input[type="button"] {
-  /* Transition douce pour tous les changements d'état */
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* Transition ciblée sans forcer transition: all !important qui bloque les animations d'entrée */
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Effet "Pressé" (Scale) dès qu'on touche ou clique sur un bouton */
@@ -308,13 +306,13 @@ button:active,
 a[href]:active,
 input[type="submit"]:active,
 input[type="button"]:active {
-  transform: scale(0.96) !important;
+  transform: scale(0.97);
 }
 
-/* Rendre le fond plus visible au survol (assombrit légèrement les couleurs/fonds) */
+/* Rendre le fond légèrement plus contrasté au survol sans forcer filter */
 button:hover:not(:disabled),
 a[href]:hover {
-  filter: brightness(0.93) !important;
+  filter: brightness(0.96);
 }
 
 /* Annuler l'effet pour les éléments désactivés */

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
-const EASE = [0.22, 0.61, 0.36, 1] as const;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 const TAGLINE = [
   "Il y a des jours qu’on attend",
@@ -31,10 +31,10 @@ function Corner({ className }: { className: string }) {
 
 export default function HeroEvents() {
   const reduceMotion = useReducedMotion();
-  const fade = (delay: number, y = 14) => ({
+  const fade = (delay: number, y = 10) => ({
     initial: { opacity: 0, y },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 1.1, delay, ease: EASE },
+    transition: { duration: 0.65, delay, ease: EASE },
   });
 
   return (
@@ -42,27 +42,27 @@ export default function HeroEvents() {
       {/* ── Ambiance : halos doux ── */}
       <motion.div
         aria-hidden
-        className="absolute left-1/2 top-[-18%] -translate-x-1/2 w-[900px] h-[620px] rounded-full bg-[#f3ead8] blur-[140px] opacity-40"
-        animate={reduceMotion ? undefined : { opacity: [0.3, 0.5, 0.3], scale: [1, 1.06, 1] }}
+        className="absolute left-1/2 top-[-18%] -translate-x-1/2 w-[900px] h-[620px] rounded-full bg-[#f3ead8] blur-[140px] opacity-40 pointer-events-none"
+        animate={reduceMotion ? undefined : { opacity: [0.35, 0.45, 0.35] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="absolute left-[-12%] bottom-[-20%] w-[520px] h-[520px] rounded-full bg-[#f4e6e2] blur-[130px] opacity-30 pointer-events-none"
+        animate={reduceMotion ? undefined : { opacity: [0.25, 0.35, 0.25] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         aria-hidden
-        className="absolute left-[-12%] bottom-[-20%] w-[520px] h-[520px] rounded-full bg-[#f4e6e2] blur-[130px] opacity-30"
-        animate={reduceMotion ? undefined : { x: [0, 40, 0], y: [0, -20, 0] }}
-        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        aria-hidden
-        className="absolute right-[-10%] bottom-[-10%] w-[480px] h-[480px] rounded-full bg-[#f5eee1] blur-[120px] opacity-40"
-        animate={reduceMotion ? undefined : { x: [0, -30, 0] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute right-[-10%] bottom-[-10%] w-[480px] h-[480px] rounded-full bg-[#f5eee1] blur-[120px] opacity-40 pointer-events-none"
+        animate={reduceMotion ? undefined : { opacity: [0.35, 0.45, 0.35] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Trame de papier fine, estompée sur les bords */}
       <div
         aria-hidden
-        className="absolute inset-0 opacity-[0.55]"
+        className="absolute inset-0 opacity-[0.55] pointer-events-none"
         style={{
           backgroundImage:
             "repeating-linear-gradient(135deg, rgba(184,146,74,0.045) 0 1px, transparent 1px 9px)",
@@ -77,7 +77,7 @@ export default function HeroEvents() {
           <motion.span
             key={i}
             aria-hidden
-            className="absolute rounded-full bg-[#b8924a]"
+            className="absolute rounded-full bg-[#b8924a] pointer-events-none"
             style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s }}
             animate={{ y: [0, -38, 0], opacity: [0, 0.75, 0] }}
             transition={{ duration: 7 + (i % 4), delay: p.d, repeat: Infinity, ease: "easeInOut" }}
@@ -88,9 +88,9 @@ export default function HeroEvents() {
       <motion.div
         aria-hidden
         className="absolute inset-3 sm:inset-6 md:inset-10 pointer-events-none"
-        initial={{ opacity: 0, scale: 1.015 }}
+        initial={{ opacity: 0, scale: 1.01 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.6, ease: EASE }}
+        transition={{ duration: 1.0, ease: EASE }}
       >
         <div className="absolute inset-0 border border-[#b8924a]/35" />
         <div className="absolute inset-[6px] border border-[#b8924a]/15" />
@@ -103,16 +103,16 @@ export default function HeroEvents() {
       {/* ── Contenu ── */}
       <div className="relative z-10 w-full max-w-5xl mx-auto px-8 sm:px-12 py-20 md:py-16 flex flex-col items-center text-center">
         <motion.p
-          {...fade(0.2, 8)}
+          {...fade(0.1, 6)}
           className="pl-[0.5em] text-[10px] sm:text-xs md:text-[13px] font-normal uppercase tracking-[0.5em] text-[#8f6f33]"
         >
           L’élite de l’événementiel
         </motion.p>
 
         <motion.h1
-          initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 1.4, delay: 0.45, ease: EASE }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
           className="hero-shimmer mt-5 md:mt-4 font-serif not-italic font-normal text-[4.2rem] sm:text-8xl md:text-[7.25rem] leading-[0.95] tracking-[0.01em]"
         >
           Evenium
@@ -124,19 +124,19 @@ export default function HeroEvents() {
             className="block h-px w-20 sm:w-28 md:w-40 bg-gradient-to-l from-[#b8924a] to-transparent origin-right"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.2, delay: 0.9, ease: EASE }}
+            transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
           />
           <motion.span
             className="block w-2 h-2 rotate-45 bg-[#b8924a]"
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 1.1, ease: EASE }}
+            transition={{ duration: 0.4, delay: 0.45, ease: EASE }}
           />
           <motion.span
             className="block h-px w-20 sm:w-28 md:w-40 bg-gradient-to-r from-[#b8924a] to-transparent origin-left"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.2, delay: 0.9, ease: EASE }}
+            transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
           />
         </div>
 
@@ -145,9 +145,9 @@ export default function HeroEvents() {
             <motion.span
               key={line}
               className="block"
-              initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 1.2, delay: 1.25 + i * 0.25, ease: EASE }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.45 + i * 0.1, ease: EASE }}
             >
               {line}
             </motion.span>
@@ -155,7 +155,7 @@ export default function HeroEvents() {
         </h2>
 
         <motion.p
-          {...fade(2.05)}
+          {...fade(0.8, 10)}
           className="mt-9 md:mt-8 max-w-2xl text-base sm:text-lg md:text-xl font-light leading-relaxed text-gray-500"
         >
           Mariage, baptême, anniversaire, henné time…
@@ -164,7 +164,7 @@ export default function HeroEvents() {
         </motion.p>
 
         <motion.div
-          {...fade(2.35)}
+          {...fade(0.95, 10)}
           className="mt-10 md:mt-10 flex flex-col sm:flex-row items-center gap-5 sm:gap-8"
         >
           <Link
@@ -189,7 +189,7 @@ export default function HeroEvents() {
         className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-px h-12 overflow-hidden bg-[#b8924a]/15"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.8, duration: 1 }}
+        transition={{ delay: 1.15, duration: 0.6 }}
       >
         {!reduceMotion && (
           <motion.span
