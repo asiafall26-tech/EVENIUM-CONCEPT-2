@@ -21,6 +21,8 @@ export interface Event {
   invitationMessage?: string | null;
   /** Content of editable invitation models, stored as JSON (column invitation_content) */
   invitationContent?: Record<string, unknown> | null;
+  /** Détails importants (thème, programme, prestations recherchées, notes) — colonne event_details */
+  eventDetails?: Record<string, unknown> | null;
   budget: {
     total: number;
     spent: number;

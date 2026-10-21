@@ -13,6 +13,8 @@ import IvoireEditorModal from "@/components/invitations/ivoire/IvoireEditorModal
 import * as ivoire from "@/components/invitations/ivoire/content";
 import RoseOrEditorModal from "@/components/invitations/rose-or/RoseOrEditorModal";
 import * as roseOr from "@/components/invitations/rose-or/content";
+import AnniversaireEditorModal from "@/components/invitations/anniversaire/AnniversaireEditorModal";
+import * as anniversaire from "@/components/invitations/anniversaire/content";
 import EventQRCode from "@/components/ui/EventQRCode";
 
 export default function InvitationsDashboardPage({
@@ -119,6 +121,7 @@ export default function InvitationsDashboardPage({
       else if (isSceau) defaultSeed = sceau.seedFromEvent(event) as unknown as Record<string, unknown>;
       else if (isIvoire) defaultSeed = ivoire.seedFromEvent(event) as unknown as Record<string, unknown>;
       else if (isRoseOr) defaultSeed = roseOr.seedFromEvent(event) as unknown as Record<string, unknown>;
+      else if (isAnniversaire) defaultSeed = anniversaire.seedFromEvent(event) as unknown as Record<string, unknown>;
 
       await updateEventInvitationContent(event.id, defaultSeed);
       setShowResetPageModal(false);
@@ -135,6 +138,7 @@ export default function InvitationsDashboardPage({
   const isSceau = event.invitationModelId === sceau.SCEAU_MODEL_ID;
   const isIvoire = event.invitationModelId === ivoire.IVOIRE_MODEL_ID;
   const isRoseOr = event.invitationModelId === roseOr.ROSE_OR_MODEL_ID;
+  const isAnniversaire = event.invitationModelId === anniversaire.ANNIVERSAIRE_MODEL_ID;
   const isStatic = event.format === "Carte";
   const cover = isVelours
     ? "/invit-velours-cover.jpg"
@@ -144,13 +148,16 @@ export default function InvitationsDashboardPage({
         ? "/invit-ivoire-cover.jpg"
         : isRoseOr
           ? "/invit-rose-or-cover.jpg"
-          : null;
+          : isAnniversaire
+            ? "/invit-anniversaire-cover.jpg"
+            : null;
 
   const getModelName = () => {
     if (isVelours) return "Velours Bordeaux";
     if (isSceau) return "Sceau d'Or Impérial";
     if (isIvoire) return "Ivoire Couture";
     if (isRoseOr) return "Rose Poudrée & Or Impérial";
+    if (isAnniversaire) return "Anniversaire Bordeaux & Or";
     return event.invitationModelId || "Modèle Exclusif";
   };
 
@@ -231,7 +238,7 @@ export default function InvitationsDashboardPage({
           </div>
           
           <div className="flex flex-wrap gap-4 items-center">
-            {(isVelours || isSceau || isIvoire || isRoseOr) && (
+            {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
               <button
                 onClick={() => setIsStudioOpen(true)}
                 className="bg-[#6b1f2a] hover:bg-[#7a1a2e] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-[#6b1f2a]/20"
@@ -245,7 +252,7 @@ export default function InvitationsDashboardPage({
             >
               <Eye size={18} /> Voir le mini-site
             </button>
-            {(isVelours || isSceau || isIvoire || isRoseOr) && (
+            {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
               <button
                 type="button"
                 onClick={() => setShowResetPageModal(true)}
@@ -422,6 +429,24 @@ export default function InvitationsDashboardPage({
               await updateEventInvitationContent(event.id, { ...content });
             } catch {
               throw new Error("Enregistrement impossible : exécutez supabase_sceau_dor.sql dans Supabase.");
+            }
+            setIsStudioOpen(false);
+          }}
+        />
+      )}
+
+      {isStudioOpen && isAnniversaire && (
+        <AnniversaireEditorModal
+          initial={event.invitationContent ? anniversaire.withDefaults(event.invitationContent) : anniversaire.seedFromEvent(event)}
+          defaultContent={anniversaire.seedFromEvent(event)}
+          isStatic={isStatic}
+          onClose={() => setIsStudioOpen(false)}
+          saveLabel="Mettre à jour l'invitation"
+          onSave={async (content) => {
+            try {
+              await updateEventInvitationContent(event.id, { ...content });
+            } catch {
+              throw new Error("Enregistrement impossible : exécutez supabase_invitation_content.sql dans Supabase.");
             }
             setIsStudioOpen(false);
           }}

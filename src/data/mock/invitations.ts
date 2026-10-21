@@ -54,6 +54,16 @@ export const mockInvitationModels: InvitationModel[] = [
     description: "Une enveloppe blush scellée d'or qui s'ouvre sur une vidéo cinématique et douce mélodie : rideaux de soie dorée, colonnes fleuries, compte à rebours, galerie photos, déroulé et confirmation RSVP.",
     liveUrl: "/invitation-rose-or",
   },
+  {
+    id: "invit-11",
+    name: "Anniversaire Bordeaux & Or",
+    type: "animée",
+    category: "Anniversaire",
+    thumbnail: "/invit-anniversaire-cover.jpg",
+    isPremium: true,
+    description: "Une invitation sur deux pages qui se tourne comme un faire-part : votre photo en couverture « Happy Birthday », puis une carte crème aux roses bordeaux et dorures avec date, lieu, programme et confirmation de présence.",
+    liveUrl: "/invitation-anniversaire",
+  },
 ];
 
 /** Models shown in the homepage showcase (up to 4), in display order */
@@ -76,6 +86,7 @@ export function getInvitationModelName(id?: string | null): string {
   if (id === "invit-8" || lower.includes("sceau")) return "Sceau d'Or Impérial";
   if (id === "invit-9" || lower.includes("ivoire")) return "Ivoire Couture";
   if (id === "invit-10" || lower.includes("rose")) return "Rose Poudrée & Or Impérial";
+  if (id === "invit-11" || lower.includes("anniversaire")) return "Anniversaire Bordeaux & Or";
   return id;
 }
 
@@ -89,5 +100,6 @@ export function getInvitationModelThumbnail(id?: string | null): string {
   if (id === "invit-8" || lower.includes("sceau")) return "/invit-sceau-dor-cover.jpg";
   if (id === "invit-9" || lower.includes("ivoire")) return "/invit-ivoire-cover.jpg";
   if (id === "invit-10" || lower.includes("rose")) return "/invit-rose-or-cover.jpg";
+  if (id === "invit-11" || lower.includes("anniversaire")) return "/invit-anniversaire-cover.jpg";
   return "/invit-velours-cover.jpg";
 }

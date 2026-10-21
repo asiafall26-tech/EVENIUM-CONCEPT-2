@@ -5,7 +5,9 @@ import { createClient } from '@/utils/supabase/client';
 
 interface EventsContextType {
   events: Event[];
-  addEvent: (event: Partial<Event>) => Promise<string | null>;
+  addEvent: (event: Partial<Event>, extraRow?: Record<string, unknown>) => Promise<string | null>;
+  /** Met à jour des colonnes de l'événement (détails, date, lieu…) */
+  updateEventFields: (id: string, row: Record<string, unknown>) => Promise<void>;
   updateEventPlan: (id: string, newPlan: PlanType) => Promise<void>;
   updateEventStatus: (id: string, newStatus: "draft" | "published" | "completed") => Promise<void>;
   updateEventInvitation: (id: string, title: string, message: string) => Promise<void>;
@@ -77,6 +79,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
           invitationTitle: dbEvent.invitation_title,
           invitationMessage: dbEvent.invitation_message,
           invitationContent: dbEvent.invitation_content ?? null,
+          eventDetails: dbEvent.event_details ?? null,
           budget: { total: Number(dbEvent.budget_total) || 0, spent: 0 },
           guests: { 
             total: Math.max(totalCapacity, totalResponses), 
@@ -97,7 +100,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     fetchEvents();
   }, []);
 
-  const addEvent = async (event: Partial<Event>): Promise<string | null> => {
+  const addEvent = async (event: Partial<Event>, extraRow?: Record<string, unknown>): Promise<string | null> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
@@ -117,8 +120,15 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         invitation_message: event.invitationMessage
     };
     if (event.invitationContent) row.invitation_content = event.invitationContent;
+    if (extraRow) Object.assign(row, extraRow);
 
     let { data, error } = await supabase.from('events').insert([row]).select().single();
+
+    // Colonne event_details absente tant que le script SQL n'a pas été exécuté
+    if (error && row.event_details && error.message?.includes('event_details')) {
+      delete row.event_details;
+      ({ data, error } = await supabase.from('events').insert([row]).select().single());
+    }
 
     // Column not created yet (see supabase_invitation_content.sql): keep the event, drop the custom content
     if (error && row.invitation_content && error.message?.includes('invitation_content')) {
@@ -138,6 +148,20 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       return data.id;
     }
     return null;
+  };
+
+  const updateEventFields = async (id: string, row: Record<string, unknown>) => {
+    let { error } = await supabase.from('events').update(row).eq('id', id);
+    if (error && 'event_details' in row && error.message?.includes('event_details')) {
+      const { event_details: _omit, ...rest } = row;
+      ({ error } = await supabase.from('events').update(rest).eq('id', id));
+      if (!error) {
+        await fetchEvents();
+        throw new Error("Les informations principales sont enregistrées, mais pas le thème, le programme ni les notes : exécutez le script « supabase_evenements_details.sql » dans Supabase.");
+      }
+    }
+    if (error) throw error;
+    await fetchEvents();
   };
 
   const updateEventPlan = async (id: string, newPlan: PlanType) => {
@@ -189,7 +213,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   if (!isLoaded) return null; // Avoid hydration mismatch
 
   return (
-    <EventsContext.Provider value={{ events, addEvent, updateEventPlan, updateEventStatus, updateEventInvitation, updateEventInvitationContent, deleteEvent, refreshEvents }}>
+    <EventsContext.Provider value={{ events, addEvent, updateEventFields, updateEventPlan, updateEventStatus, updateEventInvitation, updateEventInvitationContent, deleteEvent, refreshEvents }}>
       {children}
     </EventsContext.Provider>
   );

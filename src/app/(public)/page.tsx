@@ -146,7 +146,7 @@ export default function Home() {
             {SERVICES.map((s, i) => (
               <article
                 key={s.title}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-100 bg-[#fbf7f0] p-6 hover:bg-white hover:shadow-[0_20px_50px_-20px_rgba(184,134,11,0.35)] hover:-translate-y-1 transition-all duration-500 min-h-[160px]"
+                className="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-[#fbf7f0] p-6 hover:bg-white hover:shadow-[0_20px_50px_-20px_rgba(184,134,11,0.35)] hover:-translate-y-1 transition-all duration-500 min-h-[160px]"
               >
                 <div className="flex items-center justify-between mb-6">
                   <span className="w-12 h-12 rounded-2xl bg-white text-[#8f6f33] border border-[#b8924a]/25 shadow-xs flex items-center justify-center group-hover:bg-[#8f6f33] group-hover:text-white transition-colors duration-500">
@@ -156,7 +156,7 @@ export default function Home() {
                     {String(i + 1).padStart(2, "0")}
                   </span>
                 </div>
-                <h3 className="relative font-serif text-lg sm:text-xl font-bold text-gray-900 group-hover:text-black leading-snug">
+                <h3 className="relative font-serif text-lg sm:text-xl font-bold text-gray-900 group-hover:text-black leading-snug min-h-[2.75em]">
                   {s.title}
                 </h3>
                 <span className="absolute left-6 right-6 bottom-0 h-[2px] bg-gradient-to-r from-[#b8924a] to-transparent scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />

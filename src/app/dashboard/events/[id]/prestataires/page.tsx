@@ -11,6 +11,10 @@ import { DevisShareModal } from "@/components/ui/DevisShareModal";
 import { QuoteRevisionModal } from "@/components/devis/QuoteRevisionModal";
 import { DevisVersionHistory } from "@/components/devis/DevisVersionHistory";
 import { buildRevisionAcceptedMessage, buildRevisedQuoteRefusedMessage } from "@/lib/devis/revisionMessages";
+import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
+import { locationLabel } from "@/lib/zones";
+import { offerTagLine } from "@/lib/offres";
+import { RubriquesView } from "@/components/prestataire/RubriquesView";
 
 export default function PrestatairesDashboardPage({
   params,
@@ -286,10 +290,11 @@ export default function PrestatairesDashboardPage({
           demande_id: d.id,
           devis: relatedDevis,
           name: prof?.full_name || d.client_name || 'Prestataire',
-          role: prof?.category || d.service_name || 'Service',
+          role: prof ? providerHeadline(prof) : d.service_name || 'Service',
           description: prof?.description || '',
+          rubriques: prof?.rubriques ?? null,
           phone: prof?.phone || 'Non renseigné',
-          zone: prof?.address || 'Non renseigné',
+          zone: (prof && locationLabel(activityFromProfile(prof).country, activityFromProfile(prof).zones)) || prof?.address || 'Non renseigné',
           rating: 5,
           isPlatformProvider: prof?.is_evenium_certified !== false,
           status: relatedDevis?.status === 'Accepté' ? 'Confirmé' : (relatedDevis ? 'Devis envoyé' : d.status),
@@ -585,6 +590,7 @@ export default function PrestatairesDashboardPage({
                     <h3 className="text-xl font-bold mb-4">À propos</h3>
                     <p className="text-gray-600 leading-relaxed">{selectedProvider.description}</p>
                   </div>
+                  <RubriquesView value={selectedProvider.rubriques} />
                   
                   <div>
                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -607,11 +613,9 @@ export default function PrestatairesDashboardPage({
                                 </div>
                               )}
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90"></div>
-                              {service.categorie && (
-                                <span className="absolute top-3 left-3 bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm">
-                                  {service.categorie}
-                                </span>
-                              )}
+                              <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm">
+                                {offerTagLine(service)}
+                              </span>
                               <div className="absolute bottom-3 left-3 right-3 text-white">
                                 <span className="font-bold text-[#b8924a] text-sm block mb-1">{service.type_prix || 'À partir de'} {service.prix_base ? `${Number(service.prix_base).toLocaleString()} FCFA` : 'Sur devis'}</span>
                                 <h4 className="font-bold text-lg leading-tight line-clamp-1" title={service.nom_service}>{service.nom_service}</h4>
@@ -726,11 +730,9 @@ export default function PrestatairesDashboardPage({
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
                 <div className="absolute bottom-8 left-8 text-white pr-8">
-                  {selectedServiceForDetails.categorie && (
-                    <span className="bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded shadow-sm mb-4 inline-block">
-                      {selectedServiceForDetails.categorie}
-                    </span>
-                  )}
+                  <span className="bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded shadow-sm mb-4 inline-block">
+                    {offerTagLine(selectedServiceForDetails, 4)}
+                  </span>
                   <h2 className="font-serif text-4xl md:text-5xl font-bold mb-2 leading-tight">{selectedServiceForDetails.nom_service}</h2>
                   <p className="text-[#b8924a] font-semibold text-xl">{selectedServiceForDetails.type_prix || 'À partir de'} {selectedServiceForDetails.prix_base ? `${Number(selectedServiceForDetails.prix_base).toLocaleString()} FCFA` : 'Sur devis'}</p>
                 </div>
@@ -771,7 +773,7 @@ export default function PrestatairesDashboardPage({
                   </div>
                 )}
 
-                {(Object.keys(selectedServiceForDetails.infos_pratiques || {}).length > 0 || (selectedServiceForDetails.zones && selectedServiceForDetails.zones.length > 0)) && (
+                {(selectedServiceForDetails.infos_pratiques?.capacite || selectedServiceForDetails.infos_pratiques?.duree || (selectedServiceForDetails.zones && selectedServiceForDetails.zones.length > 0)) && (
                   <div>
                     <h3 className="text-sm font-bold text-black uppercase tracking-wider mb-6 border-b border-gray-100 pb-3">Informations pratiques</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -805,6 +807,8 @@ export default function PrestatairesDashboardPage({
                     </div>
                   </div>
                 )}
+
+                <RubriquesView value={selectedServiceForDetails.infos_pratiques?.rubriques} />
 
                 {selectedServiceForDetails.gallery && selectedServiceForDetails.gallery.length > 0 && (
                   <div>

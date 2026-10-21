@@ -6,6 +6,14 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { useEvents } from "@/store/EventsContext";
 import { QuoteRequestModal } from "@/components/dashboard/QuoteRequestModal";
+import { EVENT_TYPES } from "@/lib/eventTypes";
+import { PRESTATION_TYPES } from "@/lib/devis/categories";
+import { offerEventTypes, offerPrestations, offerTagLine } from "@/lib/offres";
+import { RubriquesView } from "@/components/prestataire/RubriquesView";
+import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
+import { COUNTRY_NAMES, WHOLE_COUNTRY, locationLabel, zonesOf } from "@/lib/zones";
+
+const ALL_EVENTS = "Tous événements";
 
 export default function CataloguePrestatairesPage({
   params,
@@ -18,7 +26,10 @@ export default function CataloguePrestatairesPage({
   const [loading, setLoading] = useState(true);
   
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
+  const [prestationFilter, setPrestationFilter] = useState("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [zoneFilter, setZoneFilter] = useState("");
   const [providerStatus, setProviderStatus] = useState<Record<string, string>>({});
   const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
   const [activeModalTab, setActiveModalTab] = useState<"presentation" | "catalogues" | "avis">("presentation");
@@ -28,6 +39,8 @@ export default function CataloguePrestatairesPage({
 
   const { events } = useEvents();
   const event = events.find(e => e.id === id);
+  // Par défaut, on filtre sur le type de l'événement en cours
+  const activeEventType = eventTypeFilter ?? (event?.type && (EVENT_TYPES as readonly string[]).includes(event.type) ? event.type : "");
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [serviceToRequest, setServiceToRequest] = useState<any | null>(null);
@@ -65,14 +78,19 @@ export default function CataloguePrestatairesPage({
           ? p.services.filter((s: any) => s.status === 'Publié') 
           : [];
 
+        const activity = activityFromProfile(p);
         return {
           id: p.id,
           name: p.full_name || 'Prestataire Anonyme',
-          role: p.category || 'Général',
+          role: providerHeadline(p),
+          eventTypes: activity.event_types,
+          prestations: activity.services,
+          country: activity.country,
+          zones: activity.zones,
           description: p.description || 'Aucune description',
           rating: 5,
           reviews: 0,
-          zone: p.address || 'Non renseigné',
+          zone: locationLabel(activity.country, activity.zones) || p.address || 'Non renseigné',
           priceRange: 'Sur devis',
           phone: p.phone || 'Non renseigné',
           website: p.website || null,
@@ -82,20 +100,44 @@ export default function CataloguePrestatairesPage({
           cover_url: p.cover_url || null,
           isPlatformProvider: p.is_evenium_certified !== false,
           services: publishedServices,
-          gallery: Array.isArray(p.gallery) ? p.gallery : []
+          gallery: Array.isArray(p.gallery) ? p.gallery : [],
+          rubriques: p.rubriques ?? null
         };
       }));
     }
     setLoading(false);
   };
 
-  const categories = Array.from(new Set(prestataires.map((p) => p.role)));
+  // Prestations et pays réellement proposés par les prestataires
+  const knownPrestations = new Set<string>(prestataires.flatMap((p) => [...p.prestations, ...p.services.flatMap((s: any) => offerPrestations(s))]));
+  const customPrestations = [...knownPrestations].filter((x) => !PRESTATION_TYPES.includes(x)).sort();
+  const countries = [...new Set([...COUNTRY_NAMES.filter((c) => prestataires.some((p) => p.country === c)), ...prestataires.map((p) => p.country).filter(Boolean)])];
+  const zones = countryFilter
+    ? [...new Set([...zonesOf(countryFilter), ...prestataires.filter((p) => p.country === countryFilter).flatMap((p) => p.zones).filter((z: string) => z !== WHOLE_COUNTRY)])]
+    : [];
+  const activeFilters = [activeEventType, prestationFilter, countryFilter, zoneFilter].filter(Boolean).length;
 
   const filteredProviders = prestataires.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.description || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory ? p.role === selectedCategory : true;
-    return matchesSearch && matchesCategory;
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = !term || [p.name, p.description, ...p.prestations].some((v: string) => (v || "").toLowerCase().includes(term));
+    // Filtre automatique (type de l'événement) : on garde les prestataires qui n'ont pas encore renseigné leurs types
+    const matchesEvent =
+      !activeEventType ||
+      p.eventTypes.includes(activeEventType) ||
+      p.services.some((s: any) => offerEventTypes(s).includes(activeEventType)) ||
+      (eventTypeFilter === null && p.eventTypes.length === 0);
+    const matchesPrestation = !prestationFilter || p.prestations.includes(prestationFilter) || p.services.some((s: any) => offerPrestations(s).includes(prestationFilter));
+    const matchesCountry = !countryFilter || p.country === countryFilter;
+    const matchesZone = !zoneFilter || p.zones.includes(zoneFilter) || p.zones.includes(WHOLE_COUNTRY);
+    return matchesSearch && matchesEvent && matchesPrestation && matchesCountry && matchesZone;
   });
+
+  const resetFilters = () => {
+    setEventTypeFilter("");
+    setPrestationFilter("");
+    setCountryFilter("");
+    setZoneFilter("");
+  };
 
   const handleOpenRequest = (providerId: string, service: any) => {
     const provider = prestataires.find(p => p.id === providerId);
@@ -126,39 +168,67 @@ export default function CataloguePrestatairesPage({
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] mb-8 flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] mb-8 space-y-4">
+        <div className="relative">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
           <input 
             type="text"
-            placeholder="Rechercher un traiteur, un lieu, un photographe..."
+            placeholder="Rechercher un prestataire, une prestation..."
             className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide shrink-0">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors ${
-              selectedCategory === null ? 'bg-black text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-            }`}
-          >
-            Tous
-          </button>
-          {categories.map((cat: any) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors ${
-                selectedCategory === cat ? 'bg-black text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <label className="block">
+            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Type d'événement</span>
+            <select value={activeEventType} onChange={(e) => setEventTypeFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+              <option value="">Tous les événements</option>
+              {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Prestation</span>
+            <select value={prestationFilter} onChange={(e) => setPrestationFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+              <option value="">Toutes les prestations</option>
+              {PRESTATION_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
+              {customPrestations.length > 0 && (
+                <optgroup label="Autres prestations">
+                  {customPrestations.map((p) => <option key={p} value={p}>{p}</option>)}
+                </optgroup>
+              )}
+            </select>
+          </label>
+          <label className="block">
+            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Pays</span>
+            <select value={countryFilter} onChange={(e) => { setCountryFilter(e.target.value); setZoneFilter(""); }} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+              <option value="">Tous les pays</option>
+              {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Zone d'intervention</span>
+            <select value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)} disabled={!countryFilter} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a] disabled:opacity-50">
+              <option value="">{countryFilter ? "Toutes les zones" : "Choisissez un pays"}</option>
+              {zones.map((z) => <option key={z} value={z}>{z}</option>)}
+            </select>
+          </label>
         </div>
+        {activeFilters > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-500">{filteredProviders.length} prestataire{filteredProviders.length > 1 ? "s" : ""} correspond{filteredProviders.length > 1 ? "ent" : ""} à vos critères</span>
+            <button type="button" onClick={resetFilters} className="text-[#8f6f33] font-semibold hover:underline">Réinitialiser les filtres</button>
+          </div>
+        )}
       </div>
+
+      {!loading && filteredProviders.length === 0 && (
+        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200 mb-8">
+          <p className="font-serif text-2xl text-gray-900">Aucun prestataire ne correspond</p>
+          <p className="text-sm text-gray-500 mt-2">Élargissez votre recherche : retirez un filtre ou choisissez une autre zone.</p>
+          <button type="button" onClick={resetFilters} className="mt-5 px-5 py-2.5 rounded-full bg-black text-[#f5eee1] text-xs uppercase tracking-[0.2em]">Voir tous les prestataires</button>
+        </div>
+      )}
 
       {loading ? (
          <div className="text-center py-20 text-gray-500">Chargement des prestataires...</div>
@@ -308,6 +378,7 @@ export default function CataloguePrestatairesPage({
                         {selectedProvider.description || "Aucune description."}
                       </p>
                     </div>
+                    <RubriquesView value={selectedProvider.rubriques} className="mb-12" />
                   </div>
                 )}
 
@@ -326,11 +397,9 @@ export default function CataloguePrestatairesPage({
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon size={32}/></div>
                               )}
-                              {service.categorie && (
-                                <span className="absolute top-3 left-3 bg-[#f5eee1]/90 backdrop-blur-sm text-[#b8924a] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded shadow-sm">
-                                  {service.categorie}
-                                </span>
-                              )}
+                              <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate bg-[#f5eee1]/90 backdrop-blur-sm text-[#8f6f33] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded shadow-sm">
+                                {offerTagLine(service)}
+                              </span>
                             </div>
                             <div className="p-6 flex-1 flex flex-col">
                               <div className="flex justify-between items-start gap-4 mb-4">
@@ -422,11 +491,9 @@ export default function CataloguePrestatairesPage({
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
                 <div className="absolute bottom-8 left-8 text-white pr-8">
-                  {selectedServiceForDetails.categorie && (
-                    <span className="bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded shadow-sm mb-4 inline-block">
-                      {selectedServiceForDetails.categorie}
-                    </span>
-                  )}
+                  <span className="bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded shadow-sm mb-4 inline-block">
+                    {offerTagLine(selectedServiceForDetails, 4)}
+                  </span>
                   <h2 className="font-serif text-4xl md:text-5xl font-bold mb-2 leading-tight">{selectedServiceForDetails.nom_service}</h2>
                   <p className="text-[#b8924a] font-semibold text-xl">{selectedServiceForDetails.type_prix || 'À partir de'} {selectedServiceForDetails.prix_base ? `${Number(selectedServiceForDetails.prix_base).toLocaleString()} FCFA` : 'Sur devis'}</p>
                 </div>
@@ -467,7 +534,7 @@ export default function CataloguePrestatairesPage({
                   </div>
                 )}
 
-                {(Object.keys(selectedServiceForDetails.infos_pratiques || {}).length > 0 || (selectedServiceForDetails.zones && selectedServiceForDetails.zones.length > 0)) && (
+                {(selectedServiceForDetails.infos_pratiques?.capacite || selectedServiceForDetails.infos_pratiques?.duree || (selectedServiceForDetails.zones && selectedServiceForDetails.zones.length > 0)) && (
                   <div>
                     <h3 className="text-sm font-bold text-black uppercase tracking-wider mb-6 border-b border-gray-100 pb-3">Informations pratiques</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -523,6 +590,8 @@ export default function CataloguePrestatairesPage({
                   </div>
                 )}
                 
+                <RubriquesView value={selectedServiceForDetails.infos_pratiques?.rubriques} className="mb-10" />
+
                 {selectedProvider && (
                   <div className="pt-8 mt-8 border-t border-gray-100">
                     <h3 className="text-sm font-bold text-black uppercase tracking-wider mb-6">À propos du prestataire</h3>

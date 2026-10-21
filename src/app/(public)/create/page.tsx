@@ -34,7 +34,9 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import EventQRCode from '@/components/ui/EventQRCode';
-import { EVENT_TYPES, type EventTypeName } from '@/lib/eventTypes';
+import { EVENT_TYPES, EVENT_TYPE_ICONS as EVENT_ICONS } from '@/lib/eventTypes';
+import { EventDetailsFields } from '@/components/events/EventDetailsFields';
+import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
 
 // Full Studio components
 import VeloursStudio from '@/components/invitations/velours/VeloursStudio';
@@ -52,6 +54,10 @@ import IvoireInvitation from '@/components/invitations/ivoire/IvoireInvitation';
 import RoseOrStudio from '@/components/invitations/rose-or/RoseOrStudio';
 import { ROSE_OR_MODEL_ID, DEFAULT_ROSE_OR, type RoseOrContent } from '@/components/invitations/rose-or/content';
 import RoseOrInvitation from '@/components/invitations/rose-or/RoseOrInvitation';
+
+import AnniversaireStudio from '@/components/invitations/anniversaire/AnniversaireStudio';
+import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, type AnniversaireContent } from '@/components/invitations/anniversaire/content';
+import AnniversaireInvitation from '@/components/invitations/anniversaire/AnniversaireInvitation';
 
 // Catalogue des modèles
 interface ModelItem {
@@ -110,32 +116,25 @@ const CATALOG_MODELS: ModelItem[] = [
     category: "Mariage",
     compatibleEvents: ["Mariage"],
     liveUrl: "/invitation-rose-or"
+  },
+  {
+    id: ANNIVERSAIRE_MODEL_ID,
+    name: "Anniversaire Bordeaux & Or",
+    subtitle: "Deux pages : photo « Happy Birthday » & carte aux roses dorées",
+    image: "/invit-anniversaire-cover.jpg",
+    color: "from-[#6b1428] to-[#c9a35c]",
+    badge: "Anniversaire Prestige",
+    category: "Anniversaire",
+    compatibleEvents: ["Anniversaire"],
+    liveUrl: "/invitation-anniversaire"
   }
 ];
 
 // Types d'événements
-// Icônes des types d'événements (liste complète : src/lib/eventTypes.ts)
-const EVENT_ICONS: Record<EventTypeName, string> = {
-  "Mariage": "💍",
-  "Baptême": "👶",
-  "Henné time": "🌿",
-  "Baby shower": "🍼",
-  "Fiançailles": "💐",
-  "Enterrement de vie de jeune fille": "👑",
-  "Anniversaire": "🎂",
-  "Gala": "🥂",
-  "Soirée": "🌙",
-  "Conférence": "🎤",
-  "Réception": "🍾",
-  "Dîner": "🍽️",
-  "Brunch": "🥐",
-  "Yendou": "🪘",
-};
-
 // L'id est le type enregistré sur l'événement ; « Bientôt » tant qu'aucun modèle n'est compatible
 const EVENT_CATEGORIES: { id: string; label: string; icon: string; isSoon?: boolean }[] = [
-  { id: "Mariage", label: "Mariage", icon: EVENT_ICONS["Mariage"] },
   { id: "Tous", label: "Tous les modèles", icon: "✨" },
+  { id: "Mariage", label: "Mariage", icon: EVENT_ICONS["Mariage"] },
   ...EVENT_TYPES.filter((t) => t !== "Mariage").map((t) => ({
     id: t,
     label: t,
@@ -176,6 +175,8 @@ function CreateExpressStudioContent() {
       foundId = IVOIRE_MODEL_ID;
     } else if (p === 'invit-10' || p === 'rose-or' || p === 'rose-poudree') {
       foundId = ROSE_OR_MODEL_ID;
+    } else if (p === 'invit-11' || p === 'anniversaire') {
+      foundId = ANNIVERSAIRE_MODEL_ID;
     } else {
       const found = CATALOG_MODELS.find(m => m.id === modelParam || m.id.toLowerCase() === p);
       if (found) foundId = found.id;
@@ -183,11 +184,16 @@ function CreateExpressStudioContent() {
     if (foundId) {
       setSelectedModelId(foundId);
       setHasChosenModel(true);
+      // Le filtre d'événement suit le modèle, sinon il serait remplacé par un modèle compatible
+      const model = CATALOG_MODELS.find(m => m.id === foundId);
+      if (model && !model.compatibleEvents.includes(selectedEventCategory)) setSelectedEventCategory(model.category);
     }
   }, [modelParam]);
 
   // Choisir un modèle depuis la galerie
   const handleChooseModel = (modelId: string) => {
+    const model = CATALOG_MODELS.find(m => m.id === modelId);
+    if (model && selectedEventCategory !== "Tous" && !model.compatibleEvents.includes(selectedEventCategory)) setSelectedEventCategory(model.category);
     setSelectedModelId(modelId);
     setHasChosenModel(true);
     if (typeof window !== 'undefined') {
@@ -212,6 +218,7 @@ function CreateExpressStudioContent() {
   const [sceauContent, setSceauContent] = useState<SceauContent>(DEFAULT_SCEAU);
   const [ivoireContent, setIvoireContent] = useState<IvoireContent>(DEFAULT_IVOIRE);
   const [roseOrContent, setRoseOrContent] = useState<RoseOrContent>(DEFAULT_ROSE_OR);
+  const [anniversaireContent, setAnniversaireContent] = useState<AnniversaireContent>(DEFAULT_ANNIVERSAIRE);
 
   // Synchronisation des champs communs lors du changement de modèle
   const handleModelChange = (newModelId: string) => {
@@ -286,6 +293,9 @@ function CreateExpressStudioContent() {
 
   // Formule & Paiement
   const [selectedPlan, setSelectedPlan] = useState<'Standard' | 'Premium' | 'Gold'>('Standard');
+  // Formules Premium et Gold : détails de l'événement obligatoires, repris dans le dashboard
+  const [eventDetails, setEventDetails] = useState<EventDetails>(EMPTY_EVENT_DETAILS);
+  const [showDetailsErrors, setShowDetailsErrors] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'wave' | 'om' | 'card'>('wave');
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -367,6 +377,15 @@ function CreateExpressStudioContent() {
       welcomeTitle = roseOrContent.kicker || name;
       welcomeText = roseOrContent.quote;
       contentJson = roseOrContent;
+    } else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) {
+      const c = anniversaireContent;
+      name = `Anniversaire de ${c.celebrant || "Mon Événement"}`;
+      date = c.date;
+      time = c.time;
+      location = [c.venueName, c.venueCity].filter(Boolean).join(", ");
+      welcomeTitle = [c.kicker, c.title].filter(Boolean).join(" ") || name;
+      welcomeText = c.message;
+      contentJson = c;
     }
 
     return {
@@ -374,14 +393,28 @@ function CreateExpressStudioContent() {
       date: date || new Date().toISOString().split('T')[0],
       time: time || "16:00",
       location: location || "Dakar, Sénégal",
+      // Valeurs réellement saisies dans l'invitation (sans valeur par défaut)
+      rawDate: date || "",
+      rawTime: time || "",
+      rawLocation: location.trim(),
       welcomeTitle,
       welcomeText,
       contentJson
     };
-  }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent]);
+  }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent]);
 
   // Montant selon la formule
   const planPrice = selectedPlan === "Gold" ? 20000 : selectedPlan === "Premium" ? 10000 : 5000;
+
+  const choosePlan = (plan: 'Standard' | 'Premium' | 'Gold') => setSelectedPlan(plan);
+
+  // Date, heure et lieu de l'invitation reportés dans les détails tant que l'organisateur ne les modifie pas
+  const detailsWithInvitation: EventDetails = {
+    ...eventDetails,
+    date: eventDetails.date || eventMetadata.rawDate,
+    time: eventDetails.time || eventMetadata.rawTime,
+    location: eventDetails.location || eventMetadata.rawLocation,
+  };
 
   // Action Finale : Inscription / Connexion + Paiement + Insertion en Base + Accès Dashboard & Partage
   const handleFinalActivation = async (e: React.FormEvent) => {
@@ -390,6 +423,14 @@ function CreateExpressStudioContent() {
     setErrorMessage("");
 
     try {
+      if (requiresEventDetails(selectedPlan)) {
+        const missing = missingEventDetails(detailsWithInvitation);
+        if (missing.length) {
+          setShowDetailsErrors(true);
+          throw new Error(`Formule ${selectedPlan} : merci de renseigner ${missing.join(", ")} de votre événement.`);
+        }
+      }
+
       let user = currentUser;
 
       // 1. Si pas connecté, créer le compte avec les éléments d'authentification ou connecter l'organisateur existant
@@ -434,7 +475,8 @@ function CreateExpressStudioContent() {
       const eventPayload: any = {
         client_id: user.id,
         name: eventMetadata.name,
-        type: selectedEventCategory === "Tous" ? "Mariage" : selectedEventCategory,
+        // Depuis « Tous les modèles », le type suit le modèle choisi
+        type: selectedEventCategory === "Tous" ? currentModel.category : selectedEventCategory,
         date: eventMetadata.date,
         time: eventMetadata.time,
         location: eventMetadata.location,
@@ -444,7 +486,9 @@ function CreateExpressStudioContent() {
         invitation_model_id: selectedModelId,
         invitation_title: eventMetadata.welcomeTitle,
         invitation_message: eventMetadata.welcomeText,
-        invitation_content: eventMetadata.contentJson
+        invitation_content: eventMetadata.contentJson,
+        // Détails saisis à l'achat (Premium / Gold) : nombre d'invités, date, lieu, budget…
+        ...(requiresEventDetails(selectedPlan) ? eventDetailsToRow(detailsWithInvitation) : {})
       };
 
       let { data: newEvent, error: eventError } = await supabase
@@ -452,6 +496,14 @@ function CreateExpressStudioContent() {
         .insert([eventPayload])
         .select()
         .single();
+
+      // Colonne event_details absente tant que le script SQL n'a pas été exécuté
+      if (eventError && eventPayload.event_details && eventError.message?.includes('event_details')) {
+        delete eventPayload.event_details;
+        const retry = await supabase.from('events').insert([eventPayload]).select().single();
+        newEvent = retry.data;
+        eventError = retry.error;
+      }
 
       if (eventError && eventPayload.invitation_content && eventError.message?.includes('invitation_content')) {
         delete eventPayload.invitation_content;
@@ -535,6 +587,21 @@ function CreateExpressStudioContent() {
               ))}
             </div>
           </div>
+
+          {filteredModels.length === 0 && (
+            <div className="max-w-xl mx-auto w-full text-center rounded-3xl border border-dashed border-[#b8924a]/40 bg-white/60 px-6 py-12">
+              <p className="text-3xl mb-3">{EVENT_CATEGORIES.find(c => c.id === selectedEventCategory)?.icon}</p>
+              <h3 className="font-serif text-2xl text-gray-900">Les modèles « {selectedEventCategory} » arrivent bientôt</h3>
+              <p className="text-sm text-gray-600 mt-2">En attendant, nos modèles actuels peuvent être personnalisés pour votre événement.</p>
+              <button
+                type="button"
+                onClick={() => setSelectedEventCategory("Tous")}
+                className="mt-6 px-6 py-3 rounded-full bg-black text-[#f5eee1] text-xs uppercase tracking-[0.2em]"
+              >
+                Voir tous les modèles
+              </button>
+            </div>
+          )}
 
           {/* Grille des modèles disponibles */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto w-full">
@@ -639,6 +706,7 @@ function CreateExpressStudioContent() {
             <div className="flex items-center gap-4 sm:gap-5">
               <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-2xl overflow-hidden relative shrink-0 shadow-md border border-gray-200 bg-gray-100">
                 <Image
+                  key={currentModel.id}
                   src={currentModel.image}
                   alt={currentModel.name}
                   fill
@@ -726,6 +794,14 @@ function CreateExpressStudioContent() {
               <RoseOrStudio
                 value={roseOrContent}
                 onChange={setRoseOrContent}
+                onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
+                onFinalize={() => setIsCheckoutModalOpen(true)}
+              />
+            )}
+            {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
+              <AnniversaireStudio
+                value={anniversaireContent}
+                onChange={setAnniversaireContent}
                 onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
                 onFinalize={() => setIsCheckoutModalOpen(true)}
               />
@@ -834,6 +910,17 @@ function CreateExpressStudioContent() {
                 }}
               />
             )}
+            {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
+              <AnniversaireInvitation
+                content={anniversaireContent}
+                preview
+                onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
+                onFinalize={() => {
+                  setIsPreviewFullScreenOpen(false);
+                  setIsCheckoutModalOpen(true);
+                }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -894,7 +981,8 @@ function CreateExpressStudioContent() {
                   <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
                     <div className="w-12 h-16 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
                       <Image
-                        src={currentModel.image}
+                        key={currentModel.id}
+                  src={currentModel.image}
                         alt={currentModel.name}
                         fill
                         className="object-cover"
@@ -1094,7 +1182,7 @@ function CreateExpressStudioContent() {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         {/* Formule Standard */}
                         <div
-                          onClick={() => setSelectedPlan('Standard')}
+                          onClick={() => choosePlan('Standard')}
                           className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                             selectedPlan === 'Standard'
                               ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
@@ -1136,7 +1224,7 @@ function CreateExpressStudioContent() {
 
                         {/* Formule Premium */}
                         <div
-                          onClick={() => setSelectedPlan('Premium')}
+                          onClick={() => choosePlan('Premium')}
                           className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                             selectedPlan === 'Premium'
                               ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
@@ -1174,7 +1262,7 @@ function CreateExpressStudioContent() {
 
                         {/* Formule Gold */}
                         <div
-                          onClick={() => setSelectedPlan('Gold')}
+                          onClick={() => choosePlan('Gold')}
                           className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative ${
                             selectedPlan === 'Gold'
                               ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
@@ -1214,6 +1302,23 @@ function CreateExpressStudioContent() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Détails de l'événement : obligatoires pour Premium et Gold */}
+                    {requiresEventDetails(selectedPlan) && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <div className="mb-3">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                            <Crown size={15} className="text-[#b8924a]" /> Détails de votre événement
+                          </label>
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            Inclus dans la formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} : ces informations sont reportées automatiquement dans votre dashboard, où vous pourrez les modifier.
+                          </p>
+                        </div>
+                        <div className="bg-[#fbf7f0] p-4 rounded-2xl border border-[#b8924a]/30">
+                          <EventDetailsFields value={detailsWithInvitation} onChange={setEventDetails} showErrors={showDetailsErrors} compact />
+                        </div>
+                      </div>
+                    )}
 
                     {/* 2. Nom de l'Organisateur & Éléments d'Authentification */}
                     <div className="pt-2 border-t border-gray-100">
@@ -1394,7 +1499,8 @@ function CreateExpressStudioContent() {
                     <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
                       <div className="w-14 h-20 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
                         <Image
-                          src={currentModel.image}
+                          key={currentModel.id}
+                  src={currentModel.image}
                           alt={currentModel.name}
                           fill
                           className="object-cover"

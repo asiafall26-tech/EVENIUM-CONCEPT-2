@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useEvents } from '@/store/EventsContext';
 import { IPhone16ProMaxFrame } from '@/components/ui/IPhone16ProMaxFrame';
 import { EVENT_TYPES, type EventTypeName } from '@/lib/eventTypes';
+import { EventDetailsFields } from '@/components/events/EventDetailsFields';
+import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, type EventDetails } from '@/lib/eventDetails';
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -19,6 +21,10 @@ export default function NewEventPage() {
   const [eventType, setEventType] = useState<EventTypeName>('Mariage');
   const [plan, setPlan] = useState<'standard' | 'premium' | 'gold'>('standard');
   const [invitationType, setInvitationType] = useState<'carte' | 'animee'>('carte');
+  // Premium et Gold : détails de l'événement obligatoires, repris dans le dashboard
+  const [details, setDetails] = useState<EventDetails>(EMPTY_EVENT_DETAILS);
+  const [showDetailsErrors, setShowDetailsErrors] = useState(false);
+  const needsDetails = plan === 'premium' || plan === 'gold';
   
   const [selectedModel, setSelectedModel] = useState(7);
   const [previewModelId, setPreviewModelId] = useState<number | null>(null);
@@ -37,10 +43,19 @@ export default function NewEventPage() {
     { id: 8, name: "Sceau d'Or Impérial", color: 'bg-[#43080f]', image: '/invit-sceau-dor-cover.jpg', liveUrl: '/invitation-sceau-dor' },
     { id: 9, name: 'Ivoire Couture', color: 'bg-[#1f1715]', image: '/invit-ivoire-cover.jpg', liveUrl: '/invitation-ivoire' },
     { id: 10, name: 'Rose Poudrée & Or Impérial', color: 'bg-[#efe2dc]', image: '/invit-rose-or-cover.jpg', liveUrl: '/invitation-rose-or' },
+    { id: 11, name: 'Anniversaire Bordeaux & Or', color: 'bg-[#6b1428]', image: '/invit-anniversaire-cover.jpg', liveUrl: '/invitation-anniversaire' },
   ];
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
+    if (needsDetails) {
+      const missing = missingEventDetails(details);
+      if (missing.length) {
+        setShowDetailsErrors(true);
+        alert(`Formule ${plan === 'gold' ? 'Gold' : 'Premium'} : merci de renseigner ${missing.join(", ")} de votre événement.`);
+        return;
+      }
+    }
     setStep(2);
   };
 
@@ -51,10 +66,10 @@ export default function NewEventPage() {
     const newEvent = {
       name: eventName,
       type: eventType,
-      date: eventDate || "À définir",
-      time: "18:00",
-      location: "À définir",
-      guestsCount: 50,
+      date: (needsDetails ? details.date : eventDate) || "À définir",
+      time: (needsDetails && details.time) || "18:00",
+      location: (needsDetails && details.location) || "À définir",
+      guestsCount: needsDetails ? Number(details.guestsCount) || 0 : 50,
       plan: plan === 'gold' ? ('Gold' as const) : plan === 'premium' ? ('Premium' as const) : ('Standard' as const),
       format: invitationType === 'animee' ? 'Animée' as const : 'Carte' as const,
       status: 'active' as any,
@@ -62,7 +77,8 @@ export default function NewEventPage() {
     };
     
     try {
-      const newId = await addEvent(newEvent);
+      const row = eventDetailsToRow(details);
+      const newId = await addEvent(newEvent, needsDetails ? { budget_total: row.budget_total, event_details: row.event_details } : undefined);
       setIsLoading(false);
       if (newId) {
         router.push(`/dashboard/events/${newId}`);
@@ -133,7 +149,7 @@ export default function NewEventPage() {
                       type="date" 
                       required
                       value={eventDate}
-                      onChange={(e) => setEventDate(e.target.value)}
+                      onChange={(e) => { setEventDate(e.target.value); setDetails(prev => prev.date ? prev : { ...prev, date: e.target.value }); }}
                       className="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl pl-12 pr-4 py-3.5 focus:bg-white focus:ring-2 focus:ring-[#b8924a]/20 focus:border-[#b8924a] outline-none transition-all"
                     />
                   </div>
@@ -223,6 +239,16 @@ export default function NewEventPage() {
                   </label>
                 </div>
               </div>
+
+              {needsDetails && (
+                <div className="space-y-4">
+                  <div className="border-b border-gray-100 pb-3">
+                    <h2 className="text-xl font-semibold text-gray-900">Détails de votre événement</h2>
+                    <p className="text-sm text-gray-500 mt-1">Obligatoires avec la formule {plan === 'gold' ? 'Gold VIP' : 'Premium'} : ils sont repris dans votre dashboard, où vous pourrez les modifier.</p>
+                  </div>
+                  <EventDetailsFields value={details} onChange={setDetails} showErrors={showDetailsErrors} />
+                </div>
+              )}
 
               <button type="submit" className="w-full bg-[#2b2118] hover:bg-black text-[#b8924a] font-semibold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
                 Continuer

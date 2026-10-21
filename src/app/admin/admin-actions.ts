@@ -13,10 +13,10 @@ export async function saveDebugData(data: any) {
 
 export async function createProviderAccount(formData: FormData) {
   const companyName = formData.get("companyName") as string;
-  const category = formData.get("category") as string;
   const email = formData.get("email") as string;
   
-  if (!companyName || !category || !email) {
+  // Types d'événements, prestations et zones : renseignés par le prestataire à sa première connexion
+  if (!companyName || !email) {
     return { error: "Tous les champs sont requis." };
   }
 
@@ -63,7 +63,6 @@ export async function createProviderAccount(formData: FormData) {
         id: newUserId,
         full_name: companyName,
         email: email,
-        category: category,
         role: "prestataire", // This is the role saved in DB
         is_evenium_certified: true // Important: This marks them as an Evenium Certified Partner
       });

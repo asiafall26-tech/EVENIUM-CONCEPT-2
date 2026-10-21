@@ -552,9 +552,36 @@ export function matchCategory(value?: string | null): ProviderCategory | undefin
   return PROVIDER_CATEGORIES.find((c) => c.aliases.some((a) => v.includes(normalize(a))));
 }
 
-/** Catégories d'un prestataire : colonne `categories` (multi), sinon l'ancienne colonne `category`. */
+const SERVICE_TO_CATEGORY = new Map<string, string>();
+for (const c of PROVIDER_CATEGORIES) for (const s of c.services) if (!SERVICE_TO_CATEGORY.has(normalize(s))) SERVICE_TO_CATEGORY.set(normalize(s), c.id);
+
+/** Types de prestation proposés aux prestataires (profil, catalogue, filtres de l'annuaire). */
+export const PRESTATION_TYPES = PROVIDER_CATEGORIES.map((c) => c.label);
+
+/**
+ * Activité correspondant à un type de prestation ou à un service détaillé
+ * (undefined pour une prestation personnalisée).
+ */
+export const categoryOfService = (name: string) =>
+  PROVIDER_CATEGORIES.find((c) => normalize(c.label) === normalize(name))?.id ?? SERVICE_TO_CATEGORY.get(normalize(name));
+
+/** Ramène une prestation à son type (« Buffet traditionnel » → « Traiteurs et restauration »). */
+export const prestationType = (name: string) => getCategory(categoryOfService(name))?.label ?? name;
+
+/**
+ * Activités d'un prestataire : déduites de ses prestations (`services_proposes`),
+ * sinon colonne `categories`, sinon l'ancienne colonne `category`.
+ */
 export function resolveProviderCategories(profile: any): string[] {
   const ids = new Set<string>();
+  const services: unknown = profile?.services_proposes;
+  if (Array.isArray(services)) {
+    for (const s of services) {
+      const id = categoryOfService(String(s));
+      if (id) ids.add(id);
+    }
+  }
+  if (ids.size) return [...ids];
   const list: unknown = profile?.categories;
   if (Array.isArray(list)) {
     for (const v of list) {

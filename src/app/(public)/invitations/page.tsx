@@ -1,6 +1,7 @@
 "use client";
 
 import { mockInvitationModels } from "@/data/mock/invitations";
+import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 import { Sparkles, PlayCircle, Eye, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -44,12 +45,12 @@ export default function InvitationsPage() {
       <div className="max-w-4xl mx-auto mb-14">
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-white/70 backdrop-blur-md p-2 rounded-2xl border border-gray-200/80 shadow-sm">
           {[
-            { id: "Mariage", label: "Mariage", icon: "💍", count: mockInvitationModels.filter(m => m.category === "Mariage").length },
-            { id: "Tous", label: "Tous les modèles", icon: "✨", count: mockInvitationModels.length },
-            { id: "Anniversaire", label: "Anniversaire", icon: "🎂", soon: true },
-            { id: "Gala", label: "Gala & Soirée", icon: "🥂", soon: true },
-            { id: "Baptême", label: "Baptême", icon: "🕊️", soon: true },
-            { id: "Corporate", label: "Corporate", icon: "💼", soon: true },
+            { id: "Tous", label: "Tous les modèles", icon: "✨", count: mockInvitationModels.length, soon: false },
+            // Tous les types d'événements de l'application ; « Bientôt » tant qu'aucun modèle n'existe
+            ...EVENT_TYPES.map((t) => {
+              const count = mockInvitationModels.filter(m => m.category === t).length;
+              return { id: t, label: t, icon: EVENT_TYPE_ICONS[t], count: count || undefined, soon: count === 0 };
+            }),
           ].map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
@@ -86,7 +87,7 @@ export default function InvitationsPage() {
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-xs bg-[#b8924a]/20 text-[#7a5e2b] border border-[#b8924a]/60 px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                💍 Catégorie {selectedCategory === "Tous" ? "Mariage" : selectedCategory}
+                {selectedCategory === "Tous" ? "✨ Tous les modèles" : `${EVENT_TYPE_ICONS[selectedCategory as keyof typeof EVENT_TYPE_ICONS] ?? "✨"} ${selectedCategory}`}
               </span>
               <span className="text-xs bg-[#6b1f2a] text-pink-200 px-3 py-1 rounded-full font-semibold tracking-wider uppercase">
                 {animatedModels.length} {animatedModels.length > 1 ? "Modèles Animés" : "Modèle Animé"}

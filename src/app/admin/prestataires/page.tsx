@@ -356,17 +356,9 @@ export default function AdminPrestatairesPage() {
               <input name="companyName" required type="text" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-1 focus:ring-[#b8924a] outline-none" placeholder="Ex: Studio Photo VIP" />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
-              <select name="category" required className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-1 focus:ring-[#b8924a] outline-none">
-                <option value="Traiteur">Traiteur</option>
-                <option value="Photographe">Photographe</option>
-                <option value="Lieu">Lieu / Salle</option>
-                <option value="Animation">Animation (DJ, Orchestre)</option>
-                <option value="Décoration">Décoration</option>
-                <option value="Autre">Autre</option>
-              </select>
-            </div>
+            <p className="text-xs text-gray-500 bg-[#f5eee1] border border-[#e4d8c4] rounded-lg px-3 py-2">
+              À sa première connexion, le prestataire devra obligatoirement renseigner ses types d'événements, ses prestations, son pays et ses zones d'intervention.
+            </p>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email de connexion</label>

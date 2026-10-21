@@ -8,6 +8,7 @@ import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import EventQRCode from "@/components/ui/EventQRCode";
+import { eventDetailsFromRow, hasExtraDetails, requiresEventDetails } from "@/lib/eventDetails";
 
 export default function EventDashboardPage({
   params,
@@ -111,6 +112,59 @@ export default function EventDashboardPage({
           </div>
         </div>
       </div>
+
+      {/* ─────────────── DÉTAILS DE L'ÉVÉNEMENT (saisis à l'achat Premium / Gold, modifiables) ─────────────── */}
+      {(() => {
+        const d = eventDetailsFromRow(event);
+        if (!requiresEventDetails(event.plan) && !d.guestsCount && !d.budget && !hasExtraDetails(d)) return null;
+        const facts = [
+          { label: "Invités prévus", value: d.guestsCount ? `${Number(d.guestsCount).toLocaleString("fr-FR")} invités` : "" },
+          { label: "Date", value: [d.date && new Date(d.date).toString() !== "Invalid Date" ? new Date(d.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : d.date, d.time && `à ${d.time}`].filter(Boolean).join(" ") },
+          { label: "Lieu", value: d.location },
+          { label: "Budget prévisionnel", value: d.budget ? `${Number(d.budget).toLocaleString("fr-FR")} FCFA` : "" },
+        ];
+        return (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm mb-8 overflow-hidden">
+            <div className="px-6 sm:px-8 pt-6 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Votre événement</p>
+                <h2 className="font-serif text-2xl text-gray-900 mt-1">Détails de l'événement</h2>
+              </div>
+              <Link href={`/dashboard/events/${event.id}/settings`} className="shrink-0 text-sm font-semibold text-[#8f6f33] border border-[#b8924a]/40 rounded-lg px-4 py-2 hover:bg-[#f5eee1]">
+                Modifier
+              </Link>
+            </div>
+            <dl className="px-6 sm:px-8 py-6 grid grid-cols-2 lg:grid-cols-4 gap-5">
+              {facts.map((f) => (
+                <div key={f.label}>
+                  <dt className="text-[11px] uppercase tracking-wider text-gray-500">{f.label}</dt>
+                  <dd className={`mt-1 text-sm ${f.value ? "font-medium text-gray-900" : "text-gray-400"}`}>{f.value || "À renseigner"}</dd>
+                </div>
+              ))}
+            </dl>
+            {hasExtraDetails(d) && (
+              <div className="px-6 sm:px-8 pb-6 pt-5 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-5">
+                {d.prestationsRecherchees.length > 0 && (
+                  <div className="md:col-span-2">
+                    <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">Prestations recherchées</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {d.prestationsRecherchees.map((p) => (
+                        <span key={p} className="px-3 py-1 rounded-full text-xs bg-[#f5eee1] text-[#7a5e2b] border border-[#e4d8c4]">{p}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {d.notes && (
+                  <div className="md:col-span-2">
+                    <p className="text-[11px] uppercase tracking-wider text-gray-500">Informations importantes</p>
+                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{d.notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ─────────────── CARTE MAJEURE : LIEN OFFICIEL & QR CODE ACTIF ─────────────── */}
       <div className="bg-gradient-to-br from-[#fcfaf7] via-white to-[#fbf7f0] rounded-3xl p-6 sm:p-8 border border-[#D4AF37]/40 shadow-sm mb-8 relative overflow-hidden">

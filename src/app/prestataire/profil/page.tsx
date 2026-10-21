@@ -1,10 +1,16 @@
 "use client";
 
-import { User, Store, Mail, Phone, MapPin, Edit2, Save, X, Briefcase, Camera, Image as ImageIcon, ArrowLeft } from "lucide-react";
+import { User, Store, Mail, Phone, MapPin, Edit2, Save, X, Briefcase, Camera, Image as ImageIcon, ArrowLeft, Crop } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { PROVIDER_CATEGORIES, getCategory, resolveProviderCategories } from "@/lib/devis/categories";
+import { ActivityFields } from "@/components/prestataire/ActivityFields";
+import { EMPTY_ACTIVITY, activityFromProfile, missingActivity, providerHeadline, saveActivity, type ProviderActivity } from "@/lib/providerProfile";
+import { locationLabel } from "@/lib/zones";
+import { useImageEditor } from "@/components/media/ImageEditorModal";
+import { RubriquesEditor } from "@/components/prestataire/RubriquesEditor";
+import { RubriquesView } from "@/components/prestataire/RubriquesView";
+import { parseRubriques, suggestProfileRubriques, type Rubrique } from "@/lib/rubriques";
 import { isMissingColumn } from "@/lib/devis/persist";
 
 export default function PrestataireProfilPage() {
@@ -12,10 +18,14 @@ export default function PrestataireProfilPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ 
-    full_name: "", email: "", phone: "", address: "", category: "", categories: [] as string[],
+    full_name: "", email: "", phone: "", address: "", category: "",
     description: "", website: "", instagram: "", experience: "", 
     is_active: true, gallery: [] as string[], cover_url: ""
   });
+  const [activity, setActivity] = useState<ProviderActivity>(EMPTY_ACTIVITY);
+  const [showActivityErrors, setShowActivityErrors] = useState(false);
+  const [rubriques, setRubriques] = useState<Rubrique[]>([]);
+  const { editImage, editorElement } = useImageEditor();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -35,13 +45,14 @@ export default function PrestataireProfilPage() {
     
     if (data) {
       setProfile(data);
+      setActivity(activityFromProfile({ ...data, user_metadata: user.user_metadata }));
+      setRubriques(parseRubriques(data.rubriques));
       setFormData({
         full_name: data.full_name || "",
         email: data.email || user.email || "",
         phone: data.phone || "",
         address: data.address || "",
         category: data.category || "",
-        categories: resolveProviderCategories(data),
         description: data.description || "",
         website: data.website || "",
         instagram: data.instagram || "",
@@ -57,7 +68,7 @@ export default function PrestataireProfilPage() {
       setFormData({
         full_name: fallbackProfile.full_name,
         email: fallbackProfile.email || "",
-        phone: "", address: "", category: "", categories: [], description: "", website: "", instagram: "", experience: "",
+        phone: "", address: "", category: "", description: "", website: "", instagram: "", experience: "",
         is_active: true, gallery: [], cover_url: ""
       });
     }
@@ -65,8 +76,11 @@ export default function PrestataireProfilPage() {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !profile) return;
+    const picked = e.target.files?.[0];
+    e.target.value = "";
+    if (!picked || !profile) return;
+    const file = await editImage(picked, { aspect: 1, title: "Photo de profil" });
+    if (!file) return;
     
     setUploadingImage(true);
     const fileExt = file.name.split('.').pop();
@@ -97,8 +111,11 @@ export default function PrestataireProfilPage() {
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !profile) return;
+    const picked = e.target.files?.[0];
+    e.target.value = "";
+    if (!picked || !profile) return;
+    const file = await editImage(picked, { aspect: 4 / 3, title: "Photo de la galerie" });
+    if (!file) return;
     
     setUploadingImage(true);
     const fileExt = file.name.split('.').pop();
@@ -125,8 +142,11 @@ export default function PrestataireProfilPage() {
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !profile) return;
+    const picked = e.target.files?.[0];
+    e.target.value = "";
+    if (!picked || !profile) return;
+    const file = await editImage(picked, { aspect: 16 / 9, title: "Photo de couverture" });
+    if (!file) return;
     
     setUploadingImage(true);
     const fileExt = file.name.split('.').pop();
@@ -152,6 +172,23 @@ export default function PrestataireProfilPage() {
     router.refresh();
   };
 
+  /** Recadre une photo déjà en ligne de la galerie et la remplace */
+  const editGalleryImage = async (index: number) => {
+    if (!profile) return;
+    const file = await editImage(formData.gallery[index], { aspect: 4 / 3, title: "Photo de la galerie" });
+    if (!file) return;
+    setUploadingImage(true);
+    const filePath = `avatars/gallery-${profile.id}-${Math.random()}.jpg`;
+    const { error } = await supabase.storage.from('evenium_assets').upload(filePath, file);
+    if (error) {
+      alert("Erreur lors de l'enregistrement de la photo : " + error.message);
+    } else {
+      const { data: { publicUrl } } = supabase.storage.from('evenium_assets').getPublicUrl(filePath);
+      setFormData(fd => ({ ...fd, gallery: fd.gallery.map((u, i) => (i === index ? publicUrl : u)) }));
+    }
+    setUploadingImage(false);
+  };
+
   const removeGalleryImage = (indexToRemove: number) => {
     setFormData({
       ...formData,
@@ -163,13 +200,19 @@ export default function PrestataireProfilPage() {
     e.preventDefault();
     if (!profile) return;
 
-    const categoryLabel = getCategory(formData.categories[0])?.label || formData.category;
+    // Prestataire certifié : types d'événements, prestations, pays et zones obligatoires
+    const missing = missingActivity(activity);
+    if (profile.is_evenium_certified !== false && missing.length) {
+      setShowActivityErrors(true);
+      alert(`Merci de renseigner ${missing.join(", ")}.`);
+      return;
+    }
+
     const profileRow = {
       id: profile.id,
       full_name: formData.full_name,
       phone: formData.phone,
       address: formData.address,
-      category: categoryLabel,
       description: formData.description,
       website: formData.website,
       instagram: formData.instagram,
@@ -179,9 +222,13 @@ export default function PrestataireProfilPage() {
       cover_url: formData.cover_url,
       role: 'prestataire'
     };
-    let { error } = await supabase.from('profiles').upsert({ ...profileRow, categories: formData.categories });
-    // Colonne « categories » absente tant que le script SQL n'a pas été exécuté
-    if (isMissingColumn(error)) ({ error } = await supabase.from('profiles').upsert(profileRow));
+    let { error } = await supabase.from('profiles').upsert(profileRow);
+    if (!error) ({ error } = await saveActivity(supabase, profile.id, activity) as { error: any });
+    if (!error) {
+      const res = await supabase.from('profiles').update({ rubriques: rubriques.filter(r => r.title.trim()) }).eq('id', profile.id);
+      if (isMissingColumn(res.error)) alert("Vos rubriques personnalisées n'ont pas été enregistrées : exécutez le script « supabase_rubriques.sql » dans Supabase.");
+      else error = res.error;
+    }
 
     if (error) {
       console.error("Profile update error:", error);
@@ -248,7 +295,7 @@ export default function PrestataireProfilPage() {
               </button>
             </div>
             <button 
-              onClick={() => setIsEditing(false)}
+              onClick={() => { setIsEditing(false); setActivity(activityFromProfile(profile)); setRubriques(parseRubriques(profile?.rubriques)); setShowActivityErrors(false); }}
               className="flex items-center gap-2 bg-gray-100 text-gray-700 px-6 py-2.5 rounded-full hover:bg-gray-200 transition-all font-medium"
             >
               <X size={18} />
@@ -297,7 +344,7 @@ export default function PrestataireProfilPage() {
             </div>
 
             <h2 className="font-serif text-2xl font-bold text-gray-900 relative z-10">{formData.full_name || 'Nom de la structure'}</h2>
-            <p className="text-[#b8924a] font-medium text-sm mb-4 relative z-10">{formData.categories.length ? formData.categories.map((c) => getCategory(c)?.label).join(" · ") : formData.category || 'Prestataire'}</p>
+            <p className="text-[#b8924a] font-medium text-sm mb-4 relative z-10">{providerHeadline({ ...profile, services_proposes: activity.services })}</p>
 
             <div className="w-full pt-6 border-t border-gray-100 mt-2 space-y-4">
               <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -316,8 +363,16 @@ export default function PrestataireProfilPage() {
                 <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
                   <MapPin size={16} className="text-gray-400" />
                 </div>
-                <span>{formData.address || 'Non renseigne'}</span>
+                <span>{activity.country ? locationLabel(activity.country, activity.zones, 6) : 'Zones non renseignées'}</span>
               </div>
+              {formData.address && (
+                <div className="flex items-center gap-3 text-sm text-gray-600 text-left">
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                    <Store size={16} className="text-gray-400" />
+                  </div>
+                  <span>{formData.address}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -346,34 +401,6 @@ export default function PrestataireProfilPage() {
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium text-gray-700">Vos activités</label>
-                <p className="text-xs text-gray-500">Choisissez une ou plusieurs activités : vos formulaires de devis s'y adaptent.</p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {(isEditing ? PROVIDER_CATEGORIES : PROVIDER_CATEGORIES.filter(c => formData.categories.includes(c.id))).map(c => {
-                    const on = formData.categories.includes(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        disabled={!isEditing}
-                        aria-pressed={on}
-                        onClick={() => setFormData({
-                          ...formData,
-                          categories: on ? formData.categories.filter(x => x !== c.id) : [...formData.categories, c.id]
-                        })}
-                        className={`px-3.5 py-2 rounded-full text-xs border transition-colors ${on ? 'bg-[#2b2118] text-[#f5eee1] border-[#2b2118]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#b8924a]/60'} disabled:cursor-default`}
-                      >
-                        {c.label}
-                      </button>
-                    );
-                  })}
-                  {!isEditing && formData.categories.length === 0 && (
-                    <span className="text-sm text-gray-500">{formData.category || "Aucune activité renseignée"}</span>
-                  )}
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Telephone</label>
                 <input 
@@ -397,14 +424,15 @@ export default function PrestataireProfilPage() {
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium text-gray-700">Adresse / Zone d'intervention</label>
+                <label className="text-sm font-medium text-gray-700">Adresse (siège, boutique, showroom)</label>
+                <p className="text-xs text-gray-500">Vos zones d'intervention se règlent dans la rubrique « Votre activité » ci-dessous.</p>
                 <input 
                   type="text" 
                   disabled={!isEditing}
                   value={formData.address}
                   onChange={e => setFormData({...formData, address: e.target.value})}
                   className={`w-full px-4 py-3 rounded-xl border transition-all ${isEditing ? 'bg-white border-gray-300 focus:ring-2 focus:ring-[#b8924a] focus:border-transparent' : 'bg-gray-50 border-transparent text-gray-600'}`}
-                  placeholder="Ex: Dakar et environs"
+                  placeholder="Ex: Sacré-Cœur 3, Dakar"
                 />
               </div>
               
@@ -461,6 +489,60 @@ export default function PrestataireProfilPage() {
           </div>
 
           <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mt-6">
+            <h2 className="font-serif text-2xl text-black mb-1">Votre activité</h2>
+            <p className="text-sm text-gray-500 mb-6">Types d'événements, prestations et zones : les organisateurs filtrent les prestataires avec ces informations.</p>
+            {isEditing ? (
+              <ActivityFields value={activity} onChange={setActivity} showErrors={showActivityErrors} />
+            ) : (
+              <dl className="space-y-5">
+                {[
+                  { label: "Types d'événements", items: activity.event_types },
+                  { label: "Prestations", items: activity.services },
+                ].map(({ label, items }) => (
+                  <div key={label}>
+                    <dt className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">{label}</dt>
+                    <dd className="flex flex-wrap gap-2">
+                      {items.length ? items.map(i => (
+                        <span key={i} className="px-3 py-1.5 rounded-full text-xs bg-[#f5eee1] text-[#7a5e2b] border border-[#e4d8c4]">{i}</span>
+                      )) : <span className="text-sm text-gray-400">Non renseigné</span>}
+                    </dd>
+                  </div>
+                ))}
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">Pays et zones d'intervention</dt>
+                  <dd className="text-sm text-gray-800 flex items-center gap-1.5">
+                    <MapPin size={14} className="text-[#b8924a]" />
+                    {activity.country ? locationLabel(activity.country, activity.zones, 8) : <span className="text-gray-400">Non renseigné</span>}
+                  </dd>
+                </div>
+              </dl>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mt-6">
+            <h2 className="font-serif text-2xl text-black mb-1">Vos rubriques</h2>
+            <p className="text-sm text-gray-500 mb-6">Personnalisez votre vitrine : ajoutez, renommez ou supprimez des rubriques. Des suggestions s'adaptent à vos prestations et types d'événements.</p>
+            {isEditing ? (
+              <RubriquesEditor
+                value={rubriques}
+                onChange={setRubriques}
+                suggestions={suggestProfileRubriques(activity.services, activity.event_types, rubriques)}
+                newSources={(() => {
+                  // Prestations et événements ajoutés depuis le dernier enregistrement : suggestions mises en avant
+                  const saved = activityFromProfile(profile);
+                  const added = activity.services.filter(x => !saved.services.includes(x));
+                  if (activity.event_types.some(x => !saved.event_types.includes(x))) added.push("Vos types d'événements");
+                  return added;
+                })()}
+              />
+            ) : rubriques.length ? (
+              <RubriquesView value={rubriques} />
+            ) : (
+              <p className="text-sm text-gray-500">Aucune rubrique. Cliquez sur « Modifier » pour en ajouter.</p>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mt-6">
             <h2 className="font-serif text-2xl font-bold text-black mb-6">Galerie Photos (Catalogue)</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {formData.gallery.map((url, idx) => (
@@ -476,12 +558,24 @@ export default function PrestataireProfilPage() {
                 >
                   <img src={url} alt={`Gallery ${idx}`} className={`w-full h-full object-cover ${!isEditing ? 'hover:opacity-80 transition-opacity' : ''}`} />
                   {isEditing && (
-                    <button 
-                      onClick={() => removeGalleryImage(idx)}
-                      className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <X size={14} />
-                    </button>
+                    <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => editGalleryImage(idx)}
+                        className="w-8 h-8 bg-black/70 hover:bg-[#b8924a] text-white rounded-full flex items-center justify-center transition-colors"
+                        aria-label="Recadrer et retoucher"
+                      >
+                        <Crop size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(idx)}
+                        className="w-8 h-8 bg-black/70 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition-colors"
+                        aria-label="Supprimer la photo"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -546,6 +640,7 @@ export default function PrestataireProfilPage() {
           </div>
         </div>
       )}
+      {editorElement}
     </div>
   );
 }

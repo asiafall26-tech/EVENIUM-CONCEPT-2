@@ -1,6 +1,8 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
+import { locationLabel } from "@/lib/zones";
 
 export interface Prestataire {
   id: string;
@@ -47,13 +49,13 @@ export function PrestataireProvider({ children }: { children: ReactNode }) {
       setPrestataires(data.map(p => ({
         id: p.id,
         name: p.full_name || "Prestataire",
-        role: p.category || "Service",
+        role: providerHeadline(p),
         rating: 5,
         phone: p.phone || "Non renseigné",
         isPlatformProvider: true,
-        zone: p.address || "Non renseigné",
+        zone: locationLabel(activityFromProfile(p).country, activityFromProfile(p).zones) || p.address || "Non renseigné",
         description: p.description || "",
-        services: p.category ? [p.category] : [],
+        services: activityFromProfile(p).services.length ? activityFromProfile(p).services : p.category ? [p.category] : [],
         priceRange: "Sur devis"
       })));
     }

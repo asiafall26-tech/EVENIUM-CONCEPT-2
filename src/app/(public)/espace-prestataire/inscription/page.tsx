@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ShieldCheck, Mail, Lock, CreditCard, Smartphone, User, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { ActivityFields } from '@/components/prestataire/ActivityFields';
+import { EMPTY_ACTIVITY, missingActivity, saveActivity, type ProviderActivity } from '@/lib/providerProfile';
 
 export default function PrestataireExterneInscription() {
   const router = useRouter();
@@ -15,6 +17,8 @@ export default function PrestataireExterneInscription() {
     password: '',
     paymentMethod: 'wave'
   });
+  const [activity, setActivity] = useState<ProviderActivity>(EMPTY_ACTIVITY);
+  const [showActivityErrors, setShowActivityErrors] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -24,10 +28,23 @@ export default function PrestataireExterneInscription() {
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name && formData.email && formData.password.length >= 6) {
+      setErrorMsg(null);
       setStep(2);
     } else {
       setErrorMsg("Veuillez remplir tous les champs (le mot de passe doit faire au moins 6 caractères).");
     }
+  };
+
+  const handleActivityStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    const missing = missingActivity(activity);
+    if (missing.length) {
+      setShowActivityErrors(true);
+      setErrorMsg(`Merci de renseigner ${missing.join(", ")}.`);
+      return;
+    }
+    setErrorMsg(null);
+    setStep(3);
   };
 
   const handlePayment = async (e: React.FormEvent) => {
@@ -47,7 +64,9 @@ export default function PrestataireExterneInscription() {
           data: {
             full_name: formData.name,
             role: 'prestataire',
-            badge: 'externe' // Le prestataire qui s'inscrit lui-même a le badge "externe"
+            badge: 'externe', // Le prestataire qui s'inscrit lui-même a le badge "externe"
+            // Conservée aussi dans le compte au cas où le profil ne peut pas encore être mis à jour
+            activity
           }
         }
       });
@@ -60,6 +79,7 @@ export default function PrestataireExterneInscription() {
           .from('profiles')
           .update({ is_evenium_certified: false })
           .eq('id', authData.user.id);
+        await saveActivity(supabase, authData.user.id, activity);
       }
 
       // 3. Redirection vers le dashboard prestataire
@@ -160,16 +180,30 @@ export default function PrestataireExterneInscription() {
               </div>
 
               <button type="submit" className="w-full py-4 bg-black text-white rounded-xl font-bold hover:bg-gray-900 transition-colors mt-8">
+                Continuer
+              </button>
+            </form>
+          ) : step === 2 ? (
+            <form onSubmit={handleActivityStep} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex items-center gap-4 mb-2">
+                <button type="button" onClick={() => setStep(1)} className="text-gray-400 hover:text-black transition-colors">
+                  Retour
+                </button>
+                <h3 className="text-2xl font-bold text-gray-900">2. Votre activité</h3>
+              </div>
+              <p className="text-sm text-gray-500 -mt-2">Les organisateurs vous trouveront grâce à ces informations. Vous pourrez les modifier dans votre profil.</p>
+              <ActivityFields value={activity} onChange={setActivity} showErrors={showActivityErrors} />
+              <button type="submit" className="w-full py-4 bg-black text-white rounded-xl font-bold hover:bg-gray-900 transition-colors mt-8">
                 Continuer vers le paiement
               </button>
             </form>
           ) : (
             <form onSubmit={handlePayment} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex items-center gap-4 mb-6">
-                <button type="button" onClick={() => setStep(1)} className="text-gray-400 hover:text-black transition-colors">
+                <button type="button" onClick={() => setStep(2)} className="text-gray-400 hover:text-black transition-colors">
                   Retour
                 </button>
-                <h3 className="text-2xl font-bold text-gray-900">2. Paiement (20 000 FCFA)</h3>
+                <h3 className="text-2xl font-bold text-gray-900">3. Paiement (20 000 FCFA)</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

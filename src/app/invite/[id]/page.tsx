@@ -13,6 +13,8 @@ import IvoireInvitation from "@/components/invitations/ivoire/IvoireInvitation";
 import * as ivoire from "@/components/invitations/ivoire/content";
 import RoseOrInvitation from "@/components/invitations/rose-or/RoseOrInvitation";
 import * as roseOr from "@/components/invitations/rose-or/content";
+import AnniversaireInvitation from "@/components/invitations/anniversaire/AnniversaireInvitation";
+import * as anniversaire from "@/components/invitations/anniversaire/content";
 import type { RsvpPayload } from "@/components/invitations/velours/VeloursInvitation";
 import { CheckCircle, XCircle, Users, Phone, Mail, User, Loader2, Music, MapPin, Clock, Camera, Navigation, Gift, Car, Hotel, Info } from "lucide-react";
 
@@ -116,6 +118,12 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
     const rawContent = event.invitation_content ?? ivoire.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
     return <IvoireInvitation content={content} onRsvp={saveRsvp} />;
+  }
+
+  if (event.invitation_model_id === anniversaire.ANNIVERSAIRE_MODEL_ID) {
+    const rawContent = event.invitation_content ? anniversaire.withDefaults(event.invitation_content) : anniversaire.seedFromEvent(event);
+    const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
+    return <AnniversaireInvitation content={content} onRsvp={saveRsvp} />;
   }
 
   if (event.invitation_model_id === roseOr.ROSE_OR_MODEL_ID) {

@@ -20,6 +20,7 @@ import { NotificationBell } from "@/components/ui/NotificationBell";
 import { UserMenu } from "@/components/ui/UserMenu";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { activityFromProfile, hasActivityColumns, isActivityComplete } from "@/lib/providerProfile";
 
 export default async function PrestataireLayout({
   children,
@@ -35,7 +36,7 @@ export default async function PrestataireLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role')
+    .select('*')
     .eq('id', user.id)
     .single();
 
@@ -43,6 +44,16 @@ export default async function PrestataireLayout({
     redirect('/dashboard');
   } else if (profile?.role === 'admin') {
     redirect('/admin');
+  }
+
+  // Prestataire certifié Evenium : types d'événements, prestations, pays et zones obligatoires
+  // (contrôle actif dès que le script SQL a ajouté les colonnes)
+  if (
+    profile?.is_evenium_certified !== false &&
+    hasActivityColumns(profile) &&
+    !isActivityComplete(activityFromProfile(profile))
+  ) {
+    redirect('/prestataire-activite');
   }
 
   const fullName = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || "Prestataire";
