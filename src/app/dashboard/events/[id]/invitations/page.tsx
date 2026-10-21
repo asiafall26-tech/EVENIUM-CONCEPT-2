@@ -429,188 +429,134 @@ export default function InvitationsDashboardPage({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full relative">
-      {/* Breadcrumb */}
-      <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
-        <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Invitations</span>
+    <div className="max-w-5xl mx-auto w-full relative space-y-5 sm:space-y-6">
+      {/* En-tête */}
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Invitation</p>
+        <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight">{event.name}</h1>
+        <p className="text-gray-500 text-sm mt-1">Votre invitation est prête : personnalisez-la et partagez le lien avec vos invités.</p>
       </div>
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-serif text-3xl font-bold text-black mb-2">L'Invitation - {event.name}</h1>
-        <p className="text-gray-500 text-sm">Votre invitation est prête. Partagez le lien avec vos invités.</p>
-      </div>
-
-      {/* Purchased Invitation Model */}
-      <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-[#b8924a]/30 shadow-[0_4px_30px_-4px_rgba(184,146,74,0.15)] flex flex-col sm:flex-row gap-8 items-center sm:items-start relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-[#b8924a] to-[#8f6f33]"></div>
-        
-        <div className="w-full sm:w-64 aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden relative flex-shrink-0 border border-gray-200 shadow-md">
-          {/* Real or Placeholder image based on model */}
-          <div className="w-full h-full relative">
+      {/* 1. MON INVITATION + ACTIONS */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="flex gap-4 sm:gap-6 items-start">
+          <div className="w-24 sm:w-36 aspect-[3/4] shrink-0 rounded-2xl overflow-hidden relative bg-gray-100 border border-gray-200">
             <div className="absolute inset-0 flex items-center justify-center text-[#b8924a] opacity-20">
-              <Sparkles size={64} />
+              <Sparkles size={40} />
             </div>
-            {cover && <Image src={cover} alt={getModelName()} fill className="object-cover" />}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 flex flex-col justify-end p-4">
-               <p className="text-white font-serif font-bold text-lg leading-tight">{invitationData.title}</p>
+            {cover && <Image src={cover} alt={getModelName()} fill sizes="144px" className="object-cover" />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full text-[11px] font-semibold">✓ En ligne</span>
+              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[11px] font-semibold">{event.plan}</span>
+              <span className="bg-[#f5eee1] text-[#7a5e2b] px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                {event.format === "Animée" ? "Animée · avec musique" : "Carte · sans musique"}
+              </span>
             </div>
-          </div>
-          <div className="absolute top-3 right-3 bg-[#8f6f33] text-white px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-            <Sparkles size={12} /> {event.format === "Animée" ? "Animée · Avec son" : "Carte · Sans musique"}
-          </div>
-        </div>
-        
-        <div className="flex-1 w-full py-4">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="bg-[#E8F5E9] text-[#2E7D32] border border-[#2E7D32]/20 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-              ✓ Générée & Prête
-            </span>
-            <span className="bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
-              {event.plan}
-            </span>
-          </div>
-          
-          <h2 className="font-serif text-3xl font-bold text-gray-900 mb-3">{getModelName()}</h2>
-          
-          <p className="text-gray-600 text-sm mb-6 max-w-2xl leading-relaxed">
-            {isStatic ? (
-              <>Votre carte d&apos;invitation digitale épurée est active (format visuel sans animation ni musique). Vos invités pourront consulter votre élégant faire-part et confirmer leur présence directement depuis leur téléphone.</>
-            ) : (
-              <>Votre mini-site d&apos;invitation immersif est actif. Vos invités pourront vivre cette animation musicale et confirmer leur présence directement depuis leur téléphone.</>
-            )}
-          </p>
-
-          <div className="mb-8 p-6 bg-gray-50/80 rounded-2xl border border-gray-100">
-            <div className="flex justify-between items-start mb-4">
-              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Aperçu du texte</h4>
-              <button 
-                onClick={() => setIsEditModalOpen(true)}
-                className="text-[#b8924a] text-sm font-semibold hover:underline flex items-center gap-1"
-              >
-                <Edit3 size={14} /> Corriger
-              </button>
-            </div>
-            <p className="font-serif text-xl font-bold text-gray-900 mb-1">{invitationData.title}</p>
-            <p className="text-sm text-[#8f6f33] font-semibold mb-3">{event.date}</p>
-            <p className="text-sm italic text-gray-700 leading-relaxed">{invitationData.message}</p>
-          </div>
-          
-          <div className="flex flex-wrap gap-4 items-center">
-            {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
-              <button
-                onClick={() => setIsStudioOpen(true)}
-                className="bg-[#6b1f2a] hover:bg-[#7a1a2e] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-[#6b1f2a]/20"
-              >
-                <Edit3 size={18} /> Personnaliser l&apos;invitation
-              </button>
-            )}
-            <button
-              onClick={() => window.open(shareUrl, '_blank')}
-              className="bg-black hover:bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-black/10"
-            >
-              <Eye size={18} /> Voir l&apos;invitation en direct
-            </button>
-            {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
-              <button
-                type="button"
-                onClick={() => setShowResetPageModal(true)}
-                className="border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 px-5 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs"
-                title="Rétablir la version originale non modifiée sans aucun rachat"
-              >
-                <RotateCcw size={16} className="text-amber-700" />
-                <span>Revenir à la version originale</span>
-              </button>
-            )}
-          </div>
-
-          {resetSuccessMessage && (
-            <div className="mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in">
-              <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
-              <p className="font-medium leading-relaxed">{resetSuccessMessage}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* SECTION LIEN OFFICIEL & QR CODE ACTIF */}
-      <div className="mt-8 bg-gradient-to-br from-[#1a1514] via-[#241c19] to-[#120f0e] rounded-3xl p-6 sm:p-8 border border-[#b8924a]/40 shadow-2xl text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-[#b8924a]/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#b8924a]/20 border border-[#b8924a]/40 text-[#f3e5ab] text-xs font-bold uppercase tracking-wider">
-              <Sparkles size={14} className="text-[#d4af37]" />
-              <span>QR Code Actif &amp; Lien Officiel</span>
-            </div>
-            
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-              Votre invitation interactive est prête à être partagée
-            </h3>
-            
-            <p className="text-gray-300 text-sm leading-relaxed">
-              Scannez le QR Code en direct ou téléchargez-le en haute résolution PNG ainsi que votre carton d&apos;invitation imprimable. Ce QR Code ouvre instantanément votre faire-part interactif sur n&apos;importe quel smartphone.
+            <h2 className="font-serif text-2xl sm:text-3xl text-gray-900 mt-2 leading-tight">{getModelName()}</h2>
+            <p className="text-sm text-gray-500 mt-1.5 leading-relaxed hidden sm:block">
+              {isStatic
+                ? "Votre carte d'invitation digitale est active. Vos invités la consultent et confirment leur présence depuis leur téléphone."
+                : "Votre invitation animée est active. Vos invités la découvrent en musique et confirment leur présence depuis leur téléphone."}
             </p>
+          </div>
+        </div>
 
-            {/* Lien officiel avec bouton de copie */}
-            <div className="pt-2">
-              <label className="block text-xs font-bold text-gray-300 mb-2">
-                Lien officiel de l&apos;invitation :
-              </label>
-              <div className="flex items-center gap-2 max-w-lg">
-                <input
-                  type="text"
-                  readOnly
-                  value={shareUrl}
-                  className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-white outline-none select-all backdrop-blur-xs"
-                />
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${
-                    copied
-                      ? "bg-emerald-600 text-white"
-                      : "bg-[#b8924a] hover:bg-[#a07b38] text-black"
-                  }`}
-                >
-                  {copied ? (
-                    <>
-                      <CheckCircle size={14} />
-                      <span>Copié !</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      <span>Copier</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+        <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
+            <button
+              onClick={() => setIsStudioOpen(true)}
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-[#6b1f2a] text-white px-3 py-4 text-sm font-semibold"
+            >
+              <Edit3 size={20} /> Personnaliser
+            </button>
+          )}
+          <button
+            onClick={() => window.open(shareUrl, '_blank')}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-black text-white px-3 py-4 text-sm font-semibold"
+          >
+            <Eye size={20} /> Voir en direct
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsShareModalOpen(true)}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] text-white px-3 py-4 text-sm font-semibold"
+          >
+            <MessageCircle size={20} /> WhatsApp
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl px-3 py-4 text-sm font-semibold border ${copied ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-800 border-gray-200"}`}
+          >
+            {copied ? <CheckCircle size={20} /> : <Copy size={20} />} {copied ? "Lien copié" : "Copier le lien"}
+          </button>
+        </div>
 
-            {/* Bouton Partager WhatsApp direct */}
-            <div className="pt-2">
+        {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
+          <button
+            type="button"
+            onClick={() => setShowResetPageModal(true)}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 hover:underline"
+            title="Rétablir la version originale non modifiée sans aucun rachat"
+          >
+            <RotateCcw size={13} /> Revenir à la version originale du modèle
+          </button>
+        )}
+
+        {resetSuccessMessage && (
+          <div className="mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm flex items-start gap-2.5 animate-in fade-in">
+            <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+            <p className="font-medium leading-relaxed">{resetSuccessMessage}</p>
+          </div>
+        )}
+      </section>
+
+      {/* 2. QR CODE & LIEN OFFICIEL */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 md:gap-8 items-center">
+          <div className="flex justify-center">
+            <EventQRCode url={shareUrl} eventName={event.name} date={event.date} size={150} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Lien officiel & QR code</p>
+            <h3 className="font-serif text-2xl text-gray-900 mt-1">Partagez votre invitation</h3>
+            <p className="text-sm text-gray-500 mt-1.5">Le QR code ouvre l&apos;invitation sur n&apos;importe quel téléphone. Téléchargez-le pour vos cartons imprimés.</p>
+            <div className="mt-4 flex items-stretch gap-2">
+              <input
+                type="text"
+                readOnly
+                value={shareUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                className="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-gray-700 outline-none"
+                aria-label="Lien officiel de l'invitation"
+              />
               <button
                 type="button"
-                onClick={() => setIsShareModalOpen(true)}
-                className="py-3 px-6 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-[#25D366]/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                onClick={handleCopyLink}
+                className={`shrink-0 px-4 rounded-xl font-semibold text-xs flex items-center gap-1.5 ${copied ? "bg-emerald-600 text-white" : "bg-[#b8924a] text-black"}`}
               >
-                <MessageCircle size={18} />
-                <span>Partager sur WhatsApp</span>
+                {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
+                {copied ? "Copié" : "Copier"}
               </button>
             </div>
           </div>
-
-          <div className="lg:col-span-5 flex justify-center">
-            <EventQRCode
-              url={shareUrl}
-              eventName={event.name}
-              date={event.date}
-              size={150}
-            />
-          </div>
         </div>
-      </div>
+      </section>
+
+      {/* 3. TEXTE DE L'INVITATION */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500">Texte de l&apos;invitation</p>
+          <button onClick={() => setIsEditModalOpen(true)} className="text-[#8f6f33] text-sm font-semibold flex items-center gap-1">
+            <Edit3 size={14} /> Corriger
+          </button>
+        </div>
+        <p className="font-serif text-xl text-gray-900 mt-3">{invitationData.title}</p>
+        <p className="text-sm text-[#8f6f33] font-semibold mt-0.5">{event.date}</p>
+        <p className="text-sm italic text-gray-700 leading-relaxed mt-2 whitespace-pre-line">{invitationData.message}</p>
+      </section>
 
       {isStudioOpen && isVelours && (
         <VeloursEditorModal

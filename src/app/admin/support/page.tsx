@@ -88,7 +88,7 @@ export default function AdminSupportPage() {
 
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="table-stack w-full text-left text-sm">
             <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4 font-medium whitespace-nowrap">Utilisateur</th>

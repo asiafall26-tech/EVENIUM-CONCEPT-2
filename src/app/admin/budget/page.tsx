@@ -138,7 +138,7 @@ export default async function AdminFinancesPage() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+          <table className="table-stack w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-white text-gray-500 border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4 font-medium">Prestataire</th>

@@ -284,6 +284,13 @@ export default function ParticipantsDashboardPage({
   };
 
   const [isRelancing, setIsRelancing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"Tous" | "Confirmé" | "En attente" | "Refusé">("Tous");
+  const visibleParticipants = participants.filter((p) => {
+    const q = query.trim().toLowerCase();
+    const matchesQuery = !q || [p.name, p.email, p.phone, p.group].some((v) => String(v ?? "").toLowerCase().includes(q));
+    return matchesQuery && (statusFilter === "Tous" || p.status === statusFilter);
+  });
 
   const handleRelance = () => {
     setIsRelancing(true);
@@ -294,210 +301,156 @@ export default function ParticipantsDashboardPage({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-      <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
-        <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Participants & Invitations</span>
+    <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6">
+      {/* En-tête */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Invités & RSVP</p>
+          <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight">Mes invités</h1>
+          <p className="text-gray-500 text-sm mt-1">Ajoutez vos invités, envoyez l&apos;invitation et suivez leurs réponses.</p>
+        </div>
+        <button onClick={openAddModal} className="inline-flex items-center justify-center gap-2 bg-black text-[#f5eee1] px-5 py-3 rounded-full text-sm font-semibold shadow-md">
+          <Plus size={17} /> Ajouter un invité
+        </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2">Suivi des Participants</h1>
-          <p className="text-gray-500 text-sm">Gérez la liste de vos invités et suivez l'historique des réponses (RSVP).</p>
+      {/* Chiffres */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Invités", value: stats.total, color: "text-gray-900", icon: Users },
+            { label: "Confirmés", value: stats.confirmed, color: "text-green-700", icon: CheckCircle },
+            { label: "En attente", value: stats.pending, color: "text-amber-600", icon: Clock },
+            { label: "Refusés", value: stats.refused, color: "text-red-600", icon: XCircle },
+          ].map((k) => (
+            <div key={k.label} className="rounded-2xl bg-gray-50/80 border border-gray-100 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                <k.icon size={13} /> {k.label}
+              </p>
+              <p className={`font-serif text-3xl mt-1 ${k.color}`}>{k.value}</p>
+            </div>
+          ))}
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+            <span>Taux de confirmation</span>
+            <span className="font-semibold text-gray-900">{stats.confirmedPct}%</span>
+          </div>
+          <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex">
+            <div className="h-full bg-[#2E7D32]" style={{ width: `${stats.confirmedPct}%` }} />
+            <div className="h-full bg-[#F57F17]" style={{ width: `${stats.pendingPct}%` }} />
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button
             onClick={openWhatsAppModalGlobal}
-            className="flex items-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-[#25D366]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center justify-center gap-2 bg-[#25D366] text-white px-4 py-3 rounded-xl text-sm font-semibold"
           >
             <MessageCircle size={17} /> Partager sur WhatsApp
           </button>
-          <button 
+          <button
             onClick={handleRelance}
             disabled={isRelancing || stats.pending === 0}
-            className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-xl text-sm font-medium disabled:opacity-50"
           >
-            <Mail size={16} /> {isRelancing ? "Envoi en cours..." : "Relancer les indécis"}
-          </button>
-          <button onClick={openAddModal} className="flex items-center gap-2 bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-[#8f6f33]/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-            <Plus size={16} /> Ajouter un invité
+            <Mail size={16} /> {isRelancing ? "Envoi en cours..." : `Relancer les indécis (${stats.pending})`}
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Stats Cards & Donut Chart (RSVP Status) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        
-        {/* Quick Stats Grid */}
-        <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3 mb-2 text-gray-600">
-              <Users size={18} />
-              <h3 className="font-medium text-sm">Total Invités</h3>
-            </div>
-            <p className="text-3xl font-bold">{stats.total}</p>
+      {/* Liste */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm">
+        <div className="p-4 sm:p-5 border-b border-gray-100 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rechercher un invité, un téléphone, un groupe…"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+            />
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3 mb-2 text-green-600">
-              <CheckCircle size={18} />
-              <h3 className="font-medium text-sm">Confirmés</h3>
-            </div>
-            <p className="text-3xl font-bold text-green-700">{stats.confirmed}</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3 mb-2 text-amber-500">
-              <Clock size={18} />
-              <h3 className="font-medium text-sm">En attente</h3>
-            </div>
-            <p className="text-3xl font-bold text-amber-600">{stats.pending}</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center gap-3 mb-2 text-red-500">
-              <XCircle size={18} />
-              <h3 className="font-medium text-sm">Refusés</h3>
-            </div>
-            <p className="text-3xl font-bold text-red-600">{stats.refused}</p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+            {([
+              ["Tous", stats.total],
+              ["Confirmé", stats.confirmed],
+              ["En attente", stats.pending],
+              ["Refusé", stats.refused],
+            ] as const).map(([label, count]) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setStatusFilter(label)}
+                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border ${statusFilter === label ? "bg-[#2b2118] text-[#f5eee1] border-[#2b2118]" : "bg-white text-gray-600 border-gray-200"}`}
+              >
+                {label === "Tous" ? "Tous" : label === "Confirmé" ? "Confirmés" : label === "Refusé" ? "Refusés" : "En attente"} · {count}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Donut Chart */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] h-full flex flex-col justify-center">
-          <h2 className="font-semibold text-lg text-black mb-4">Statut des réponses</h2>
-          <div className="flex flex-col items-center justify-center">
-            {stats.total > 0 ? (
-              <div className="relative w-32 h-32 rounded-full flex items-center justify-center" 
-                   style={{
-                     background: `conic-gradient(
-                       #2E7D32 0% ${stats.confirmedPct}%, 
-                       #F57F17 ${stats.confirmedPct}% ${stats.confirmedPct + stats.pendingPct}%, 
-                       #C62828 ${stats.confirmedPct + stats.pendingPct}% 100%
-                     )`
-                   }}>
-                <div className="w-20 h-20 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-inner">
-                  <span className="text-xl font-bold">{stats.confirmedPct}%</span>
-                  <span className="text-[9px] text-gray-400 font-bold uppercase">Confirmés</span>
-                </div>
-              </div>
-            ) : (
-              <div className="relative w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center">
-                <span className="text-gray-400 text-sm">Vide</span>
-              </div>
+        {loading ? (
+          <p className="py-10 text-center text-gray-500 text-sm">Chargement des invités...</p>
+        ) : visibleParticipants.length === 0 ? (
+          <div className="py-10 px-6 text-center">
+            <p className="text-gray-500 text-sm">{participants.length === 0 ? "Aucun invité pour le moment." : "Aucun invité ne correspond à votre recherche."}</p>
+            {participants.length === 0 && (
+              <button onClick={openAddModal} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#8f6f33]">
+                <Plus size={15} /> Ajouter mon premier invité
+              </button>
             )}
-            
-            <div className="mt-6 w-full space-y-2 px-2">
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#2E7D32]" /> <span className="text-gray-600 font-medium">Confirmés</span></div>
-                <span className="font-bold text-gray-900">{stats.confirmed}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#F57F17]" /> <span className="text-gray-600 font-medium">En attente</span></div>
-                <span className="font-bold text-gray-900">{stats.pending}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#C62828]" /> <span className="text-gray-600 font-medium">Refusés</span></div>
-                <span className="font-bold text-gray-900">{stats.refused}</span>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Participants & Invitations History Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center bg-gray-50/50 gap-4">
-          <h2 className="font-semibold text-lg text-black">Historique des invitations envoyées</h2>
-          <div className="flex gap-3">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input type="text" placeholder="Rechercher un invité..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a] focus:border-transparent" />
-            </div>
-            <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
-              <option>Tous les statuts</option>
-              <option>Confirmé</option>
-              <option>En attente</option>
-              <option>Refusé</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-[10px] text-gray-400 font-semibold tracking-wider uppercase bg-white">
-                <th className="py-4 px-6 font-medium">Invité</th>
-                <th className="py-4 px-6 font-medium">Contact (Email/Tel)</th>
-                <th className="py-4 px-6 font-medium">Groupe</th>
-                <th className="py-4 px-6 font-medium">Date d'envoi</th>
-                <th className="py-4 px-6 font-medium">Statut RSVP</th>
-                <th className="py-4 px-6 font-medium text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">Chargement des invités...</td>
-                </tr>
-              ) : participants.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">Aucun participant enregistré.</td>
-                </tr>
-              ) : (
-                participants.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50/50 transition-colors bg-white group">
-                    <td className="py-4 px-6 font-medium text-gray-900">{p.name}</td>
-                    <td className="py-4 px-6 text-gray-500">
-                      <div className="flex flex-col">
-                        <span>{p.email}</span>
-                        <span className="text-xs text-gray-400">{p.phone}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-gray-500">
-                      <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-medium">
-                        {p.group}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-500 font-medium">{p.dateSent}</td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusStyle(p.status)}`}>
-                        {p.status === "Confirmé" && <CheckCircle size={12} />}
-                        {p.status === "En attente" && <Clock size={12} />}
-                        {p.status === "Refusé" && <XCircle size={12} />}
-                        {p.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button 
-                          onClick={() => openWhatsAppModalForGuest(p)} 
-                          className="px-2.5 py-1.5 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-lg text-xs font-semibold transition-all hover:scale-105 shadow-sm flex items-center gap-1.5 shadow-[#25D366]/20" 
-                          title={`Envoyer l'invitation à ${p.name} sur WhatsApp`}
-                        >
-                          <MessageCircle size={13} />
-                          <span>WhatsApp</span>
-                        </button>
-                        <button onClick={() => openEditModal(p)} className="p-1.5 text-gray-500 hover:text-[#8f6f33] hover:bg-[#f5eee1] rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Modifier">
-                          <Edit2 size={14} />
-                        </button>
-                        <button onClick={() => handleDelete(p.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Supprimer">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="p-4 border-t border-gray-100 flex justify-between items-center bg-gray-50/50 text-sm text-gray-500">
-          <span>Affichage de {participants.length} invité(s)</span>
-        </div>
-      </div>
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {visibleParticipants.map((p) => (
+              <li key={p.id} className="px-4 sm:px-5 py-3.5 flex items-center gap-3">
+                <div className="w-10 h-10 shrink-0 rounded-full bg-[#f5eee1] text-[#7a5e2b] flex items-center justify-center text-xs font-bold">
+                  {String(p.name || "?").trim().slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${getStatusStyle(p.status)}`}>
+                      {p.status === "Confirmé" && <CheckCircle size={11} />}
+                      {p.status === "En attente" && <Clock size={11} />}
+                      {p.status === "Refusé" && <XCircle size={11} />}
+                      {p.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    {[p.phone, p.email, p.group, p.dateSent].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                <div className="shrink-0 flex items-center gap-1">
+                  <button
+                    onClick={() => openWhatsAppModalForGuest(p)}
+                    className="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center"
+                    title={`Envoyer l'invitation à ${p.name} sur WhatsApp`}
+                    aria-label={`WhatsApp à ${p.name}`}
+                  >
+                    <MessageCircle size={16} />
+                  </button>
+                  <button onClick={() => openEditModal(p)} className="w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 flex items-center justify-center" aria-label={`Modifier ${p.name}`}>
+                    <Edit2 size={15} />
+                  </button>
+                  <button onClick={() => handleDelete(p.id)} className="w-9 h-9 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center" aria-label={`Supprimer ${p.name}`}>
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="px-4 sm:px-5 py-3 border-t border-gray-100 text-xs text-gray-500">
+          {visibleParticipants.length} invité(s) affiché(s) sur {participants.length}
+        </p>
+      </section>
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92dvh] overflow-y-auto shadow-2xl animate-in fade-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 pb-[env(safe-area-inset-bottom)]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className="font-bold text-xl text-gray-900">
                 {editingParticipantId ? "Modifier le participant" : "Ajouter un participant"}
@@ -520,7 +473,7 @@ export default function ParticipantsDashboardPage({
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                   <input 
@@ -543,7 +496,7 @@ export default function ParticipantsDashboardPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Groupe</label>
                   <select 

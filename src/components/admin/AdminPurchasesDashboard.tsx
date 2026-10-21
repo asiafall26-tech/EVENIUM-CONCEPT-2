@@ -823,7 +823,7 @@ export default function AdminPurchasesDashboard({
         {/* VIEW 1: CLIENTS PURCHASES ONLY */}
         {activeTab === "clients" && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
+            <table className="table-stack w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-gray-50 text-gray-500 border-b border-gray-100 text-xs font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Réf &amp; Date</th>
@@ -980,7 +980,7 @@ export default function AdminPurchasesDashboard({
         {/* VIEW 2: PRESTATAIRES PURCHASES & TRANSACTIONS ONLY */}
         {activeTab === "prestataires" && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
+            <table className="table-stack w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-gray-50 text-gray-500 border-b border-gray-100 text-xs font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Réf &amp; Date</th>
@@ -1108,7 +1108,7 @@ export default function AdminPurchasesDashboard({
         {/* VIEW 3: ALL TRANSACTIONS UNIFIED STREAM */}
         {activeTab === "all" && (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
+            <table className="table-stack w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-gray-50 text-gray-500 border-b border-gray-100 text-xs font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Réf &amp; Date</th>

@@ -301,18 +301,20 @@ input[type="button"] {
   transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Effet "Pressé" (Scale) dès qu'on touche ou clique sur un bouton */
-button:active, 
+/* Retour visuel au toucher sans déplacer l'élément (un effet de taille faisait « bouger » l'écran) */
+button:active:not(:disabled),
 a[href]:active,
 input[type="submit"]:active,
 input[type="button"]:active {
-  transform: scale(0.97);
+  opacity: 0.85;
 }
 
-/* Rendre le fond légèrement plus contrasté au survol sans forcer filter */
-button:hover:not(:disabled),
-a[href]:hover {
-  filter: brightness(0.96);
+/* Survol uniquement avec une souris : sur écran tactile l'effet restait bloqué après un toucher */
+@media (hover: hover) {
+  button:hover:not(:disabled),
+  a[href]:hover {
+    filter: brightness(0.96);
+  }
 }
 
 /* Annuler l'effet pour les éléments désactivés */
@@ -336,8 +338,34 @@ body {
 }
 
 body {
-  overflow-wrap: break-word;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Les mots ne sont jamais coupés en plein milieu (tableaux, colonnes d'informations) ;
+   seuls les e-mails et liens très longs peuvent passer à la ligne */
+td,
+th {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+.break-long,
+a[href^="mailto:"] {
+  overflow-wrap: anywhere;
+}
+
+/* Zones de texte : elles s'agrandissent avec le texte puis défilent dans leur cadre */
+textarea {
+  overflow-y: auto;
+  max-height: 55vh;
+  overscroll-behavior: contain;
+  scroll-padding-block: 0.75rem;
+}
+@supports (field-sizing: content) {
+  textarea {
+    field-sizing: content;
+    min-height: 5.5rem;
+  }
 }
 
 /* Hauteur réelle de l'écran mobile (barre d'adresse comprise) */
@@ -381,4 +409,46 @@ body {
 /* Barres fixées en bas d'écran : au-dessus de la barre d'accueil de l'iPhone */
 .safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Tableaux « empilés » sur téléphone : chaque ligne devient une carte lisible.
+   Ajouter la classe table-stack sur <table> ; data-label="…" sur un <td> affiche son intitulé. */
+@media (max-width: 767px) {
+  table.table-stack {
+    min-width: 0 !important;
+    width: 100%;
+  }
+  table.table-stack thead {
+    display: none;
+  }
+  table.table-stack,
+  table.table-stack tbody,
+  table.table-stack tr,
+  table.table-stack td {
+    display: block;
+    width: 100%;
+  }
+  table.table-stack tr {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--color-sand);
+  }
+  table.table-stack td {
+    padding: 0.15rem 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+  table.table-stack td:first-child {
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  table.table-stack td[data-label]::before {
+    content: attr(data-label) " : ";
+    color: var(--color-taupe);
+    font-weight: 400;
+  }
+  table.table-stack td > div[class*="justify-end"],
+  table.table-stack td > div[class*="justify-center"] {
+    justify-content: flex-start !important;
+  }
 }

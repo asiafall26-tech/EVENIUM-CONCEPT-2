@@ -156,11 +156,11 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
       </div>
 
       {/* Main Container - Full Width */}
-      <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="w-full flex-1 min-h-0 overflow-clip lg:overflow-hidden flex flex-col">
         {/* Editor Panel */}
-        <div className="w-full flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
+        <div className="w-full flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-clip lg:overflow-hidden">
           {/* Horizontal Menu Navigation Bar */}
-          <div className="border-b border-gray-100 bg-gray-50/70 p-2 shrink-0">
+          <div className="border-b border-gray-100 bg-gray-50 p-2 shrink-0 sticky top-[var(--studio-sticky-top,0px)] z-20 lg:static">
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth">
               {MENUS.map((menu) => {
                 const Icon = menu.icon;
@@ -207,7 +207,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
           </div>
 
           {/* Active Menu Content Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6">
+          <div className="flex-1 min-h-0 lg:overflow-y-auto p-4 sm:p-6 space-y-6">
             {/* 1. Les Mariés & la Date */}
             {(activeMenu === "general" || activeMenu === "all") && (
               <section className="space-y-4">
@@ -512,7 +512,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
 
           {/* Stepper Footer for Easy Navigation */}
           {activeMenu !== "all" && (
-            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/80 flex items-center justify-between shrink-0">
+            <div className="px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-2 shrink-0 sticky bottom-0 z-20 lg:static">
               <button
                 type="button"
                 onClick={goToPrevious}

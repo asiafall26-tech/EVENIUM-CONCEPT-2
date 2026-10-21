@@ -251,7 +251,7 @@ export default function PrestataireDemandesPage() {
         </div>
       </div>
 
-      <div className="flex space-x-4 mb-6 border-b">
+      <div className="flex space-x-4 mb-6 border-b overflow-x-auto no-scrollbar">
         <button
           className={`pb-4 px-2 font-medium text-sm transition-colors border-b-2 ${
             activeTab === "demandes" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
@@ -280,7 +280,43 @@ export default function PrestataireDemandesPage() {
               <p>Aucune demande de devis reçue pour le moment.</p>
             </div>
           ) : (
-            <table className="w-full min-w-[680px] text-left border-collapse">
+            <>
+            <ul className="md:hidden divide-y divide-gray-100">
+              {demandes.map((demande) => (
+                <li key={demande.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDemande(demande);
+                      setIsViewModalOpen(true);
+                      if (demande.status === 'Nouvelle') {
+                        supabase.from('demandes_devis').update({ status: 'À traiter' }).eq('id', demande.id).then(() => fetchData());
+                      }
+                    }}
+                    className="w-full text-left px-4 py-4 flex items-start gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-gray-900 truncate">{demande.client_name || demande.events?.profiles?.full_name || 'Client Inconnu'}</p>
+                        {getStatusBadge(demande.status)}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {demande.event_type || demande.events?.type || 'Événement'} · {demande.event_date || 'Date non précisée'}
+                        {demande.event_location ? ` · ${demande.event_location}` : ''}
+                      </p>
+                      <p className="text-sm text-gray-800 mt-1.5">
+                        {demande.service_name || 'Service non spécifié'}
+                        <span className="text-[#8f6f33] font-semibold">
+                          {demande.budget_indicatif ? ` · ${demande.budget_indicatif.toLocaleString()} FCFA` : ''}
+                        </span>
+                      </p>
+                    </div>
+                    <Eye size={18} className="shrink-0 mt-1 text-gray-400" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <table className="hidden md:table w-full min-w-[680px] text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
                   <th className="p-4 font-medium">Client & Événement</th>
@@ -331,6 +367,7 @@ export default function PrestataireDemandesPage() {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </div>
       ) : (
@@ -341,7 +378,30 @@ export default function PrestataireDemandesPage() {
               <p>Vous n'avez pas encore émis de devis.</p>
             </div>
           ) : (
-            <table className="w-full min-w-[680px] text-left border-collapse">
+            <>
+            <ul className="md:hidden divide-y divide-gray-100">
+              {devis.map((d) => (
+                <li key={d.id}>
+                  <Link href={`/prestataire/devis/${d.id}/edit`} className="px-4 py-4 flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-gray-900 truncate">{d.demandes_devis?.client_name || 'Client Inconnu'}</p>
+                        {getDevisStatusBadge(d.is_draft ? 'Brouillon' : d.status)}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 font-mono">
+                        {d.reference || `DEV-${d.id.substring(0, 8).toUpperCase()}`}
+                        {d.date_emission ? ` · ${new Date(d.date_emission).toLocaleDateString()}` : ''}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1.5">{d.total?.toLocaleString()} FCFA</p>
+                    </div>
+                    <span className={`shrink-0 mt-1 inline-flex items-center gap-1 text-xs font-semibold ${d.status === 'Révision demandée' ? 'text-[#8f6f33]' : 'text-gray-400'}`}>
+                      <Edit2 size={16} /> {d.status === 'Révision demandée' ? 'Réviser' : ''}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <table className="hidden md:table w-full min-w-[680px] text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
                   <th className="p-4 font-medium">N° Devis</th>
@@ -395,14 +455,15 @@ export default function PrestataireDemandesPage() {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </div>
       )}
 
       {/* Modal View Demande */}
       {isViewModalOpen && selectedDemande && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-6xl max-h-[90vh] md:h-[90vh] flex flex-col md:flex-row shadow-2xl animate-in zoom-in-95 duration-300 overflow-y-auto md:overflow-hidden relative">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-none sm:rounded-3xl w-full max-w-6xl h-dvh sm:h-auto max-h-dvh sm:max-h-[90vh] md:h-[90vh] flex flex-col md:flex-row shadow-2xl animate-in zoom-in-95 duration-300 overflow-y-auto md:overflow-hidden relative">
             
             {/* Colonne de gauche : Contexte (Client & Événement) */}
             <div className="w-full md:w-1/3 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col shrink-0 md:h-full md:overflow-y-auto hide-scrollbar">

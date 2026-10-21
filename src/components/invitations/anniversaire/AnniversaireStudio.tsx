@@ -83,8 +83,8 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
         </a>
       </div>
 
-      <div className="w-full flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
-        <div className="border-b border-gray-100 bg-gray-50/70 p-2 shrink-0">
+      <div className="w-full flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-clip lg:overflow-hidden">
+        <div className="border-b border-gray-100 bg-gray-50 p-2 shrink-0 sticky top-[var(--studio-sticky-top,0px)] z-20 lg:static">
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
             {MENUS.map((m) => {
               const Icon = m.icon;
@@ -112,7 +112,7 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-8">
+        <div className="flex-1 min-h-0 lg:overflow-y-auto p-4 sm:p-6 space-y-8">
           {show("cover") && (
             <Section n={1} title="Page 1 · Couverture" desc="Titre manuscrit, prénom et photo de la couverture.">
               <div className={box}>
@@ -264,7 +264,7 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
         </div>
 
         {active !== "all" && (
-          <div className="border-t border-gray-100 bg-gray-50/90 p-3 flex items-center justify-between shrink-0">
+          <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-2 shrink-0 sticky bottom-0 z-20 lg:static">
             <button
               type="button"
               onClick={() => index > 0 && setActive(MENUS[index - 1].id)}

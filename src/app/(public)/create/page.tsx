@@ -264,6 +264,16 @@ function CreateExpressStudioContent() {
     }
   }, [selectedEventCategory, filteredModels, selectedModelId]);
 
+  // Aperçu plein écran : la page de création ne défile pas derrière
+  useEffect(() => {
+    if (!isPreviewFullScreenOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isPreviewFullScreenOpen]);
+
   // Modale de finalisation & paiement
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
@@ -765,7 +775,7 @@ function CreateExpressStudioContent() {
           </div>
 
           {/* Le Studio embarqué dédié uniquement au modèle choisi */}
-          <div className="w-full bg-[#faf7f5] rounded-3xl shadow-xl border border-gray-200/90 overflow-hidden flex flex-col h-[85dvh] min-h-[560px] max-h-[900px] lg:h-[900px]">
+          <div className="w-full bg-[#faf7f5] rounded-3xl shadow-xl border border-gray-200/90 overflow-clip lg:overflow-hidden flex flex-col lg:h-[900px] [--studio-sticky-top:4rem] lg:[--studio-sticky-top:0px]">
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursStudio
                 value={veloursContent}
@@ -815,58 +825,22 @@ function CreateExpressStudioContent() {
       {/* (Protégé : sans téléchargement avant paiement)                     */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {isPreviewFullScreenOpen && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black/95 overflow-y-auto flex flex-col select-none"
+        <div
+          className="fixed inset-0 z-[100] h-dvh bg-black overflow-y-auto overscroll-contain select-none"
           onContextMenu={(e) => e.preventDefault()}
         >
-          {/* Barre supérieure flottante d'action et de contrôle */}
-          <div className="sticky top-0 z-50 w-full bg-black/90 backdrop-blur-md px-4 sm:px-6 py-3 border-b border-[#b8924a]/30 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsPreviewFullScreenOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold transition-all border border-white/20 active:scale-95 whitespace-nowrap cursor-pointer"
-              >
-                <ArrowLeft size={16} />
-                <span>Revenir à la création</span>
-              </button>
-
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#b8924a] animate-pulse" />
-                <span className="text-xs text-gray-300 font-medium">
-                  Rendu en direct avec vos modifications
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] text-[#b8924a] bg-[#b8924a]/10 px-3 py-1.5 rounded-xl border border-[#b8924a]/20">
-                <Lock size={13} /> Téléchargement débloqué après paiement
-              </span>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPreviewFullScreenOpen(false);
-                  setIsCheckoutModalOpen(true);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-xs sm:text-sm shadow-xl hover:brightness-105 active:scale-95 transition-all flex items-center gap-2 border border-[#b8924a]/60 whitespace-nowrap cursor-pointer"
-              >
-                <Sparkles size={15} />
-                <span>Valider &amp; Finaliser l&apos;achat</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* Bandeau d'information de protection */}
-          <div className="bg-gradient-to-r from-[#5c0f21]/80 via-[#2b1810]/90 to-[#5c0f21]/80 border-b border-[#b8924a]/20 text-center py-2 px-4 text-[11px] text-[#F3E5AB] font-medium flex items-center justify-center gap-2">
-            <Lock size={12} className="text-[#b8924a] shrink-0" />
-            <span>Aperçu interactif protégé · Les cartons téléchargeables et liens de partage WhatsApp seront activés dès validation de votre achat.</span>
-          </div>
+          {/* Seul contrôle visible : retour discret. « Valider » et « Revenir » sont à la fin de l'invitation */}
+          <button
+            type="button"
+            onClick={() => setIsPreviewFullScreenOpen(false)}
+            aria-label="Revenir à la création"
+            className="fixed z-[120] left-3 top-[max(0.75rem,env(safe-area-inset-top))] w-10 h-10 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md text-white border border-white/25 flex items-center justify-center shadow-lg"
+          >
+            <ArrowLeft size={18} />
+          </button>
 
           {/* Corps de l'invitation en plein écran avec modifications */}
-          <div className="flex-1 w-full relative min-h-screen">
+          <div className="w-full relative min-h-dvh">
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursInvitation
                 content={veloursContent}

@@ -200,208 +200,149 @@ export default function BudgetDashboardPage({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-      <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
-        <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Gestion Budgétaire</span>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+    <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6">
+      {/* En-tête */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2">Gestion Budgétaire</h1>
-          <p className="text-gray-500 text-sm">Suivez vos dépenses et maîtrisez votre budget événementiel.</p>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Budget</p>
+          <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight">Mon budget</h1>
+          <p className="text-gray-500 text-sm mt-1">Suivez vos dépenses et gardez un œil sur ce qu&apos;il vous reste.</p>
         </div>
-        <button 
-          onClick={openAddModal}
-          className="flex items-center gap-2 bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md shadow-[#8f6f33]/20 transition-colors"
-        >
-          <Plus size={16} /> Ajouter une dépense
+        <button onClick={openAddModal} className="inline-flex items-center justify-center gap-2 bg-black text-[#f5eee1] px-5 py-3 rounded-full text-sm font-semibold shadow-md">
+          <Plus size={17} /> Ajouter une dépense
         </button>
       </div>
 
-      {/* Dashboard KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Wallet size={80} />
-          </div>
-          <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gray-50 text-gray-700 flex items-center justify-center shadow-sm">
-              <Wallet size={24} />
-            </div>
-            <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2.5 py-1 rounded-full">ESTIMATION</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-gray-500 font-medium">Budget global estimé</p>
-              <button onClick={() => setIsEditingBudget(!isEditingBudget)} className="text-gray-400 hover:text-[#b8924a] transition-colors" title="Modifier le budget">
+      {/* Chiffres clés */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-2xl bg-gray-50/80 border border-gray-100 px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] uppercase tracking-wider text-gray-500 flex items-center gap-1.5"><Wallet size={13} /> Budget prévu</p>
+              <button onClick={() => setIsEditingBudget(!isEditingBudget)} className="p-1 -m-1 text-gray-400 hover:text-[#b8924a]" aria-label="Modifier le budget">
                 <Edit2 size={14} />
               </button>
             </div>
-            
             {isEditingBudget ? (
               <div className="flex items-center gap-2 mt-2">
-                <input 
-                  type="number" 
-                  placeholder="Montant..." 
-                  className="px-3 py-1.5 border border-gray-200 rounded-md text-sm outline-none w-32"
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Montant…"
+                  className="min-w-0 flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none bg-white"
                   value={newBudgetTotal}
                   onChange={(e) => setNewBudgetTotal(e.target.value)}
                 />
-                <button 
+                <button
                   onClick={handleUpdateBudget}
                   disabled={isSubmitting || !newBudgetTotal}
-                  className="bg-[#b8924a] text-white px-3 py-1.5 rounded-md text-sm font-semibold disabled:opacity-50"
+                  className="shrink-0 bg-[#b8924a] text-white px-3 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
                 >
-                  Ok
+                  OK
                 </button>
               </div>
             ) : (
-              <h3 className="text-3xl font-serif font-bold text-gray-900">{formatCurrency(globalBudget)} <span className="text-lg text-gray-400">FCFA</span></h3>
+              <p className="font-serif text-2xl sm:text-3xl text-gray-900 mt-1">{formatCurrency(globalBudget)} <span className="text-sm text-gray-400">FCFA</span></p>
             )}
           </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity text-red-500">
-            <TrendingDown size={80} />
+          <div className="rounded-2xl bg-gray-50/80 border border-gray-100 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 flex items-center gap-1.5"><TrendingDown size={13} /> Dépensé</p>
+            <p className="font-serif text-2xl sm:text-3xl text-gray-900 mt-1">{formatCurrency(totalSpent)} <span className="text-sm text-gray-400">FCFA</span></p>
           </div>
-          <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shadow-sm">
-              <TrendingDown size={24} />
-            </div>
-            <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><ArrowUpRight size={12} /> {consumedPercentage}% CONSOMMÉ</span>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">Dépenses actuelles</p>
-            <h3 className="text-3xl font-serif font-bold text-gray-900">{formatCurrency(totalSpent)} <span className="text-lg text-gray-400">FCFA</span></h3>
+          <div className="rounded-2xl bg-[#2b2118] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-[#d9c08c] flex items-center gap-1.5"><CheckCircle2 size={13} /> Restant</p>
+            <p className="font-serif text-2xl sm:text-3xl text-white mt-1">{formatCurrency(remainingBudget)} <span className="text-sm text-white/50">FCFA</span></p>
           </div>
         </div>
-
-        <div className="bg-gradient-to-br from-[#2b2118] to-black p-6 rounded-2xl border border-gray-800 shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-[#b8924a]">
-            <CheckCircle2 size={80} />
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+            <span>Budget consommé</span>
+            <span className="font-semibold text-gray-900">{consumedPercentage}%</span>
           </div>
-          <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 rounded-xl bg-white/10 text-[#b8924a] flex items-center justify-center shadow-sm backdrop-blur-sm">
-              <Activity size={24} />
-            </div>
-            <span className="bg-[#b8924a]/20 text-[#b8924a] border border-[#b8924a]/30 text-[10px] font-bold px-2.5 py-1 rounded-full">RESTANT</span>
-          </div>
-          <div>
-            <p className="text-sm text-gray-400 font-medium mb-1">Budget restant disponible</p>
-            <h3 className="text-3xl font-serif font-bold text-white mb-4">{formatCurrency(remainingBudget)} <span className="text-lg text-gray-500">FCFA</span></h3>
-            <div className="w-full bg-white/10 rounded-full h-1.5 mt-2">
-              <div className="bg-gradient-to-r from-[#b8924a] to-[#f5eee1] h-1.5 rounded-full transition-all duration-500" style={{ width: `${100 - consumedPercentage}%` }} />
-            </div>
+          <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+            <div className={`h-full rounded-full ${consumedPercentage > 100 ? "bg-red-500" : "bg-[#b8924a]"}`} style={{ width: `${Math.min(100, consumedPercentage)}%` }} />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Charts */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-              <h2 className="font-semibold text-lg text-black">Répartition par catégorie</h2>
-            </div>
-            
-            <div className="flex items-center justify-center mb-8 pt-4">
-              <div className="relative w-40 h-40 rounded-full flex items-center justify-center shadow-inner" 
-                   style={{
-                     background: 'conic-gradient(#b8924a 0% 50%, #2b2118 50% 70%, #E5E5E5 70% 90%, #8B5CF6 90% 100%)'
-                   }}>
-                <div className="w-28 h-28 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-sm">
-                  <span className="text-xl font-bold">{consumedPercentage}%</span>
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Consommé</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {Object.entries(expensesByCategory).sort((a,b) => b[1] - a[1]).map(([cat, amount]) => (
-                <div key={cat}>
-                  <div className="flex justify-between text-sm mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: categoryColors[cat] || '#000' }}></span>
-                      <span className="font-medium text-gray-700">{cat}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+        {/* Répartition réelle par catégorie */}
+        <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+          <h2 className="font-serif text-2xl text-gray-900">Par catégorie</h2>
+          {Object.keys(expensesByCategory).length === 0 ? (
+            <p className="text-sm text-gray-500 mt-3">Aucune dépense pour le moment.</p>
+          ) : (
+            <ul className="mt-4 space-y-4">
+              {Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1]).map(([cat, amount]) => {
+                const pct = totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0;
+                return (
+                  <li key={cat}>
+                    <div className="flex justify-between gap-3 text-sm">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: categoryColors[cat] || "#9CA3AF" }} />
+                        <span className="text-gray-700 truncate">{cat}</span>
+                      </span>
+                      <span className="font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(amount)} F</span>
                     </div>
-                    <span className="font-bold text-gray-900">{formatCurrency(amount)} F</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                    <div className="mt-1.5 h-2 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: categoryColors[cat] || "#9CA3AF" }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
-        {/* Right Column: Transactions Table */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-            <h2 className="font-semibold text-lg text-black">Historique des transactions</h2>
-            <div className="text-sm font-semibold text-gray-500">
-              {expenses.length} dépense(s)
+        {/* Dépenses */}
+        <section className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-5 pb-3">
+            <h2 className="font-serif text-2xl text-gray-900">Dépenses</h2>
+            <span className="text-sm text-gray-500">{expenses.length} dépense(s)</span>
+          </div>
+          {expenses.length === 0 ? (
+            <div className="px-6 pb-8 pt-2 text-center">
+              <p className="text-sm text-gray-500">Aucune dépense enregistrée pour le moment.</p>
+              <button onClick={openAddModal} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#8f6f33]">
+                <Plus size={15} /> Ajouter ma première dépense
+              </button>
             </div>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-[10px] text-gray-400 font-bold tracking-wider uppercase">
-                  <th className="pb-4">Description</th>
-                  <th className="pb-4">Catégorie</th>
-                  <th className="pb-4">Date</th>
-                  <th className="pb-4">Statut</th>
-                  <th className="pb-4 text-right">Montant</th>
-                  <th className="pb-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {expenses.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500">Aucune dépense enregistrée pour le moment.</td>
-                  </tr>
-                ) : (
-                  expenses.map((expense) => (
-                    <tr key={expense.id} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"><Receipt size={14} /></div>
-                          <span className="font-bold text-gray-900">{expense.description}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-gray-500 font-medium">
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: categoryColors[expense.category] || '#000' }}></span>
-                          {expense.category}
-                        </span>
-                      </td>
-                      <td className="py-4 text-gray-500">
-                        {new Date(expense.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </td>
-                      <td className="py-4"><span className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold ${getStatusColor(expense.status)}`}>{expense.status}</span></td>
-                      <td className="py-4 text-right font-bold text-gray-900">{formatCurrency(expense.amount)} F</td>
-                      <td className="py-4 text-center">
-                        <div className="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEditModal(expense)} className="p-1.5 text-gray-500 hover:text-[#8f6f33] hover:bg-[#f5eee1] rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Modifier">
-                            <Edit2 size={14} />
-                          </button>
-                          <button onClick={() => handleDeleteExpense(expense.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shadow-sm bg-white border border-gray-200" title="Supprimer">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {expenses.map((expense) => (
+                <li key={expense.id} className="px-4 sm:px-6 py-3.5 flex items-center gap-3">
+                  <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center" style={{ color: categoryColors[expense.category] || "#6b7280" }}>
+                    <Receipt size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{expense.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                      {expense.category} · {new Date(expense.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(expense.amount)} F</p>
+                    <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide font-bold ${getStatusColor(expense.status)}`}>{expense.status}</span>
+                  </div>
+                  <div className="shrink-0 flex flex-col sm:flex-row gap-0.5">
+                    <button onClick={() => openEditModal(expense)} className="w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 flex items-center justify-center" aria-label={`Modifier ${expense.description}`}>
+                      <Edit2 size={15} />
+                    </button>
+                    <button onClick={() => handleDeleteExpense(expense.id)} className="w-9 h-9 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center" aria-label={`Supprimer ${expense.description}`}>
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
       {/* Add/Edit Expense Modal */}
       {isAddExpenseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92dvh] overflow-y-auto shadow-2xl animate-in fade-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 pb-[env(safe-area-inset-bottom)]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className="font-bold text-xl text-gray-900">
                 {editingExpenseId ? "Modifier la dépense" : "Ajouter une dépense"}
@@ -424,7 +365,7 @@ export default function BudgetDashboardPage({
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Montant (FCFA)</label>
                   <input 
@@ -450,7 +391,7 @@ export default function BudgetDashboardPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Catégorie</label>
                   <select 

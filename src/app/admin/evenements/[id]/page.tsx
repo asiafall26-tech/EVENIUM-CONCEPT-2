@@ -181,7 +181,7 @@ export default async function AdminEventDetailsPage({ params }: { params: Promis
 
       <h2 className="font-serif text-2xl font-bold mb-4">Prestataires Associés</h2>
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-x-auto">
-        <table className="w-full min-w-[640px] text-left text-sm whitespace-nowrap">
+        <table className="table-stack w-full min-w-[640px] text-left text-sm whitespace-nowrap">
           <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 font-medium">Prestataire</th>

@@ -40,9 +40,9 @@ export default function VeloursEditorModal({ initial, onClose, onSave, saveLabel
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-7xl 2xl:max-w-[1440px] h-[94vh] max-h-[960px] bg-[#faf7f5] rounded-3xl shadow-2xl overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300 border border-white/20">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="w-full max-w-7xl 2xl:max-w-[1440px] h-dvh sm:h-[94vh] max-h-none sm:max-h-[960px] bg-[#faf7f5] rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300 border border-white/20">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-white shrink-0">
           <div>
             <h3 className="font-serif text-2xl text-gray-900 font-bold">Personnalisez « Velours Bordeaux »</h3>
             <p className="text-sm text-gray-500">Prénoms, date, lieu, textes, programme et photos : tout est modifiable à volonté.</p>
@@ -57,11 +57,11 @@ export default function VeloursEditorModal({ initial, onClose, onSave, saveLabel
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 p-3 sm:p-5 overflow-hidden">
+        <div className="flex-1 min-h-0 p-2 sm:p-5 overflow-y-auto overscroll-contain lg:overflow-hidden">
           <VeloursStudio value={draft} onChange={setDraft} isStatic={isStatic} />
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-white flex flex-col sm:flex-row gap-3 sm:items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-4 border-t border-gray-100 bg-white flex flex-col sm:flex-row gap-3 sm:items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <button
               type="button"
