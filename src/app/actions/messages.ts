@@ -2,16 +2,17 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize Supabase Admin client to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
+  return createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+}
 
 export async function getMessagesForUser(userId: string) {
   if (!userId) return [];
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('messages')
     .select('*')
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
@@ -25,7 +26,7 @@ export async function getMessagesForUser(userId: string) {
 }
 
 export async function getProfiles() {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('profiles')
     .select('*');
     
@@ -39,7 +40,7 @@ export async function getProfiles() {
 export async function sendMessage(senderId: string, receiverId: string, content: string) {
   if (!senderId || !receiverId || !content) return { error: "Paramètres manquants" };
   
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('messages')
     .insert({
       sender_id: senderId,
@@ -59,7 +60,7 @@ export async function sendMessage(senderId: string, receiverId: string, content:
 export async function sendBroadcastMessage(senderId: string, targetGroup: 'all_organisateurs' | 'all_prestataires' | 'everyone', content: string) {
   if (!senderId || !targetGroup || !content) return { error: "Paramètres manquants" };
   
-  let query = supabaseAdmin.from('profiles').select('id');
+  let query = getSupabaseAdmin().from('profiles').select('id');
   
   if (targetGroup === 'all_organisateurs') {
     query = query.eq('role', 'client');
@@ -86,7 +87,7 @@ export async function sendBroadcastMessage(senderId: string, targetGroup: 'all_o
     content: content,
   }));
   
-  const { error: insertError } = await supabaseAdmin
+  const { error: insertError } = await getSupabaseAdmin()
     .from('messages')
     .insert(inserts);
     

@@ -3,12 +3,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
-// Initialize Supabase Admin client to bypass RLS for support operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
+  return createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+}
 
 export async function createSupportTicket(userId: string, subject: string, message: string) {
   if (!userId || !subject || !message) {
@@ -16,7 +17,7 @@ export async function createSupportTicket(userId: string, subject: string, messa
   }
 
   try {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("support_tickets")
       .insert({
         user_id: userId,
@@ -41,7 +42,7 @@ export async function createSupportTicket(userId: string, subject: string, messa
 }
 
 export async function getSupportTickets() {
-  const { data: tickets, error: ticketsError } = await supabaseAdmin
+  const { data: tickets, error: ticketsError } = await getSupabaseAdmin()
     .from("support_tickets")
     .select('*')
     .order("created_at", { ascending: false });
@@ -57,7 +58,7 @@ export async function getSupportTickets() {
 
   // Fetch profiles
   const userIds = [...new Set(tickets.map(t => t.user_id))];
-  const { data: profiles } = await supabaseAdmin
+  const { data: profiles } = await getSupabaseAdmin()
     .from("profiles")
     .select("id, full_name, email, role")
     .in("id", userIds);
@@ -77,13 +78,13 @@ export async function getSupportTickets() {
 
 export async function updateTicketStatus(ticketId: string, status: string) {
   // First, get the ticket info to know who to notify
-  const { data: ticketData } = await supabaseAdmin
+  const { data: ticketData } = await getSupabaseAdmin()
     .from("support_tickets")
     .select("*")
     .eq("id", ticketId)
     .single();
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from("support_tickets")
     .update({ status: status })
     .eq("id", ticketId);
@@ -95,7 +96,7 @@ export async function updateTicketStatus(ticketId: string, status: string) {
   // If resolved, notify the user
   if (status === "résolu" && ticketData) {
     // Find an admin to send the message from
-    const { data: adminData } = await supabaseAdmin
+    const { data: adminData } = await getSupabaseAdmin()
       .from("profiles")
       .select("id")
       .eq("role", "admin")
@@ -103,14 +104,14 @@ export async function updateTicketStatus(ticketId: string, status: string) {
       .single();
 
     if (adminData) {
-      const { data: userProf } = await supabaseAdmin
+      const { data: userProf } = await getSupabaseAdmin()
         .from("profiles")
         .select("full_name")
         .eq("id", ticketData.user_id)
         .single();
       const recipientName = userProf?.full_name ? `Bonjour ${userProf.full_name},\n\n` : "Bonjour,\n\n";
 
-      await supabaseAdmin.from("messages").insert({
+      await getSupabaseAdmin().from("messages").insert({
         sender_id: adminData.id,
         receiver_id: ticketData.user_id,
         content: `${recipientName}Notre équipe Support Evenium vous informe que votre demande concernant « ${ticketData.subject} » a été traitée et résolue par nos conseillers.\n\nNous restons à votre entière disposition si vous avez la moindre question !`
@@ -123,7 +124,7 @@ export async function updateTicketStatus(ticketId: string, status: string) {
 }
 
 export async function getUserSupportTickets(userId: string) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("support_tickets")
     .select("*")
     .eq("user_id", userId)
