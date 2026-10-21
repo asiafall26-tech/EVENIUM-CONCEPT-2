@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { type VeloursContent } from "./content";
 import { uploadMedia } from "@/utils/uploadMedia";
-import { PhotoPickerModal } from "@/components/media/PhotoPickerModal";
 import { AudioPickerModal } from "@/components/media/AudioPickerModal";
 import { AudioTrimmer } from "@/components/media/AudioTrimmer";
 
@@ -100,30 +99,69 @@ export function PhotoField({
   value?: string;
   onChange: (v: string) => void;
 }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+    try {
+      const res = await uploadMedia(file, "photos");
+      if (res.success && res.url) {
+        onChange(res.url);
+      } else {
+        setError(res.error || "Erreur lors du téléversement de la photo.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Échec de l'envoi.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div>
       <span className="block text-xs font-semibold text-gray-700 mb-1.5">{label}</span>
       <div className="flex gap-3 items-center">
         <div
-          className="w-20 h-20 rounded-xl bg-gray-100 bg-cover bg-center border border-gray-200 shrink-0 relative overflow-hidden shadow-xs"
+          className="w-20 h-20 rounded-xl bg-gray-100 bg-cover bg-center border border-gray-200 shrink-0 relative overflow-hidden shadow-xs flex items-center justify-center"
           style={{ backgroundImage: value ? `url("${value}")` : undefined }}
-        />
+        >
+          {uploading && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-white">
+              <Loader2 size={22} className="animate-spin text-[#D4AF37]" />
+            </div>
+          )}
+        </div>
         <div className="flex flex-col gap-2 flex-1">
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#5c0f21] text-white text-sm font-semibold hover:bg-[#7a1a2e] transition-colors shadow-xs"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#5c0f21] text-white text-sm font-semibold hover:bg-[#7a1a2e] transition-colors shadow-xs disabled:opacity-60 cursor-pointer"
           >
-            <ImagePlus size={16} />
-            <span>{value ? "Changer la photo" : "Choisir une photo"}</span>
+            {uploading ? (
+              <>
+                <Loader2 size={16} className="animate-spin text-[#D4AF37]" />
+                <span>Envoi en cours...</span>
+              </>
+            ) : (
+              <>
+                <ImagePlus size={16} />
+                <span>{value ? "Changer la photo" : "Importer une photo"}</span>
+              </>
+            )}
           </button>
-          {value && (
+          {value && !uploading && (
             <button
               type="button"
               onClick={() => onChange("")}
-              className="text-xs text-gray-500 hover:text-red-600 transition-colors text-left"
+              className="text-xs text-gray-500 hover:text-red-600 transition-colors text-left cursor-pointer"
             >
               Retirer la photo
             </button>
@@ -131,13 +169,17 @@ export function PhotoField({
         </div>
       </div>
 
-      <PhotoPickerModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSelect={(url) => onChange(url)}
-        currentUrl={value}
-        title={label}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
       />
+
+      {error && (
+        <p className="mt-1.5 text-xs text-red-600 font-medium">{error}</p>
+      )}
     </div>
   );
 }

@@ -2,8 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { X, Check, UploadCloud, Loader2, Sparkles, Image as ImageIcon } from "lucide-react";
-import { PRESET_PHOTOS, type EventCategory } from "@/data/mediaLibrary";
+import { X, UploadCloud, Loader2, Sparkles, Image as ImageIcon } from "lucide-react";
 import { uploadMedia } from "@/utils/uploadMedia";
 
 interface PhotoPickerModalProps {
@@ -14,39 +13,21 @@ interface PhotoPickerModalProps {
   title?: string;
 }
 
-const CATEGORIES: EventCategory[] = [
-  "Tous",
-  "Mariage",
-  "Anniversaire",
-  "Gala",
-  "Baptême",
-  "Corporate",
-];
-
 export function PhotoPickerModal({
   isOpen,
   onClose,
   onSelect,
   currentUrl,
-  title = "Choisir une photo",
+  title = "Importer une photo",
 }: PhotoPickerModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState<EventCategory>("Tous");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const filteredPhotos =
-    selectedCategory === "Tous"
-      ? PRESET_PHOTOS
-      : PRESET_PHOTOS.filter((p) => p.category === selectedCategory);
-
-  const handleCustomUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     setUploading(true);
     setUploadError(null);
     try {
@@ -55,80 +36,106 @@ export function PhotoPickerModal({
         onSelect(res.url);
         onClose();
       } else {
-        setUploadError(res.error || "Erreur lors du téléversement.");
+        setUploadError(res.error || "Erreur lors du téléversement de la photo.");
       }
     } catch (err: any) {
-      setUploadError(err?.message || "Échec de l'envoi.");
+      setUploadError(err?.message || "Échec de l'envoi de la photo.");
     } finally {
       setUploading(false);
     }
   };
 
+  const handleCustomUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      await processFile(file);
+    } else if (file) {
+      setUploadError("Veuillez sélectionner un fichier image valide (JPG, PNG, WebP).");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-[#b8924a]/30 animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-[#b8924a]/30 animate-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/60">
           <div>
-            <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h3 className="font-serif text-xl font-bold text-gray-900 flex items-center gap-2">
               <Sparkles size={20} className="text-[#b8924a]" />
               <span>{title}</span>
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Sélectionnez une photo d&apos;inspiration classée par type d&apos;événement ou importez la vôtre.
+              Sélectionnez une photo depuis votre appareil ou votre galerie personnelle.
             </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-black flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-black flex items-center justify-center transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Toolbar: Category tabs + Custom Upload CTA */}
-        <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-white">
-          {/* Categories */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-full">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedCategory === cat
-                    ? "bg-[#6b1f2a] text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        {/* Body: Upload Zone */}
+        <div className="p-6">
+          {uploadError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium">
+              {uploadError}
+            </div>
+          )}
 
-          {/* Upload Button */}
-          <div className="shrink-0">
-            <button
-              type="button"
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-black text-[#b8924a] hover:bg-gray-900 border border-[#b8924a]/40 text-xs font-semibold transition-all shadow-sm disabled:opacity-50"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>Envoi...</span>
-                </>
-              ) : (
-                <>
-                  <UploadCloud size={14} />
-                  <span>Importer ma photo</span>
-                </>
-              )}
-            </button>
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-2xl p-8 text-center flex flex-col items-center justify-center cursor-pointer transition-all ${
+              dragOver
+                ? "border-[#b8924a] bg-[#b8924a]/10"
+                : "border-gray-200 hover:border-[#b8924a]/60 hover:bg-gray-50/70"
+            }`}
+          >
+            {uploading ? (
+              <div className="py-6 flex flex-col items-center gap-3">
+                <Loader2 size={36} className="animate-spin text-[#b8924a]" />
+                <p className="text-sm font-semibold text-gray-800">Téléversement de votre photo en cours...</p>
+                <p className="text-xs text-gray-500">Optimisation et enregistrement haute définition</p>
+              </div>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-[#fdf8f0] border border-[#b8924a]/30 flex items-center justify-center mb-4 text-[#b8924a] shadow-xs">
+                  <UploadCloud size={28} />
+                </div>
+                <p className="font-semibold text-sm text-gray-900 mb-1">
+                  Glissez-déposez votre photo ici
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  ou cliquez pour parcourir les dossiers de votre appareil
+                </p>
+                <button
+                  type="button"
+                  className="px-5 py-2.5 rounded-full bg-black text-[#b8924a] border border-[#b8924a]/50 text-xs font-bold hover:bg-gray-900 transition-colors shadow-sm pointer-events-none"
+                >
+                  Choisir un fichier
+                </button>
+              </>
+            )}
+
             <input
               ref={fileInputRef}
               type="file"
@@ -137,78 +144,33 @@ export function PhotoPickerModal({
               onChange={handleCustomUpload}
             />
           </div>
-        </div>
 
-        {uploadError && (
-          <div className="px-6 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600 font-medium">
-            {uploadError}
-          </div>
-        )}
-
-        {/* Photo Grid */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 min-h-[300px]">
-          {filteredPhotos.map((photo) => {
-            const isSelected = currentUrl === photo.url;
-            return (
-              <div
-                key={photo.id}
-                onClick={() => {
-                  onSelect(photo.url);
-                  onClose();
-                }}
-                className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
-                  isSelected
-                    ? "border-[#b8924a] ring-4 ring-[#b8924a]/20 shadow-md"
-                    : "border-gray-200 hover:border-[#b8924a]/60"
-                }`}
-              >
-                <Image
-                  src={photo.url}
-                  alt={photo.alt}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-
-                {/* Dark gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity" />
-
-                {/* Event Category badge */}
-                <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-black/60 backdrop-blur-xs text-white border border-white/20">
-                  {photo.category}
-                </span>
-
-                {/* Selected Checkmark badge */}
-                {isSelected && (
-                  <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-[#b8924a] text-black flex items-center justify-center shadow-md">
-                    <Check size={14} strokeWidth={3} />
-                  </span>
-                )}
-
-                {/* Title */}
-                <div className="absolute bottom-2.5 inset-x-2.5">
-                  <p className="text-[11px] font-semibold text-white leading-tight line-clamp-2 drop-shadow-xs">
-                    {photo.title}
-                  </p>
-                </div>
+          {currentUrl && (
+            <div className="mt-4 p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-200 shrink-0">
+                <Image src={currentUrl} alt="Photo actuelle" fill className="object-cover" />
               </div>
-            );
-          })}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-gray-800 truncate">Photo actuelle</p>
+                <p className="text-[11px] text-gray-500">Sélectionnez une nouvelle photo pour la remplacer</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50 text-xs text-gray-500">
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50 text-xs text-gray-500">
           <span className="flex items-center gap-1.5">
             <ImageIcon size={14} className="text-[#b8924a]" />
-            <span>{filteredPhotos.length} photos disponibles dans cette catégorie</span>
+            <span>Formats acceptés : JPG, PNG, WebP (jusqu&apos;à 10 Mo)</span>
           </span>
 
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl text-gray-600 hover:text-black hover:bg-gray-200 transition-colors font-medium"
+            className="px-4 py-1.5 rounded-xl text-gray-600 hover:text-black hover:bg-gray-200 transition-colors font-medium cursor-pointer"
           >
-            Fermer
+            Annuler
           </button>
         </div>
       </div>
