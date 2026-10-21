@@ -54,6 +54,7 @@ interface Props {
   preview?: boolean;
   onBackToEdit?: () => void;
   onFinalize?: () => void;
+  hideCta?: boolean;
 }
 
 function Swirl({ className }: { className?: string }) {
@@ -201,7 +202,7 @@ function RsvpSheet({ c, onRsvp, onClose }: { c: AnniversaireContent; onRsvp?: Pr
   );
 }
 
-export default function AnniversaireInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize }: Props) {
+export default function AnniversaireInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const c = useMemo(() => withDefaults(content ?? DEFAULT_ANNIVERSAIRE), [content]);
   const dates = formatDates(c);
   const target = useMemo(() => eventDate(c), [c]);
@@ -387,7 +388,9 @@ export default function AnniversaireInvitation({ content, onRsvp, preview, onBac
 
       {rsvpOpen && <RsvpSheet c={c} onRsvp={preview && !onRsvp ? async () => {} : onRsvp} onClose={() => setRsvpOpen(false)} />}
 
-      <InvitationEndCta theme="velours" modelId="invit-11" onBackToEdit={onBackToEdit} onFinalize={onFinalize} />
+      {!hideCta && (
+        <InvitationEndCta theme="velours" modelId="invit-11" onBackToEdit={onBackToEdit} onFinalize={onFinalize} hideCta={hideCta} />
+      )}
     </div>
   );
 }

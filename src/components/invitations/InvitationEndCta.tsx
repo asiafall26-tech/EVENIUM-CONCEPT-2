@@ -11,6 +11,7 @@ interface InvitationEndCtaProps {
   onBackToEdit?: () => void;
   onFinalize?: () => void;
   isCreateMode?: boolean;
+  hideCta?: boolean;
 }
 
 export default function InvitationEndCta({
@@ -19,6 +20,7 @@ export default function InvitationEndCta({
   onBackToEdit,
   onFinalize,
   isCreateMode,
+  hideCta = false,
 }: InvitationEndCtaProps) {
   const [mounted, setMounted] = useState(false);
   const [isIframe, setIsIframe] = useState(false);
@@ -32,6 +34,20 @@ export default function InvitationEndCta({
       setIsIframe(true);
     }
   }, []);
+
+  // 1. Explicit prop override
+  if (hideCta) {
+    return null;
+  }
+
+  // 2. Strict Route Protection:
+  // After purchase or on guest invitation links (/invite/[id]) or within the organizer dashboard (/dashboard/...),
+  // commercial / sales / checkout CTAs must NEVER be shown.
+  if (typeof pathname === "string") {
+    if (pathname.startsWith("/invite") || pathname.startsWith("/dashboard")) {
+      return null;
+    }
+  }
 
   const isCreate =
     isCreateMode ||

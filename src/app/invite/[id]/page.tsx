@@ -76,6 +76,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
     return (
       <VeloursInvitation
         content={content}
+        hideCta
         onRsvp={async (rsvp) => {
           const { error } = await supabase.from('guests').insert([{
             event_id: event.id,
@@ -111,19 +112,19 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
   if (event.invitation_model_id === sceau.SCEAU_MODEL_ID) {
     const rawContent = event.invitation_content ?? sceau.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
-    return <SceauInvitation content={content} onRsvp={saveRsvp} />;
+    return <SceauInvitation content={content} onRsvp={saveRsvp} hideCta />;
   }
 
   if (event.invitation_model_id === ivoire.IVOIRE_MODEL_ID) {
     const rawContent = event.invitation_content ?? ivoire.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
-    return <IvoireInvitation content={content} onRsvp={saveRsvp} />;
+    return <IvoireInvitation content={content} onRsvp={saveRsvp} hideCta />;
   }
 
   if (event.invitation_model_id === anniversaire.ANNIVERSAIRE_MODEL_ID) {
     const rawContent = event.invitation_content ? anniversaire.withDefaults(event.invitation_content) : anniversaire.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
-    return <AnniversaireInvitation content={content} onRsvp={saveRsvp} />;
+    return <AnniversaireInvitation content={content} onRsvp={saveRsvp} hideCta />;
   }
 
   if (event.invitation_model_id === roseOr.ROSE_OR_MODEL_ID) {
@@ -132,6 +133,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
     return (
       <RoseOrInvitation
         content={content}
+        hideCta
         onRsvp={(r) => saveRsvp({ name: r.name, email: r.email, phone: "", attending: r.attending, guests: 1, message: r.message })}
       />
     );

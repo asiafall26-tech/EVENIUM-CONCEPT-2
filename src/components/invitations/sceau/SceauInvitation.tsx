@@ -28,6 +28,7 @@ interface Props {
   preview?: boolean;
   onBackToEdit?: () => void;
   onFinalize?: () => void;
+  hideCta?: boolean;
 }
 
 /** closed → open (seal broken) → curtains (gate faded, curtains part) → done */
@@ -373,7 +374,7 @@ function GuestForm({
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize }: Props) {
+export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const [live, setLive] = useState<Partial<SceauContent> | null>(null);
   const [phase, setPhase] = useState<Phase>("closed");
   const [curtainsGone, setCurtainsGone] = useState(false);
@@ -799,12 +800,15 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
           </p>
         </footer>
 
-        <InvitationEndCta
-          theme="sceau"
-          modelId="invit-9"
-          onBackToEdit={onBackToEdit}
-          onFinalize={onFinalize}
-        />
+        {!hideCta && (
+          <InvitationEndCta
+            theme="sceau"
+            modelId="invit-9"
+            onBackToEdit={onBackToEdit}
+            onFinalize={onFinalize}
+            hideCta={hideCta}
+          />
+        )}
       </main>
 
       {/* Ancestors may be transformed/filtered (page transitions, layouts), which breaks position:fixed —

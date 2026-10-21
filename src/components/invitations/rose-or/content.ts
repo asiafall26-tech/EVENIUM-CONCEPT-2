@@ -10,7 +10,7 @@ export const DEFAULT_MUSIC = `${ASSETS}/ambiance.mp3`;
 export const DEFAULT_FOOTER_PHOTO = `${ASSETS}/photo3.jpg`;
 
 /** Bump after each change to index.html so browsers that cached the page fetch the new version */
-export const PAGE_VERSION = "3";
+export const PAGE_VERSION = "4";
 
 /** URL of the invitation page, in "live" mode (waits for content sent by the parent window) */
 export const LIVE_SRC = `${ASSETS}/index.html?live=1&v=${PAGE_VERSION}`;
@@ -156,12 +156,13 @@ export function venueQuery(c: RoseOrContent) {
 }
 
 /** Message sent to the invitation page: the content plus the links the static page cannot compute itself. */
-export function toPreviewMessage(c: RoseOrContent, handlesRsvp = false) {
+export function toPreviewMessage(c: RoseOrContent, handlesRsvp = false, showCta = false) {
   const q = venueQuery(c);
   return {
     type: PREVIEW_MSG.content,
     content: c,
     handlesRsvp,
+    showCta,
     view: { mapEmbed: mapsEmbedUrl(c.mapsUrl, q), mapHref: mapsLink(c.mapsUrl, q) },
   };
 }

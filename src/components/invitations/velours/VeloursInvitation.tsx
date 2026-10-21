@@ -33,6 +33,7 @@ interface Props {
   preview?: boolean;
   onBackToEdit?: () => void;
   onFinalize?: () => void;
+  hideCta?: boolean;
 }
 
 const EASE = [0.2, 0.7, 0.2, 1] as const;
@@ -647,7 +648,7 @@ function RsvpSection({ c, dates, onRsvp }: SectionProps & { onRsvp?: Props["onRs
 
 /* ───────────────────────── Envelope intro + page ───────────────────────── */
 
-export default function VeloursInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize }: Props) {
+export default function VeloursInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const [phase, setPhase] = useState<Phase>(preview ? "done" : "closed");
   const [live, setLive] = useState<Partial<VeloursContent> | null>(null);
   const mounted = useMounted();
@@ -858,12 +859,15 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
         <ProgrammeSection c={c} dates={dates} />
         <DetailsSection c={c} dates={dates} />
         <RsvpSection c={c} dates={dates} onRsvp={onRsvp} />
-        <InvitationEndCta
-          theme="velours"
-          modelId="invit-1"
-          onBackToEdit={onBackToEdit}
-          onFinalize={onFinalize}
-        />
+        {!hideCta && (
+          <InvitationEndCta
+            theme="velours"
+            modelId="invit-1"
+            onBackToEdit={onBackToEdit}
+            onFinalize={onFinalize}
+            hideCta={hideCta}
+          />
+        )}
       </main>
 
       {/* Floating Audio Controller */}

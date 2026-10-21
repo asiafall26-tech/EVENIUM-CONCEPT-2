@@ -101,3 +101,12 @@ Si vous (l'IA) lisez ce fichier lors d'une future session pour reprendre le dév
 4. **Compréhension du Métier** : 
    - Un "Événement" a un cycle de vie, un "Budget" défini par le client, et des "Prestataires" assignés.
    - Il faut maintenir la stricte étanchéité (routage et logique) entre l'espace `/dashboard` (Le Client payeur) et l'espace `/prestataire` (Le vendeur de services).
+
+5. **Règles d'Invitations & Modèles Futurs (CTAs & Liens Invités)** :
+   - **Étanchéité des CTAs de vente/achat** : Les boutons commerciaux ou d'achat ("Valider & Finaliser l'achat", "Choisir ce modèle", "Retour à l'accueil") ne doivent figurer **QUE** pendant la phase d'achat/démo (`/create`, vitrines publiques `/invitation-*`).
+   - **Invitations Achetées & Liens Invités (`/invite/[id]`)** : Dès que l'invitation est achetée et envoyée aux convives (`/invite/[id]`) ou consultée dans le dashboard organisateur (`/dashboard/...`), **aucun** CTA commercial ou de retour accueil ne doit apparaître. L'invitation doit se terminer avec élégance sur la signature des hôtes, les photos ou le formulaire RSVP.
+   - **Règle pour tout futur modèle d'invitation** :
+     - Tout nouveau modèle doit accepter la prop `hideCta?: boolean`.
+     - Utiliser le composant unifié `InvitationEndCta` (qui intègre une désactivation automatique stricte sur toutes les routes commençant par `/invite` et `/dashboard`).
+     - Dans le cas d'un modèle sous forme de page HTML/iframe (comme Rose Or), passer `showCta: false` et `hideCta=1` et supprimer l'élément DOM du CTA lorsque `hideCta` ou `handlesRsvp` est actif.
+

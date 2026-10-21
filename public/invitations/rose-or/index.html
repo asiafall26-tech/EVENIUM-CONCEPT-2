@@ -474,8 +474,21 @@ const DEFAULT_VIEW = {
 
 const $=id=>document.getElementById(id);
 const env=$('envelope'), vid=$('heroVideo'), amb=$('ambiance');
-const live=new URLSearchParams(location.search).has('live') && window.parent!==window;
-if(live && $('eveniumCta')) {
+const urlParams = new URLSearchParams(location.search);
+const hideCtaParam = urlParams.get('hideCta') === '1';
+const live = urlParams.has('live') && window.parent !== window;
+
+function hideCtaBlock() {
+  const cta = $('eveniumCta');
+  if (cta) {
+    cta.style.display = 'none';
+    cta.remove();
+  }
+}
+
+if (hideCtaParam) {
+  hideCtaBlock();
+} else if (live && $('eveniumCta')) {
   $('eveniumCta').style.display='block';
   const title = $('eveniumCta').querySelector('.evenium-title');
   if(title) title.textContent = "Votre invitation est prête !";
@@ -670,7 +683,15 @@ $('editRsvp').addEventListener('click',()=>{form.style.display='';$('thanks').cl
 window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==window.parent||!e.data)return;
   const m=e.data;
-  if(m.type===MSG.content&&m.content){handlesRsvp=!!m.handlesRsvp;render(m.content,m.view)}
+  if(m.type===MSG.content&&m.content){
+    handlesRsvp=!!m.handlesRsvp;
+    if(m.showCta === false || m.handlesRsvp || hideCtaParam) {
+      hideCtaBlock();
+    } else if (m.showCta === true && $('eveniumCta')) {
+      $('eveniumCta').style.display = 'block';
+    }
+    render(m.content,m.view);
+  }
   else if(m.type===MSG.skip)skipEnvelope();
   else if(m.type===MSG.replay)replayEnvelope();
   else if(m.type===MSG.rsvpResult&&pending[m.id])pending[m.id](!!m.ok);

@@ -27,6 +27,7 @@ interface Props {
   preview?: boolean;
   onBackToEdit?: () => void;
   onFinalize?: () => void;
+  hideCta?: boolean;
 }
 
 const subscribeNoop = () => () => {};
@@ -265,7 +266,7 @@ function RsvpForm({ mono, onRsvp }: { mono: string; onRsvp?: Props["onRsvp"] }) 
 
 /* ───────────────────────── Page ───────────────────────── */
 
-export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize }: Props) {
+export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const [live, setLive] = useState<Partial<IvoireContent> | null>(null);
   const [opened, setOpened] = useState(false);
   const [gone, setGone] = useState(false);
@@ -730,12 +731,15 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
             {c.partnerA} &amp; {c.partnerB} · {dates.long}
           </span>
         </footer>
-        <InvitationEndCta
-          theme="ivoire"
-          modelId="invit-8"
-          onBackToEdit={onBackToEdit}
-          onFinalize={onFinalize}
-        />
+        {!hideCta && (
+          <InvitationEndCta
+            theme="ivoire"
+            modelId="invit-8"
+            onBackToEdit={onBackToEdit}
+            onFinalize={onFinalize}
+            hideCta={hideCta}
+          />
+        )}
       </main>
 
       {/* Ancestors may be transformed/filtered (page transitions, layouts), which breaks position:fixed —
