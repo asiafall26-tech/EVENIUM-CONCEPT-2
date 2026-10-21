@@ -33,6 +33,16 @@ export default function PrestatairesDashboardPage({
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "externe" || tab === "evenium") {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
+
   // Devis view state
 
   // Modification state
@@ -390,39 +400,59 @@ export default function PrestatairesDashboardPage({
         <p className="text-gray-500 text-sm">Gérez l'équipe de professionnels qui fera le succès de votre événement.</p>
       </div>
 
-      {/* Tabs & Annuaire Evenium on the same line */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 mb-6 gap-3">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={() => setActiveTab('evenium')}
-            className={`pb-3 text-sm font-bold transition-colors relative ${
-              activeTab === 'evenium' ? 'text-[#b8924a]' : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            Prestataires Evenium
-            {activeTab === 'evenium' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#b8924a] rounded-t-full"></span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('externe')}
-            className={`pb-3 text-sm font-bold transition-colors relative ${
-              activeTab === 'externe' ? 'text-black' : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            Prestataires Externes
-            {activeTab === 'externe' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black rounded-t-full"></span>
-            )}
-          </button>
-        </div>
-
+      {/* 3 Onglets sur la même ligne : 1er Annuaire Evenium, 2ème Prestataires Evenium, 3ème Prestataires Externes */}
+      <div className="flex items-center gap-2 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto no-scrollbar">
+        {/* 1ER : Annuaire Evenium */}
         <Link
           href={`/dashboard/events/${event.id}/prestataires/catalogue`}
-          className="mb-2 sm:mb-2.5 inline-flex items-center gap-2 bg-[#b8924a] hover:bg-[#8f6f33] text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 shrink-0 self-start sm:self-auto"
+          className="pb-3 text-sm font-bold text-[#b8924a] hover:text-[#8f6f33] transition-colors relative flex items-center gap-2 shrink-0 group"
         >
-          <Search size={15} /> Annuaire Evenium
+          <div className="w-6 h-6 rounded-lg bg-[#b8924a]/10 text-[#b8924a] flex items-center justify-center group-hover:bg-[#b8924a] group-hover:text-white transition-colors">
+            <Search size={13} />
+          </div>
+          <span>Annuaire Evenium</span>
+          <span className="text-[10px] bg-[#b8924a]/10 text-[#8f6f33] px-2 py-0.5 rounded-full font-bold border border-[#b8924a]/20">
+            Explorer
+          </span>
         </Link>
+
+        {/* 2EME : Prestataires Evenium */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('evenium')}
+          className={`pb-3 text-sm font-bold transition-colors relative flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeTab === 'evenium' ? 'text-black' : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <span>Prestataires Evenium</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+            activeTab === 'evenium' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+          }`}>
+            {myPrestataires.filter(p => p.isPlatformProvider).length}
+          </span>
+          {activeTab === 'evenium' && (
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black rounded-t-full"></span>
+          )}
+        </button>
+
+        {/* 3EME : Prestataires Externes */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('externe')}
+          className={`pb-3 text-sm font-bold transition-colors relative flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeTab === 'externe' ? 'text-black' : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <span>Prestataires Externes</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+            activeTab === 'externe' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+          }`}>
+            {myPrestataires.filter(p => !p.isPlatformProvider).length}
+          </span>
+          {activeTab === 'externe' && (
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black rounded-t-full"></span>
+          )}
+        </button>
       </div>
 
       {loading ? (

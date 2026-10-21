@@ -354,6 +354,14 @@ a[href^="mailto:"] {
   overflow-wrap: anywhere;
 }
 
+/* Les champs peuvent rétrécir dans une ligne (sinon ils poussent les boutons voisins hors de l'écran) */
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* Zones de texte : elles s'agrandissent avec le texte puis défilent dans leur cadre */
 textarea {
   overflow-y: auto;

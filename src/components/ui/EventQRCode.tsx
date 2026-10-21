@@ -209,7 +209,7 @@ export default function EventQRCode({
 
       {/* Boutons d'action : Téléchargement PNG & Carton */}
       {showDownloadButtons && (
-        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2.5 mt-4">
+        <div className="w-full flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-2.5 mt-4">
           <button
             type="button"
             onClick={handleDownloadPNG}

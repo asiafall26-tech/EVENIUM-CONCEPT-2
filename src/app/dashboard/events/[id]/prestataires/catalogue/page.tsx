@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { Search, Star, MapPin, Phone, CheckCircle, Plus, ArrowLeft, Globe, Briefcase, Camera, Image as ImageIcon, X, Users, Clock, Share2, Heart, ChevronRight } from "lucide-react";
+import { Search, Star, MapPin, Phone, CheckCircle, Plus, ArrowLeft, Globe, Briefcase, Camera, Image as ImageIcon, X, Users, Clock, Share2, Heart, ChevronRight, SlidersHorizontal, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { useEvents } from "@/store/EventsContext";
@@ -12,6 +12,7 @@ import { offerEventTypes, offerPrestations, offerTagLine } from "@/lib/offres";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
 import { COUNTRIES, COUNTRY_NAMES, WHOLE_COUNTRY, locationLabel, zonesOf } from "@/lib/zones";
+import { mockProviders } from "@/data/mock/prestataires";
 
 const ALL_EVENTS = "Tous événements";
 
@@ -26,10 +27,11 @@ export default function CataloguePrestatairesPage({
   const [loading, setLoading] = useState(true);
   
   const [searchTerm, setSearchTerm] = useState("");
-  const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>("");
   const [prestationFilter, setPrestationFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
   const [zoneFilter, setZoneFilter] = useState("");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [providerStatus, setProviderStatus] = useState<Record<string, string>>({});
   const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
   const [activeModalTab, setActiveModalTab] = useState<"presentation" | "catalogues" | "avis">("presentation");
@@ -39,8 +41,8 @@ export default function CataloguePrestatairesPage({
 
   const { events } = useEvents();
   const event = events.find(e => e.id === id);
-  // Par défaut, on filtre sur le type de l'événement en cours
-  const activeEventType = eventTypeFilter ?? (event?.type && (EVENT_TYPES as readonly string[]).includes(event.type) ? event.type : "");
+  // Par défaut : tous les prestataires qui ont intégré notre organisation sont affichés directement !
+  const activeEventType = eventTypeFilter;
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [serviceToRequest, setServiceToRequest] = useState<any | null>(null);
@@ -54,57 +56,98 @@ export default function CataloguePrestatairesPage({
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: profs } = await supabase.from('profiles').select('*, services(*)').eq('role', 'prestataire').or('is_active.eq.true,is_active.is.null');
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('*, services(*)')
+      .eq('role', 'prestataire')
+      .or('is_active.eq.true,is_active.is.null');
     
     // Check which ones we already requested
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: requests } = await supabase.from('demandes_devis').select('prestataire_id, status').eq('event_id', id);
+      const { data: requests } = await supabase
+        .from('demandes_devis')
+        .select('prestataire_id, status')
+        .eq('event_id', id);
       if (requests) {
         const statusMap: Record<string, string> = {};
         requests.forEach((r: any) => {
-          // If there are multiple requests, we keep the most relevant/recent one.
-          // Since we order by something or just assume one request per event/provider.
           statusMap[r.prestataire_id] = r.status;
         });
         setProviderStatus(statusMap);
       }
     }
     
-    if (profs) {
-      setPrestataires(profs.map(p => {
-        // Ne garder que les services publiés
-        const publishedServices = Array.isArray(p.services) 
-          ? p.services.filter((s: any) => s.status === 'Publié') 
-          : [];
+    const dbProviders = (profs || []).map(p => {
+      const publishedServices = Array.isArray(p.services) 
+        ? p.services.filter((s: any) => s.status === 'Publié') 
+        : [];
 
-        const activity = activityFromProfile(p);
-        return {
-          id: p.id,
-          name: p.full_name || 'Prestataire Anonyme',
-          role: providerHeadline(p),
-          eventTypes: activity.event_types,
-          prestations: activity.services,
-          country: activity.country,
-          zones: activity.zones,
-          description: p.description || 'Aucune description',
-          rating: 5,
-          reviews: 0,
-          zone: locationLabel(activity.country, activity.zones) || p.address || 'Non renseigné',
-          priceRange: 'Sur devis',
-          phone: p.phone || 'Non renseigné',
-          website: p.website || null,
-          instagram: p.instagram || null,
-          experience: p.experience || null,
-          avatar_url: p.avatar_url || null,
-          cover_url: p.cover_url || null,
-          isPlatformProvider: p.is_evenium_certified !== false,
-          services: publishedServices,
-          gallery: Array.isArray(p.gallery) ? p.gallery : [],
-          rubriques: p.rubriques ?? null
-        };
-      }));
-    }
+      const activity = activityFromProfile(p);
+      return {
+        id: p.id,
+        name: p.full_name || 'Prestataire Anonyme',
+        role: providerHeadline(p),
+        eventTypes: activity.event_types,
+        prestations: activity.services,
+        country: activity.country,
+        zones: activity.zones,
+        description: p.description || 'Aucune description',
+        rating: 5,
+        reviews: 0,
+        zone: locationLabel(activity.country, activity.zones) || p.address || 'Non renseigné',
+        priceRange: 'Sur devis',
+        phone: p.phone || 'Non renseigné',
+        website: p.website || null,
+        instagram: p.instagram || null,
+        experience: p.experience || null,
+        avatar_url: p.avatar_url || null,
+        cover_url: p.cover_url || null,
+        isPlatformProvider: p.is_evenium_certified !== false,
+        services: publishedServices,
+        gallery: Array.isArray(p.gallery) ? p.gallery : [],
+        rubriques: p.rubriques ?? null
+      };
+    });
+
+    const fallbackMock = mockProviders.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      role: m.category,
+      eventTypes: [...EVENT_TYPES],
+      prestations: [m.category, ...(m.services || [])],
+      country: m.zone && (m.zone.includes("Dakar") || m.zone.includes("Sénégal") || m.zone.includes("Saly") || m.zone.includes("Diamniadio") || m.zone.includes("Thiès") || m.zone.includes("Mbour")) ? "Sénégal" : "France",
+      zones: [m.zone],
+      description: m.description,
+      rating: m.rating || 5,
+      reviews: 14,
+      zone: m.zone || "Dakar",
+      priceRange: m.priceRange || "Sur devis",
+      phone: m.phone || "Non renseigné",
+      website: null,
+      instagram: null,
+      experience: "Prestataire Partenaire Evenium",
+      avatar_url: m.gallery?.[0] || null,
+      cover_url: m.gallery?.[1] || m.gallery?.[0] || null,
+      isPlatformProvider: m.isPlatformProvider !== false,
+      services: (m.services || []).map((s: string, idx: number) => ({
+        id: `${m.id}-srv-${idx}`,
+        nom_service: s,
+        description: `Prestation sur-mesure d'excellence proposée par ${m.name}.`,
+        tarif_indicatif: m.priceRange,
+        status: 'Publié'
+      })),
+      gallery: m.gallery || [],
+      rubriques: null
+    }));
+
+    // Tous les prestataires ayant intégré notre organisation
+    const allProviders = [
+      ...dbProviders,
+      ...fallbackMock.filter(m => !dbProviders.some(d => d.name.toLowerCase() === m.name.toLowerCase()))
+    ];
+
+    setPrestataires(allProviders);
     setLoading(false);
   };
 
@@ -129,15 +172,27 @@ export default function CataloguePrestatairesPage({
   const activeFilters = [activeEventType, prestationFilter, countryFilter, zoneFilter].filter(Boolean).length;
 
   const filteredProviders = prestataires.filter((p) => {
-    const term = searchTerm.toLowerCase();
-    const matchesSearch = !term || [p.name, p.description, ...p.prestations].some((v: string) => (v || "").toLowerCase().includes(term));
-    // Filtre automatique (type de l'événement) : on garde les prestataires qui n'ont pas encore renseigné leurs types
+    const term = searchTerm.toLowerCase().trim();
+    const matchesSearch = !term || [
+      p.name, 
+      p.description, 
+      p.role, 
+      p.zone, 
+      p.country,
+      ...p.prestations, 
+      ...(p.services || []).map((s: any) => s.nom_service || "")
+    ].some((v: string) => (v || "").toLowerCase().includes(term));
+
     const matchesEvent =
       !activeEventType ||
-      p.eventTypes.includes(activeEventType) ||
-      p.services.some((s: any) => offerEventTypes(s).includes(activeEventType)) ||
-      (eventTypeFilter === null && p.eventTypes.length === 0);
-    const matchesPrestation = !prestationFilter || p.prestations.includes(prestationFilter) || p.services.some((s: any) => offerPrestations(s).includes(prestationFilter));
+      (p.eventTypes && p.eventTypes.includes(activeEventType)) ||
+      (p.services && p.services.some((s: any) => offerEventTypes(s).includes(activeEventType)));
+
+    const matchesPrestation = 
+      !prestationFilter || 
+      (p.prestations && p.prestations.some((pr: string) => pr.toLowerCase().includes(prestationFilter.toLowerCase()))) ||
+      (p.role && p.role.toLowerCase().includes(prestationFilter.toLowerCase())) ||
+      (p.services && p.services.some((s: any) => offerPrestations(s).includes(prestationFilter) || (s.nom_service && s.nom_service.toLowerCase().includes(prestationFilter.toLowerCase()))));
     
     const matchesCountry =
       !countryFilter ||
@@ -159,6 +214,7 @@ export default function CataloguePrestatairesPage({
     setPrestationFilter("");
     setCountryFilter("");
     setZoneFilter("");
+    setSearchTerm("");
   };
 
   const handleOpenRequest = (providerId: string, service: any) => {
@@ -171,91 +227,234 @@ export default function CataloguePrestatairesPage({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+      {/* Fil d'Ariane */}
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
         <span>Événement</span> <span className="text-gray-300">&gt;</span> 
         <Link href={`/dashboard/events/${id}/prestataires`} className="hover:text-black">Mes Prestataires</Link> 
         <span className="text-gray-300">&gt;</span> 
-        <span className="text-black">Catalogue</span>
+        <span className="text-black">Annuaire Evenium</span>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <Link href={`/dashboard/events/${id}/prestataires`} className="flex items-center gap-2 text-sm text-gray-500 hover:text-black mb-2 transition-colors w-fit">
-            <ArrowLeft size={16} /> Retour
-          </Link>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
-            Annuaire Evenium <Star size={24} className="text-[#b8924a] fill-[#b8924a]" />
-          </h1>
-          <p className="text-gray-500 text-sm">Découvrez nos prestataires vérifiés et demandez-leur des devis.</p>
+      {/* Titre & Description */}
+      <div className="mb-6">
+        <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
+          Annuaire Evenium <Star size={24} className="text-[#b8924a] fill-[#b8924a]" />
+        </h1>
+        <p className="text-gray-500 text-sm">
+          Tous les prestataires qui ont intégré notre organisation sont réunis ici. Demandez-leur des devis en toute sérénité.
+        </p>
+      </div>
+
+      {/* 3 Onglets sur la même ligne : 1er Annuaire Evenium (Actif), 2ème Prestataires Evenium, 3ème Prestataires Externes */}
+      <div className="flex items-center gap-2 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto no-scrollbar">
+        {/* 1ER : Annuaire Evenium (Actif sur cette page) */}
+        <div className="pb-3 text-sm font-bold text-[#b8924a] relative flex items-center gap-2 shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-[#b8924a] text-white flex items-center justify-center shadow-xs">
+            <Search size={13} />
+          </div>
+          <span>Annuaire Evenium</span>
+          <span className="text-[10px] bg-[#b8924a]/20 text-[#8f6f33] px-2 py-0.5 rounded-full font-bold">
+            {prestataires.length} prestataires
+          </span>
+          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#b8924a] rounded-t-full"></span>
         </div>
+
+        {/* 2EME : Prestataires Evenium */}
+        <Link
+          href={`/dashboard/events/${id}/prestataires?tab=evenium`}
+          className="pb-3 text-sm font-bold text-gray-500 hover:text-black transition-colors relative flex items-center gap-2 shrink-0"
+        >
+          <span>Prestataires Evenium</span>
+        </Link>
+
+        {/* 3EME : Prestataires Externes */}
+        <Link
+          href={`/dashboard/events/${id}/prestataires?tab=externe`}
+          className="pb-3 text-sm font-bold text-gray-500 hover:text-black transition-colors relative flex items-center gap-2 shrink-0"
+        >
+          <span>Prestataires Externes</span>
+        </Link>
       </div>
 
+      {/* SECTION RECHERCHE RAPIDE & FILTRES POUR LES PERSONNES PRESSÉES */}
       <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] mb-8 space-y-4">
+        {/* Titre & Bouton Rechercher avec filtres */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Search size={18} className="text-[#b8924a]" /> Rechercher dans l&apos;annuaire
+              </span>
+              <span className="text-xs bg-[#b8924a]/10 text-[#8f6f33] px-2.5 py-0.5 rounded-full font-semibold">
+                Recherche express
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Idéal pour les personnes pressées : tapez un mot-clé ou appliquez un filtre rapide.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                isFiltersOpen || activeFilters > 0
+                  ? "bg-[#b8924a] text-white shadow-sm"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              <SlidersHorizontal size={15} />
+              <span>{isFiltersOpen ? "Masquer les filtres" : "Rechercher avec les filtres"}</span>
+              {activeFilters > 0 && (
+                <span className="w-5 h-5 rounded-full bg-white text-black text-[10px] font-extrabold flex items-center justify-center">
+                  {activeFilters}
+                </span>
+              )}
+            </button>
+            {(activeFilters > 0 || searchTerm) && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-xs text-red-600 hover:underline px-2 py-1 font-semibold cursor-pointer"
+              >
+                Effacer
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Champ de recherche direct avec la loupe */}
         <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#b8924a]" />
           <input 
             type="text"
-            placeholder="Rechercher un prestataire, une prestation..."
-            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] text-sm"
+            placeholder="Rechercher par nom, métier (ex: photographe, traiteur), ville ou prestation..."
+            className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] text-sm text-gray-900 placeholder-gray-400 font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <label className="block">
-            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Type d'événement</span>
-            <select value={activeEventType} onChange={(e) => setEventTypeFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
-              <option value="">Tous les événements</option>
-              {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </label>
-          <label className="block">
-            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Prestation</span>
-            <select value={prestationFilter} onChange={(e) => setPrestationFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
-              <option value="">Toutes les prestations</option>
-              {PRESTATION_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
-              {customPrestations.length > 0 && (
-                <optgroup label="Autres prestations">
-                  {customPrestations.map((p) => <option key={p} value={p}>{p}</option>)}
-                </optgroup>
-              )}
-            </select>
-          </label>
-          <label className="block">
-            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Pays</span>
-            <select value={countryFilter} onChange={(e) => { setCountryFilter(e.target.value); setZoneFilter(""); }} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
-              <option value="">Tous les pays</option>
-              {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </label>
-          <label className="block">
-            <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Zone d'intervention</span>
-            <select
-              value={zoneFilter}
-              onChange={(e) => {
-                const val = e.target.value;
-                setZoneFilter(val);
-                // Si l'utilisateur choisit une zone sans avoir sélectionné de pays, déduire le pays automatiquement
-                if (val && !countryFilter) {
-                  const matchCountry = COUNTRIES.find((c) => c.zones.some((z) => z.toLowerCase() === val.toLowerCase()));
-                  if (matchCountry) {
-                    setCountryFilter(matchCountry.name);
-                  }
-                }
-              }}
-              className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black p-1 cursor-pointer"
             >
-              <option value="">{countryFilter ? `Toutes les zones (${countryFilter})` : "Toutes les zones"}</option>
-              {zones.map((z) => <option key={z} value={z}>{z}</option>)}
-            </select>
-          </label>
+              <X size={16} />
+            </button>
+          )}
         </div>
-        {activeFilters > 0 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">{filteredProviders.length} prestataire{filteredProviders.length > 1 ? "s" : ""} correspond{filteredProviders.length > 1 ? "ent" : ""} à vos critères</span>
-            <button type="button" onClick={resetFilters} className="text-[#8f6f33] font-semibold hover:underline">Réinitialiser les filtres</button>
+
+        {/* Raccourcis express en 1 clic pour les personnes pressées */}
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-gray-400 font-bold mb-2">
+            Raccourcis express pour les personnes pressées :
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "Tous", filter: "", icon: "⚡" },
+              ...(event?.type ? [{ label: `${event.type}`, filter: event.type, isEvent: true, icon: "🎉" }] : []),
+              { label: "Photographes", filter: "Photographes", icon: "📸" },
+              { label: "Traiteurs", filter: "Traiteurs", icon: "🍽️" },
+              { label: "Décorateurs", filter: "Décorateurs", icon: "✨" },
+              { label: "Salles & Lieux", filter: "Salles de réception", icon: "🏰" },
+              { label: "DJ & Musique", filter: "DJ / Animation", icon: "🎵" },
+              { label: "Coiffure & Beauté", filter: "Coiffeurs / maquilleurs", icon: "💄" },
+              { label: "Sécurité", filter: "Sécurité", icon: "🛡️" },
+            ].map((shortcut) => {
+              const isSelected = shortcut.isEvent 
+                ? activeEventType === shortcut.filter 
+                : (!shortcut.filter && !prestationFilter && !activeEventType) || (shortcut.filter && prestationFilter === shortcut.filter);
+              return (
+                <button
+                  key={shortcut.label}
+                  type="button"
+                  onClick={() => {
+                    if (shortcut.isEvent) {
+                      setEventTypeFilter(activeEventType === shortcut.filter ? "" : shortcut.filter);
+                    } else if (!shortcut.filter) {
+                      resetFilters();
+                    } else {
+                      setPrestationFilter(prestationFilter === shortcut.filter ? "" : shortcut.filter);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-black text-white shadow-sm"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  <span>{shortcut.icon}</span>
+                  <span>{shortcut.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Volet détaillé des 4 filtres (accessible via le bouton "Rechercher avec les filtres") */}
+        {isFiltersOpen && (
+          <div className="pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-in fade-in duration-200">
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Type d'événement</span>
+              <select value={activeEventType} onChange={(e) => setEventTypeFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+                <option value="">Tous les événements</option>
+                {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Prestation</span>
+              <select value={prestationFilter} onChange={(e) => setPrestationFilter(e.target.value)} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+                <option value="">Toutes les prestations</option>
+                {PRESTATION_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
+                {customPrestations.length > 0 && (
+                  <optgroup label="Autres prestations">
+                    {customPrestations.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </optgroup>
+                )}
+              </select>
+            </label>
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Pays</span>
+              <select value={countryFilter} onChange={(e) => { setCountryFilter(e.target.value); setZoneFilter(""); }} className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]">
+                <option value="">Tous les pays</option>
+                {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">Zone d'intervention</span>
+              <select
+                value={zoneFilter}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setZoneFilter(val);
+                  if (val && !countryFilter) {
+                    const matchCountry = COUNTRIES.find((c) => c.zones.some((z) => z.toLowerCase() === val.toLowerCase()));
+                    if (matchCountry) {
+                      setCountryFilter(matchCountry.name);
+                    }
+                  }
+                }}
+                className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
+              >
+                <option value="">{countryFilter ? `Toutes les zones (${countryFilter})` : "Toutes les zones"}</option>
+                {zones.map((z) => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </label>
           </div>
         )}
+
+        {/* Compteur et statut */}
+        <div className="flex items-center justify-between text-xs sm:text-sm pt-2 text-gray-500">
+          <span>
+            <strong className="text-gray-900 font-semibold">{filteredProviders.length}</strong> prestataire{filteredProviders.length > 1 ? "s" : ""} qui ont intégré notre organisation {activeFilters > 0 || searchTerm ? "correspondant à vos critères" : "affichés directement"}
+          </span>
+          {(activeFilters > 0 || searchTerm) && (
+            <button type="button" onClick={resetFilters} className="text-[#8f6f33] font-semibold hover:underline cursor-pointer">
+              Réinitialiser les filtres
+            </button>
+          )}
+        </div>
       </div>
 
       {!loading && filteredProviders.length === 0 && (

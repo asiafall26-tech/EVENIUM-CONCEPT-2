@@ -226,10 +226,10 @@ export default function EventDashboardPage({
       })()}
 
       {/* ─────────────── CARTE MAJEURE : LIEN OFFICIEL & QR CODE ACTIF ─────────────── */}
-      <div className="bg-gradient-to-br from-[#fcfaf7] via-white to-[#fbf7f0] rounded-3xl p-6 sm:p-8 border border-[#D4AF37]/40 shadow-sm mb-8 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#fcfaf7] via-white to-[#fbf7f0] rounded-3xl p-4 sm:p-8 border border-[#D4AF37]/40 shadow-sm mb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8 justify-between">
+        <div className="relative z-10 flex flex-col xl:flex-row items-center gap-6 xl:gap-8 justify-between">
           
           {/* Colonne Gauche : Le QR Code Actif généré dynamiquement */}
           <div className="flex-shrink-0 flex flex-col items-center">
@@ -243,7 +243,7 @@ export default function EventDashboardPage({
           </div>
 
           {/* Colonne Droite : Titre, lien copiable, WhatsApp et actions directes */}
-          <div className="flex-1 min-w-0 space-y-4 text-center lg:text-left">
+          <div className="flex-1 w-full min-w-0 space-y-4 text-center xl:text-left">
             <div>
               <div className="inline-flex items-center gap-1.5 bg-[#fbf7f0] border border-[#b8924a]/30 text-[#8f6f33] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
                 <Sparkles size={12} className="text-[#b8924a]" />
@@ -258,12 +258,12 @@ export default function EventDashboardPage({
             </div>
 
             {/* Input du lien officiel avec bouton Copier en 1 clic */}
-            <div className="bg-white p-2.5 rounded-2xl border border-gray-200/90 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl">
+            <div className="bg-white p-2.5 rounded-2xl border border-gray-200/90 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full max-w-xl min-w-0 mx-auto xl:mx-0">
               <input
                 type="text"
                 readOnly
                 value={eventUrl || `/invite/${event.id}`}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-gray-900 outline-none select-all"
+                className="min-w-0 w-full flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-gray-900 outline-none select-all text-ellipsis"
               />
               <button
                 type="button"
@@ -293,7 +293,7 @@ export default function EventDashboardPage({
             </div>
 
             {/* Boutons d'action rapides : WhatsApp + Tester l'invitation + Personnaliser */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 pt-1">
+            <div className="flex flex-wrap items-center justify-center xl:justify-start gap-2.5 pt-1">
               <a
                 href={`https://api.whatsapp.com/send?text=${waShareText}`}
                 target="_blank"
