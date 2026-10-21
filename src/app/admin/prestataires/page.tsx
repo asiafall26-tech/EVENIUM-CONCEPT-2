@@ -152,7 +152,7 @@ export default function AdminPrestatairesPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2">Prestataires Partenaires</h1>
@@ -188,8 +188,8 @@ export default function AdminPrestatairesPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm whitespace-nowrap">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left text-sm whitespace-nowrap">
           <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
             <tr>
               <th className="px-6 py-4 font-medium">Prestataire</th>

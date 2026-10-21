@@ -159,7 +159,7 @@ export default function InvitationsPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-3xl p-12 text-center max-w-lg mx-auto">
+          <div className="bg-gray-50 border border-gray-200 rounded-3xl p-6 sm:p-10 lg:p-12 text-center max-w-lg mx-auto">
             <p className="text-4xl mb-3">🎨</p>
             <h3 className="font-serif text-xl font-bold text-gray-900 mb-2">Bientôt disponible</h3>
             <p className="text-sm text-gray-500 mb-6">
@@ -244,7 +244,7 @@ export default function InvitationsPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/create"
-              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#b8924a] to-[#F3E5AB] text-black font-extrabold text-sm shadow-xl shadow-[#b8924a]/20 hover:scale-105 transition-all flex items-center gap-2"
+              className="px-4 sm:px-6 lg:px-8 py-3.5 rounded-full bg-gradient-to-r from-[#b8924a] to-[#F3E5AB] text-black font-extrabold text-sm shadow-xl shadow-[#b8924a]/20 hover:scale-105 transition-all flex items-center gap-2"
             >
               <Sparkles size={16} /> Créer mon événement
             </Link>

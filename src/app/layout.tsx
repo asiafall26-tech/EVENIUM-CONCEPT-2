@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost, Parisienne } from "next/font/google";
 import "./globals.css";
 
@@ -20,6 +20,14 @@ const parisienne = Parisienne({
   subsets: ["latin"],
   weight: "400",
 });
+
+// Affichage mobile : largeur de l'appareil, zoom autorisé (accessibilité), encoche iPhone prise en compte
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f5eee1",
+};
 
 export const metadata: Metadata = {
   title: "Evenium | Plateforme d'organisation événementielle",

@@ -53,7 +53,7 @@ export default async function AdminUserProfilePage({ params }: { params: Promise
   }
 
   if (!profile) {
-    return <div className="p-8 text-center text-gray-500">Utilisateur introuvable.</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 text-center text-gray-500">Utilisateur introuvable.</div>;
   }
 
   // Strict data separation: If the user is a prestataire, redirect to the dedicated provider dossier
@@ -325,7 +325,7 @@ export default async function AdminUserProfilePage({ params }: { params: Promise
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Liste simple des événements */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-wrap gap-3">
             <h2 className="font-serif text-xl font-bold">Événements en cours</h2>
           </div>
           <div className="divide-y divide-gray-100">
@@ -370,7 +370,7 @@ export default async function AdminUserProfilePage({ params }: { params: Promise
 
         {/* Historique des paiements de dépenses associées */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-wrap gap-3">
             <h2 className="font-serif text-xl font-bold">Dépenses &amp; Transactions Budgétaires</h2>
           </div>
           <div className="divide-y divide-gray-100">

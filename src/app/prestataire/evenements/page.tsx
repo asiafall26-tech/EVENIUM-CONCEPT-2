@@ -181,7 +181,7 @@ export default function PrestataireEvenementsPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
@@ -234,7 +234,7 @@ export default function PrestataireEvenementsPage() {
             </div>
           ))
         ) : (
-          <div className="col-span-3 bg-white rounded-3xl border border-gray-100 p-12 text-center flex flex-col items-center">
+          <div className="col-span-3 bg-white rounded-3xl border border-gray-100 p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center">
             <div className="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-4">
               <Calendar size={32} />
             </div>

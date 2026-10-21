@@ -71,7 +71,7 @@ export default async function AdminEventDetailsPage({ params }: { params: Promis
   const datesInfo = computeEventDates(event.date, event.end_date);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <Link href="/admin/evenements" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black transition-colors mb-6 font-medium">
         <ArrowLeft size={16} /> Retour à tous les événements
       </Link>
@@ -180,8 +180,8 @@ export default async function AdminEventDetailsPage({ params }: { params: Promis
       </div>
 
       <h2 className="font-serif text-2xl font-bold mb-4">Prestataires Associés</h2>
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm whitespace-nowrap">
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm whitespace-nowrap">
           <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 font-medium">Prestataire</th>

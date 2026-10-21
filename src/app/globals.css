@@ -324,3 +324,63 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   RESPONSIVE — téléphones (dès 280 px, écrans pliables), tablettes, paysage
+   ========================================================================== */
+
+/* Aucun défilement horizontal parasite (clip préserve les éléments « sticky ») */
+html,
+body {
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-wrap: break-word;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hauteur réelle de l'écran mobile (barre d'adresse comprise) */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+  .h-screen {
+    height: 100dvh;
+  }
+}
+
+/* Écrans tactiles : pas de zoom automatique de l'iPhone sur les champs (≥ 16 px) */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/* Tableaux larges : défilement horizontal dans leur cadre plutôt que la page */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Très petits écrans (iPhone SE 1re génération, Galaxy Fold replié…) */
+@media (max-width: 360px) {
+  html {
+    font-size: 15px;
+  }
+}
+@media (max-width: 300px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Barres fixées en bas d'écran : au-dessus de la barre d'accueil de l'iPhone */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}

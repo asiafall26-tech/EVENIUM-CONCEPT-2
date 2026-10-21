@@ -64,7 +64,7 @@ export default function PrestataireAvisPage() {
   const averageRating = calculateAverage();
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function PrestataireAvisPage() {
           <div className="absolute -right-4 -bottom-4 opacity-10">
             <Star size={100} />
           </div>
-          <h3 className="text-6xl font-bold font-serif text-[#b8924a] relative z-10">{averageRating}</h3>
+          <h3 className="text-4xl sm:text-6xl font-bold font-serif text-[#b8924a] relative z-10">{averageRating}</h3>
           <div className="flex items-center justify-center gap-1 my-2 relative z-10">
             {[1,2,3,4,5].map(i => (
               <Star key={i} size={16} className={i <= Number(averageRating) ? "text-[#b8924a]" : "text-gray-600"} fill={i <= Number(averageRating) ? "#b8924a" : "none"} />
@@ -130,7 +130,7 @@ export default function PrestataireAvisPage() {
 
       <div className="space-y-6">
         {loading ? (
-           <div className="text-center p-12 text-gray-500">Chargement des avis...</div>
+           <div className="text-center p-6 sm:p-10 lg:p-12 text-gray-500">Chargement des avis...</div>
         ) : filteredReviews.length > 0 ? (
           filteredReviews.map((review) => (
             <div key={review.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm group hover:border-[#b8924a]/30 transition-colors">
@@ -194,7 +194,7 @@ export default function PrestataireAvisPage() {
             </div>
           ))
         ) : (
-          <div className="text-center p-12 bg-white rounded-3xl border border-gray-100 shadow-sm">
+          <div className="text-center p-6 sm:p-10 lg:p-12 bg-white rounded-3xl border border-gray-100 shadow-sm">
             <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
             <h3 className="text-lg font-bold text-gray-900 mb-1">Aucun avis {filterRating ? "correspondant" : ""} pour le moment</h3>
             <p className="text-gray-500 max-w-sm mx-auto">

@@ -88,7 +88,7 @@ export default function ClientDevisPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="mb-8">
         <h1 className="font-serif text-3xl font-bold text-black mb-2">Mes Devis</h1>
         <p className="text-gray-500">Consultez et gérez les devis envoyés par vos prestataires.</p>
@@ -97,7 +97,7 @@ export default function ClientDevisPage() {
       {loading ? (
         <div className="text-center py-20 text-gray-500">Chargement de vos devis...</div>
       ) : devisList.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-10 lg:p-12 text-center shadow-sm">
           <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText size={32} className="text-gray-400" />
           </div>

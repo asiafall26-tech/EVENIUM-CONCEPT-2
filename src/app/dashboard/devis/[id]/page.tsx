@@ -303,7 +303,7 @@ export default function DetailedDevisClientPage({
   if (!devis) return <div className="p-20 text-center text-red-500">Devis introuvable.</div>;
 
   return (
-    <div className="p-4 sm:p-8 max-w-6xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-0 sm:p-4 lg:p-8 pb-48 md:pb-8 max-w-6xl mx-auto w-full animate-in fade-in duration-500">
       
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -650,7 +650,7 @@ export default function DetailedDevisClientPage({
 
           {/* Boutons d'action (Sticky on mobile) */}
           {['En attente de validation', 'Envoyé', 'Nouvelle version envoyée', 'Révision demandée', 'En cours de révision'].includes(devis.status) && (
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:relative md:bg-transparent md:border-0 md:p-0 z-50">
+            <div className="fixed bottom-0 left-0 right-0 p-4 safe-bottom bg-white border-t shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.2)] md:relative md:bg-transparent md:border-0 md:p-0 md:shadow-none z-40">
               <button onClick={handleAccept} className="w-full py-4 mb-3 bg-[#6b1f2a] text-white rounded-xl hover:bg-[#a03f55] font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-colors cursor-pointer">
                 <Check size={20} /> Accepter la proposition de devis
               </button>

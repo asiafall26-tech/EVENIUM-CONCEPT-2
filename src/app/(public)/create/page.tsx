@@ -765,7 +765,7 @@ function CreateExpressStudioContent() {
           </div>
 
           {/* Le Studio embarqué dédié uniquement au modèle choisi */}
-          <div className="w-full bg-[#faf7f5] rounded-3xl shadow-xl border border-gray-200/90 overflow-hidden flex flex-col h-[860px] lg:h-[900px]">
+          <div className="w-full bg-[#faf7f5] rounded-3xl shadow-xl border border-gray-200/90 overflow-hidden flex flex-col h-[85dvh] min-h-[560px] max-h-[900px] lg:h-[900px]">
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursStudio
                 value={veloursContent}

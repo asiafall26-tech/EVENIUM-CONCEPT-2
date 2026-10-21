@@ -92,17 +92,17 @@ export default function BudgetDashboardPage({
   }, [expenses]);
 
   if (loading) {
-    return <div className="p-8 max-w-7xl mx-auto flex items-center justify-center h-[80vh]">Chargement de votre budget...</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex items-center justify-center h-[80vh]">Chargement de votre budget...</div>;
   }
 
   if (!event) {
-    return <div className="p-8 max-w-7xl mx-auto flex items-center justify-center h-[80vh]">Événement introuvable.</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex items-center justify-center h-[80vh]">Événement introuvable.</div>;
   }
 
   if (event.plan !== "Gold") {
     return (
-      <div className="p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl max-w-md text-center">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
           <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
@@ -200,7 +200,7 @@ export default function BudgetDashboardPage({
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
         <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Gestion Budgétaire</span>
       </div>
@@ -301,7 +301,7 @@ export default function BudgetDashboardPage({
         {/* Left Column: Charts */}
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
               <h2 className="font-semibold text-lg text-black">Répartition par catégorie</h2>
             </div>
             
@@ -335,7 +335,7 @@ export default function BudgetDashboardPage({
 
         {/* Right Column: Transactions Table */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <h2 className="font-semibold text-lg text-black">Historique des transactions</h2>
             <div className="text-sm font-semibold text-gray-500">
               {expenses.length} dépense(s)

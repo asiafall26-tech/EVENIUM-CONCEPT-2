@@ -52,7 +52,7 @@ const FEE_SUGGESTIONS = [
 function Card({ icon, title, hint, children, action }: { icon: ReactNode; title: string; hint?: string; children: ReactNode; action?: ReactNode }) {
   return (
     <section className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-      <div className="px-5 sm:px-7 pt-6 pb-4 flex items-start justify-between gap-4">
+      <div className="px-5 sm:px-7 pt-6 pb-4 flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 w-9 h-9 shrink-0 rounded-xl bg-[#f5eee1] text-[#8f6f33] flex items-center justify-center">{icon}</span>
           <div>

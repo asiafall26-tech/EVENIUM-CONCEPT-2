@@ -96,7 +96,7 @@ export default function PrestataireExterneInscription() {
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
         
         {/* Sidebar Info */}
-        <div className="w-full md:w-1/3 bg-gradient-to-br from-gray-900 to-black text-white p-8 flex flex-col justify-between">
+        <div className="w-full md:w-1/3 bg-gradient-to-br from-gray-900 to-black text-white p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
           <div>
             <Link href="/" className="font-serif text-2xl font-bold text-[#b8924a] mb-8 block">
               Evenium

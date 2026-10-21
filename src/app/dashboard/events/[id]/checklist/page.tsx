@@ -65,7 +65,7 @@ export default function ChecklistPage({
   const progressPercentage = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   return (
-    <div className="p-8 max-w-4xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full">
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
         <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Checklist</span>
       </div>

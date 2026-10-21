@@ -115,8 +115,8 @@ export default function Home() {
           <Reveal className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
             {STEPS.map((s, i) => (
               <div key={s.title} className="flex">
-                <article className="relative flex-1 rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-8 pt-10 hover:bg-white/[0.07] hover:border-[#b8924a]/40 transition-all duration-500">
-                  <span className="font-serif text-7xl leading-none bg-gradient-to-b from-[#f3d58a] to-[#9c7124] bg-clip-text text-transparent">
+                <article className="relative flex-1 rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-4 sm:p-6 lg:p-8 pt-10 hover:bg-white/[0.07] hover:border-[#b8924a]/40 transition-all duration-500">
+                  <span className="font-serif text-4xl sm:text-5xl lg:text-7xl leading-none bg-gradient-to-b from-[#f3d58a] to-[#9c7124] bg-clip-text text-transparent">
                     {i + 1}
                   </span>
                   <h3 className="mt-6 font-serif text-2xl">{s.title}</h3>
@@ -183,7 +183,7 @@ export default function Home() {
             </h2>
             <Link
               href="/create"
-              className="relative inline-flex rounded-full bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] px-8 py-4 text-sm font-bold text-[#241b13] shadow-[0_15px_40px_-10px_rgba(184,146,74,0.6)] hover:gap-3 transition-all items-center gap-2"
+              className="relative inline-flex rounded-full bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] px-4 sm:px-6 lg:px-8 py-4 text-sm font-bold text-[#241b13] shadow-[0_15px_40px_-10px_rgba(184,146,74,0.6)] hover:gap-3 transition-all items-center gap-2"
             >
               Commencer maintenant <ArrowRight size={16} />
             </Link>

@@ -16,7 +16,7 @@ export default function EspacePrestataireLanding() {
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* OPTION 1 : PRESTATAIRE EVENIUM (Déjà sélectionné) */}
-          <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
               <ShieldCheck size={100} className="text-[#b8924a]" />
             </div>
@@ -39,7 +39,7 @@ export default function EspacePrestataireLanding() {
           </div>
 
           {/* OPTION 2 : PRESTATAIRE EXTERNE (Nouvelle adhésion) */}
-          <div className="bg-gradient-to-br from-[#2b2118] to-black rounded-3xl p-10 border border-gray-800 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
+          <div className="bg-gradient-to-br from-[#2b2118] to-black rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-800 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
               <Star size={100} className="text-[#b8924a]" />
             </div>

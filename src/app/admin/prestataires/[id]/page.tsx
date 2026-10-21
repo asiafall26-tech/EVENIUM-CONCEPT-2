@@ -21,7 +21,7 @@ export default async function AdminPrestataireProfilePage({ params }: { params: 
     .single();
 
   if (!profile || profile.role !== 'prestataire') {
-    return <div className="p-8 text-center text-gray-500">Prestataire introuvable.</div>;
+    return <div className="p-4 sm:p-6 lg:p-8 text-center text-gray-500">Prestataire introuvable.</div>;
   }
 
   // Fetch their transactions (money they received)
@@ -49,7 +49,7 @@ export default async function AdminPrestataireProfilePage({ params }: { params: 
   const totalDevis = (devis || []).reduce((sum, d) => sum + Number(d.total || d.amount || 0), 0);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="mb-8">
         <Link href="/admin/prestataires" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black mb-4 transition-colors">
@@ -132,7 +132,7 @@ export default async function AdminPrestataireProfilePage({ params }: { params: 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Liste des devis */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-wrap gap-3">
             <h2 className="font-serif text-xl font-bold">Devis Émis</h2>
           </div>
           <div className="divide-y divide-gray-100">
@@ -155,7 +155,7 @@ export default async function AdminPrestataireProfilePage({ params }: { params: 
 
         {/* Historique des paiements reçus */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-wrap gap-3">
             <h2 className="font-serif text-xl font-bold">Paiements Reçus</h2>
           </div>
           <div className="divide-y divide-gray-100">

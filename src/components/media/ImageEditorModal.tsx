@@ -176,7 +176,7 @@ function ImageEditor({ source, options, onCancel, onDone }: EditorProps) {
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Modifier la photo">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between gap-3 px-5 sm:px-7 py-4 border-b border-gray-100">
           <h2 className="font-serif text-2xl text-gray-900">{options.title || "Modifier la photo"}</h2>
           <button type="button" onClick={onCancel} className="p-2 rounded-full hover:bg-gray-100 text-gray-500" aria-label="Fermer">
             <X size={20} />

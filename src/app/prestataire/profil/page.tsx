@@ -250,7 +250,7 @@ export default function PrestataireProfilPage() {
   );
 
   return (
-    <div className="p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-500">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
@@ -379,7 +379,7 @@ export default function PrestataireProfilPage() {
 
         {/* Colonne de droite : Formulaire */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm relative overflow-hidden">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-gray-100 shadow-sm relative overflow-hidden">
             {/* Background design element */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#b8924a]/5 to-transparent rounded-bl-full pointer-events-none"></div>
             
@@ -488,7 +488,7 @@ export default function PrestataireProfilPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mt-6">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-gray-100 shadow-sm mt-6">
             <h2 className="font-serif text-2xl text-black mb-1">Votre activité</h2>
             <p className="text-sm text-gray-500 mb-6">Types d'événements, prestations et zones : les organisateurs filtrent les prestataires avec ces informations.</p>
             {isEditing ? (
@@ -519,7 +519,7 @@ export default function PrestataireProfilPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mt-6">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-gray-100 shadow-sm mt-6">
             <h2 className="font-serif text-2xl text-black mb-1">Vos rubriques</h2>
             <p className="text-sm text-gray-500 mb-6">Personnalisez votre vitrine : ajoutez, renommez ou supprimez des rubriques. Des suggestions s'adaptent à vos prestations et types d'événements.</p>
             {isEditing ? (
@@ -542,7 +542,7 @@ export default function PrestataireProfilPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mt-6">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-gray-100 shadow-sm mt-6">
             <h2 className="font-serif text-2xl font-bold text-black mb-6">Galerie Photos (Catalogue)</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {formData.gallery.map((url, idx) => (

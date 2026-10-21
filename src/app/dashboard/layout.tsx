@@ -1,3 +1,4 @@
+import { Home as TabHome, PlusCircle as TabNew, FileText as TabDevis, MessageSquare as TabMessages, User as TabUser } from "lucide-react";
 import { DashboardFrame } from "@/components/layout/DashboardFrame";
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { Bell, Plus, ChevronDown } from "lucide-react";
@@ -41,15 +42,22 @@ export default async function DashboardLayout({
 
   return (
     <DashboardFrame
+      mobileTabs={[
+        { href: "/dashboard", label: "Accueil", icon: <TabHome size={21} />, exact: true },
+        { href: "/dashboard/new", label: "Créer", icon: <TabNew size={21} /> },
+        { href: "/dashboard/devis", label: "Devis", icon: <TabDevis size={21} />, badge: "pendingDevis" },
+        { href: "/dashboard/messages", label: "Messages", icon: <TabMessages size={21} />, badge: "unreadMessages" },
+        { href: "/dashboard/settings", label: "Compte", icon: <TabUser size={21} /> },
+      ]}
       homeHref="/dashboard"
       badge="Client"
       sidebar={<DashboardSidebar />}
       header={
         <>
           <div className="flex-1" />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <NotificationBell role="client" />
-            <span className="w-px h-8 bg-gray-100" />
+            <span className="hidden sm:block w-px h-8 bg-gray-100" />
             <UserMenu
               name={fullName}
               role={profile?.role === 'prestataire' ? "Prestataire" : "Organisateur"}

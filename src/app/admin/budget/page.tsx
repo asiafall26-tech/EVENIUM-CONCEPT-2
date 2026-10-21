@@ -81,7 +81,7 @@ export default async function AdminFinancesPage() {
   const totalRevenusPlateforme = adhesionRevenues;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
@@ -93,7 +93,7 @@ export default async function AdminFinancesPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-[#2b2118] text-white p-8 rounded-3xl border border-gray-800 shadow-xl relative overflow-hidden">
+        <div className="bg-[#2b2118] text-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-800 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-6 opacity-10">
             <PieChart size={100} />
           </div>
@@ -104,7 +104,7 @@ export default async function AdminFinancesPage() {
           <p className="text-xs text-gray-500 mt-4 relative z-10">Droits d'adhésion & forfaits</p>
         </div>
 
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start mb-2">
               <p className="text-sm text-gray-500 font-medium">Droits d'adhésion (Externes)</p>
@@ -115,7 +115,7 @@ export default async function AdminFinancesPage() {
           <p className="text-xs text-gray-500 mt-4">{externalPrestataires.length} prestataire(s) externe(s)</p>
         </div>
 
-        <div className="bg-[#f5eee1] p-8 rounded-3xl border border-[#e4d8c4] shadow-sm flex flex-col justify-between">
+        <div className="bg-[#f5eee1] p-4 sm:p-6 lg:p-8 rounded-3xl border border-[#e4d8c4] shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start mb-2">
               <p className="text-sm text-gray-700 font-medium">Commission Prestataire</p>
@@ -129,7 +129,7 @@ export default async function AdminFinancesPage() {
 
       {/* Traçabilité des Prestations */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8">
-        <div className="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+        <div className="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center flex-wrap gap-3">
           <div>
             <h2 className="font-serif text-xl font-bold text-gray-900 flex items-center gap-2">
               Suivi des Prestations & Volume d'Affaires <ShieldCheck size={20} className="text-[#b8924a]" />
@@ -191,7 +191,7 @@ export default async function AdminFinancesPage() {
       </div>
       
       {/* Volume Global Organisateur */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6 lg:p-8">
         <h2 className="font-serif text-xl font-bold mb-2">Volume global transité (Organisateurs)</h2>
         <p className="text-gray-500 text-sm mb-6">Total des paiements effectués par les organisateurs sur la plateforme : <strong>{totalVolumeOrganisateurs.toLocaleString()} FCFA</strong>.</p>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full max-w-md">

@@ -55,7 +55,7 @@ export default function AdminSettingsPage() {
   const initials = `${firstName[0] || ""}${lastName[0] || firstName[1] || ""}`.toUpperCase() || "AD";
 
   return (
-    <div className="p-8 max-w-4xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2">Paramètres</h1>
@@ -106,7 +106,7 @@ export default function AdminSettingsPage() {
           
           {/* TAB: PROFIL */}
           {activeTab === "profil" && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Informations Personnelles</h2>
               
               <div className="flex items-center gap-6 mb-8">
@@ -170,7 +170,7 @@ export default function AdminSettingsPage() {
           {/* TAB: SECURITE */}
           {activeTab === "securite" && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Mot de passe</h2>
                 <p className="text-gray-500 text-sm mb-6">Modifiez votre mot de passe pour sécuriser votre compte admin.</p>
 
@@ -199,8 +199,8 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-                <div className="flex items-start justify-between">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8">
+                <div className="flex items-start justify-between flex-wrap gap-3">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 mb-2">Double Authentification (2FA)</h2>
                     <p className="text-gray-500 text-sm max-w-md">Renforcez la sécurité de votre compte administrateur en exigeant un code temporaire lors de la connexion.</p>
@@ -228,7 +228,7 @@ export default function AdminSettingsPage() {
 
           {/* TAB: NOTIFICATIONS */}
           {activeTab === "notifications" && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <h2 className="text-xl font-bold text-gray-900 mb-2">Notifications Système</h2>
               <p className="text-gray-500 text-sm mb-6">Sélectionnez les événements pour lesquels vous souhaitez recevoir une alerte par email.</p>
 
@@ -268,7 +268,7 @@ export default function AdminSettingsPage() {
 
           {/* TAB: LANGUES ET REGION */}
           {activeTab === "langues" && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <h2 className="text-xl font-bold text-gray-900 mb-2">Langue & Région</h2>
               <p className="text-gray-500 text-sm mb-6">Définissez vos préférences régionales pour l'interface de gestion.</p>
 

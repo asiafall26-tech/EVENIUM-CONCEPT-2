@@ -35,7 +35,7 @@ export default function LoginPage() {
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
         
-        <div className="relative z-20 max-w-lg px-12 text-center text-white">
+        <div className="relative z-20 max-w-lg px-6 sm:px-10 lg:px-12 text-center text-white">
           <Link href="/" className="inline-flex items-center gap-2 text-[#b8924a] font-serif text-3xl font-bold mb-8">
             <Sparkles size={28} />
             Evenium

@@ -166,7 +166,7 @@ export default function AdminSoundBankPage() {
   const activeCount = tracks.filter((t) => t.is_active).length;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function AdminSoundBankPage() {
           setDragOver(false);
           importFiles(e.dataTransfer.files);
         }}
-        className={`mb-6 cursor-pointer rounded-3xl border-2 border-dashed p-8 text-center transition-colors ${
+        className={`mb-6 cursor-pointer rounded-3xl border-2 border-dashed p-4 sm:p-6 lg:p-8 text-center transition-colors ${
           dragOver ? "border-[#b8924a] bg-[#fbf7f0]" : "border-gray-200 bg-white hover:border-[#b8924a]/60 hover:bg-[#fbf7f0]/50"
         }`}
       >

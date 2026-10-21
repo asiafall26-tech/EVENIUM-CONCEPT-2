@@ -336,7 +336,7 @@ export default function PrestatairePlanningPage() {
         <div className="xl:col-span-3 bg-white rounded-3xl border border-gray-100 shadow-sm p-6 overflow-hidden">
           {viewMode === 'Mois' && (
             <>
-              <div className="flex items-center justify-between mb-8 px-2">
+              <div className="flex items-center justify-between mb-8 px-2 flex-wrap gap-3">
                 <h2 className="font-serif text-2xl font-bold text-gray-900 capitalize flex items-center gap-4">
                   {monthName}
                 </h2>
@@ -418,7 +418,7 @@ export default function PrestatairePlanningPage() {
             
             return (
               <>
-                <div className="flex items-center justify-between mb-8 px-2">
+                <div className="flex items-center justify-between mb-8 px-2 flex-wrap gap-3">
                   <h2 className="font-serif text-2xl font-bold text-gray-900 capitalize flex items-center gap-4">
                     Semaine du {weekDays[0].getDate()} {weekDays[0].toLocaleString('fr-FR', { month: 'short' })}
                   </h2>
@@ -463,7 +463,7 @@ export default function PrestatairePlanningPage() {
             
             return (
               <>
-                <div className="flex items-center justify-between mb-8 px-2">
+                <div className="flex items-center justify-between mb-8 px-2 flex-wrap gap-3">
                   <h2 className="font-serif text-2xl font-bold text-gray-900 capitalize flex items-center gap-4">
                     {currentDate.toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                   </h2>
@@ -504,7 +504,7 @@ export default function PrestatairePlanningPage() {
           {/* LISTE VIEW */}
           {viewMode === 'Liste' && (
             <>
-              <div className="flex items-center justify-between mb-8 px-2">
+              <div className="flex items-center justify-between mb-8 px-2 flex-wrap gap-3">
                 <h2 className="font-serif text-2xl font-bold text-gray-900 capitalize flex items-center gap-4">Agenda</h2>
               </div>
               <div className="space-y-3">
@@ -581,7 +581,7 @@ export default function PrestatairePlanningPage() {
       <Modal isOpen={isDayModalOpen} onClose={() => setIsDayModalOpen(false)} title="">
         <div className="pb-2">
           {/* Hero Header */}
-          <div className="relative -mt-6 -mx-6 px-8 py-8 bg-[#fbf7f0] border-b border-[#e4d8c4]/40 rounded-t-3xl mb-6 overflow-hidden">
+          <div className="relative -mt-6 -mx-6 px-4 sm:px-6 lg:px-8 py-8 bg-[#fbf7f0] border-b border-[#e4d8c4]/40 rounded-t-3xl mb-6 overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#b8924a]/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
             <div className="relative z-10 flex items-start justify-between">
               <div>

@@ -355,8 +355,8 @@ export default function PrestatairesDashboardPage({
 
   if (event.plan !== "Gold") {
     return (
-      <div className="p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl max-w-md text-center">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
           <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
@@ -378,7 +378,7 @@ export default function PrestatairesDashboardPage({
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
         <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Mes Prestataires</span>
       </div>
@@ -591,7 +591,7 @@ export default function PrestatairesDashboardPage({
               </div>
             </div>
             
-            <div className="p-8">
+            <div className="p-4 sm:p-6 lg:p-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-2 space-y-8">
                   <div>
@@ -746,7 +746,7 @@ export default function PrestatairesDashboardPage({
                 </div>
               </div>
 
-              <div className="p-8 max-w-3xl mx-auto space-y-12">
+              <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-12">
                 {selectedServiceForDetails.description && (
                   <div>
                     <p className="text-gray-600 text-lg leading-relaxed">{selectedServiceForDetails.description}</p>
@@ -1169,14 +1169,14 @@ export default function PrestatairesDashboardPage({
                           handleDevisResponse('Refusé');
                         }
                       }}
-                      className="w-full sm:w-auto px-8 py-3.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-bold transition-colors disabled:opacity-50"
+                      className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-3.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-bold transition-colors disabled:opacity-50"
                     >
                       Refuser
                     </button>
                     <button 
                       disabled={isProcessing}
                       onClick={() => setIsRevisionModalOpen(true)}
-                      className="w-full sm:w-auto px-8 py-3.5 border border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-xs"
+                      className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-3.5 border border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-xs"
                     >
                       <RefreshCw size={16} className="text-[#8f6f33]" />
                       {(selectedDevis.version || 1) > 1 ? 'Nouvelle révision' : 'Demander une révision'}
@@ -1184,7 +1184,7 @@ export default function PrestatairesDashboardPage({
                     <button 
                       disabled={isProcessing}
                       onClick={() => handleDevisResponse('Accepté')}
-                      className="w-full sm:w-auto px-10 py-3.5 bg-[#A87B2D] hover:bg-[#8A6525] text-white rounded-xl font-bold transition-colors shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full sm:w-auto px-5 sm:px-8 lg:px-10 py-3.5 bg-[#A87B2D] hover:bg-[#8A6525] text-white rounded-xl font-bold transition-colors shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       <CheckCircle size={18} /> {isProcessing ? 'En cours...' : ((selectedDevis.version || 1) > 1 ? 'Accepter le devis révisé' : 'Valider le devis')}
                     </button>

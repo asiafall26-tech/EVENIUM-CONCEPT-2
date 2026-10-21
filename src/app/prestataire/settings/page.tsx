@@ -104,7 +104,7 @@ export default function PrestataireSettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2">Paramètres Avancés</h1>
@@ -147,7 +147,7 @@ export default function PrestataireSettingsPage() {
           {/* TAB 1 : PREFERENCES */}
           {activeTab === "preferences" && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-100 shadow-sm">
                 <h2 className="text-xl font-serif font-bold mb-6 flex items-center gap-2">
                   <Map className="text-[#b8924a]" size={20} /> Zone et Capacité
                 </h2>
@@ -173,7 +173,7 @@ export default function PrestataireSettingsPage() {
                 </div>
               </div>
 
-              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-100 shadow-sm">
                 <h2 className="text-xl font-serif font-bold mb-6 flex items-center gap-2">
                   <Bell className="text-[#b8924a]" size={20} /> Alertes & Notifications
                 </h2>
@@ -209,7 +209,7 @@ export default function PrestataireSettingsPage() {
               </div>
 
               <div className="flex justify-end">
-                <button onClick={handleSavePreferences} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-8 py-4 rounded-full font-bold shadow-lg hover:-translate-y-1 hover:bg-[#8f6f33] hover:shadow-xl transition-all disabled:opacity-50">
+                <button onClick={handleSavePreferences} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-4 sm:px-6 lg:px-8 py-4 rounded-full font-bold shadow-lg hover:-translate-y-1 hover:bg-[#8f6f33] hover:shadow-xl transition-all disabled:opacity-50">
                   <Save size={20} /> {isSaving ? "Enregistrement..." : "Enregistrer"}
                 </button>
               </div>
@@ -219,7 +219,7 @@ export default function PrestataireSettingsPage() {
           {/* TAB 2 : FACTURATION */}
           {activeTab === "facturation" && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-gradient-to-br from-gray-900 to-black p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden text-white">
+              <div className="bg-gradient-to-br from-gray-900 to-black p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden text-white">
                 <div className="absolute right-0 top-0 opacity-10">
                   <CreditCard size={200} />
                 </div>
@@ -260,7 +260,7 @@ export default function PrestataireSettingsPage() {
                 </div>
 
                 <div className="mt-8 flex justify-end relative z-10">
-                  <button onClick={handleSaveBank} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-[#8f6f33] transition-all disabled:opacity-50">
+                  <button onClick={handleSaveBank} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-4 sm:px-6 lg:px-8 py-4 rounded-full font-bold shadow-lg hover:bg-[#8f6f33] transition-all disabled:opacity-50">
                     <Upload size={20} /> {isSaving ? "Enregistrement..." : "Mettre à jour le RIB"}
                   </button>
                 </div>
@@ -271,7 +271,7 @@ export default function PrestataireSettingsPage() {
           {/* TAB 3 : SECURITE */}
           {activeTab === "securite" && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+              <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-bl-full -z-0"></div>
                 <h2 className="text-xl font-serif font-bold mb-2 flex items-center gap-2 relative z-10">
                   <Lock className="text-red-500" size={20} /> Modifier le mot de passe
@@ -305,7 +305,7 @@ export default function PrestataireSettingsPage() {
                     />
                   </div>
                   
-                  <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-gray-900 transition-all disabled:opacity-50">
+                  <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-black text-white px-4 sm:px-6 lg:px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-gray-900 transition-all disabled:opacity-50">
                     <Shield size={20} /> {isSaving ? "Modification..." : "Modifier mon mot de passe"}
                   </button>
                 </form>

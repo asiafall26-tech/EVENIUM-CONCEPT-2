@@ -112,7 +112,7 @@ export default function PrestataireFinancesPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
@@ -181,8 +181,8 @@ export default function PrestataireFinancesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-        <div className="flex justify-between items-center mb-6">
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6 lg:p-8">
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
           <h2 className="font-serif text-xl font-bold">Historique des transactions</h2>
           <button onClick={fetchFinances} className="text-gray-400 hover:text-black transition-colors">
             <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />

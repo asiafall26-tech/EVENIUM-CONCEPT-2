@@ -63,8 +63,8 @@ export default function ParticipantsDashboardPage({
 
   if (event.plan === "Standard") {
     return (
-      <div className="p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl max-w-md text-center">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
           <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
@@ -294,7 +294,7 @@ export default function ParticipantsDashboardPage({
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
         <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Participants & Invitations</span>
       </div>

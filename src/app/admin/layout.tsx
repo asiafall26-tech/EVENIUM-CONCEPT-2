@@ -1,3 +1,4 @@
+import { LayoutDashboard as TabHome, CalendarHeart as TabEvents, Store as TabProviders, MessageSquare as TabMessages, LifeBuoy as TabSupport } from "lucide-react";
 import { DashboardFrame } from "@/components/layout/DashboardFrame";
 import Link from "next/link";
 import Image from "next/image";
@@ -58,6 +59,13 @@ export default async function AdminLayout({
     .toUpperCase() || "SA";
   return (
     <DashboardFrame
+      mobileTabs={[
+        { href: "/admin", label: "Accueil", icon: <TabHome size={21} />, exact: true },
+        { href: "/admin/evenements", label: "Événements", icon: <TabEvents size={21} /> },
+        { href: "/admin/prestataires", label: "Prestataires", icon: <TabProviders size={21} /> },
+        { href: "/admin/messages", label: "Messages", icon: <TabMessages size={21} />, badge: "unreadMessages" },
+        { href: "/admin/support", label: "Support", icon: <TabSupport size={21} />, badge: "pendingSupport" },
+      ]}
       variant="light"
       sidebarVariant="dark"
       homeHref="/admin"
@@ -79,7 +87,7 @@ export default async function AdminLayout({
       }
       header={
         <>
-          <div className="relative w-full max-w-md">
+          <div className="relative w-full max-w-md hidden md:block">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
@@ -87,9 +95,9 @@ export default async function AdminLayout({
               className="w-full bg-gray-50 border border-gray-200 shadow-xs rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30 focus:border-[#b8924a] focus:bg-white transition-all text-gray-900"
             />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 ml-auto">
             <NotificationBell role="admin" />
-            <span className="w-px h-8 bg-gray-200" />
+            <span className="hidden sm:block w-px h-8 bg-gray-200" />
             <UserMenu
               name="Super Admin"
               role="Administrateur"

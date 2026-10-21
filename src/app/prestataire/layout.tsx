@@ -1,3 +1,4 @@
+import { Home as TabHome, Inbox as TabInbox, CalendarDays as TabPlanning, MessageSquare as TabMessages, User as TabUser } from "lucide-react";
 import { DashboardFrame } from "@/components/layout/DashboardFrame";
 import Link from "next/link";
 import Image from "next/image";
@@ -67,6 +68,13 @@ export default async function PrestataireLayout({
 
   return (
     <DashboardFrame
+      mobileTabs={[
+        { href: "/prestataire", label: "Accueil", icon: <TabHome size={21} />, exact: true },
+        { href: "/prestataire/demandes", label: "Demandes", icon: <TabInbox size={21} />, badge: "pendingDemandes" },
+        { href: "/prestataire/planning", label: "Planning", icon: <TabPlanning size={21} /> },
+        { href: "/prestataire/messages", label: "Messages", icon: <TabMessages size={21} />, badge: "unreadMessages" },
+        { href: "/prestataire/profil", label: "Profil", icon: <TabUser size={21} /> },
+      ]}
       homeHref="/prestataire"
       badge="Pro"
       sidebar={<PrestataireSidebarNav />}
@@ -87,13 +95,13 @@ export default async function PrestataireLayout({
       }
       header={
         <>
-          <div>
-            <h2 className="font-serif text-lg text-gray-900 leading-tight">Espace Prestataire</h2>
-            <p className="text-xs text-gray-500">Organisez. Collaborez. Créez des événements inoubliables.</p>
+          <div className="min-w-0">
+            <h2 className="font-serif text-base sm:text-lg text-gray-900 leading-tight truncate">Espace Prestataire</h2>
+            <p className="hidden md:block text-xs text-gray-500">Organisez. Collaborez. Créez des événements inoubliables.</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <NotificationBell role="prestataire" />
-            <span className="w-px h-8 bg-gray-100" />
+            <span className="hidden sm:block w-px h-8 bg-gray-100" />
             <UserMenu
               name={fullName}
               role={profile?.role === 'client' ? "Organisateur" : "Prestataire"}

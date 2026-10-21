@@ -225,7 +225,7 @@ export default function InvitationsDashboardPage({
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full relative">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full relative">
       {/* Breadcrumb */}
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
         <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Invitations</span>
@@ -246,7 +246,7 @@ export default function InvitationsDashboardPage({
       </div>
 
       {/* Purchased Invitation Model */}
-      <div className="bg-white p-8 rounded-3xl border border-[#b8924a]/30 shadow-[0_4px_30px_-4px_rgba(184,146,74,0.15)] flex flex-col sm:flex-row gap-8 items-center sm:items-start relative overflow-hidden">
+      <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-[#b8924a]/30 shadow-[0_4px_30px_-4px_rgba(184,146,74,0.15)] flex flex-col sm:flex-row gap-8 items-center sm:items-start relative overflow-hidden">
         <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-[#b8924a] to-[#8f6f33]"></div>
         
         <div className="w-full sm:w-64 aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden relative flex-shrink-0 border border-gray-200 shadow-md">

@@ -243,8 +243,8 @@ export default function PrestataireDemandesPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-3">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2">Demandes & Devis</h1>
           <p className="text-gray-500">Gérez vos demandes entrantes et vos devis émis.</p>
@@ -273,14 +273,14 @@ export default function PrestataireDemandesPage() {
       {loading ? (
         <div className="text-center py-20 text-gray-500">Chargement...</div>
       ) : activeTab === "demandes" ? (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto shadow-sm">
           {demandes.length === 0 ? (
             <div className="text-center py-20 text-gray-500">
               <FileText size={48} className="mx-auto mb-4 opacity-20" />
               <p>Aucune demande de devis reçue pour le moment.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[680px] text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
                   <th className="p-4 font-medium">Client & Événement</th>
@@ -334,14 +334,14 @@ export default function PrestataireDemandesPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto shadow-sm">
           {devis.length === 0 ? (
             <div className="text-center py-20 text-gray-500">
               <FileText size={48} className="mx-auto mb-4 opacity-20" />
               <p>Vous n'avez pas encore émis de devis.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[680px] text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
                   <th className="p-4 font-medium">N° Devis</th>
@@ -406,7 +406,7 @@ export default function PrestataireDemandesPage() {
             
             {/* Colonne de gauche : Contexte (Client & Événement) */}
             <div className="w-full md:w-1/3 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col shrink-0 md:h-full md:overflow-y-auto hide-scrollbar">
-              <div className="p-8 pb-6 border-b border-gray-200">
+              <div className="p-4 sm:p-6 lg:p-8 pb-6 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   {getStatusBadge(selectedDemande.status)}
                   <button onClick={() => setIsViewModalOpen(false)} className="md:hidden text-gray-400 hover:text-black bg-white rounded-full p-1 shadow-sm">
@@ -421,7 +421,7 @@ export default function PrestataireDemandesPage() {
                 </p>
               </div>
 
-              <div className="p-8 space-y-8 flex-1">
+              <div className="p-4 sm:p-6 lg:p-8 space-y-8 flex-1">
                 {/* Informations Client */}
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2"><Users size={16} className="text-[#b8924a]"/> Client</h3>

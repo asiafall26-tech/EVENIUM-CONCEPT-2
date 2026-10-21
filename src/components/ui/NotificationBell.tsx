@@ -158,7 +158,7 @@ export function NotificationBell({ role }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-[0_25px_60px_-20px_rgba(40,25,5,0.35)] border border-gray-100 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
+        <div className="fixed inset-x-3 top-[4.25rem] max-h-[75dvh] overflow-y-auto sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-96 sm:max-h-none bg-white rounded-2xl shadow-[0_25px_60px_-20px_rgba(40,25,5,0.35)] border border-gray-100 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
           <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
             <h3 className="font-semibold text-gray-900">Notifications &amp; Alertes</h3>
             {total > 0 && (
@@ -170,7 +170,7 @@ export function NotificationBell({ role }: NotificationBellProps) {
 
           <div className="max-h-[400px] overflow-y-auto">
             {allNotifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-4 sm:p-6 lg:p-8 text-center text-gray-500">
                 <Bell className="mx-auto mb-3 opacity-20" size={32} />
                 <p className="text-sm">Vous n'avez aucune nouvelle notification.</p>
               </div>

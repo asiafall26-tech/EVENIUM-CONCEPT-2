@@ -371,7 +371,7 @@ export default function AdminAlertsClientView({ alerts: initialAlerts, stats: in
             );
           })
         ) : (
-          <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center shadow-xs">
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-10 lg:p-12 text-center shadow-xs">
             <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
               <CheckCircle2 size={32} />
             </div>

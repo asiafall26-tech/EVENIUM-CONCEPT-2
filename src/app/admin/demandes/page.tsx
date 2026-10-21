@@ -27,7 +27,7 @@ export default function AdminSupportPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
@@ -38,9 +38,9 @@ export default function AdminSupportPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center p-12">Chargement des tickets...</div>
+        <div className="flex justify-center p-6 sm:p-10 lg:p-12">Chargement des tickets...</div>
       ) : tickets.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px] flex flex-col items-center justify-center text-center p-8">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px] flex flex-col items-center justify-center text-center p-4 sm:p-6 lg:p-8">
           <div className="w-20 h-20 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mb-6">
             <CheckCircle size={40} />
           </div>

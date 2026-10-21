@@ -191,7 +191,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
 
           <FadeInScroll delay={0.4}>
             <div className="text-center space-y-4 relative z-10">
-              <h1 className="font-serif text-5xl text-[#2C241B] leading-tight mb-6">
+              <h1 className="font-serif text-3xl sm:text-5xl text-[#2C241B] leading-tight mb-6">
                 {names.includes('&') ? (
                   <>
                     {names.split('&')[0].trim()} <br/>
@@ -216,7 +216,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         </section>
 
         {/* Page 2 - Notre Histoire */}
-        <section className="bg-[#111111] text-[#FDFBF7] py-20 px-8 relative">
+        <section className="bg-[#111111] text-[#FDFBF7] py-20 px-4 sm:px-6 lg:px-8 relative">
           <FadeInScroll>
             <h2 className="font-serif text-4xl text-center text-[#FDFBF7] mb-8">Notre histoire</h2>
             <p className="text-[#D4AF37] text-center font-serif italic mb-8">Deux âmes, un même chemin...</p>
@@ -237,7 +237,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         </section>
 
         {/* Page 3 - Programme */}
-        <section className="bg-[#FDFBF7] py-20 px-8">
+        <section className="bg-[#FDFBF7] py-20 px-4 sm:px-6 lg:px-8">
           <FadeInScroll>
             <h2 className="font-serif text-4xl text-center text-[#2C241B] mb-12">Notre Programme</h2>
             
@@ -297,13 +297,13 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         </section>
 
         {/* Page 5 - RSVP */}
-        <section className="bg-[#FDFBF7] py-20 px-8" id="rsvp">
+        <section className="bg-[#FDFBF7] py-20 px-4 sm:px-6 lg:px-8" id="rsvp">
           <FadeInScroll>
             <h2 className="font-serif text-4xl text-center text-[#2C241B] mb-4">Confirmez votre présence</h2>
             <p className="text-center text-sm text-gray-500 mb-10 max-w-xs mx-auto">Merci de nous faire part de votre présence avant le 30 Avril 2025.</p>
             
             {rsvpSuccess ? (
-              <div className="bg-white p-8 rounded-2xl shadow-lg border border-[#D4AF37]/20 text-center">
+              <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl shadow-lg border border-[#D4AF37]/20 text-center">
                 <CheckCircle className="w-16 h-16 text-[#D4AF37] mx-auto mb-4" />
                 <h3 className="font-serif text-2xl text-[#2C241B] mb-2">Merci !</h3>
                 <p className="text-gray-500 text-sm">Votre réponse a bien été enregistrée.</p>
@@ -352,7 +352,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         </section>
 
         {/* Page 6 - Dress Code */}
-        <section className="bg-[#111111] py-20 px-8 text-center relative overflow-hidden">
+        <section className="bg-[#111111] py-20 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
           <FadeInScroll>
             <h2 className="font-serif text-4xl text-[#FDFBF7] mb-6">Dress code</h2>
             <p className="text-[#D4AF37] text-sm mb-8 max-w-xs mx-auto">Nous vous invitons à porter une tenue élégante dans les tons beige, pêche et doré.</p>
@@ -380,7 +380,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         </section>
 
         {/* Page 7 - Infos Pratiques */}
-        <section className="bg-[#1A1A1A] py-20 px-8 text-white">
+        <section className="bg-[#1A1A1A] py-20 px-4 sm:px-6 lg:px-8 text-white">
           <FadeInScroll>
             <h2 className="font-serif text-3xl text-center text-[#FDFBF7] mb-10">Informations pratiques</h2>
             <div className="grid grid-cols-2 gap-4">
@@ -401,7 +401,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         </section>
 
         {/* Page 8 - Liste de mariage */}
-        <section className="bg-[#FDFBF7] py-20 px-8 text-center">
+        <section className="bg-[#FDFBF7] py-20 px-4 sm:px-6 lg:px-8 text-center">
           <FadeInScroll>
             <h2 className="font-serif text-3xl text-[#2C241B] mb-6">Liste de mariage</h2>
             <div className="w-12 h-12 bg-[#F9F5EC] rounded-full flex items-center justify-center mx-auto mb-6">
@@ -410,7 +410,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
             <p className="text-sm text-gray-600 max-w-sm mx-auto mb-8 leading-relaxed">
               Votre présence est notre plus beau cadeau. Si vous souhaitez contribuer à notre projet de vie, vous pouvez participer à notre cagnotte.
             </p>
-            <button className="bg-[#E6C2A5] hover:bg-[#D4AF37] text-black font-bold py-4 px-8 rounded-full transition-colors flex items-center justify-center gap-2 mx-auto">
+            <button className="bg-[#E6C2A5] hover:bg-[#D4AF37] text-black font-bold py-4 px-4 sm:px-6 lg:px-8 rounded-full transition-colors flex items-center justify-center gap-2 mx-auto">
               Voir la cagnotte
             </button>
             <p className="text-xs text-[#D4AF37] font-serif italic mt-6">Merci du fond du cœur !</p>
@@ -436,7 +436,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         </section>
 
         {/* Page 10 - Mot de fin */}
-        <section className="bg-[#FDFBF7] py-32 px-8 text-center relative overflow-hidden">
+        <section className="bg-[#FDFBF7] py-32 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-[#D4AF37]/10 to-transparent pointer-events-none" />
           <FadeInScroll>
             <h2 className="font-serif text-4xl text-[#2C241B] mb-10">On compte sur vous !</h2>

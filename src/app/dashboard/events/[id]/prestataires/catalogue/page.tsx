@@ -148,7 +148,7 @@ export default function CataloguePrestatairesPage({
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
         <span>Événement</span> <span className="text-gray-300">&gt;</span> 
         <Link href={`/dashboard/events/${id}/prestataires`} className="hover:text-black">Mes Prestataires</Link> 
@@ -241,7 +241,7 @@ export default function CataloguePrestatairesPage({
                   <img src={provider.avatar_url} alt={provider.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <span className="font-serif text-5xl font-bold text-gray-400 opacity-20">{provider.name.substring(0, 2).toUpperCase()}</span>
+                    <span className="font-serif text-3xl sm:text-5xl font-bold text-gray-400 opacity-20">{provider.name.substring(0, 2).toUpperCase()}</span>
                   </div>
                 )}
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-[#8f6f33] flex items-center gap-1 shadow-sm">
@@ -444,7 +444,7 @@ export default function CataloguePrestatairesPage({
                         ))}
                       </div>
                     ) : (
-                      <div className="bg-gray-50 rounded-2xl p-8 text-center text-gray-500 text-sm border border-gray-100">
+                      <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 lg:p-8 text-center text-gray-500 text-sm border border-gray-100">
                         Aucun catalogue publié pour le moment.
                       </div>
                     )}
@@ -455,7 +455,7 @@ export default function CataloguePrestatairesPage({
                   <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <h3 className="font-serif text-3xl font-bold text-gray-900 mb-2">Avis clients</h3>
                     <p className="text-gray-500 text-sm mb-8">Découvrez les retours d'expérience des clients ayant travaillé avec {selectedProvider.name}.</p>
-                    <div className="bg-gray-50 rounded-2xl p-8 text-center text-gray-500 text-sm border border-gray-100">
+                    <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 lg:p-8 text-center text-gray-500 text-sm border border-gray-100">
                       Aucun avis publié pour ce prestataire pour le moment.
                     </div>
                   </div>
@@ -499,7 +499,7 @@ export default function CataloguePrestatairesPage({
                 </div>
               </div>
 
-              <div className="p-8 max-w-3xl mx-auto space-y-12">
+              <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-12">
                 {selectedServiceForDetails.description && (
                   <div>
                     <p className="text-gray-600 text-lg leading-relaxed">{selectedServiceForDetails.description}</p>

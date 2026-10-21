@@ -91,14 +91,14 @@ export default function PrestataireActivitePage() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-200">
+      <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <p className={`text-sm ${error ? "text-[#6b1f2a]" : "text-gray-500"}`}>{error || "Tous les champs sont obligatoires. Vous pourrez les modifier dans votre profil."}</p>
           <button
             type="button"
             onClick={submit}
             disabled={saving}
-            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full bg-black px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-[#f5eee1] disabled:opacity-50"
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full bg-black px-4 sm:px-6 lg:px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-[#f5eee1] disabled:opacity-50"
           >
             {saving && <Loader2 size={14} className="animate-spin" />}
             Accéder à mon espace

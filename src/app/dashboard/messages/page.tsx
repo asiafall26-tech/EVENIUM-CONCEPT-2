@@ -289,7 +289,7 @@ function ClientMessagesInner() {
 
 export default function ClientMessagesPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-gray-500 font-medium">Chargement de votre messagerie...</div>}>
+    <Suspense fallback={<div className="p-6 sm:p-10 lg:p-12 text-center text-gray-500 font-medium">Chargement de votre messagerie...</div>}>
       <ClientMessagesInner />
     </Suspense>
   );

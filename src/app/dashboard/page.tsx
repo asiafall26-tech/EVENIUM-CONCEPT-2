@@ -128,12 +128,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-gray-100">
+        <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">Mes événements à venir</h2>
           <p className="text-sm text-gray-500">Accès rapide à vos espaces dédiés.</p>
         </div>
         
-        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50">
+        <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50">
           {upcomingEvents.length === 0 ? (
             <div className="col-span-full py-8 text-center text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
               Vous n'avez aucun événement à venir.
@@ -206,12 +206,12 @@ export default function DashboardPage() {
 
       {completedEvents.length > 0 && (
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mt-8">
-          <div className="p-8 border-b border-gray-100">
+          <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">Historique des événements (Terminés)</h2>
             <p className="text-sm text-gray-500">Consultez ou supprimez vos événements passés.</p>
           </div>
           
-          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50">
+          <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50">
             {completedEvents.map((event) => (
               <Link key={event.id} href={`/dashboard/events/${event.id}`} className="block group">
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden opacity-70 hover:opacity-100">

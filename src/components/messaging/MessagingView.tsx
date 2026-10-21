@@ -385,11 +385,11 @@ export function MessagingView({
   }, [conversations, query]);
 
   return (
-    <div className="h-[calc(100dvh-80px-2rem)] sm:h-[calc(100dvh-80px-3rem)] lg:h-[calc(100dvh-80px-4rem)] min-h-[520px] flex rounded-3xl overflow-hidden bg-white border border-stone-200/70 shadow-[0_20px_60px_-30px_rgba(60,40,10,0.25)] animate-in fade-in duration-500">
+    <div className="h-[calc(100dvh-64px-2rem)] sm:h-[calc(100dvh-80px-3rem)] lg:h-[calc(100dvh-80px-4rem)] min-h-[420px] rounded-2xl sm:rounded-3xl flex overflow-hidden bg-white border border-stone-200/70 shadow-[0_20px_60px_-30px_rgba(60,40,10,0.25)] animate-in fade-in duration-500">
       {/* ===== Conversation list ===== */}
       <aside className={`${activeConv ? "hidden md:flex" : "flex"} w-full md:w-[340px] lg:w-[380px] shrink-0 flex-col border-r border-stone-200/70 bg-gradient-to-b from-[#fbf7f0] to-white`}>
         <div className="px-5 pt-5 pb-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
               <h1 className="font-serif text-2xl font-bold text-stone-900 flex items-center gap-2">
                 Messagerie
@@ -488,7 +488,7 @@ export function MessagingView({
       {/* ===== Conversation ===== */}
       <section className={`${activeConv ? "flex" : "hidden md:flex"} flex-1 min-w-0 flex-col bg-[#faf8f5]`}>
         {!activeConv ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-4 sm:p-6 lg:p-8">
             <div className="relative mb-6">
               <div className="w-24 h-24 rounded-[2rem] bg-white shadow-lg shadow-[#b8924a]/10 border border-[#b8924a]/20 flex items-center justify-center text-[#b8924a]">
                 <Send size={34} />

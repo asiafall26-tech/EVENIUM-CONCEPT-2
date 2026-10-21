@@ -48,7 +48,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "md" }: Mod
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
       {/* Overlay */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -57,19 +57,20 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "md" }: Mod
       
       {/* Modal Content */}
       <div 
-        className={`relative flex flex-col w-full max-h-[95vh] ${maxWidthClasses[maxWidth]} bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
+        className={`relative flex flex-col w-full max-h-[92dvh] sm:max-h-[95vh] ${maxWidthClasses[maxWidth]} bg-white rounded-t-3xl sm:rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-6 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200`}
       >
-        <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div className="flex-none flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 min-w-0 truncate">{title}</h2>
           <button 
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Fermer"
+            className="shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X size={20} />
           </button>
         </div>
         
-        <div className="flex-1 min-h-0 p-6 overflow-y-auto flex flex-col">
+        <div className="flex-1 min-h-0 p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain flex flex-col">
           {children}
         </div>
       </div>

@@ -157,7 +157,7 @@ export default function NewEventPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-wrap gap-3">
                   <h2 className="text-xl font-semibold text-gray-900">Type d'invitation</h2>
                   <span className="text-xs text-gray-500">Choisissez le format souhaité</span>
                 </div>
@@ -373,7 +373,7 @@ export default function NewEventPage() {
         </div>
 
         {/* Right Side: Summary Card */}
-        <div className="hidden md:block w-1/3 bg-gray-50 border-l border-gray-200 p-10 h-full">
+        <div className="hidden md:block w-1/3 bg-gray-50 border-l border-gray-200 p-5 sm:p-8 lg:p-10 h-full">
           <div className="sticky top-0">
             <h3 className="font-serif text-xl font-semibold mb-6">Récapitulatif</h3>
             

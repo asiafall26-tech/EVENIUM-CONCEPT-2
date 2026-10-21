@@ -142,7 +142,7 @@ export default function EventDashboardPage({
   return (
     <div className="max-w-5xl mx-auto">
       {/* Event Header */}
-      <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm mb-8 relative overflow-hidden">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200 shadow-sm mb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16" />
         <div className="relative z-10 flex justify-between items-start">
           <div>
@@ -184,7 +184,7 @@ export default function EventDashboardPage({
         ];
         return (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm mb-8 overflow-hidden">
-            <div className="px-6 sm:px-8 pt-6 flex items-start justify-between gap-4">
+            <div className="px-6 sm:px-8 pt-6 flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Votre événement</p>
                 <h2 className="font-serif text-2xl text-gray-900 mt-1">Détails de l'événement</h2>

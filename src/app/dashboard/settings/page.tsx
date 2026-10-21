@@ -255,7 +255,7 @@ export default function GlobalSettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto w-full relative">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full relative">
       <div className="mb-8">
         <h1 className="font-serif text-3xl font-bold text-black mb-2">Mon Profil</h1>
         <p className="text-gray-500 text-sm">Gérez vos informations personnelles et les paramètres de votre compte.</p>

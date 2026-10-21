@@ -874,7 +874,7 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
               <p className="text-gray-500 max-w-md mx-auto mb-8">
                 Le prestataire <strong>{provider.name}</strong> a été notifié. Il pourra consulter votre demande et vous transmettre son devis directement depuis Evenium.
               </p>
-              <button onClick={onClose} className="px-8 py-4 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors shadow-xl">
+              <button onClick={onClose} className="px-4 sm:px-6 lg:px-8 py-4 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors shadow-xl">
                 Fermer et retourner au catalogue
               </button>
             </div>
@@ -1165,7 +1165,7 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
               type="submit"
               form="intelligent-quote-form"
               disabled={!validateStep() || loading || isUploading}
-              className="px-8 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 sm:px-6 lg:px-8 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading || isUploading ? (
                 <>{isUploading ? 'Téléchargement...' : 'Envoi en cours...'}</>

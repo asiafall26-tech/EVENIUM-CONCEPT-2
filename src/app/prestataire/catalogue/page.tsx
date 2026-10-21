@@ -282,7 +282,7 @@ export default function PrestataireCataloguePage() {
   const showSection = (k: BuiltinSection) => set('hidden', form.hidden.filter(x => x !== k));
 
   const sectionHeader = (num: string, title: string, removable?: BuiltinSection) => (
-    <div className="flex items-center justify-between gap-3 mb-6">
+    <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
       <h2 className="text-xl font-bold flex items-center gap-3">
         <span className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm">{num}</span>
         {title}
@@ -319,7 +319,7 @@ export default function PrestataireCataloguePage() {
         </div>
       </div>
 
-      <div className="p-8 space-y-8">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-8">
         {form.description && <p className="text-gray-600 leading-relaxed text-sm">{form.description}</p>}
 
         {!form.hidden.includes('inclus') && form.included.length > 0 && (
@@ -705,7 +705,7 @@ export default function PrestataireCataloguePage() {
       </div>
 
       {offres.length === 0 && !isLoading ? (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-16 flex flex-col items-center justify-center text-center">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 sm:p-12 lg:p-16 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 mb-6 border border-gray-100">
             <LayoutList size={40} />
           </div>
@@ -713,7 +713,7 @@ export default function PrestataireCataloguePage() {
           <p className="text-gray-500 text-sm max-w-md mb-8 leading-relaxed">
             Créez des catalogues élégants pour présenter vos offres. Indiquez vos prix, ce qui est inclus et vos options.
           </p>
-          <button onClick={openCreateModal} className="flex items-center gap-2 bg-[#b8924a] hover:bg-[#8f6f33] text-white px-8 py-4 rounded-xl font-bold shadow-lg transition-all">
+          <button onClick={openCreateModal} className="flex items-center gap-2 bg-[#b8924a] hover:bg-[#8f6f33] text-white px-4 sm:px-6 lg:px-8 py-4 rounded-xl font-bold shadow-lg transition-all">
             Créer ma première offre
           </button>
         </div>
@@ -769,7 +769,7 @@ export default function PrestataireCataloguePage() {
     </div>
   );
 
-  if (isLoading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-[#b8924a] border-t-transparent rounded-full animate-spin"></div></div>;
+  if (isLoading) return <div className="p-4 sm:p-6 lg:p-8 flex justify-center"><div className="w-8 h-8 border-4 border-[#b8924a] border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <>

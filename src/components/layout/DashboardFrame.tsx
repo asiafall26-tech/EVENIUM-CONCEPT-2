@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { EveniumLogo } from "@/components/ui/EveniumLogo";
+import { MobileTabBar, type MobileTab } from "./MobileTabBar";
 
 export interface DashboardFrameProps {
   children: React.ReactNode;
@@ -14,6 +16,8 @@ export interface DashboardFrameProps {
   header?: React.ReactNode;
   variant?: "light" | "dark";
   sidebarVariant?: "light" | "dark";
+  /** Onglets de la barre fixée en bas de l'écran sur mobile */
+  mobileTabs?: MobileTab[];
 }
 
 export function DashboardFrame({
@@ -25,13 +29,30 @@ export function DashboardFrame({
   header,
   variant = "light",
   sidebarVariant,
+  mobileTabs,
 }: DashboardFrameProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  // Le menu mobile se referme quand on change de page
+  const [openedOn, setOpenedOn] = useState(pathname);
+  if (mobileOpen && openedOn !== pathname) {
+    setMobileOpen(false);
+    setOpenedOn(pathname);
+  }
+  // Pas de défilement de la page derrière le menu ouvert
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
   const isDark = variant === "dark";
   const isSidebarDark = sidebarVariant ? sidebarVariant === "dark" : isDark;
 
   return (
-    <div className={`min-h-screen flex ${isDark ? "bg-[#241b13] text-stone-100" : "bg-[#F8F7F4] text-stone-900"}`}>
+    <div className={`min-h-dvh flex ${isDark ? "bg-[#241b13] text-stone-100" : "bg-[#F8F7F4] text-stone-900"}`}>
       {/* MOBILE BACKDROP */}
       {mobileOpen && (
         <div
@@ -43,7 +64,7 @@ export function DashboardFrame({
 
       {/* SIDEBAR CONTAINER (DESKTOP + MOBILE DRAWER) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,85vw)] lg:w-72 h-dvh lg:h-auto pb-[env(safe-area-inset-bottom)] flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${
           isSidebarDark
@@ -90,7 +111,13 @@ export function DashboardFrame({
         </div>
 
         {/* SCROLLABLE SIDEBAR NAVIGATION */}
-        <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 space-y-6"
+          onClick={(e) => {
+            // Un lien du menu ferme le tiroir sur mobile
+            if ((e.target as HTMLElement).closest("a")) setMobileOpen(false);
+          }}
+        >
           {sidebar}
         </div>
 
@@ -106,7 +133,7 @@ export function DashboardFrame({
       <div className="flex-1 flex flex-col min-w-0">
         {/* TOPBAR / HEADER */}
         <header
-          className={`sticky top-0 z-30 h-20 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 border-b backdrop-blur-md ${
+          className={`sticky top-0 z-30 h-16 sm:h-20 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4 border-b backdrop-blur-md ${
             isDark
               ? "bg-[#0B0907]/90 border-[#b8924a]/15"
               : "bg-white/85 border-stone-200/60 shadow-xs"
@@ -115,8 +142,12 @@ export function DashboardFrame({
           {/* Mobile open drawer button */}
           <button
             type="button"
-            onClick={() => setMobileOpen(true)}
+            onClick={() => {
+              setOpenedOn(pathname);
+              setMobileOpen(true);
+            }}
             aria-label="Ouvrir le menu"
+            aria-expanded={mobileOpen}
             className={`lg:hidden p-2 rounded-xl transition-colors ${
               isDark
                 ? "text-stone-300 hover:bg-white/10 hover:text-white"
@@ -127,15 +158,20 @@ export function DashboardFrame({
           </button>
 
           {/* Header custom content (search, notifications, profile menu) */}
-          <div className="flex-1 flex items-center justify-between gap-4 min-w-0">
+          <div className="flex-1 flex items-center justify-between gap-2 sm:gap-4 min-w-0">
             {header}
           </div>
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+        <main
+          className={`flex-1 min-w-0 px-3 py-4 sm:p-6 lg:p-8 overflow-x-hidden ${
+            mobileTabs?.length ? "pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8" : "pb-[max(1rem,env(safe-area-inset-bottom))]"
+          }`}
+        >
           {children}
         </main>
+        {mobileTabs?.length ? <MobileTabBar tabs={mobileTabs} dark={isDark} /> : null}
       </div>
     </div>
   );

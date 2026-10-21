@@ -128,7 +128,7 @@ export default function PrestataireDashboardPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       {/* BANNER PRESTATAIRE */}
       <div className="relative flex flex-col md:flex-row items-center justify-between bg-gradient-to-r from-[#F9F3E9] to-[#fbf7f0] p-6 md:p-0 rounded-3xl border border-[#e4d8c4]/50 shadow-sm overflow-hidden h-[340px] mb-8">
         
@@ -207,7 +207,7 @@ export default function PrestataireDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Table: Dernières demandes */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <h2 className="font-semibold text-lg text-black">Dernières demandes</h2>
             <Link href="/prestataire/demandes" className="text-sm font-medium text-[#8f6f33] flex items-center gap-1 hover:underline">Voir toutes &rarr;</Link>
           </div>
