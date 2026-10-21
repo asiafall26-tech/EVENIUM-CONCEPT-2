@@ -64,10 +64,6 @@ export default function DashboardPage() {
   const nextEvent = upcomingEvents[0];
   const nextIn = nextEvent && parseDate(nextEvent.date) ? daysUntil(parseDate(nextEvent.date)!) : null;
 
-  const totalGuests = events.reduce((acc, curr) => acc + (curr.guests?.total || 0), 0);
-  const confirmedGuests = events.reduce((acc, curr) => acc + (curr.guests?.confirmed || 0), 0);
-  const rsvpRate = totalGuests > 0 ? Math.round((confirmedGuests / totalGuests) * 100) : 0;
-
   const displayName = userName.trim();
   const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
   const hour = new Date().getHours();
@@ -83,13 +79,6 @@ export default function DashboardPage() {
       alert("Erreur lors de la suppression.");
     }
   };
-
-  const kpis = [
-    { label: "Événements", value: String(events.length), hint: `${upcomingEvents.length} à venir`, icon: Calendar },
-    { label: "Invités", value: String(totalGuests), hint: "Toutes listes confondues", icon: Send },
-    { label: "Confirmés", value: String(confirmedGuests), hint: "Réponses positives", icon: CheckCircle2 },
-    { label: "Taux de réponse", value: `${rsvpRate}%`, hint: "Confirmations / invités", icon: Users, bar: rsvpRate },
-  ];
 
   return (
     <div className="max-w-6xl mx-auto w-full space-y-6 sm:space-y-8 animate-in fade-in duration-500">
@@ -139,24 +128,34 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* CHIFFRES */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {kpis.map(k => (
-          <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] uppercase tracking-wider text-gray-500 truncate">{k.label}</p>
-              <k.icon size={16} className="text-[#b8924a] shrink-0" />
-            </div>
-            <p className="font-serif text-3xl sm:text-4xl text-gray-900 mt-2">{k.value}</p>
-            {k.bar !== undefined ? (
-              <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
-                <div className="bg-[#b8924a] h-1.5 rounded-full" style={{ width: `${k.bar}%` }} />
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400 mt-1 truncate">{k.hint}</p>
-            )}
+      {/* STATISTIQUES RÉELLES DES ÉVÉNEMENTS ORGANISÉS */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">Total événements</p>
+            <Calendar size={18} className="text-[#b8924a] shrink-0" />
           </div>
-        ))}
+          <p className="font-serif text-3xl sm:text-4xl text-gray-900 mt-2">{events.length}</p>
+          <p className="text-xs text-gray-400 mt-1">Organisés sur Evenium</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">Événements à venir</p>
+            <Sparkles size={18} className="text-[#b8924a] shrink-0" />
+          </div>
+          <p className="font-serif text-3xl sm:text-4xl text-gray-900 mt-2">{upcomingEvents.length}</p>
+          <p className="text-xs text-gray-400 mt-1">En cours de préparation</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">Événements passés</p>
+            <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+          </div>
+          <p className="font-serif text-3xl sm:text-4xl text-gray-900 mt-2">{completedEvents.length}</p>
+          <p className="text-xs text-gray-400 mt-1">Clôturés avec succès</p>
+        </div>
       </section>
 
       {/* ÉVÉNEMENTS À VENIR */}
