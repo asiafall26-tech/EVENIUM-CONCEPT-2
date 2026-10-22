@@ -64,7 +64,7 @@ export function DashboardFrame({
 
       {/* SIDEBAR CONTAINER (DESKTOP + MOBILE DRAWER) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,85vw)] lg:w-72 h-dvh lg:h-auto pb-[env(safe-area-inset-bottom)] flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(20.5rem,86vw)] sm:w-80 lg:w-72 h-dvh lg:h-auto pb-[env(safe-area-inset-bottom)] flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${
           isSidebarDark
@@ -73,19 +73,19 @@ export function DashboardFrame({
         }`}
       >
         {/* BRAND / LOGO AREA */}
-        <div className={`h-20 shrink-0 px-5 flex items-center justify-between border-b ${
+        <div className={`h-20 shrink-0 px-4 sm:px-5 flex items-center justify-between gap-3 border-b ${
           isSidebarDark ? "border-[#b8924a]/20 bg-[#0B0907]" : "border-stone-200/60"
         }`}>
-          <Link href={homeHref} className="flex items-center gap-2.5 group min-w-0">
+          <Link href={homeHref} className="flex items-center gap-2 sm:gap-2.5 group min-w-0 shrink">
             <EveniumLogo
               variant={isSidebarDark ? "dark" : "light"}
               format="horizontal"
-              height={36}
-              width={135}
+              height={32}
+              width={120}
               priority
             />
             {badge && (
-              <span className={`text-[9px] tracking-widest uppercase font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+              <span className={`text-[9px] tracking-wider uppercase font-semibold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${
                 isSidebarDark
                   ? "bg-[#b8924a]/20 text-[#b8924a] border-[#b8924a]/40 shadow-xs"
                   : "bg-[#b8924a]/15 text-[#9a7209] border-[#b8924a]/30"
@@ -100,13 +100,13 @@ export function DashboardFrame({
             type="button"
             onClick={() => setMobileOpen(false)}
             aria-label="Fermer le menu"
-            className={`lg:hidden p-1.5 rounded-lg transition-colors ${
+            className={`lg:hidden shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-xs ${
               isSidebarDark
-                ? "text-stone-300 hover:text-white hover:bg-white/10"
-                : "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+                ? "text-stone-300 hover:text-white bg-white/10 hover:bg-white/15 border border-white/10"
+                : "text-stone-600 hover:text-stone-900 bg-stone-200/70 hover:bg-stone-200 border border-stone-300/50"
             }`}
           >
-            <X size={20} />
+            <X size={16} />
           </button>
         </div>
 
