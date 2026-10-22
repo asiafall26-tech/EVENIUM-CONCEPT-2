@@ -710,7 +710,13 @@ if(live){
   // filet de sécurité : si aucun contenu n'arrive, on affiche le modèle
   setTimeout(()=>{if(document.body.classList.contains('awaiting'))render(C)},3000);
   window.parent.postMessage({type:MSG.ready},location.origin);
-} else render(DEFAULT);
+} else {
+  // Démo du site : version ajustée par l'admin dans le studio des modèles, sinon contenu d'origine
+  fetch('/api/model-defaults/invit-10', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (d && d.preview && d.preview.content) render(d.preview.content, d.preview.view); else render(DEFAULT); })
+    .catch(() => render(DEFAULT));
+}
 </script>
 </body>
 </html>

@@ -40,25 +40,26 @@ import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEv
 
 // Full Studio components
 import VeloursStudio from '@/components/invitations/velours/VeloursStudio';
-import { VELOURS_MODEL_ID, DEFAULT_VELOURS, type VeloursContent } from '@/components/invitations/velours/content';
+import { VELOURS_MODEL_ID, DEFAULT_VELOURS, withDefaults as veloursDefaults, type VeloursContent } from '@/components/invitations/velours/content';
 import VeloursInvitation from '@/components/invitations/velours/VeloursInvitation';
 
 import SceauStudio from '@/components/invitations/sceau/SceauStudio';
-import { SCEAU_MODEL_ID, DEFAULT_SCEAU, type SceauContent } from '@/components/invitations/sceau/content';
+import { SCEAU_MODEL_ID, DEFAULT_SCEAU, withDefaults as sceauDefaults, type SceauContent } from '@/components/invitations/sceau/content';
 import SceauInvitation from '@/components/invitations/sceau/SceauInvitation';
 
 import IvoireStudio from '@/components/invitations/ivoire/IvoireStudio';
-import { IVOIRE_MODEL_ID, DEFAULT_IVOIRE, type IvoireContent } from '@/components/invitations/ivoire/content';
+import { IVOIRE_MODEL_ID, DEFAULT_IVOIRE, withDefaults as ivoireDefaults, type IvoireContent } from '@/components/invitations/ivoire/content';
 import IvoireInvitation from '@/components/invitations/ivoire/IvoireInvitation';
 
 import RoseOrStudio from '@/components/invitations/rose-or/RoseOrStudio';
-import { ROSE_OR_MODEL_ID, DEFAULT_ROSE_OR, type RoseOrContent } from '@/components/invitations/rose-or/content';
+import { ROSE_OR_MODEL_ID, DEFAULT_ROSE_OR, withDefaults as roseOrDefaults, type RoseOrContent } from '@/components/invitations/rose-or/content';
 import RoseOrInvitation from '@/components/invitations/rose-or/RoseOrInvitation';
 
 import AnniversaireStudio from '@/components/invitations/anniversaire/AnniversaireStudio';
-import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, type AnniversaireContent } from '@/components/invitations/anniversaire/content';
+import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, withDefaults as anniversaireDefaults, type AnniversaireContent } from '@/components/invitations/anniversaire/content';
 import AnniversaireInvitation from '@/components/invitations/anniversaire/AnniversaireInvitation';
 import { InvitationCtaContext } from '@/components/invitations/InvitationCtaContext';
+import { fetchModelDefaults, type ModelDefaultRow } from '@/lib/modelDefaults';
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -224,6 +225,25 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   const [ivoireContent, setIvoireContent] = useState<IvoireContent>(DEFAULT_IVOIRE);
   const [roseOrContent, setRoseOrContent] = useState<RoseOrContent>(DEFAULT_ROSE_OR);
   const [anniversaireContent, setAnniversaireContent] = useState<AnniversaireContent>(DEFAULT_ANNIVERSAIRE);
+
+  // Modèles ajustés par l'admin (studio des modèles) : ils servent de point de départ à la personnalisation
+  const [publishedModels, setPublishedModels] = useState<Record<string, ModelDefaultRow>>({});
+  useEffect(() => {
+    let cancelled = false;
+    fetchModelDefaults(createClient()).then((rows) => {
+      if (cancelled) return;
+      setPublishedModels(rows);
+      if (rows[VELOURS_MODEL_ID]) setVeloursContent(veloursDefaults(rows[VELOURS_MODEL_ID].content as any));
+      if (rows[SCEAU_MODEL_ID]) setSceauContent(sceauDefaults(rows[SCEAU_MODEL_ID].content as any));
+      if (rows[IVOIRE_MODEL_ID]) setIvoireContent(ivoireDefaults(rows[IVOIRE_MODEL_ID].content as any));
+      if (rows[ROSE_OR_MODEL_ID]) setRoseOrContent(roseOrDefaults(rows[ROSE_OR_MODEL_ID].content as any));
+      if (rows[ANNIVERSAIRE_MODEL_ID]) setAnniversaireContent(anniversaireDefaults(rows[ANNIVERSAIRE_MODEL_ID].content as any));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const publishedContent = (id: string) => publishedModels[id]?.content as any;
 
   // Synchronisation des champs communs lors du changement de modèle
   const handleModelChange = (newModelId: string) => {
@@ -961,11 +981,11 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   setDemoModelId(null);
                   window.scrollTo({ top: 0 });
                 };
-                if (demoModelId === VELOURS_MODEL_ID) return <VeloursInvitation content={DEFAULT_VELOURS} preview onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === SCEAU_MODEL_ID) return <SceauInvitation content={DEFAULT_SCEAU} preview onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === IVOIRE_MODEL_ID) return <IvoireInvitation content={DEFAULT_IVOIRE} preview onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === ROSE_OR_MODEL_ID) return <RoseOrInvitation content={DEFAULT_ROSE_OR} onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={DEFAULT_ANNIVERSAIRE} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === VELOURS_MODEL_ID) return <VeloursInvitation content={veloursDefaults(publishedContent(VELOURS_MODEL_ID) ?? DEFAULT_VELOURS)} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === SCEAU_MODEL_ID) return <SceauInvitation content={sceauDefaults(publishedContent(SCEAU_MODEL_ID) ?? DEFAULT_SCEAU)} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === IVOIRE_MODEL_ID) return <IvoireInvitation content={ivoireDefaults(publishedContent(IVOIRE_MODEL_ID) ?? DEFAULT_IVOIRE)} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === ROSE_OR_MODEL_ID) return <RoseOrInvitation content={roseOrDefaults(publishedContent(ROSE_OR_MODEL_ID) ?? DEFAULT_ROSE_OR)} onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={anniversaireDefaults(publishedContent(ANNIVERSAIRE_MODEL_ID) ?? DEFAULT_ANNIVERSAIRE)} preview onBackToEdit={back} onFinalize={choose} />;
                 return null;
               })()}
             </div>

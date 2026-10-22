@@ -14,7 +14,8 @@ import {
   PieChart, 
   Settings,
   Bell,
-  Music
+  Music,
+  Brush
 } from "lucide-react";
 import { SidebarHeading, sidebarIconClass, sidebarLinkClass } from "./layout/DashboardFrame";
 import { getAdminAlertsAndAutoTerminate } from "@/app/admin/admin-actions";
@@ -49,6 +50,7 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
     { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
     { name: "Finances & Revenus", href: "/admin/budget", icon: Wallet },
     { name: "Messages", href: "/admin/messages", icon: MessageSquare, badge: badgeLabel(unreadCount), urgent: true },
+    { name: "Studio des modèles", href: "/admin/modeles", icon: Brush },
     { name: "Banque de sons", href: "/admin/sons", icon: Music },
     { name: "Rapports", href: "/admin/rapports", icon: PieChart },
     { name: "Paramètres", href: "/admin/settings", icon: Settings },
