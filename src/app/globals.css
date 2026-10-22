@@ -386,6 +386,17 @@ textarea {
   }
 }
 
+/* Éditeurs d'invitation : zones de texte larges et hautes, faciles à relire */
+.studio-fields textarea {
+  min-height: 8rem;
+  max-height: 60vh;
+}
+@supports (field-sizing: content) {
+  .studio-fields textarea {
+    min-height: 8rem;
+  }
+}
+
 /* Écrans tactiles : pas de zoom automatique de l'iPhone sur les champs (≥ 16 px) */
 @media (pointer: coarse) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),

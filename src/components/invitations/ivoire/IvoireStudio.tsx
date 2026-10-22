@@ -231,7 +231,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
           </div>
 
           {/* Active Menu Content Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+          <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
             {/* 1. Mariés & Photos */}
             {(activeMenu === "general" || activeMenu === "all") && (
               <section className="space-y-4">
@@ -246,7 +246,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                 </div>
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Prénom 1">
                       <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
                     </Field>
@@ -254,7 +254,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                       <input className={inputCls} value={value.partnerB} onChange={(e) => set("partnerB", e.target.value)} />
                     </Field>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Date de l'événement">
                       <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
                     </Field>
@@ -472,7 +472,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <h5 className="text-xs font-bold uppercase tracking-wider text-gray-700">Confirmation &amp; Fin</h5>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Titre de la confirmation">
                       <input className={inputCls} value={value.rsvpTitle} onChange={(e) => set("rsvpTitle", e.target.value)} />
                     </Field>

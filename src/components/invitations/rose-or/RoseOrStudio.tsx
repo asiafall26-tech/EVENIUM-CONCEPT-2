@@ -207,7 +207,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
           </div>
 
           {/* Active Menu Content Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+          <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
             {/* 1. Les Mariés & la Date */}
             {(activeMenu === "general" || activeMenu === "all") && (
               <section className="space-y-4">
@@ -222,7 +222,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                 </div>
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Prénom du 1er marié">
                       <input className={inputCls} value={value.partnerA} placeholder="Ex: Adama" onChange={(e) => set("partnerA", e.target.value)} />
                     </Field>
@@ -230,7 +230,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                       <input className={inputCls} value={value.partnerB} placeholder="Ex: Mariama" onChange={(e) => set("partnerB", e.target.value)} />
                     </Field>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Date de l'événement">
                       <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
                     </Field>
@@ -349,7 +349,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                           onMove={(dir) => set("story", move(story, i, dir))}
                           onRemove={() => set("story", story.filter((_, idx) => idx !== i))}
                         />
-                        <div className="grid grid-cols-[6rem_1fr] gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-[7rem_1fr] gap-3">
                           <Field label="Année">
                             <input className={inputCls} value={s.year} placeholder="2022" onChange={(e) => setStory(i, { year: e.target.value })} />
                           </Field>
@@ -385,7 +385,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                 </div>
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Titre principal">
                       <input className={inputCls} value={value.programmeTitle} onChange={(e) => set("programmeTitle", e.target.value)} />
                     </Field>
@@ -404,7 +404,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                           onMove={(dir) => set("programme", move(programme, i, dir))}
                           onRemove={() => set("programme", programme.filter((_, idx) => idx !== i))}
                         />
-                        <div className="grid grid-cols-[7rem_1fr] gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-3">
                           <Field label="Horaire">
                             <input type="time" className={inputCls} value={p.time} onChange={(e) => setStep(i, { time: e.target.value })} />
                           </Field>
@@ -413,7 +413,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                           </Field>
                         </div>
                         <Field label="Description courte">
-                          <input className={inputCls} value={p.text} placeholder="Ex: Là où deux cœurs n'en font plus qu'un" onChange={(e) => setStep(i, { text: e.target.value })} />
+                          <textarea rows={2} className={`${inputCls} resize-none`} value={p.text} placeholder="Ex: Là où deux cœurs n'en font plus qu'un" onChange={(e) => setStep(i, { text: e.target.value })} />
                         </Field>
                       </div>
                     ))}

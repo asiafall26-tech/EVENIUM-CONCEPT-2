@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Sparkles, ArrowLeft, CheckCircle2, Crown, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { CHOOSE_CTA_TEXT, useInvitationCta } from "./InvitationCtaContext";
 
 interface InvitationEndCtaProps {
   theme?: "velours" | "sceau" | "ivoire" | "default";
@@ -25,6 +26,8 @@ export default function InvitationEndCta({
   const [mounted, setMounted] = useState(false);
   const [isIframe, setIsIframe] = useState(false);
   const pathname = usePathname();
+  const cta = useInvitationCta();
+  const isChoose = cta.variant === "choose";
 
   useEffect(() => {
     setMounted(true);
@@ -43,7 +46,7 @@ export default function InvitationEndCta({
   // 2. Strict Route Protection:
   // After purchase or on guest invitation links (/invite/[id]) or within the organizer dashboard (/dashboard/...),
   // commercial / sales / checkout CTAs must NEVER be shown.
-  if (typeof pathname === "string") {
+  if (!cta.force && typeof pathname === "string") {
     if (pathname.startsWith("/invite") || pathname.startsWith("/dashboard")) {
       return null;
     }
@@ -57,7 +60,7 @@ export default function InvitationEndCta({
 
   // When rendered inside an editor studio side-by-side iframe (not the fullscreen view),
   // do not display the public marketing footer
-  if (mounted && isIframe && !isCreate) {
+  if (!cta.force && mounted && isIframe && !isCreate) {
     return null;
   }
 
@@ -125,7 +128,7 @@ export default function InvitationEndCta({
           <div className="flex items-center justify-center gap-2 mb-2.5">
             <span className="w-5 h-[1px] bg-gradient-to-r from-transparent to-[#D4AF37]/60" />
             <span className="text-[10px] sm:text-[11px] font-extrabold tracking-[0.25em] uppercase text-[#D4AF37]">
-              {isCreate ? "Votre création Evenium" : "Evenium · Haute Couture Digitale"}
+              {isChoose ? CHOOSE_CTA_TEXT.kicker : isCreate ? "Votre création Evenium" : "Evenium · Haute Couture Digitale"}
             </span>
             <span className="w-5 h-[1px] bg-gradient-to-l from-transparent to-[#D4AF37]/60" />
           </div>
@@ -136,7 +139,7 @@ export default function InvitationEndCta({
               isDark ? "text-white" : "text-[#1f1715]"
             }`}
           >
-            {isCreate ? "Votre invitation est prête !" : "Ce modèle vous inspire ?"}
+            {isChoose ? CHOOSE_CTA_TEXT.title : isCreate ? "Votre invitation est prête !" : "Ce modèle vous inspire ?"}
           </h3>
 
           {/* Subtitle */}
@@ -145,7 +148,9 @@ export default function InvitationEndCta({
               isDark ? "text-gray-300" : "text-gray-600"
             }`}
           >
-            {isCreate
+            {isChoose
+              ? CHOOSE_CTA_TEXT.desc
+              : isCreate
               ? "Toutes vos personnalisations sont en place. Validez votre achat pour activer votre lien officiel, débloquer le partage WhatsApp et vos accès organisateur."
               : "Personnalisez ce modèle avec vos photos, musiques, programme et gérez vos confirmations RSVP en temps réel."}
           </p>
@@ -161,7 +166,7 @@ export default function InvitationEndCta({
                   className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-sm sm:text-base shadow-xl shadow-[#D4AF37]/25 hover:shadow-[#D4AF37]/45 hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-[#D4AF37]/60 group cursor-pointer whitespace-nowrap"
                 >
                   <Sparkles size={17} className="text-black group-hover:rotate-12 transition-transform shrink-0" />
-                  <span className="tracking-wide">Valider &amp; Finaliser l&apos;achat</span>
+                  <span className="tracking-wide">{isChoose ? CHOOSE_CTA_TEXT.primary : "Valider & Finaliser l'achat"}</span>
                 </button>
 
                 {/* 2. Secondary Action: Revenir à la création */}
@@ -175,7 +180,7 @@ export default function InvitationEndCta({
                   }`}
                 >
                   <ArrowLeft size={16} className="shrink-0" />
-                  <span>Revenir à la création</span>
+                  <span>{isChoose ? CHOOSE_CTA_TEXT.secondary : "Revenir à la création"}</span>
                 </button>
               </>
             ) : (
@@ -213,7 +218,12 @@ export default function InvitationEndCta({
                 : "bg-[#f5ede0] text-gray-700 border-[#D4AF37]/25"
             }`}
           >
-            {isCreate ? (
+            {isChoose ? (
+              <>
+                <CheckCircle2 size={13} className="text-[#D4AF37] shrink-0" />
+                <span>Vous pourrez tout personnaliser à l&apos;étape suivante</span>
+              </>
+            ) : isCreate ? (
               <>
                 <Lock size={12} className="text-[#D4AF37] shrink-0" />
                 <span>Téléchargement et liens de partage débloqués après validation</span>

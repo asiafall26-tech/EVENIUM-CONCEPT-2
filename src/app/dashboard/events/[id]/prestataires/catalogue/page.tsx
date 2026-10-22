@@ -453,13 +453,6 @@ export default function CataloguePrestatairesPage({
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/espace-prestataire/inscription"
-              target="_blank"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-black text-[#f5eee1] text-xs font-bold uppercase tracking-wider shadow-md hover:bg-gray-900 transition-colors"
-            >
-              <Plus size={16} /> Inviter ou inscrire un prestataire
-            </Link>
-            <Link
               href={`/dashboard/events/${id}/prestataires`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200 transition-colors"
             >

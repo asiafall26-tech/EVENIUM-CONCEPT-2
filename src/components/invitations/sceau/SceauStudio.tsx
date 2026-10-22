@@ -377,7 +377,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
           </div>
 
           {/* Active Menu Content Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+          <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
             {/* 1. Mariés & Accueil */}
             {(activeMenu === "general" || activeMenu === "all") && (
               <section className="space-y-4">
@@ -392,7 +392,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                 </div>
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Prénom du 1er marié">
                       <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
                     </Field>
@@ -406,7 +406,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   >
                     <input className={inputCls} value={value.guestLabel} onChange={(e) => set("guestLabel", e.target.value)} />
                   </Field>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Date de l'événement">
                       <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
                     </Field>
@@ -444,7 +444,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   <Field label="Titre de la carte">
                     <input className={inputCls} value={value.venueTitle} onChange={(e) => set("venueTitle", e.target.value)} />
                   </Field>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                     <Field label="Nom du lieu">
                       <input className={inputCls} value={value.venue} onChange={(e) => set("venue", e.target.value)} />
                     </Field>

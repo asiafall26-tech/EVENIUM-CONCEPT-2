@@ -39,7 +39,7 @@ interface Props {
 }
 
 export const inputCls =
-  "w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7a1a2e]/40 focus:bg-white transition-colors";
+  "w-full min-h-[3.25rem] px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#7a1a2e]/40 focus:bg-white transition-colors";
 
 export function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -453,7 +453,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
           </div>
 
           {/* Active Menu Content Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+          <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
             {/* 1. Mariés & Date */}
             {(activeMenu === "general" || activeMenu === "all") && (
               <section className="space-y-4">
@@ -468,7 +468,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                 </div>
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Prénom du 1er marié">
                       <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
                     </Field>
@@ -479,7 +479,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                   <Field label="Phrase d'accroche" hint="Ex : « Nous allons nous dire oui »">
                     <input className={inputCls} value={value.tagline} onChange={(e) => set("tagline", e.target.value)} />
                   </Field>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <Field label="Date de l'événement">
                       <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
                     </Field>

@@ -689,6 +689,14 @@ window.addEventListener('message',e=>{
       hideCtaBlock();
     } else if (m.showCta === true && $('eveniumCta')) {
       $('eveniumCta').style.display = 'block';
+      const L = m.ctaLabels, box = $('eveniumCta');
+      if (L) {
+        const set = (sel, txt) => { const n = box.querySelector(sel); if (n) n.textContent = txt; };
+        set('.evenium-title', L.title);
+        set('.evenium-desc', L.desc);
+        set('.evenium-btn-create span', L.primary);
+        set('.evenium-btn-home span', L.secondary);
+      }
     }
     render(m.content,m.view);
   }

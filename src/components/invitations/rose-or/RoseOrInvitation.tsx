@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { CHOOSE_CTA_TEXT, useInvitationCta } from "../InvitationCtaContext";
 import { LIVE_SRC, PREVIEW_MSG, toPreviewMessage, withDefaults, type RoseOrContent } from "./content";
 
 export interface RoseOrRsvp {
@@ -28,10 +29,13 @@ export default function RoseOrInvitation({ content, onRsvp, onBackToEdit, onFina
   const onBackToEditRef = useRef(onBackToEdit);
   const onFinalizeRef = useRef(onFinalize);
   const pathname = usePathname();
+  const cta = useInvitationCta();
+  const ctaLabels = cta.variant === "choose" ? CHOOSE_CTA_TEXT : null;
+  const ctaLabelsRef = useRef(ctaLabels);
 
   const isPurchasedOrGuest =
     !!hideCta ||
-    (typeof pathname === "string" && (pathname.startsWith("/invite") || pathname.startsWith("/dashboard")));
+    (!cta.force && typeof pathname === "string" && (pathname.startsWith("/invite") || pathname.startsWith("/dashboard")));
   const showCta = !isPurchasedOrGuest && (!!onBackToEdit || !!onFinalize || (typeof pathname === "string" && pathname.startsWith("/create")));
   const showCtaRef = useRef(showCta);
 
@@ -41,6 +45,7 @@ export default function RoseOrInvitation({ content, onRsvp, onBackToEdit, onFina
     onBackToEditRef.current = onBackToEdit;
     onFinalizeRef.current = onFinalize;
     showCtaRef.current = showCta;
+    ctaLabelsRef.current = ctaLabels;
   });
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export default function RoseOrInvitation({ content, onRsvp, onBackToEdit, onFina
     const onMessage = async (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.source !== frameRef.current?.contentWindow) return;
       if (e.data?.type === PREVIEW_MSG.ready) {
-        post(toPreviewMessage(contentRef.current, !!onRsvpRef.current, showCtaRef.current));
+        post({ ...toPreviewMessage(contentRef.current, !!onRsvpRef.current, showCtaRef.current), ctaLabels: ctaLabelsRef.current });
       } else if (e.data?.type === "evenium:close-preview") {
         if (onBackToEditRef.current) onBackToEditRef.current();
         window.dispatchEvent(new CustomEvent("evenium:close-preview"));

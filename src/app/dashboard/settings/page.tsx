@@ -8,6 +8,19 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { DeleteAccountSection } from "@/components/ui/DeleteAccountSection";
 
+// Helper pour calculer les initiales de manière consistante avec la navbar (ex: "Famille diallo" -> "FD")
+const getInitials = (name?: string) => {
+  if (!name?.trim()) return "NA";
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((n: string) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || "NA";
+};
+
 export default function GlobalSettingsPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -255,58 +268,63 @@ export default function GlobalSettingsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full relative">
-      <div className="mb-8">
-        <h1 className="font-serif text-3xl font-bold text-black mb-2">Mon Profil</h1>
-        <p className="text-gray-500 text-sm">Gérez vos informations personnelles et les paramètres de votre compte.</p>
+    <div className="px-0 sm:px-4 lg:px-6 py-2 sm:py-6 max-w-4xl mx-auto w-full relative mb-8">
+      <div className="mb-5 sm:mb-8 px-1 sm:px-0">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-black mb-1 sm:mb-2">Mon Profil</h1>
+        <p className="text-gray-500 text-xs sm:text-sm">Gérez vos informations personnelles et les paramètres de votre compte.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {/* Navigation latérale des paramètres */}
-        <div className="md:col-span-1 space-y-2">
-          <button 
-            onClick={() => setActiveTab("profil")}
-            className={`w-full text-left px-5 py-3 font-semibold rounded-xl flex items-center gap-3 transition-all ${
-              activeTab === "profil" ? "bg-black text-white shadow-lg shadow-black/10" : "text-gray-500 hover:bg-gray-100 hover:text-black"
-            }`}
-          >
-            <User size={18} /> Mon Profil
-          </button>
-          <button 
-            onClick={() => setActiveTab("notifications")}
-            className={`w-full text-left px-5 py-3 font-semibold rounded-xl flex items-center gap-3 transition-all ${
-              activeTab === "notifications" ? "bg-black text-white shadow-lg shadow-black/10" : "text-gray-500 hover:bg-gray-100 hover:text-black"
-            }`}
-          >
-            <Bell size={18} /> Notifications
-          </button>
-          <button 
-            onClick={() => setActiveTab("securite")}
-            className={`w-full text-left px-5 py-3 font-semibold rounded-xl flex items-center gap-3 transition-all ${
-              activeTab === "securite" ? "bg-black text-white shadow-lg shadow-black/10" : "text-gray-500 hover:bg-gray-100 hover:text-black"
-            }`}
-          >
-            <Shield size={18} /> Sécurité
-          </button>
-          <button 
-            onClick={() => setActiveTab("facturation")}
-            className={`w-full text-left px-5 py-3 font-semibold rounded-xl flex items-center gap-3 transition-all ${
-              activeTab === "facturation" ? "bg-black text-white shadow-lg shadow-black/10" : "text-gray-500 hover:bg-gray-100 hover:text-black"
-            }`}
-          >
-            <CreditCard size={18} /> Facturation
-          </button>
-          <div className="h-px bg-gray-100 my-4 w-full"></div>
-          <button onClick={() => router.push('/login')} className="w-full text-left px-5 py-3 text-red-500 hover:bg-red-50 font-medium rounded-xl flex items-center gap-3 transition-colors">
-            <LogOut size={18} /> Déconnexion
-          </button>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+        {/* Navigation des paramètres : Onglets horizontaux défilables sur mobile, barre latérale sur desktop */}
+        <div className="md:col-span-1">
+          <div className="flex md:flex-col overflow-x-auto pb-2 md:pb-0 gap-1.5 md:space-y-2 no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
+            <button 
+              onClick={() => setActiveTab("profil")}
+              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
+                activeTab === "profil" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
+              }`}
+            >
+              <User size={16} className="shrink-0" /> <span className="whitespace-nowrap">Mon Profil</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab("notifications")}
+              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
+                activeTab === "notifications" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
+              }`}
+            >
+              <Bell size={16} className="shrink-0" /> <span className="whitespace-nowrap">Notifications</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab("securite")}
+              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
+                activeTab === "securite" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
+              }`}
+            >
+              <Shield size={16} className="shrink-0" /> <span className="whitespace-nowrap">Sécurité</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab("facturation")}
+              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
+                activeTab === "facturation" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
+              }`}
+            >
+              <CreditCard size={16} className="shrink-0" /> <span className="whitespace-nowrap">Facturation</span>
+            </button>
+            <div className="hidden md:block h-px bg-gray-100 my-4 w-full"></div>
+            <button 
+              onClick={() => router.push('/login')} 
+              className="shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm text-red-500 hover:bg-red-50 font-medium rounded-xl flex items-center gap-2 sm:gap-3 transition-colors bg-white md:bg-transparent border border-red-100 md:border-transparent"
+            >
+              <LogOut size={16} className="shrink-0" /> <span className="whitespace-nowrap">Déconnexion</span>
+            </button>
+          </div>
         </div>
 
         {/* Contenu principal */}
         <div className="md:col-span-3">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
             {/* Cover Photo */}
-            <div className="h-32 bg-gradient-to-r from-gray-900 to-gray-700 relative group cursor-pointer overflow-hidden">
+            <div className="h-28 sm:h-32 bg-gradient-to-r from-gray-900 to-gray-700 relative group cursor-pointer overflow-hidden">
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium flex items-center gap-2">
                   <Camera size={16} /> Changer la couverture
@@ -314,17 +332,17 @@ export default function GlobalSettingsPage() {
               </div>
             </div>
 
-            <div className="p-6 md:p-8 relative">
+            <div className="p-4 sm:p-6 md:p-8 relative">
               {/* Photo de profil (Avatar) */}
-              <div className="absolute -top-16 left-8">
-                <label className="w-24 h-24 rounded-full bg-white p-1 shadow-lg block cursor-pointer">
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#b8924a] to-[#8f6f33] text-white flex items-center justify-center font-serif text-3xl font-bold relative group overflow-hidden">
+              <div className="absolute -top-14 sm:-top-16 left-6 sm:left-8">
+                <label className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white p-1 shadow-lg block cursor-pointer">
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#b8924a] to-[#8f6f33] text-white flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold relative group overflow-hidden">
                     {uploadingAvatar ? (
                       <span className="text-sm">...</span>
                     ) : profile?.avatar_url ? (
                       <Image src={profile.avatar_url} alt="Avatar" fill className="object-cover" unoptimized />
                     ) : (
-                      profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : "NA"
+                      profile?.full_name ? getInitials(profile.full_name) : "NA"
                     )}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Camera size={20} className="text-white" />
@@ -335,29 +353,29 @@ export default function GlobalSettingsPage() {
               </div>
 
               {/* Spacer for avatar */}
-              <div className="h-10 mb-4"></div>
+              <div className="h-8 sm:h-10 mb-4"></div>
 
               {/* Profil Tab */}
               {activeTab === "profil" && (
                 <section className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Informations personnelles</h2>
-                    <p className="text-sm text-gray-500">Mettez à jour vos informations de contact et votre identité.</p>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Informations personnelles</h2>
+                    <p className="text-xs sm:text-sm text-gray-500">Mettez à jour vos informations de contact et votre identité.</p>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 bg-gray-50/50 p-4 sm:p-6 rounded-xl border border-gray-100">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nom complet</label>
                       <input 
                         type="text" 
                         value={profile?.full_name || ""} 
                         onChange={(e) => setProfile({...profile, full_name: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm" 
+                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm text-sm" 
                       />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">Adresse Email</label>
-                      <input type="email" value={profile?.email || ""} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm" disabled />
+                      <input type="email" value={profile?.email || ""} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm text-sm" disabled />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">Numéro de téléphone</label>
@@ -365,7 +383,7 @@ export default function GlobalSettingsPage() {
                         type="tel" 
                         value={profile?.phone || ""} 
                         onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm" 
+                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm text-sm" 
                       />
                     </div>
                   </div>
@@ -557,27 +575,27 @@ export default function GlobalSettingsPage() {
                     <div className="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="border-b border-gray-200 text-gray-500 bg-gray-50 text-[11px] uppercase tracking-wider">
-                            <th className="px-6 py-4 font-semibold">Date</th>
-                            <th className="px-6 py-4 font-semibold">Description</th>
-                            <th className="px-6 py-4 font-semibold">Montant</th>
-                            <th className="px-6 py-4 font-semibold text-right">Facture</th>
+                          <tr className="border-b border-gray-200 text-gray-500 bg-gray-50 text-[10px] sm:text-[11px] uppercase tracking-wider">
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Date</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Description</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Montant</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right">Facture</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                           {invoices.length === 0 ? (
                             <tr>
-                              <td colSpan={4} className="py-8 text-center text-gray-500">Aucune facture enregistrée.</td>
+                              <td colSpan={4} className="py-8 text-center text-gray-500 text-xs sm:text-sm">Aucune facture enregistrée.</td>
                             </tr>
                           ) : (
                             invoices.map(inv => (
-                              <tr key={inv.id} className="text-gray-700 hover:bg-gray-50/50 transition-colors">
-                                <td className="px-6 py-4">{inv.date}</td>
-                                <td className="px-6 py-4 font-medium text-gray-900">{inv.desc}</td>
-                                <td className="px-6 py-4 font-bold">{inv.amount}</td>
-                                <td className="px-6 py-4 text-right">
-                                  <button onClick={() => handleDownloadInvoice(inv.id)} className="text-[#8f6f33] hover:text-[#7a5e2b] bg-[#f5eee1] p-2 rounded-lg transition-colors" title="Télécharger">
-                                    <Download size={16} />
+                              <tr key={inv.id} className="text-gray-700 hover:bg-gray-50/50 transition-colors text-xs sm:text-sm">
+                                <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">{inv.date}</td>
+                                <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-gray-900">{inv.desc}</td>
+                                <td className="px-3 sm:px-6 py-3 sm:py-4 font-bold whitespace-nowrap">{inv.amount}</td>
+                                <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
+                                  <button onClick={() => handleDownloadInvoice(inv.id)} className="text-[#8f6f33] hover:text-[#7a5e2b] bg-[#f5eee1] p-1.5 sm:p-2 rounded-lg transition-colors" title="Télécharger">
+                                    <Download size={15} />
                                   </button>
                                 </td>
                               </tr>
@@ -592,20 +610,30 @@ export default function GlobalSettingsPage() {
 
             </div>
             
-            <div className="bg-gray-50 p-6 border-t border-gray-200 flex justify-between items-center gap-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-green-600 transition-opacity duration-300" style={{ opacity: showSaveSuccess ? 1 : 0 }}>
-                <Check size={16} /> Modifications enregistrées
-              </div>
-              <div className="flex gap-3">
-                <button className="px-6 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-black">
+            <div className="bg-gray-50 p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {showSaveSuccess ? (
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-green-600 animate-in fade-in duration-200">
+                  <Check size={16} className="shrink-0" />
+                  <span>Modifications enregistrées</span>
+                </div>
+              ) : (
+                <div className="hidden sm:block" />
+              )}
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+                <button 
+                  type="button"
+                  onClick={() => router.refresh()}
+                  className="flex-1 sm:flex-initial text-center px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-200/60 border border-gray-200 sm:border-transparent transition-colors"
+                >
                   Annuler
                 </button>
                 <button 
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:bg-gray-400"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors disabled:bg-gray-400 shrink-0 shadow-sm"
                 >
-                  <Save size={16} /> {isSaving ? "Enregistrement..." : "Enregistrer"}
+                  <Save size={16} className="shrink-0" />
+                  <span>{isSaving ? "Enregistrement..." : "Enregistrer"}</span>
                 </button>
               </div>
             </div>

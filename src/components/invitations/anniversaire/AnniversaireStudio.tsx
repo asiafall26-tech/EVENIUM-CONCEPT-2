@@ -112,14 +112,14 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-8">
+        <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-8">
           {show("cover") && (
             <Section n={1} title="Page 1 · Couverture" desc="Titre manuscrit, prénom et photo de la couverture.">
               <div className={box}>
                 <Field label="Titre de la couverture" hint="Ex : Happy Birthday, Joyeux anniversaire, 30 ans !">
                   <input className={inputCls} value={value.coverTitle} onChange={(e) => set("coverTitle", e.target.value)} />
                 </Field>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                   <Field label="Prénom de la personne fêtée">
                     <input className={inputCls} value={value.celebrant} onChange={(e) => set("celebrant", e.target.value)} />
                   </Field>
@@ -176,7 +176,7 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
                     <input className={inputCls} value={value.timeLabel} placeholder="À partir de" onChange={(e) => set("timeLabel", e.target.value)} />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                   <Field label="Lieu">
                     <input className={inputCls} value={value.venueName} onChange={(e) => set("venueName", e.target.value)} />
                   </Field>
