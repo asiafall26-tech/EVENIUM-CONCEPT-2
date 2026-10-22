@@ -1,3 +1,4 @@
+import type { InvitationStyle } from "@/lib/invitationStyle";
 // Editable content of the "Ivoire Couture" invitation model (stored as JSON on the event).
 
 import type { DressColor } from "../sceau/content";
@@ -31,6 +32,8 @@ export interface ProgrammeBlock {
 }
 
 export interface IvoireContent {
+  /** Retouches de polices, couleurs et tailles (studio des modèles) */
+  style?: InvitationStyle;
   partnerA: string;
   partnerB: string;
   /** YYYY-MM-DD */

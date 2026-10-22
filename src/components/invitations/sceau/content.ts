@@ -1,3 +1,4 @@
+import type { InvitationStyle } from "@/lib/invitationStyle";
 // Editable content of the "Sceau d'Or" invitation model (stored as JSON on the event).
 
 export const SCEAU_MODEL_ID = "invit-8";
@@ -24,6 +25,8 @@ export interface DressColor {
 }
 
 export interface SceauContent {
+  /** Retouches de polices, couleurs et tailles (studio des modèles) */
+  style?: InvitationStyle;
   partnerA: string;
   partnerB: string;
   /** Name on the envelope; a link ending in #famille-diop overrides it per guest */

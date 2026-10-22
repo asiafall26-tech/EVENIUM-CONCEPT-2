@@ -414,7 +414,7 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
   </footer>
 
   <!-- ========== EVENIUM END CTA ========== -->
-  <section class="evenium-end-cta reveal" id="eveniumCta">
+  <section class="evenium-end-cta reveal" id="eveniumCta" data-inv-cta="">
     <div class="evenium-emblem">✨</div>
     <div class="evenium-kicker">EVENIUM · HAUTE COUTURE DIGITALE</div>
     <h3 class="evenium-title">Ce modèle vous inspire ?</h3>
@@ -679,6 +679,15 @@ form.addEventListener('submit',e=>{
 });
 $('editRsvp').addEventListener('click',()=>{form.style.display='';$('thanks').classList.remove('show')});
 
+/* Polices, couleurs et tailles choisies dans le studio des modèles */
+function applyStyle(st){
+  document.querySelectorAll('link[data-inv-font]').forEach(n=>n.remove());
+  let tag=$('invStyle');
+  if(!tag){tag=document.createElement('style');tag.id='invStyle';document.head.appendChild(tag)}
+  tag.textContent=(st&&st.css)||'';
+  ((st&&st.fonts)||[]).forEach(h=>{const l=document.createElement('link');l.rel='stylesheet';l.href=h;l.setAttribute('data-inv-font','');document.head.appendChild(l)});
+}
+
 /* ===== Communication avec l'éditeur / la page invité ===== */
 window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==window.parent||!e.data)return;
@@ -698,6 +707,7 @@ window.addEventListener('message',e=>{
         set('.evenium-btn-home span', L.secondary);
       }
     }
+    applyStyle(m.style);
     render(m.content,m.view);
   }
   else if(m.type===MSG.skip)skipEnvelope();
@@ -714,7 +724,7 @@ if(live){
   // Démo du site : version ajustée par l'admin dans le studio des modèles, sinon contenu d'origine
   fetch('/api/model-defaults/invit-10', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => { if (d && d.preview && d.preview.content) render(d.preview.content, d.preview.view); else render(DEFAULT); })
+    .then(d => { if (d && d.preview && d.preview.content) { applyStyle(d.preview.style); render(d.preview.content, d.preview.view); } else render(DEFAULT); })
     .catch(() => render(DEFAULT));
 }
 </script>

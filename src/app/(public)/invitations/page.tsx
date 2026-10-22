@@ -5,13 +5,21 @@ import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 import { Sparkles, PlayCircle, Eye, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { fetchModelDefaults, hiddenModelIds } from "@/lib/modelDefaults";
 
 export default function InvitationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Mariage");
 
+  // Modèles retirés du site par l'admin (studio des modèles)
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    fetchModelDefaults(createClient()).then((rows) => setHidden(hiddenModelIds(rows)));
+  }, []);
+
   const categoryFilter = (m: (typeof mockInvitationModels)[number]) =>
-    selectedCategory === "Tous" ? true : m.category === selectedCategory;
+    !hidden.has(m.id) && (selectedCategory === "Tous" ? true : m.category === selectedCategory);
 
   const animatedModels = mockInvitationModels
     .filter((m) => m.type === "animée")
@@ -45,10 +53,10 @@ export default function InvitationsPage() {
       <div className="max-w-4xl mx-auto mb-14">
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-white/70 backdrop-blur-md p-2 rounded-2xl border border-gray-200/80 shadow-sm">
           {[
-            { id: "Tous", label: "Tous les modèles", icon: "✨", count: mockInvitationModels.length, soon: false },
+            { id: "Tous", label: "Tous les modèles", icon: "✨", count: mockInvitationModels.filter(m => !hidden.has(m.id)).length, soon: false },
             // Tous les types d'événements de l'application ; « Bientôt » tant qu'aucun modèle n'existe
             ...EVENT_TYPES.map((t) => {
-              const count = mockInvitationModels.filter(m => m.category === t).length;
+              const count = mockInvitationModels.filter(m => !hidden.has(m.id) && m.category === t).length;
               return { id: t, label: t, icon: EVENT_TYPE_ICONS[t], count: count || undefined, soon: count === 0 };
             }),
           ].map((cat) => {

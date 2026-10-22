@@ -1,3 +1,4 @@
+import type { InvitationStyle } from "@/lib/invitationStyle";
 // Editable content of the "Anniversaire Bordeaux & Or" invitation model (two pages, stored as JSON on the event).
 
 export const ANNIVERSAIRE_MODEL_ID = "invit-11";
@@ -24,6 +25,8 @@ export interface ProgrammeItem {
 }
 
 export interface AnniversaireContent {
+  /** Retouches de polices, couleurs et tailles (studio des modèles) */
+  style?: InvitationStyle;
   /* Page 1 — couverture */
   coverTitle: string;
   coverSubtitle: string;

@@ -1,3 +1,4 @@
+import { googleFontHrefs, styleCss, type InvitationStyle } from "@/lib/invitationStyle";
 // Editable content of the "Rose Poudrée & Or Impérial" invitation model (stored as JSON on the event).
 // The invitation itself is the static page public/invitations/rose-or/index.html, driven by postMessage.
 
@@ -32,6 +33,8 @@ export interface ProgrammeItem {
 }
 
 export interface RoseOrContent {
+  /** Retouches de polices, couleurs et tailles (studio des modèles) */
+  style?: InvitationStyle;
   partnerA: string;
   partnerB: string;
   /** YYYY-MM-DD */
@@ -164,6 +167,7 @@ export function toPreviewMessage(c: RoseOrContent, handlesRsvp = false, showCta 
     handlesRsvp,
     showCta,
     view: { mapEmbed: mapsEmbedUrl(c.mapsUrl, q), mapHref: mapsLink(c.mapsUrl, q) },
+    style: { css: styleCss(c.style, "body"), fonts: googleFontHrefs([c.style?.titleFont, c.style?.bodyFont]) },
   };
 }
 

@@ -27,3 +27,11 @@ CREATE POLICY "Admins manage model defaults" ON public.invitation_model_defaults
   ) WITH CHECK (
     EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
   );
+
+-- --------------------------------------------------------------
+-- Brouillon, publication et retrait du site (studio des modèles v2)
+-- --------------------------------------------------------------
+ALTER TABLE public.invitation_model_defaults ALTER COLUMN content DROP NOT NULL;   -- content = version publiée
+ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS draft_content JSONB;          -- version enregistrée, non publiée
+ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT false;  -- retiré du site
+ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;

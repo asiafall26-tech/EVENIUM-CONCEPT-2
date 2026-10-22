@@ -18,6 +18,7 @@ import { mapsEmbedUrl, mapsLink, wazeLink } from "../sceau/content";
 import { createSoundtrack, type Soundtrack } from "../sceau/effects";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import InvitationEndCta from "../InvitationEndCta";
+import InvitationStyleTag from "../InvitationStyleTag";
 
 interface Props {
   content?: Partial<IvoireContent> | null;
@@ -481,7 +482,8 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
   );
 
   return (
-    <div className={cx(s.theme, s.root, ivoireFontVars, !opened && s.locked)}>
+    <div className={cx(s.theme, s.root, ivoireFontVars, !opened && s.locked)} data-inv-style="">
+      <InvitationStyleTag style={c.style} />
       <Defs />
       <main ref={mainRef} className={s.inv}>
         {/* ============ HERO ============ */}

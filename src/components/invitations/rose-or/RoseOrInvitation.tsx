@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { CHOOSE_CTA_TEXT, useInvitationCta } from "../InvitationCtaContext";
+import { ctaText, useInvitationCta } from "../InvitationCtaContext";
 import { LIVE_SRC, PREVIEW_MSG, toPreviewMessage, withDefaults, type RoseOrContent } from "./content";
 
 export interface RoseOrRsvp {
@@ -30,7 +30,7 @@ export default function RoseOrInvitation({ content, onRsvp, onBackToEdit, onFina
   const onFinalizeRef = useRef(onFinalize);
   const pathname = usePathname();
   const cta = useInvitationCta();
-  const ctaLabels = cta.variant === "choose" ? CHOOSE_CTA_TEXT : null;
+  const ctaLabels = ctaText(cta.variant);
   const ctaLabelsRef = useRef(ctaLabels);
 
   const isPurchasedOrGuest =

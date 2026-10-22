@@ -59,7 +59,7 @@ import AnniversaireStudio from '@/components/invitations/anniversaire/Anniversai
 import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, withDefaults as anniversaireDefaults, type AnniversaireContent } from '@/components/invitations/anniversaire/content';
 import AnniversaireInvitation from '@/components/invitations/anniversaire/AnniversaireInvitation';
 import { InvitationCtaContext } from '@/components/invitations/InvitationCtaContext';
-import { fetchModelDefaults, type ModelDefaultRow } from '@/lib/modelDefaults';
+import { fetchModelDefaults, hiddenModelIds, type ModelDefaultRow } from '@/lib/modelDefaults';
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -233,11 +233,11 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     fetchModelDefaults(createClient()).then((rows) => {
       if (cancelled) return;
       setPublishedModels(rows);
-      if (rows[VELOURS_MODEL_ID]) setVeloursContent(veloursDefaults(rows[VELOURS_MODEL_ID].content as any));
-      if (rows[SCEAU_MODEL_ID]) setSceauContent(sceauDefaults(rows[SCEAU_MODEL_ID].content as any));
-      if (rows[IVOIRE_MODEL_ID]) setIvoireContent(ivoireDefaults(rows[IVOIRE_MODEL_ID].content as any));
-      if (rows[ROSE_OR_MODEL_ID]) setRoseOrContent(roseOrDefaults(rows[ROSE_OR_MODEL_ID].content as any));
-      if (rows[ANNIVERSAIRE_MODEL_ID]) setAnniversaireContent(anniversaireDefaults(rows[ANNIVERSAIRE_MODEL_ID].content as any));
+      if (rows[VELOURS_MODEL_ID]?.content) setVeloursContent(veloursDefaults(rows[VELOURS_MODEL_ID].content as any));
+      if (rows[SCEAU_MODEL_ID]?.content) setSceauContent(sceauDefaults(rows[SCEAU_MODEL_ID].content as any));
+      if (rows[IVOIRE_MODEL_ID]?.content) setIvoireContent(ivoireDefaults(rows[IVOIRE_MODEL_ID].content as any));
+      if (rows[ROSE_OR_MODEL_ID]?.content) setRoseOrContent(roseOrDefaults(rows[ROSE_OR_MODEL_ID].content as any));
+      if (rows[ANNIVERSAIRE_MODEL_ID]?.content) setAnniversaireContent(anniversaireDefaults(rows[ANNIVERSAIRE_MODEL_ID].content as any));
     });
     return () => {
       cancelled = true;
@@ -277,9 +277,12 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
   // Filtrage des modèles selon l'événement choisi
   const filteredModels = useMemo(() => {
-    if (selectedEventCategory === "Tous") return CATALOG_MODELS;
-    return CATALOG_MODELS.filter(m => m.compatibleEvents.includes(selectedEventCategory));
-  }, [selectedEventCategory]);
+    // Modèles retirés du site par l'admin : absents de la galerie
+    const hidden = hiddenModelIds(publishedModels);
+    const onSite = CATALOG_MODELS.filter(m => !hidden.has(m.id));
+    if (selectedEventCategory === "Tous") return onSite;
+    return onSite.filter(m => m.compatibleEvents.includes(selectedEventCategory));
+  }, [selectedEventCategory, publishedModels]);
 
   // Si le modèle actuellement sélectionné n'est pas compatible avec la nouvelle catégorie, basculer sur le premier disponible
   useEffect(() => {

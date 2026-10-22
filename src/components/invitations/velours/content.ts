@@ -1,3 +1,4 @@
+import type { InvitationStyle } from "@/lib/invitationStyle";
 // Editable content of the "Velours Bordeaux" invitation model (stored as JSON on the event).
 
 export const VELOURS_MODEL_ID = "invit-7";
@@ -8,6 +9,8 @@ export interface ProgrammeItem {
 }
 
 export interface VeloursContent {
+  /** Retouches de polices, couleurs et tailles (studio des modèles) */
+  style?: InvitationStyle;
   partnerA: string;
   partnerB: string;
   tagline: string;

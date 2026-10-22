@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import InvitationEndCta from "../InvitationEndCta";
+import InvitationStyleTag from "../InvitationStyleTag";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import { anniversaireFontVars } from "./fonts";
 import s from "./anniversaire.module.css";
@@ -237,7 +238,8 @@ export default function AnniversaireInvitation({ content, onRsvp, preview, onBac
   const subtitle = c.coverSubtitle || [c.celebrant, c.age && `${c.age} ans`].filter(Boolean).join(" · ");
 
   return (
-    <div className={`${s.root} ${anniversaireFontVars}`}>
+    <div className={`${s.root} ${anniversaireFontVars}`} data-inv-style="">
+      <InvitationStyleTag style={c.style} />
       {music.state !== "none" && (
         <button type="button" className={s.music} onClick={music.toggle} aria-label={music.state === "on" ? "Couper la musique" : "Activer la musique"}>
           {music.state === "on" ? <Volume2 size={18} /> : <VolumeX size={18} />}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Sparkles, ArrowLeft, CheckCircle2, Crown, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { CHOOSE_CTA_TEXT, useInvitationCta } from "./InvitationCtaContext";
+import { ctaText, useInvitationCta } from "./InvitationCtaContext";
 
 interface InvitationEndCtaProps {
   theme?: "velours" | "sceau" | "ivoire" | "default";
@@ -27,7 +27,8 @@ export default function InvitationEndCta({
   const [isIframe, setIsIframe] = useState(false);
   const pathname = usePathname();
   const cta = useInvitationCta();
-  const isChoose = cta.variant === "choose";
+  const custom = ctaText(cta.variant);
+  const isChoose = !!custom;
 
   useEffect(() => {
     setMounted(true);
@@ -94,6 +95,7 @@ export default function InvitationEndCta({
   return (
     /* Luxury End of Invitation CTA block */
     <section
+        data-inv-cta=""
         className={`w-full py-12 sm:py-16 px-3 sm:px-6 text-center transition-all relative z-10 ${
           isDark
             ? "bg-gradient-to-b from-transparent via-black/60 to-black/90 text-white border-t border-[#D4AF37]/25"
@@ -128,7 +130,7 @@ export default function InvitationEndCta({
           <div className="flex items-center justify-center gap-2 mb-2.5">
             <span className="w-5 h-[1px] bg-gradient-to-r from-transparent to-[#D4AF37]/60" />
             <span className="text-[10px] sm:text-[11px] font-extrabold tracking-[0.25em] uppercase text-[#D4AF37]">
-              {isChoose ? CHOOSE_CTA_TEXT.kicker : isCreate ? "Votre création Evenium" : "Evenium · Haute Couture Digitale"}
+              {isChoose ? custom!.kicker : isCreate ? "Votre création Evenium" : "Evenium · Haute Couture Digitale"}
             </span>
             <span className="w-5 h-[1px] bg-gradient-to-l from-transparent to-[#D4AF37]/60" />
           </div>
@@ -139,7 +141,7 @@ export default function InvitationEndCta({
               isDark ? "text-white" : "text-[#1f1715]"
             }`}
           >
-            {isChoose ? CHOOSE_CTA_TEXT.title : isCreate ? "Votre invitation est prête !" : "Ce modèle vous inspire ?"}
+            {isChoose ? custom!.title : isCreate ? "Votre invitation est prête !" : "Ce modèle vous inspire ?"}
           </h3>
 
           {/* Subtitle */}
@@ -149,7 +151,7 @@ export default function InvitationEndCta({
             }`}
           >
             {isChoose
-              ? CHOOSE_CTA_TEXT.desc
+              ? custom!.desc
               : isCreate
               ? "Toutes vos personnalisations sont en place. Validez votre achat pour activer votre lien officiel, débloquer le partage WhatsApp et vos accès organisateur."
               : "Personnalisez ce modèle avec vos photos, musiques, programme et gérez vos confirmations RSVP en temps réel."}
@@ -166,7 +168,7 @@ export default function InvitationEndCta({
                   className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-sm sm:text-base shadow-xl shadow-[#D4AF37]/25 hover:shadow-[#D4AF37]/45 hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-[#D4AF37]/60 group cursor-pointer whitespace-nowrap"
                 >
                   <Sparkles size={17} className="text-black group-hover:rotate-12 transition-transform shrink-0" />
-                  <span className="tracking-wide">{isChoose ? CHOOSE_CTA_TEXT.primary : "Valider & Finaliser l'achat"}</span>
+                  <span className="tracking-wide">{isChoose ? custom!.primary : "Valider & Finaliser l'achat"}</span>
                 </button>
 
                 {/* 2. Secondary Action: Revenir à la création */}
@@ -180,7 +182,7 @@ export default function InvitationEndCta({
                   }`}
                 >
                   <ArrowLeft size={16} className="shrink-0" />
-                  <span>{isChoose ? CHOOSE_CTA_TEXT.secondary : "Revenir à la création"}</span>
+                  <span>{isChoose ? custom!.secondary : "Revenir à la création"}</span>
                 </button>
               </>
             ) : (
@@ -221,7 +223,7 @@ export default function InvitationEndCta({
             {isChoose ? (
               <>
                 <CheckCircle2 size={13} className="text-[#D4AF37] shrink-0" />
-                <span>Vous pourrez tout personnaliser à l&apos;étape suivante</span>
+                <span>{custom!.pill}</span>
               </>
             ) : isCreate ? (
               <>

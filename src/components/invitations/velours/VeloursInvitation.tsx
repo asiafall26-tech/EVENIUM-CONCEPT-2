@@ -16,6 +16,7 @@ import {
   type VeloursContent,
 } from "./content";
 import InvitationEndCta from "../InvitationEndCta";
+import InvitationStyleTag from "../InvitationStyleTag";
 
 export interface RsvpPayload {
   name: string;
@@ -836,7 +837,8 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
     ) : null;
 
   return (
-    <div className={`${s.theme} ${s.root} ${veloursFontVars}`}>
+    <div className={`${s.theme} ${s.root} ${veloursFontVars}`} data-inv-style="">
+      <InvitationStyleTag style={c.style} />
       {c.audioUrl && (
         <audio
           ref={audioRef}

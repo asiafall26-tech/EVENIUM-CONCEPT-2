@@ -19,6 +19,7 @@ import {
 import { createSoundtrack, paintBouquet, sealPath, startPetals, type PetalEngine, type Soundtrack } from "./effects";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import InvitationEndCta from "../InvitationEndCta";
+import InvitationStyleTag from "../InvitationStyleTag";
 
 interface Props {
   content?: Partial<SceauContent> | null;
@@ -626,7 +627,8 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
   );
 
   return (
-    <div className={cx(s.theme, s.root, sceauFontVars, stateCls)}>
+    <div className={cx(s.theme, s.root, sceauFontVars, stateCls)} data-inv-style="">
+      <InvitationStyleTag style={c.style} />
       <DrapeDefs />
       <main className={cx(s.col, s.velvet)}>
         <header className={s.hero}>
