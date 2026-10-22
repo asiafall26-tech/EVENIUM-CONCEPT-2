@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   description: "Démo du modèle d'invitation de mariage animé Velours Bordeaux.",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Public demo of the model; also used as the live preview iframe inside the editors
 export default async function InvitationMariagePage() {
   // Version ajustée par l'admin dans le studio des modèles, sinon contenu d'origine

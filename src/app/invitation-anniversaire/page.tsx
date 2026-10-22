@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   description: "Démo du modèle d'invitation d'anniversaire Bordeaux & Or, sur deux pages.",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Démo publique du modèle
 export default async function InvitationAnniversairePage() {
   // Version ajustée par l'admin dans le studio des modèles, sinon contenu d'origine

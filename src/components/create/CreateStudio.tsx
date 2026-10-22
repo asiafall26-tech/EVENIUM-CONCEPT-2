@@ -59,7 +59,7 @@ import AnniversaireStudio from '@/components/invitations/anniversaire/Anniversai
 import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, withDefaults as anniversaireDefaults, type AnniversaireContent } from '@/components/invitations/anniversaire/content';
 import AnniversaireInvitation from '@/components/invitations/anniversaire/AnniversaireInvitation';
 import { InvitationCtaContext } from '@/components/invitations/InvitationCtaContext';
-import { fetchModelDefaults, hiddenModelIds, type ModelDefaultRow } from '@/lib/modelDefaults';
+import { classificationOf, fetchModelDefaults, hiddenModelIds, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -137,14 +137,13 @@ const CATALOG_MODELS: ModelItem[] = [
 
 // Types d'événements
 // L'id est le type enregistré sur l'événement ; « Bientôt » tant qu'aucun modèle n'est compatible
-const EVENT_CATEGORIES: { id: string; label: string; icon: string; isSoon?: boolean }[] = [
+const buildEventCategories = (models: ModelItem[]): { id: string; label: string; icon: string; isSoon?: boolean }[] => [
   { id: "Tous", label: "Tous les modèles", icon: "✨" },
-  { id: "Mariage", label: "Mariage", icon: EVENT_ICONS["Mariage"] },
-  ...EVENT_TYPES.filter((t) => t !== "Mariage").map((t) => ({
+  ...EVENT_TYPES.map((t) => ({
     id: t,
     label: t,
     icon: EVENT_ICONS[t],
-    isSoon: !CATALOG_MODELS.some((m) => m.compatibleEvents.includes(t)),
+    isSoon: !models.some((m) => m.compatibleEvents.includes(t)),
   })),
 ];
 
@@ -167,6 +166,22 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   // Événement & Modèle sélectionné
   const [selectedEventCategory, setSelectedEventCategory] = useState("Mariage");
   const [selectedModelId, setSelectedModelId] = useState<string>(VELOURS_MODEL_ID);
+
+  // Modèles ajustés, classés ou retirés du site par l'admin (studio des modèles)
+  const [publishedModels, setPublishedModels] = useState<Record<string, ModelDefaultRow>>({});
+  const classifiedModels = useMemo(
+    () =>
+      CATALOG_MODELS.map((m) => {
+        const c = classificationOf(publishedModels[m.id], { type: 'animée', events: m.compatibleEvents });
+        return { ...m, compatibleEvents: c.events, category: c.events[0] ?? m.category, kind: c.type as InvitationKind };
+      }),
+    [publishedModels]
+  );
+  const siteModels = useMemo(() => {
+    const hidden = hiddenModelIds(publishedModels);
+    return classifiedModels.filter((m) => !hidden.has(m.id));
+  }, [classifiedModels, publishedModels]);
+  const eventCategories = useMemo(() => buildEventCategories(siteModels), [siteModels]);
 
   // Synchronisation du modèle choisi depuis les paramètres d'URL (ex: /create?model=invit-9)
   useEffect(() => {
@@ -198,7 +213,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
   // Choisir un modèle depuis la galerie
   const handleChooseModel = (modelId: string) => {
-    const model = CATALOG_MODELS.find(m => m.id === modelId);
+    const model = classifiedModels.find(m => m.id === modelId);
     if (model && selectedEventCategory !== "Tous" && !model.compatibleEvents.includes(selectedEventCategory)) setSelectedEventCategory(model.category);
     setSelectedModelId(modelId);
     setHasChosenModel(true);
@@ -227,22 +242,55 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   const [anniversaireContent, setAnniversaireContent] = useState<AnniversaireContent>(DEFAULT_ANNIVERSAIRE);
 
   // Modèles ajustés par l'admin (studio des modèles) : ils servent de point de départ à la personnalisation
-  const [publishedModels, setPublishedModels] = useState<Record<string, ModelDefaultRow>>({});
   useEffect(() => {
     let cancelled = false;
-    fetchModelDefaults(createClient()).then((rows) => {
-      if (cancelled) return;
-      setPublishedModels(rows);
-      if (rows[VELOURS_MODEL_ID]?.content) setVeloursContent(veloursDefaults(rows[VELOURS_MODEL_ID].content as any));
-      if (rows[SCEAU_MODEL_ID]?.content) setSceauContent(sceauDefaults(rows[SCEAU_MODEL_ID].content as any));
-      if (rows[IVOIRE_MODEL_ID]?.content) setIvoireContent(ivoireDefaults(rows[IVOIRE_MODEL_ID].content as any));
-      if (rows[ROSE_OR_MODEL_ID]?.content) setRoseOrContent(roseOrDefaults(rows[ROSE_OR_MODEL_ID].content as any));
-      if (rows[ANNIVERSAIRE_MODEL_ID]?.content) setAnniversaireContent(anniversaireDefaults(rows[ANNIVERSAIRE_MODEL_ID].content as any));
-    });
+    const supabase = createClient();
+
+    const reload = () => {
+      fetchModelDefaults(supabase).then((rows) => {
+        if (cancelled) return;
+        setPublishedModels(rows);
+        if (rows[VELOURS_MODEL_ID]?.content) setVeloursContent(veloursDefaults(rows[VELOURS_MODEL_ID].content as any));
+        if (rows[SCEAU_MODEL_ID]?.content) setSceauContent(sceauDefaults(rows[SCEAU_MODEL_ID].content as any));
+        if (rows[IVOIRE_MODEL_ID]?.content) setIvoireContent(ivoireDefaults(rows[IVOIRE_MODEL_ID].content as any));
+        if (rows[ROSE_OR_MODEL_ID]?.content) setRoseOrContent(roseOrDefaults(rows[ROSE_OR_MODEL_ID].content as any));
+        if (rows[ANNIVERSAIRE_MODEL_ID]?.content) setAnniversaireContent(anniversaireDefaults(rows[ANNIVERSAIRE_MODEL_ID].content as any));
+      });
+    };
+
+    reload();
+
+    // Abonnement Supabase Realtime : actualisation automatique instantanée
+    const channel = supabase
+      .channel("create_studio_model_defaults_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invitation_model_defaults" },
+        () => {
+          reload();
+        }
+      )
+      .subscribe();
+
+    const handleFocus = () => reload();
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
     return () => {
       cancelled = true;
+      supabase.removeChannel(channel);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
     };
   }, []);
+
+  // Si le modèle actuellement sélectionné a été désactivé par l'admin, basculer automatiquement sur le premier modèle actif disponible
+  useEffect(() => {
+    if (siteModels.length > 0 && !siteModels.some((m) => m.id === selectedModelId)) {
+      setSelectedModelId(siteModels[0].id);
+    }
+  }, [siteModels, selectedModelId]);
+
   const publishedContent = (id: string) => publishedModels[id]?.content as any;
 
   // Synchronisation des champs communs lors du changement de modèle
@@ -272,17 +320,23 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
   // Modèle actuel
   const currentModel = useMemo(() => {
-    return CATALOG_MODELS.find(m => m.id === selectedModelId) || CATALOG_MODELS[0];
-  }, [selectedModelId]);
+    return classifiedModels.find(m => m.id === selectedModelId) || classifiedModels[0];
+  }, [selectedModelId, classifiedModels]);
 
   // Filtrage des modèles selon l'événement choisi
   const filteredModels = useMemo(() => {
     // Modèles retirés du site par l'admin : absents de la galerie
-    const hidden = hiddenModelIds(publishedModels);
-    const onSite = CATALOG_MODELS.filter(m => !hidden.has(m.id));
-    if (selectedEventCategory === "Tous") return onSite;
-    return onSite.filter(m => m.compatibleEvents.includes(selectedEventCategory));
-  }, [selectedEventCategory, publishedModels]);
+    if (selectedEventCategory === "Tous") return siteModels;
+    return siteModels.filter(m => m.compatibleEvents.includes(selectedEventCategory));
+  }, [selectedEventCategory, siteModels]);
+
+  // Modèle retiré du site alors qu'il était ouvert par un lien : retour à la galerie
+  useEffect(() => {
+    if (hasChosenModel && hiddenModelIds(publishedModels).has(selectedModelId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHasChosenModel(false);
+    }
+  }, [publishedModels, selectedModelId, hasChosenModel]);
 
   // Si le modèle actuellement sélectionné n'est pas compatible avec la nouvelle catégorie, basculer sur le premier disponible
   useEffect(() => {
@@ -624,7 +678,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
             {/* Filtres de catégorie d'événement */}
             <div className="flex items-center justify-center gap-2 flex-wrap mt-6">
-              {EVENT_CATEGORIES.map(cat => (
+              {eventCategories.map(cat => (
                 <button
                   key={cat.id}
                   type="button"
@@ -649,7 +703,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
           {filteredModels.length === 0 && (
             <div className="max-w-xl mx-auto w-full text-center rounded-3xl border border-dashed border-[#b8924a]/40 bg-white/60 px-6 py-12">
-              <p className="text-3xl mb-3">{EVENT_CATEGORIES.find(c => c.id === selectedEventCategory)?.icon}</p>
+              <p className="text-3xl mb-3">{eventCategories.find(c => c.id === selectedEventCategory)?.icon}</p>
               <h3 className="font-serif text-2xl text-gray-900">Les modèles « {selectedEventCategory} » arrivent bientôt</h3>
               <p className="text-sm text-gray-600 mt-2">En attendant, nos modèles actuels peuvent être personnalisés pour votre événement.</p>
               <button
@@ -683,6 +737,9 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   <div className="absolute top-4 left-4 flex items-center gap-2">
                     <span className="bg-black/80 backdrop-blur-md border border-[#b8924a]/40 text-[#F3E5AB] text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">
                       {model.badge}
+                    </span>
+                    <span className="bg-white/90 text-gray-800 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">
+                      {model.kind === 'carte' ? 'Carte' : 'Animée'}
                     </span>
                   </div>
 

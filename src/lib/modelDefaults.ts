@@ -3,6 +3,7 @@
  * - draft_content : version enregistrée dans le studio, pas encore visible
  * - content       : version publiée, affichée sur le site et proposée aux clients
  * - is_hidden     : modèle retiré du site (galeries, démo, création d'événement)
+ * - invitation_type / event_types : classement choisi par l'admin (sinon celui d'origine)
  * Sans ligne en base, chaque modèle garde le contenu de son fichier content.ts.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -16,6 +17,24 @@ export interface ModelDefaultRow {
   is_hidden: boolean;
   updated_at: string;
   published_at: string | null;
+  invitation_type: InvitationKind | null;
+  event_types: string[] | null;
+}
+
+export type InvitationKind = "animée" | "carte";
+
+export interface ModelClassification {
+  type: InvitationKind;
+  /** types d'événement pour lesquels le modèle est proposé, le premier est le principal */
+  events: string[];
+}
+
+/** Classement d'un modèle : celui de l'admin s'il existe, sinon celui d'origine. */
+export function classificationOf(row: ModelDefaultRow | undefined, fallback: ModelClassification): ModelClassification {
+  return {
+    type: row?.invitation_type === "carte" || row?.invitation_type === "animée" ? row.invitation_type : fallback.type,
+    events: row?.event_types?.length ? row.event_types : fallback.events,
+  };
 }
 
 const isMissingTable = (e: { code?: string; message?: string }) =>
@@ -33,16 +52,23 @@ function normalize(r: Partial<ModelDefaultRow> & { model_id: string }): ModelDef
     is_hidden: !!r.is_hidden,
     updated_at: r.updated_at ?? new Date(0).toISOString(),
     published_at: r.published_at ?? null,
+    invitation_type: r.invitation_type ?? null,
+    event_types: Array.isArray(r.event_types) ? r.event_types : null,
   };
 }
 
 /** Toutes les lignes, indexées par identifiant de modèle (vide si la table n'existe pas encore). */
 export async function fetchModelDefaults(supabase: SupabaseClient): Promise<Record<string, ModelDefaultRow>> {
-  let res = await supabase.from(MODEL_DEFAULTS_TABLE).select("model_id, content, draft_content, is_hidden, updated_at, published_at");
-  // Colonnes du brouillon / retrait absentes tant que le script complet n'a pas été exécuté
-  if (res.error && isMissingColumn(res.error)) res = await supabase.from(MODEL_DEFAULTS_TABLE).select("model_id, content, updated_at");
+  // Colonnes ajoutées au fil des versions du script : on se rabat sur les plus anciennes si besoin
+  const selects = [
+    "model_id, content, draft_content, is_hidden, updated_at, published_at, invitation_type, event_types",
+    "model_id, content, draft_content, is_hidden, updated_at, published_at",
+    "model_id, content, updated_at",
+  ];
+  let res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[0]);
+  for (let i = 1; i < selects.length && res.error && isMissingColumn(res.error); i++) res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[i]);
   if (res.error || !res.data) return {};
-  return Object.fromEntries((res.data as ModelDefaultRow[]).map((r) => [r.model_id, normalize(r)]));
+  return Object.fromEntries((res.data as unknown as ModelDefaultRow[]).map((r) => [r.model_id, normalize(r)]));
 }
 
 /** Identifiants des modèles retirés du site. */
@@ -79,11 +105,31 @@ export async function publishModel(supabase: SupabaseClient, modelId: string, co
 
 /** « Retirer du site » / « Remettre sur le site » sans toucher au contenu. */
 export async function setModelHidden(supabase: SupabaseClient, modelId: string, hidden: boolean, userId?: string) {
-  await write(supabase, { model_id: modelId, is_hidden: hidden, updated_at: new Date().toISOString(), updated_by: userId ?? null });
+  const existing = await supabase.from(MODEL_DEFAULTS_TABLE).select("content, draft_content").eq("model_id", modelId).maybeSingle();
+  const payload: Record<string, unknown> = {
+    model_id: modelId,
+    is_hidden: hidden,
+    updated_at: new Date().toISOString(),
+    updated_by: userId ?? null,
+  };
+  if (existing.data?.content !== undefined) {
+    payload.content = existing.data.content;
+  } else {
+    payload.content = {};
+  }
+  if (existing.data?.draft_content !== undefined) {
+    payload.draft_content = existing.data.draft_content;
+  }
+  await write(supabase, payload);
 }
 
-/** « Version d'origine » : supprime les ajustements, publiés ou non. */
+/** Classement du modèle : type d'invitation et types d'événement. */
+export async function saveModelClassification(supabase: SupabaseClient, modelId: string, c: ModelClassification, userId?: string) {
+  await write(supabase, { model_id: modelId, invitation_type: c.type, event_types: c.events, updated_at: new Date().toISOString(), updated_by: userId ?? null });
+}
+
+/** « Version d'origine » : efface les ajustements de contenu (publiés ou non) ; le classement et la présence sur le site sont gardés. */
 export async function resetModelDefault(supabase: SupabaseClient, modelId: string) {
-  const { error } = await supabase.from(MODEL_DEFAULTS_TABLE).delete().eq("model_id", modelId);
+  const { error } = await supabase.from(MODEL_DEFAULTS_TABLE).update({ content: null, draft_content: null, published_at: null, updated_at: new Date().toISOString() }).eq("model_id", modelId);
   if (error) throw new Error(error.message);
 }

@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Modèle d'invitation de mariage animé avec enveloppe scellée, vidéo cinématique, musique d'ambiance et RSVP.",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function InvitationRoseOrPage() {
   // Modèle retiré du site par l'admin ; sinon la page animée charge elle-même la version publiée
   const { hidden } = await fetchPublishedModel(await createClient(), ROSE_OR_MODEL_ID);

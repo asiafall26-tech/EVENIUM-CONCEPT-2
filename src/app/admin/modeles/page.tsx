@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Brush, CheckCircle2, ExternalLink, EyeOff, Globe, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { Brush, CheckCircle2, ExternalLink, EyeOff, Globe, Loader2, RotateCcw, Sparkles, Tags } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
+  classificationOf,
   fetchModelDefaults,
+  saveModelClassification,
+  type InvitationKind,
   publishModel,
   resetModelDefault,
   saveModelDraft,
@@ -14,6 +17,14 @@ import {
 } from "@/lib/modelDefaults";
 import { SITE_MODELS, type ModelContent, type SiteModel } from "@/components/admin/models/registry";
 import AdminModelEditor from "@/components/admin/models/AdminModelEditor";
+import ClassifyModal from "@/components/admin/models/ClassifyModal";
+import { defaultClassification } from "@/data/mock/invitations";
+import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
+
+const KIND_GROUPS: { id: InvitationKind; title: string }[] = [
+  { id: "animée", title: "Invitations animées" },
+  { id: "carte", title: "Cartes" },
+];
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -35,6 +46,9 @@ export default function AdminModelsStudioPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [classifyingId, setClassifyingId] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<"Tous" | InvitationKind>("Tous");
+  const [eventFilter, setEventFilter] = useState<string>("Tous");
 
   const load = useCallback(async () => {
     setRows(await fetchModelDefaults(supabase));
@@ -64,6 +78,18 @@ export default function AdminModelsStudioPage() {
   };
 
   const editing = SITE_MODELS.find((m) => m.id === editingId) ?? null;
+  const classifying = SITE_MODELS.find((m) => m.id === classifyingId) ?? null;
+  const classOf = (m: SiteModel) => classificationOf(rows[m.id], defaultClassification(m.id));
+  const groups = KIND_GROUPS.filter((g) => kindFilter === "Tous" || kindFilter === g.id)
+    .map((g) => ({
+      ...g,
+      models: SITE_MODELS.filter((m) => {
+        const c = classOf(m);
+        return c.type === g.id && (eventFilter === "Tous" || c.events.includes(eventFilter));
+      }),
+    }))
+    .filter((g) => g.models.length || kindFilter !== "Tous");
+  const eventCount = (t: string) => SITE_MODELS.filter((m) => classOf(m).events.includes(t)).length;
 
   return (
     <div className="max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
@@ -88,14 +114,50 @@ export default function AdminModelsStudioPage() {
         </div>
       )}
 
+      {/* Classement : type d'invitation et type d'événement */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-3 sm:p-4 space-y-3">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {(["Tous", "animée", "carte"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKindFilter(k)}
+              className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border ${kindFilter === k ? "bg-[#2b2118] text-[#f5eee1] border-[#2b2118]" : "border-gray-200 text-gray-600"}`}
+            >
+              {k === "Tous" ? "Tous les types" : k === "animée" ? "Animées" : "Cartes"}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {["Tous", ...EVENT_TYPES].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setEventFilter(t)}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border ${eventFilter === t ? "bg-[#b8924a] text-white border-[#b8924a]" : "border-gray-200 text-gray-600"}`}
+            >
+              {t === "Tous" ? "✨ Tous les événements" : <>{EVENT_TYPE_ICONS[t as keyof typeof EVENT_TYPE_ICONS]} {t}</>}
+              {t !== "Tous" && <span className="opacity-70">· {eventCount(t)}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {loading ? (
         <div className="py-16 flex justify-center text-gray-400">
           <Loader2 className="animate-spin" />
         </div>
       ) : (
+        <div className="space-y-8">
+        {groups.length === 0 && <p className="text-sm text-gray-500 text-center py-10">Aucun modèle pour ce filtre.</p>}
+        {groups.map((g) => (
+        <section key={g.id} className="space-y-3">
+          <h2 className="font-serif text-2xl text-gray-900">{g.title} <span className="text-sm text-gray-400">· {g.models.length}</span></h2>
+          {g.models.length === 0 && <p className="text-sm text-gray-500">Aucun modèle de ce type pour ce filtre.</p>}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-          {SITE_MODELS.map((model) => {
+          {g.models.map((model) => {
             const row = rows[model.id];
+            const cls = classOf(model);
             const st = status(row);
             const busy = busyId === model.id;
             return (
@@ -107,6 +169,17 @@ export default function AdminModelsStudioPage() {
                   <h2 className="absolute bottom-3 left-4 right-4 font-serif text-2xl text-white">{model.name}</h2>
                 </div>
                 <div className="p-4 flex-1 flex flex-col gap-2.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{cls.type === "carte" ? "Carte" : "Animée"}</span>
+                    {cls.events.map((e) => (
+                      <span key={e} className="text-[11px] px-2 py-0.5 rounded-full bg-[#fbf7f0] border border-[#b8924a]/25 text-[#6f5527]">
+                        {EVENT_TYPE_ICONS[e as keyof typeof EVENT_TYPE_ICONS]} {e}
+                      </span>
+                    ))}
+                    <button type="button" onClick={() => setClassifyingId(model.id)} className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-[#8f6f33]">
+                      <Tags size={13} /> Classer
+                    </button>
+                  </div>
                   <p className="text-xs text-gray-500">
                     {row?.published_at ? `Publié le ${formatDate(row.published_at)}` : row ? `Modifié le ${formatDate(row.updated_at)}` : "Contenu d'origine du modèle"}
                   </p>
@@ -161,7 +234,7 @@ export default function AdminModelsStudioPage() {
                     </a>
                     <button
                       type="button"
-                      disabled={!row || busy}
+                      disabled={!(row?.content || row?.draft_content) || busy}
                       onClick={async () => {
                         if (!confirm(`Rétablir la version d'origine de « ${model.name} » ? Vos ajustements (publiés ou non) seront effacés.`)) return;
                         await act(model, () => resetModelDefault(supabase, model.id), `« ${model.name} » a retrouvé sa version d'origine.`);
@@ -176,6 +249,23 @@ export default function AdminModelsStudioPage() {
             );
           })}
         </div>
+        </section>
+        ))}
+        </div>
+      )}
+
+      {classifying && (
+        <ClassifyModal
+          modelName={classifying.name}
+          initial={classOf(classifying)}
+          onClose={() => setClassifyingId(null)}
+          onSave={async (c) => {
+            await saveModelClassification(supabase, classifying.id, c, await userId());
+            setClassifyingId(null);
+            setNotice({ ok: true, text: `« ${classifying.name} » est classé : ${c.type === "carte" ? "carte" : "animée"} · ${c.events.join(", ")}.` });
+            await load();
+          }}
+        />
       )}
 
       {editing && (

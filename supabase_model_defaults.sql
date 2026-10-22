@@ -35,3 +35,9 @@ ALTER TABLE public.invitation_model_defaults ALTER COLUMN content DROP NOT NULL;
 ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS draft_content JSONB;          -- version enregistrée, non publiée
 ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT false;  -- retiré du site
 ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
+
+-- --------------------------------------------------------------
+-- Classement des modèles (studio des modèles v3)
+-- --------------------------------------------------------------
+ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS invitation_type TEXT;   -- 'animée' ou 'carte' (vide = classement d'origine)
+ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS event_types TEXT[];      -- types d'événement proposés (vide = classement d'origine)

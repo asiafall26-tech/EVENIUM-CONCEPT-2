@@ -7,25 +7,54 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { fetchModelDefaults, hiddenModelIds } from "@/lib/modelDefaults";
+import { classificationOf, fetchModelDefaults, type ModelDefaultRow } from "@/lib/modelDefaults";
 
 export default function InvitationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Mariage");
 
-  // Modèles retirés du site par l'admin (studio des modèles)
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  // Classement et présence sur le site choisis par l'admin (studio des modèles)
+  const [rows, setRows] = useState<Record<string, ModelDefaultRow>>({});
   useEffect(() => {
-    fetchModelDefaults(createClient()).then((rows) => setHidden(hiddenModelIds(rows)));
+    const supabase = createClient();
+    const reload = () => fetchModelDefaults(supabase).then(setRows);
+    reload();
+
+    const channel = supabase
+      .channel("invitations_gallery_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invitation_model_defaults" },
+        () => {
+          reload();
+        }
+      )
+      .subscribe();
+
+    const handleFocus = () => reload();
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
   }, []);
+  const siteModels = mockInvitationModels
+    .filter((m) => !rows[m.id]?.is_hidden)
+    .map((m) => {
+      const c = classificationOf(rows[m.id], { type: m.type, events: [m.category] });
+      return { ...m, type: c.type, category: c.events[0] ?? m.category, events: c.events };
+    });
 
-  const categoryFilter = (m: (typeof mockInvitationModels)[number]) =>
-    !hidden.has(m.id) && (selectedCategory === "Tous" ? true : m.category === selectedCategory);
+  const categoryFilter = (m: (typeof siteModels)[number]) =>
+    selectedCategory === "Tous" ? true : m.events.includes(selectedCategory);
 
-  const animatedModels = mockInvitationModels
+  const animatedModels = siteModels
     .filter((m) => m.type === "animée")
     .filter(categoryFilter);
 
-  const cardModels = mockInvitationModels
+  const cardModels = siteModels
     .filter((m) => m.type === "carte")
     .filter(categoryFilter);
 
@@ -53,10 +82,10 @@ export default function InvitationsPage() {
       <div className="max-w-4xl mx-auto mb-14">
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-white/70 backdrop-blur-md p-2 rounded-2xl border border-gray-200/80 shadow-sm">
           {[
-            { id: "Tous", label: "Tous les modèles", icon: "✨", count: mockInvitationModels.filter(m => !hidden.has(m.id)).length, soon: false },
+            { id: "Tous", label: "Tous les modèles", icon: "✨", count: siteModels.length, soon: false },
             // Tous les types d'événements de l'application ; « Bientôt » tant qu'aucun modèle n'existe
             ...EVENT_TYPES.map((t) => {
-              const count = mockInvitationModels.filter(m => !hidden.has(m.id) && m.category === t).length;
+              const count = siteModels.filter(m => m.events.includes(t)).length;
               return { id: t, label: t, icon: EVENT_TYPE_ICONS[t], count: count || undefined, soon: count === 0 };
             }),
           ].map((cat) => {

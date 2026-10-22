@@ -69,6 +69,12 @@ export const mockInvitationModels: InvitationModel[] = [
 /** Models shown in the homepage showcase (up to 4), in display order */
 export const showcaseModelIds: string[] = ["invit-7", "invit-8", "invit-9", "invit-10"];
 
+/** Classement d'origine d'un modèle (type d'invitation et événement), remplaçable dans le studio des modèles */
+export function defaultClassification(id: string): { type: InvitationType; events: string[] } {
+  const m = mockInvitationModels.find((x) => x.id === id);
+  return { type: m?.type ?? "animée", events: m ? [m.category] : [] };
+}
+
 /** Lookup an invitation model by its ID */
 export function getInvitationModel(id?: string | null): InvitationModel | undefined {
   if (!id) return undefined;
