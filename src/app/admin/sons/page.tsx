@@ -250,7 +250,18 @@ export default function AdminSoundBankPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+      <div className="space-y-3 mb-4">
+        {/* Recherche en premier, bien visible */}
+        <div className="relative">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher un titre, un artiste…"
+            className={`${inputCls} pl-11 py-3.5 text-base bg-white`}
+          />
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {["Toutes", ...MUSIC_CATEGORIES].map((c) => (
             <button
@@ -263,10 +274,6 @@ export default function AdminSoundBankPage() {
               {c === "Tous" ? "Tous événements" : c}
             </button>
           ))}
-        </div>
-        <div className="relative md:ml-auto md:w-72">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un titre, un artiste…" className={`${inputCls} pl-9`} />
         </div>
       </div>
 

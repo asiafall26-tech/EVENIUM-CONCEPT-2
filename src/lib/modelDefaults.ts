@@ -64,10 +64,11 @@ export function modelNamesMap(rows: Record<string, ModelDefaultRow>): Record<str
   return map;
 }
 
-const isMissingTable = (e: { code?: string; message?: string }) =>
-  e.code === "42P01" || e.code === "PGRST205" || /does not exist|schema cache/i.test(e.message ?? "");
 const isMissingColumn = (e: { code?: string; message?: string }) =>
-  e.code === "42703" || e.code === "PGRST204" || /column .* does not exist/i.test(e.message ?? "");
+  e.code === "42703" || e.code === "PGRST204" || /column .* does not exist|column .* in the schema cache/i.test(e.message ?? "");
+
+const isMissingTable = (e: { code?: string; message?: string }) =>
+  !isMissingColumn(e) && (e.code === "42P01" || e.code === "PGRST205" || /relation .* does not exist|table .* in the schema cache/i.test(e.message ?? ""));
 
 const SETUP_HINT = "exécutez le script supabase_model_defaults.sql dans Supabase.";
 
@@ -141,7 +142,12 @@ export async function fetchPublishedModel<T>(
 }
 
 async function write(supabase: SupabaseClient, row: Record<string, unknown>) {
-  const { error } = await supabase.from(MODEL_DEFAULTS_TABLE).upsert(row, { onConflict: "model_id" });
+  let { error } = await supabase.from(MODEL_DEFAULTS_TABLE).upsert(row, { onConflict: "model_id" });
+  if (error && isMissingColumn(error) && "name" in row) {
+    const { name: _omitted, ...fallbackRow } = row;
+    const retry = await supabase.from(MODEL_DEFAULTS_TABLE).upsert(fallbackRow, { onConflict: "model_id" });
+    error = retry.error;
+  }
   if (!error) return;
   if (isMissingTable(error)) throw new Error(`La table des modèles n'existe pas encore : ${SETUP_HINT}`);
   if (isMissingColumn(error)) throw new Error(`La table des modèles doit être mise à jour : ${SETUP_HINT}`);
@@ -291,7 +297,12 @@ export async function resetModelDefault(supabase: SupabaseClient, modelId: strin
   if (resetName) {
     updateData.name = null;
   }
-  const { error } = await supabase.from(MODEL_DEFAULTS_TABLE).update(updateData).eq("model_id", modelId);
+  let { error } = await supabase.from(MODEL_DEFAULTS_TABLE).update(updateData).eq("model_id", modelId);
+  if (error && isMissingColumn(error) && "name" in updateData) {
+    delete updateData.name;
+    const retry = await supabase.from(MODEL_DEFAULTS_TABLE).update(updateData).eq("model_id", modelId);
+    error = retry.error;
+  }
   if (error) throw new Error(error.message);
 }
 
