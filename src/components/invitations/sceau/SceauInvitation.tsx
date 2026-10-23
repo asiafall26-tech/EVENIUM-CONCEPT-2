@@ -19,7 +19,8 @@ import {
 import { createSoundtrack, paintBouquet, sealPath, startPetals, type PetalEngine, type Soundtrack } from "./effects";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import InvitationEndCta from "../InvitationEndCta";
-import InvitationStyleTag from "../InvitationStyleTag";
+import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import { cls } from "@/lib/invitationStyle";
 
 interface Props {
   content?: Partial<SceauContent> | null;
@@ -375,6 +376,16 @@ function GuestForm({
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
+/** Textes de ce modèle par catégorie, pour les réglages de style du studio des modèles */
+const STYLE_SELECTORS = modelSelectors({
+  names: cls(s.names),
+  titles: cls(s.script, s.heroTitle),
+  labels: cls(s.caps, s.pageTag, s.progTime, s.progLabel, s.place),
+  numbers: cls(s.bigTime, s.month),
+  body: cls(s.muted, s.thanks),
+  buttons: cls(s.pill),
+});
+
 export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const [live, setLive] = useState<Partial<SceauContent> | null>(null);
   const [phase, setPhase] = useState<Phase>("closed");
@@ -628,7 +639,7 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
 
   return (
     <div className={cx(s.theme, s.root, sceauFontVars, stateCls)} data-inv-style="">
-      <InvitationStyleTag style={c.style} />
+      <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
       <DrapeDefs />
       <main className={cx(s.col, s.velvet)}>
         <header className={s.hero}>

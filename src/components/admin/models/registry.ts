@@ -36,7 +36,7 @@ export interface SiteModel {
   liveUrl: string;
   original: ModelContent;
   fill: (partial: any) => ModelContent;
-  Studio: ComponentType<{ value: any; onChange: (v: any) => void; onViewFullScreen?: () => void }>;
+  Studio: ComponentType<{ value: any; onChange: (v: any) => void; onViewFullScreen?: () => void; isStatic?: boolean }>;
   Invitation: ComponentType<{ content: any; preview?: boolean; onBackToEdit?: () => void; onFinalize?: () => void }>;
   audio: AudioKeys;
 }

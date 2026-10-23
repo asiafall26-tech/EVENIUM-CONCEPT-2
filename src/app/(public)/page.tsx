@@ -8,7 +8,7 @@ import SectionHeading from "@/components/landing/SectionHeading";
 import HomeShowcase from "@/components/landing/HomeShowcase";
 import { mockInvitationModels, showcaseModelIds } from "@/data/mock/invitations";
 import { createClient } from "@/utils/supabase/server";
-import { fetchModelDefaults, hiddenModelIds } from "@/lib/modelDefaults";
+import { fetchModelDefaults, hiddenModelIds, modelNameOf } from "@/lib/modelDefaults";
 
 // Vitrine toujours à jour en temps réel : un modèle désactivé disparaît immédiatement
 export const dynamic = "force-dynamic";
@@ -19,7 +19,12 @@ async function getShowcaseModels() {
     const supabase = await createClient();
     const rows = await fetchModelDefaults(supabase);
     const hidden = hiddenModelIds(rows);
-    const visible = mockInvitationModels.filter((m) => !hidden.has(m.id));
+    const visible = mockInvitationModels
+      .filter((m) => !hidden.has(m.id))
+      .map((m) => ({
+        ...m,
+        name: modelNameOf(rows[m.id], m.name),
+      }));
     // Modèles mis en avant d'abord, complétés par les autres modèles en ligne
     return [
       ...showcaseModelIds.map((id) => visible.find((m) => m.id === id)).filter((m) => m !== undefined),

@@ -16,7 +16,8 @@ import {
   type VeloursContent,
 } from "./content";
 import InvitationEndCta from "../InvitationEndCta";
-import InvitationStyleTag from "../InvitationStyleTag";
+import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import { cls } from "@/lib/invitationStyle";
 
 export interface RsvpPayload {
   name: string;
@@ -649,6 +650,15 @@ function RsvpSection({ c, dates, onRsvp }: SectionProps & { onRsvp?: Props["onRs
 
 /* ───────────────────────── Envelope intro + page ───────────────────────── */
 
+/** Textes de ce modèle par catégorie, pour les réglages de style du studio des modèles */
+const STYLE_SELECTORS = modelSelectors({
+  names: cls(s.names, s.introNames, s.name),
+  titles: cls(s.title, s.scriptTitle),
+  labels: cls(s.label, s.introKicker, s.weekday, s.infoSub, s.tlTime, s.tlLabel, s.cdUnit, s.letterSmall, s.letterDate, s.heroCardDate, s.footerSmall, s.introHint),
+  numbers: cls(s.bigDate, s.cdNum),
+  body: cls(s.body, s.bodyLeft, s.bodyLight, s.quote, s.scriptLight, s.infoMain, s.footerQuote),
+});
+
 export default function VeloursInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const [phase, setPhase] = useState<Phase>(preview ? "done" : "closed");
   const [live, setLive] = useState<Partial<VeloursContent> | null>(null);
@@ -838,7 +848,7 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
 
   return (
     <div className={`${s.theme} ${s.root} ${veloursFontVars}`} data-inv-style="">
-      <InvitationStyleTag style={c.style} />
+      <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
       {c.audioUrl && (
         <audio
           ref={audioRef}

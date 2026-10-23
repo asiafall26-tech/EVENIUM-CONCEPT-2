@@ -5,16 +5,19 @@ import { AlertCircle, ArrowDown, ArrowUp, CheckCircle, Edit3, Eye, EyeOff, Loade
 import { Modal } from "@/components/ui/Modal";
 import { AudioTrimmer } from "@/components/media/AudioTrimmer";
 import { uploadMedia } from "@/utils/uploadMedia";
+import { isVideoFile, videoToMp3 } from "@/utils/videoToMp3";
 import { formatTime } from "@/utils/audioSegment";
 import { createTrack, deleteTrack, getAllTracks, reorderTracks, updateTrack } from "@/app/actions/musicLibrary";
-import { MUSIC_CATEGORIES, MUSIC_MOODS, type LibraryTrack } from "@/data/musicLibrary";
+import { ALL_EVENTS, MUSIC_CATEGORIES, joinTrackEvents, trackEvents, type LibraryTrack } from "@/data/musicLibrary";
 
 const inputCls =
   "w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40 focus:bg-white";
 
 interface UploadItem {
   name: string;
-  status: "uploading" | "done" | "error";
+  status: "converting" | "uploading" | "done" | "error";
+  /** progression de la conversion vidéo → MP3 */
+  progress?: number;
   error?: string;
 }
 
@@ -75,28 +78,39 @@ export default function AdminSoundBankPage() {
     const q = query.trim().toLowerCase();
     return tracks.filter(
       (t) =>
-        (filter === "Toutes" || t.category === filter) &&
+        (filter === "Toutes" || trackEvents(t).includes(filter)) &&
         (!q || t.title.toLowerCase().includes(q) || (t.artist ?? "").toLowerCase().includes(q))
     );
   }, [tracks, filter, query]);
 
   /* ---------- Import ---------- */
   const importFiles = async (files: FileList | File[]) => {
-    const list = Array.from(files).filter((f) => f.type.startsWith("audio/") || /\.(mp3|m4a|wav|ogg|aac|flac)$/i.test(f.name));
+    const list = Array.from(files).filter((f) => f.type.startsWith("audio/") || /\.(mp3|m4a|wav|ogg|aac|flac)$/i.test(f.name) || isVideoFile(f));
     if (!list.length) return;
-    setUploads((u) => [...list.map((f) => ({ name: f.name, status: "uploading" as const })), ...u]);
+    setUploads((u) => [...list.map((f) => ({ name: f.name, status: (isVideoFile(f) ? "converting" : "uploading") as UploadItem["status"] })), ...u]);
     const setStatus = (name: string, patch: Partial<UploadItem>) => setUploads((u) => u.map((x) => (x.name === name ? { ...x, ...patch } : x)));
 
-    for (const file of list) {
+    for (const source of list) {
+      // Vidéo : le son est extrait et converti en MP3 dans le navigateur, seul le MP3 est envoyé
+      let file = source;
+      if (isVideoFile(source)) {
+        try {
+          file = await videoToMp3(source, (progress) => setStatus(source.name, { progress }));
+        } catch (e) {
+          setStatus(source.name, { status: "error", error: e instanceof Error ? e.message : "Conversion impossible." });
+          continue;
+        }
+        setStatus(source.name, { status: "uploading" });
+      }
       const [duration, up] = await Promise.all([fileDuration(file), uploadMedia(file, "library")]);
       if (!up.success || !up.url) {
-        setStatus(file.name, { status: "error", error: up.error });
+        setStatus(source.name, { status: "error", error: up.error });
         continue;
       }
       const res = await createTrack({ title: prettyTitle(file.name), audio_url: up.url, storage_path: up.path ?? null, duration, category: "Mariage" });
-      if (res.error || !res.data) setStatus(file.name, { status: "error", error: res.error });
+      if (res.error || !res.data) setStatus(source.name, { status: "error", error: res.error });
       else {
-        setStatus(file.name, { status: "done" });
+        setStatus(source.name, { status: "done" });
         setTracks((t) => [...t, res.data!]);
       }
     }
@@ -155,8 +169,8 @@ export default function AdminSoundBankPage() {
   const saveEditing = async () => {
     if (!editing) return;
     setSaving(true);
-    const { id, title, artist, category, mood, excerpt_start, excerpt_end, is_active } = editing;
-    const res = await updateTrack(id, { title, artist, category, mood, excerpt_start, excerpt_end, is_active });
+    const { id, title, artist, category, excerpt_start, excerpt_end, is_active } = editing;
+    const res = await updateTrack(id, { title, artist, category, excerpt_start, excerpt_end, is_active });
     setSaving(false);
     if (res.error || !res.data) return alert(res.error);
     setTracks((list) => list.map((x) => (x.id === id ? res.data! : x)));
@@ -195,7 +209,7 @@ export default function AdminSoundBankPage() {
       )}
 
       {/* Import */}
-      <input ref={fileRef} type="file" accept="audio/*,.mp3,.m4a,.wav" multiple className="hidden" onChange={(e) => e.target.files && importFiles(e.target.files).then(() => (e.target.value = ""))} />
+      <input ref={fileRef} type="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.mp4,.mov,.webm" multiple className="hidden" onChange={(e) => e.target.files && importFiles(e.target.files).then(() => (e.target.value = ""))} />
       <div
         onClick={() => fileRef.current?.click()}
         onDragOver={(e) => {
@@ -215,20 +229,20 @@ export default function AdminSoundBankPage() {
         <div className="w-14 h-14 mx-auto rounded-2xl bg-[#efe6d6] text-[#8f6f33] flex items-center justify-center mb-3">
           <UploadCloud size={26} />
         </div>
-        <p className="font-semibold text-gray-900">Glissez vos fichiers audio ici ou cliquez pour les choisir</p>
-        <p className="text-xs text-gray-500 mt-1">MP3, M4A ou WAV · 25 Mo maximum par fichier · plusieurs fichiers à la fois</p>
+        <p className="font-semibold text-gray-900">Glissez vos fichiers audio ou vidéo ici, ou cliquez pour les choisir</p>
+        <p className="text-xs text-gray-500 mt-1">MP3, M4A, WAV · vidéos MP4, MOV, WebM converties automatiquement en MP3 · plusieurs fichiers à la fois</p>
       </div>
 
       {uploads.length > 0 && (
         <div className="mb-6 bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
           {uploads.slice(0, 8).map((u, i) => (
             <div key={`${u.name}-${i}`} className="px-4 py-2.5 flex items-center gap-3 text-sm">
-              {u.status === "uploading" && <Loader2 size={16} className="animate-spin text-[#8f6f33]" />}
+              {(u.status === "uploading" || u.status === "converting") && <Loader2 size={16} className="animate-spin text-[#8f6f33]" />}
               {u.status === "done" && <CheckCircle size={16} className="text-green-600" />}
               {u.status === "error" && <AlertCircle size={16} className="text-red-600" />}
               <span className="truncate flex-1 text-gray-800">{u.name}</span>
               <span className={`text-xs ${u.status === "error" ? "text-red-600" : "text-gray-400"}`}>
-                {u.status === "uploading" ? "Import…" : u.status === "done" ? "Ajouté — pensez à renseigner sa catégorie" : u.error}
+                {u.status === "converting" ? `Conversion en MP3… ${u.progress ?? 0} %` : u.status === "uploading" ? "Import…" : u.status === "done" ? "Ajouté — pensez à renseigner sa catégorie" : u.error}
               </span>
             </div>
           ))}
@@ -286,8 +300,9 @@ export default function AdminSoundBankPage() {
                     <p className="font-semibold text-gray-900 truncate">{t.title}</p>
                     <p className="text-xs text-gray-500 truncate">{t.artist || "Artiste non renseigné"}</p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">{t.category === "Tous" ? "Tous événements" : t.category}</span>
-                      {t.mood && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-pink-700">{t.mood}</span>}
+                      {trackEvents(t).map((e) => (
+                        <span key={e} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">{e === ALL_EVENTS ? "Tous événements" : e}</span>
+                      ))}
                       <span className="text-[11px] text-gray-400 font-mono">{t.duration ? formatTime(t.duration) : "—"}</span>
                       {hasExcerpt && (
                         <span className="text-[11px] text-[#7a5e2b]">
@@ -338,27 +353,32 @@ export default function AdminSoundBankPage() {
                 <span className="block text-xs font-semibold text-gray-700 mb-1.5">Artiste</span>
                 <input className={inputCls} value={editing.artist ?? ""} onChange={(e) => setEditing({ ...editing, artist: e.target.value || null })} />
               </label>
-              <label className="block">
-                <span className="block text-xs font-semibold text-gray-700 mb-1.5">Type d&apos;événement</span>
-                <select className={inputCls} value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
-                  {MUSIC_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c === "Tous" ? "Tous événements" : c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="block text-xs font-semibold text-gray-700 mb-1.5">Ambiance</span>
-                <select className={inputCls} value={editing.mood ?? ""} onChange={(e) => setEditing({ ...editing, mood: e.target.value || null })}>
-                  <option value="">Non précisée</option>
-                  {MUSIC_MOODS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            </div>
+
+            {/* Un morceau peut être proposé pour plusieurs événements */}
+            <div>
+              <span className="block text-xs font-semibold text-gray-700 mb-1.5">Types d&apos;événement (un ou plusieurs)</span>
+              <div className="flex flex-wrap gap-2">
+                {MUSIC_CATEGORIES.map((c) => {
+                  const current = trackEvents(editing);
+                  const on = current.includes(c);
+                  const toggle = () => {
+                    if (c === ALL_EVENTS) return setEditing({ ...editing, category: ALL_EVENTS });
+                    const next = on ? current.filter((x) => x !== c) : [...current.filter((x) => x !== ALL_EVENTS), c];
+                    setEditing({ ...editing, category: joinTrackEvents(next) });
+                  };
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={toggle}
+                      className={`px-3.5 py-2 rounded-full border text-xs font-semibold ${on ? "bg-[#2b2118] text-[#f5eee1] border-[#2b2118]" : "border-gray-200 text-gray-600"}`}
+                    >
+                      {c === ALL_EVENTS ? "Tous les événements" : c}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>

@@ -81,9 +81,19 @@ export function getInvitationModel(id?: string | null): InvitationModel | undefi
   return mockInvitationModels.find((m) => m.id === id);
 }
 
+/** Cache en mémoire des noms de modèles personnalisés par l'admin */
+let dynamicModelNames: Record<string, string> = {};
+
+/** Enregistrer des noms personnalisés de modèles récupérés depuis Supabase */
+export function registerModelNames(map: Record<string, string>) {
+  dynamicModelNames = { ...dynamicModelNames, ...map };
+}
+
 /** Retrieve the human-readable, official name of an invitation model */
-export function getInvitationModelName(id?: string | null): string {
+export function getInvitationModelName(id?: string | null, customNames?: Record<string, string>): string {
   if (!id) return "Modèle Exclusif";
+  if (customNames && customNames[id]) return customNames[id];
+  if (dynamicModelNames[id]) return dynamicModelNames[id];
   const model = getInvitationModel(id);
   if (model) return model.name;
 

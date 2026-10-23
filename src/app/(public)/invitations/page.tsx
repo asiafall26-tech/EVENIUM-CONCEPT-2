@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { classificationOf, fetchModelDefaults, type ModelDefaultRow } from "@/lib/modelDefaults";
+import { classificationOf, fetchModelDefaults, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
 
 export default function InvitationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Mariage");
@@ -44,7 +44,13 @@ export default function InvitationsPage() {
     .filter((m) => !rows[m.id]?.is_hidden)
     .map((m) => {
       const c = classificationOf(rows[m.id], { type: m.type, events: [m.category] });
-      return { ...m, type: c.type, category: c.events[0] ?? m.category, events: c.events };
+      return {
+        ...m,
+        name: modelNameOf(rows[m.id], m.name),
+        type: c.type,
+        category: c.events[0] ?? m.category,
+        events: c.events,
+      };
     });
 
   const categoryFilter = (m: (typeof siteModels)[number]) =>

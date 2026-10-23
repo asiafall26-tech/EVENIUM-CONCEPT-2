@@ -16,6 +16,7 @@ import {
   classificationOf,
   fetchModelDefaults,
   hiddenModelIds,
+  modelNameOf,
 } from "@/lib/modelDefaults";
 
 interface HomeShowcaseProps {
@@ -38,6 +39,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
             const c = classificationOf(rows[m.id], { type: m.type, events: [m.category] });
             return {
               ...m,
+              name: modelNameOf(rows[m.id], m.name),
               type: c.type,
               category: (c.events[0] as any) ?? m.category,
             };

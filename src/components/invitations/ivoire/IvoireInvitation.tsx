@@ -18,7 +18,8 @@ import { mapsEmbedUrl, mapsLink, wazeLink } from "../sceau/content";
 import { createSoundtrack, type Soundtrack } from "../sceau/effects";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import InvitationEndCta from "../InvitationEndCta";
-import InvitationStyleTag from "../InvitationStyleTag";
+import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import { cls } from "@/lib/invitationStyle";
 
 interface Props {
   content?: Partial<IvoireContent> | null;
@@ -267,6 +268,16 @@ function RsvpForm({ mono, onRsvp }: { mono: string; onRsvp?: Props["onRsvp"] }) 
 
 /* ───────────────────────── Page ───────────────────────── */
 
+/** Textes de ce modèle par catégorie, pour les réglages de style du studio des modèles */
+const STYLE_SELECTORS = modelSelectors({
+  names: cls(s.names, s.amp),
+  titles: cls(s.script),
+  labels: cls(s.label, s.lbl, s.month, s.when, s.deadline, s.mapTag, s.kind, s.tag, s.dayLabel),
+  numbers: cls(s.bigday, s.count),
+  body: cls(s.intro, s.prose, s.it, s.love, s.thanks),
+  buttons: cls(s.btn, s.btnO),
+});
+
 export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const [live, setLive] = useState<Partial<IvoireContent> | null>(null);
   const [opened, setOpened] = useState(false);
@@ -483,7 +494,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
 
   return (
     <div className={cx(s.theme, s.root, ivoireFontVars, !opened && s.locked)} data-inv-style="">
-      <InvitationStyleTag style={c.style} />
+      <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
       <Defs />
       <main ref={mainRef} className={s.inv}>
         {/* ============ HERO ============ */}

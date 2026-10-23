@@ -1,4 +1,14 @@
-import { googleFontHrefs, styleCss, type InvitationStyle } from "@/lib/invitationStyle";
+import { GENERIC_SELECTORS, googleFontHrefs, styleCss, styleFonts, type InvitationStyle, type PartSelectors } from "@/lib/invitationStyle";
+
+/** Textes de la page animée par catégorie, pour les réglages de style du studio des modèles */
+const STYLE_SELECTORS: PartSelectors = {
+  names: [...GENERIC_SELECTORS.names, ".names", ".amp"],
+  titles: [...GENERIC_SELECTORS.titles],
+  labels: [".eyebrow", ".kicker", ".sub", ".meta", ".y", ".made", ".tap-hint"],
+  numbers: [".date", ".countdown"],
+  body: [...GENERIC_SELECTORS.body, ".intro", ".quote", ".addr", ".venue", ".ev", ".tl-item"],
+  buttons: [".pill", ".btn", ".cta"],
+};
 // Editable content of the "Rose Poudrée & Or Impérial" invitation model (stored as JSON on the event).
 // The invitation itself is the static page public/invitations/rose-or/index.html, driven by postMessage.
 
@@ -167,7 +177,7 @@ export function toPreviewMessage(c: RoseOrContent, handlesRsvp = false, showCta 
     handlesRsvp,
     showCta,
     view: { mapEmbed: mapsEmbedUrl(c.mapsUrl, q), mapHref: mapsLink(c.mapsUrl, q) },
-    style: { css: styleCss(c.style, "body"), fonts: googleFontHrefs([c.style?.titleFont, c.style?.bodyFont]) },
+    style: { css: styleCss(c.style, "body", STYLE_SELECTORS), fonts: googleFontHrefs(styleFonts(c.style)) },
   };
 }
 

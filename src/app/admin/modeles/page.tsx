@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Brush, CheckCircle2, ExternalLink, EyeOff, Globe, Loader2, RotateCcw, Sparkles, Tags } from "lucide-react";
+import { Brush, CheckCircle2, ExternalLink, EyeOff, Globe, Loader2, Pencil, RotateCcw, Sparkles, Tags } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
   classificationOf,
   fetchModelDefaults,
+  modelNameOf,
   saveModelClassification,
+  saveModelName,
   type InvitationKind,
   publishModel,
   resetModelDefault,
@@ -17,7 +19,9 @@ import {
 } from "@/lib/modelDefaults";
 import { SITE_MODELS, type ModelContent, type SiteModel } from "@/components/admin/models/registry";
 import AdminModelEditor from "@/components/admin/models/AdminModelEditor";
+import { withoutMusic } from "@/lib/staticCard";
 import ClassifyModal from "@/components/admin/models/ClassifyModal";
+import RenameModelModal from "@/components/admin/models/RenameModelModal";
 import { defaultClassification } from "@/data/mock/invitations";
 import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 
@@ -47,6 +51,7 @@ export default function AdminModelsStudioPage() {
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [classifyingId, setClassifyingId] = useState<string | null>(null);
+  const [renamingModel, setRenamingModel] = useState<SiteModel | null>(null);
   const [kindFilter, setKindFilter] = useState<"Tous" | InvitationKind>("Tous");
   const [eventFilter, setEventFilter] = useState<string>("Tous");
 
@@ -80,6 +85,7 @@ export default function AdminModelsStudioPage() {
   const editing = SITE_MODELS.find((m) => m.id === editingId) ?? null;
   const classifying = SITE_MODELS.find((m) => m.id === classifyingId) ?? null;
   const classOf = (m: SiteModel) => classificationOf(rows[m.id], defaultClassification(m.id));
+  const currentName = (m: SiteModel) => modelNameOf(rows[m.id], m.name);
   const groups = KIND_GROUPS.filter((g) => kindFilter === "Tous" || kindFilter === g.id)
     .map((g) => ({
       ...g,
@@ -99,7 +105,7 @@ export default function AdminModelsStudioPage() {
         </p>
         <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight">Modèles d&apos;invitation du site</h1>
         <p className="text-gray-500 text-sm mt-1 max-w-2xl">
-          Ajustez textes, photos, polices, couleurs et musique dans le studio, enregistrez, puis publiez. La version publiée s&apos;affiche
+          Ajustez noms, textes, photos, polices, couleurs et musique dans le studio, enregistrez, puis publiez. La version publiée s&apos;affiche
           dans la démo du site et sert de point de départ aux clients. Un modèle retiré disparaît des galeries et de la création d&apos;événement.
         </p>
       </div>
@@ -158,15 +164,31 @@ export default function AdminModelsStudioPage() {
           {g.models.map((model) => {
             const row = rows[model.id];
             const cls = classOf(model);
+            const name = currentName(model);
             const st = status(row);
             const busy = busyId === model.id;
             return (
               <article key={model.id} className={`bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col ${row?.is_hidden ? "opacity-80" : ""}`}>
                 <div className="relative h-48 bg-gray-900">
-                  <Image src={model.image} alt={model.name} fill className={`object-cover ${row?.is_hidden ? "grayscale" : ""}`} sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                  <Image src={model.image} alt={name} fill className={`object-cover ${row?.is_hidden ? "grayscale" : ""}`} sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                   <span className={`absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${st.cls}`}>{st.label}</span>
-                  <h2 className="absolute bottom-3 left-4 right-4 font-serif text-2xl text-white">{model.name}</h2>
+                  <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="font-serif text-2xl text-white truncate drop-shadow-sm">{name}</h2>
+                      {name !== model.name && (
+                        <p className="text-[11px] text-white/75 italic truncate">Origine : {model.name}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setRenamingModel(model)}
+                      title="Modifier le nom de cette invitation"
+                      className="shrink-0 p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white transition-colors"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                  </div>
                 </div>
                 <div className="p-4 flex-1 flex flex-col gap-2.5">
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -176,9 +198,18 @@ export default function AdminModelsStudioPage() {
                         {EVENT_TYPE_ICONS[e as keyof typeof EVENT_TYPE_ICONS]} {e}
                       </span>
                     ))}
-                    <button type="button" onClick={() => setClassifyingId(model.id)} className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-[#8f6f33]">
-                      <Tags size={13} /> Classer
-                    </button>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRenamingModel(model)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                      >
+                        <Pencil size={12} /> Renommer
+                      </button>
+                      <button type="button" onClick={() => setClassifyingId(model.id)} className="inline-flex items-center gap-1 text-xs font-semibold text-[#8f6f33]">
+                        <Tags size={13} /> Classer
+                      </button>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500">
                     {row?.published_at ? `Publié le ${formatDate(row.published_at)}` : row ? `Modifié le ${formatDate(row.updated_at)}` : "Contenu d'origine du modèle"}
@@ -189,7 +220,7 @@ export default function AdminModelsStudioPage() {
                       setNotice(null);
                       setEditingId(model.id);
                     }}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#2b2118] text-[#f5eee1] px-4 py-3 text-sm font-semibold"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#2b2118] text-[#f5eee1] px-4 py-3 text-sm font-semibold hover:bg-black transition-all"
                   >
                     <Sparkles size={16} className="text-[#d9c08c]" /> Ouvrir dans le studio
                   </button>
@@ -197,8 +228,8 @@ export default function AdminModelsStudioPage() {
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={async () => act(model, async () => publishModel(supabase, model.id, workingContent(model), await userId()), `« ${model.name} » est publié sur le site.`)}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#b8924a]/50 bg-[#fbf7f0] px-3 py-2.5 text-xs font-semibold text-[#6f5527] disabled:opacity-50"
+                      onClick={async () => act(model, async () => publishModel(supabase, model.id, classOf(model).type === "carte" ? withoutMusic(workingContent(model)) : workingContent(model), await userId(), name), `« ${name} » est publié sur le site.`)}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#b8924a]/50 bg-[#fbf7f0] px-3 py-2.5 text-xs font-semibold text-[#6f5527] disabled:opacity-50 hover:bg-[#f5ede0] transition-colors"
                     >
                       {busy ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />} Publier
                     </button>
@@ -206,8 +237,8 @@ export default function AdminModelsStudioPage() {
                       <button
                         type="button"
                         disabled={busy}
-                        onClick={async () => act(model, async () => setModelHidden(supabase, model.id, false, await userId()), `« ${model.name} » est de retour sur le site.`)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700 disabled:opacity-50"
+                        onClick={async () => act(model, async () => setModelHidden(supabase, model.id, false, await userId()), `« ${name} » est de retour sur le site.`)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
                       >
                         <Globe size={14} /> Remettre en ligne
                       </button>
@@ -216,10 +247,10 @@ export default function AdminModelsStudioPage() {
                         type="button"
                         disabled={busy}
                         onClick={async () => {
-                          if (!confirm(`Retirer « ${model.name} » du site ? Il n'apparaîtra plus dans les galeries ni à la création d'événement. Les invitations déjà achetées restent intactes.`)) return;
-                          await act(model, async () => setModelHidden(supabase, model.id, true, await userId()), `« ${model.name} » est retiré du site.`);
+                          if (!confirm(`Retirer « ${name} » du site ? Il n'apparaîtra plus dans les galeries ni à la création d'événement. Les invitations déjà achetées restent intactes.`)) return;
+                          await act(model, async () => setModelHidden(supabase, model.id, true, await userId()), `« ${name} » est retiré du site.`);
                         }}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-xs font-semibold text-red-700 disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-xs font-semibold text-red-700 disabled:opacity-50 hover:bg-red-50 transition-colors"
                       >
                         <EyeOff size={14} /> Retirer du site
                       </button>
@@ -228,18 +259,18 @@ export default function AdminModelsStudioPage() {
                       href={model.liveUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <ExternalLink size={14} /> Voir sur le site
                     </a>
                     <button
                       type="button"
-                      disabled={!(row?.content || row?.draft_content) || busy}
+                      disabled={!(row?.content || row?.draft_content || row?.name) || busy}
                       onClick={async () => {
-                        if (!confirm(`Rétablir la version d'origine de « ${model.name} » ? Vos ajustements (publiés ou non) seront effacés.`)) return;
-                        await act(model, () => resetModelDefault(supabase, model.id), `« ${model.name} » a retrouvé sa version d'origine.`);
+                        if (!confirm(`Rétablir la version d'origine de « ${name} » ? Vos ajustements (nom, textes, photos) seront effacés.`)) return;
+                        await act(model, () => resetModelDefault(supabase, model.id, true), `« ${model.name} » a retrouvé son contenu et nom d'origine.`);
                       }}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700 disabled:opacity-40"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700 disabled:opacity-40 hover:bg-gray-50 transition-colors"
                     >
                       <RotateCcw size={14} /> Version d&apos;origine
                     </button>
@@ -254,15 +285,33 @@ export default function AdminModelsStudioPage() {
         </div>
       )}
 
+      {renamingModel && (
+        <RenameModelModal
+          modelName={currentName(renamingModel)}
+          originalName={renamingModel.name}
+          modelImage={renamingModel.image}
+          onClose={() => setRenamingModel(null)}
+          onSave={async (newName) => {
+            await saveModelName(supabase, renamingModel.id, newName, await userId());
+            setRenamingModel(null);
+            setNotice({
+              ok: true,
+              text: `L'invitation s'appelle désormais « ${newName} » sur l'ensemble du site.`,
+            });
+            await load();
+          }}
+        />
+      )}
+
       {classifying && (
         <ClassifyModal
-          modelName={classifying.name}
+          modelName={currentName(classifying)}
           initial={classOf(classifying)}
           onClose={() => setClassifyingId(null)}
           onSave={async (c) => {
             await saveModelClassification(supabase, classifying.id, c, await userId());
             setClassifyingId(null);
-            setNotice({ ok: true, text: `« ${classifying.name} » est classé : ${c.type === "carte" ? "carte" : "animée"} · ${c.events.join(", ")}.` });
+            setNotice({ ok: true, text: `« ${currentName(classifying)} » est classé : ${c.type === "carte" ? "carte" : "animée"} · ${c.events.join(", ")}.` });
             await load();
           }}
         />
@@ -271,14 +320,16 @@ export default function AdminModelsStudioPage() {
       {editing && (
         <AdminModelEditor
           model={editing}
+          modelName={currentName(editing)}
+          isStatic={classOf(editing).type === "carte"}
           initial={workingContent(editing)}
           onClose={() => setEditingId(null)}
-          onSave={async (content: ModelContent) => {
-            await saveModelDraft(supabase, editing.id, content, await userId());
+          onSave={async (content: ModelContent, newName?: string) => {
+            await saveModelDraft(supabase, editing.id, content, await userId(), newName);
             await load();
           }}
-          onPublish={async (content: ModelContent) => {
-            await publishModel(supabase, editing.id, content, await userId());
+          onPublish={async (content: ModelContent, newName?: string) => {
+            await publishModel(supabase, editing.id, classOf(editing).type === "carte" ? withoutMusic(content) : content, await userId(), newName);
             await load();
           }}
         />

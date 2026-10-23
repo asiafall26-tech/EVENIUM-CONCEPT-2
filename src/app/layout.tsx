@@ -35,6 +35,7 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "@/components/Providers";
+import UpdateWatcher from "@/components/UpdateWatcher";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           {children}
         </Providers>
+        <UpdateWatcher />
       </body>
     </html>
   );

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Play, Pause, Music, UploadCloud, Loader2, Sparkles, Check, Search } from "lucide-react";
 import { getActiveTracks } from "@/app/actions/musicLibrary";
-import { MUSIC_CATEGORIES, MUSIC_MOODS, type LibraryTrack } from "@/data/musicLibrary";
+import { MUSIC_CATEGORIES, trackEvents, trackFits, type LibraryTrack } from "@/data/musicLibrary";
 import { uploadMedia } from "@/utils/uploadMedia";
 import { formatTime } from "@/utils/audioSegment";
 
@@ -23,7 +23,6 @@ const trackTitle = (t: LibraryTrack) => (t.artist ? `${t.title} - ${t.artist}` :
 export function AudioPickerModal({ isOpen, onClose, onSelect, currentUrl, defaultCategory = "Mariage" }: AudioPickerModalProps) {
   const [tracks, setTracks] = useState<LibraryTrack[] | null>(null);
   const [category, setCategory] = useState<string>(defaultCategory);
-  const [mood, setMood] = useState<string>("");
   const [query, setQuery] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -56,15 +55,14 @@ export function AudioPickerModal({ isOpen, onClose, onSelect, currentUrl, defaul
     const q = query.trim().toLowerCase();
     return (tracks ?? []).filter(
       (t) =>
-        (category === "Toutes" || t.category === category || t.category === "Tous") &&
-        (!mood || t.mood === mood) &&
+        (category === "Toutes" || trackFits(t, category)) &&
         (!q || t.title.toLowerCase().includes(q) || (t.artist ?? "").toLowerCase().includes(q))
     );
-  }, [tracks, category, mood, query]);
+  }, [tracks, category, query]);
 
   // Categories that actually contain tracks (+ "Toutes")
   const categories = useMemo(() => {
-    const used = new Set((tracks ?? []).map((t) => t.category));
+    const used = new Set((tracks ?? []).flatMap((t) => trackEvents(t)));
     return ["Toutes", ...MUSIC_CATEGORIES.filter((c) => c !== "Tous" && (used.has(c) || c === defaultCategory))];
   }, [tracks, defaultCategory]);
 
@@ -110,8 +108,6 @@ export function AudioPickerModal({ isOpen, onClose, onSelect, currentUrl, defaul
     onSelect(t.audio_url, trackTitle(t), t.excerpt_start, t.excerpt_end);
     onClose();
   };
-
-  const moods = MUSIC_MOODS.filter((m) => (tracks ?? []).some((t) => t.mood === m));
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
@@ -173,21 +169,6 @@ export function AudioPickerModal({ isOpen, onClose, onSelect, currentUrl, defaul
                 {c}
               </button>
             ))}
-            {moods.length > 0 && (
-              <select
-                value={mood}
-                onChange={(e) => setMood(e.target.value)}
-                className="ml-auto px-3 py-1 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border-0 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
-                aria-label="Filtrer par ambiance"
-              >
-                <option value="">Toutes ambiances</option>
-                {moods.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
         </div>
 
@@ -237,7 +218,6 @@ export function AudioPickerModal({ isOpen, onClose, onSelect, currentUrl, defaul
                     </div>
                     <p className="text-xs text-gray-500 font-medium truncate mt-0.5">
                       {t.artist || "Evenium Audio"}
-                      {t.mood && <span className="text-gray-400"> · {t.mood}</span>}
                       {hasExcerpt && <span className="text-[#7a5e2b]"> · extrait conseillé</span>}
                     </p>
                   </div>

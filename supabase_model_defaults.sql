@@ -41,3 +41,9 @@ ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS published_
 -- --------------------------------------------------------------
 ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS invitation_type TEXT;   -- 'animée' ou 'carte' (vide = classement d'origine)
 ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS event_types TEXT[];      -- types d'événement proposés (vide = classement d'origine)
+
+-- --------------------------------------------------------------
+-- Nom personnalisé du modèle (studio des modèles v4)
+-- --------------------------------------------------------------
+ALTER TABLE public.invitation_model_defaults ADD COLUMN IF NOT EXISTS name TEXT;              -- nom public personnalisé affiché sur le site
+

@@ -59,7 +59,8 @@ import AnniversaireStudio from '@/components/invitations/anniversaire/Anniversai
 import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, withDefaults as anniversaireDefaults, type AnniversaireContent } from '@/components/invitations/anniversaire/content';
 import AnniversaireInvitation from '@/components/invitations/anniversaire/AnniversaireInvitation';
 import { InvitationCtaContext } from '@/components/invitations/InvitationCtaContext';
-import { classificationOf, fetchModelDefaults, hiddenModelIds, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
+import { forInvitationKind } from '@/lib/staticCard';
+import { classificationOf, fetchModelDefaults, hiddenModelIds, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -173,7 +174,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     () =>
       CATALOG_MODELS.map((m) => {
         const c = classificationOf(publishedModels[m.id], { type: 'animée', events: m.compatibleEvents });
-        return { ...m, compatibleEvents: c.events, category: c.events[0] ?? m.category, kind: c.type as InvitationKind };
+        return {
+          ...m,
+          name: modelNameOf(publishedModels[m.id], m.name),
+          compatibleEvents: c.events,
+          category: c.events[0] ?? m.category,
+          kind: c.type as InvitationKind,
+        };
       }),
     [publishedModels]
   );
@@ -322,6 +329,9 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   const currentModel = useMemo(() => {
     return classifiedModels.find(m => m.id === selectedModelId) || classifiedModels[0];
   }, [selectedModelId, classifiedModels]);
+
+  // Carte statique : pas de musique (à l'édition, à l'achat et après)
+  const isStaticCard = currentModel?.kind === 'carte';
 
   // Filtrage des modèles selon l'événement choisi
   const filteredModels = useMemo(() => {
@@ -594,12 +604,12 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         time: eventMetadata.time,
         location: eventMetadata.location,
         plan: selectedPlan,
-        format: 'Animée',
+        format: isStaticCard ? 'Carte' : 'Animée',
         status: 'active',
         invitation_model_id: selectedModelId,
         invitation_title: eventMetadata.welcomeTitle,
         invitation_message: eventMetadata.welcomeText,
-        invitation_content: eventMetadata.contentJson,
+        invitation_content: eventMetadata.contentJson ? forInvitationKind(eventMetadata.contentJson, isStaticCard) : eventMetadata.contentJson,
         // Détails saisis à l'achat (Premium / Gold) : nombre d'invités, date, lieu, budget…
         ...(requiresEventDetails(selectedPlan) ? eventDetailsToRow(detailsWithInvitation) : {})
       };
@@ -899,6 +909,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 onChange={setVeloursContent}
                 onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
                 onFinalize={() => setIsCheckoutModalOpen(true)}
+                isStatic={isStaticCard}
               />
             )}
             {selectedModelId === SCEAU_MODEL_ID && (
@@ -907,6 +918,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 onChange={setSceauContent}
                 onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
                 onFinalize={() => setIsCheckoutModalOpen(true)}
+                isStatic={isStaticCard}
               />
             )}
             {selectedModelId === IVOIRE_MODEL_ID && (
@@ -915,6 +927,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 onChange={setIvoireContent}
                 onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
                 onFinalize={() => setIsCheckoutModalOpen(true)}
+                isStatic={isStaticCard}
               />
             )}
             {selectedModelId === ROSE_OR_MODEL_ID && (
@@ -923,6 +936,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 onChange={setRoseOrContent}
                 onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
                 onFinalize={() => setIsCheckoutModalOpen(true)}
+                isStatic={isStaticCard}
               />
             )}
             {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
@@ -931,6 +945,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 onChange={setAnniversaireContent}
                 onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
                 onFinalize={() => setIsCheckoutModalOpen(true)}
+                isStatic={isStaticCard}
               />
             )}
           </div>
@@ -961,7 +976,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
           <div className="w-full relative min-h-dvh">
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursInvitation
-                content={veloursContent}
+                content={forInvitationKind(veloursContent, isStaticCard)}
                 preview={true}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
@@ -972,7 +987,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
             )}
             {selectedModelId === SCEAU_MODEL_ID && (
               <SceauInvitation
-                content={sceauContent}
+                content={forInvitationKind(sceauContent, isStaticCard)}
                 preview={true}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
@@ -983,7 +998,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
             )}
             {selectedModelId === IVOIRE_MODEL_ID && (
               <IvoireInvitation
-                content={ivoireContent}
+                content={forInvitationKind(ivoireContent, isStaticCard)}
                 preview={true}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
@@ -994,7 +1009,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
             )}
             {selectedModelId === ROSE_OR_MODEL_ID && (
               <RoseOrInvitation
-                content={roseOrContent}
+                content={forInvitationKind(roseOrContent, isStaticCard)}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
                   setIsPreviewFullScreenOpen(false);
@@ -1004,7 +1019,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
             )}
             {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
               <AnniversaireInvitation
-                content={anniversaireContent}
+                content={forInvitationKind(anniversaireContent, isStaticCard)}
                 preview
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
@@ -1041,11 +1056,11 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   setDemoModelId(null);
                   window.scrollTo({ top: 0 });
                 };
-                if (demoModelId === VELOURS_MODEL_ID) return <VeloursInvitation content={veloursDefaults(publishedContent(VELOURS_MODEL_ID) ?? DEFAULT_VELOURS)} preview onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === SCEAU_MODEL_ID) return <SceauInvitation content={sceauDefaults(publishedContent(SCEAU_MODEL_ID) ?? DEFAULT_SCEAU)} preview onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === IVOIRE_MODEL_ID) return <IvoireInvitation content={ivoireDefaults(publishedContent(IVOIRE_MODEL_ID) ?? DEFAULT_IVOIRE)} preview onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === ROSE_OR_MODEL_ID) return <RoseOrInvitation content={roseOrDefaults(publishedContent(ROSE_OR_MODEL_ID) ?? DEFAULT_ROSE_OR)} onBackToEdit={back} onFinalize={choose} />;
-                if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={anniversaireDefaults(publishedContent(ANNIVERSAIRE_MODEL_ID) ?? DEFAULT_ANNIVERSAIRE)} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === VELOURS_MODEL_ID) return <VeloursInvitation content={forInvitationKind(veloursDefaults(publishedContent(VELOURS_MODEL_ID) ?? DEFAULT_VELOURS), classifiedModels.find((m) => m.id === VELOURS_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === SCEAU_MODEL_ID) return <SceauInvitation content={forInvitationKind(sceauDefaults(publishedContent(SCEAU_MODEL_ID) ?? DEFAULT_SCEAU), classifiedModels.find((m) => m.id === SCEAU_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === IVOIRE_MODEL_ID) return <IvoireInvitation content={forInvitationKind(ivoireDefaults(publishedContent(IVOIRE_MODEL_ID) ?? DEFAULT_IVOIRE), classifiedModels.find((m) => m.id === IVOIRE_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === ROSE_OR_MODEL_ID) return <RoseOrInvitation content={forInvitationKind(roseOrDefaults(publishedContent(ROSE_OR_MODEL_ID) ?? DEFAULT_ROSE_OR), classifiedModels.find((m) => m.id === ROSE_OR_MODEL_ID)?.kind === 'carte')} onBackToEdit={back} onFinalize={choose} />;
+                if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={forInvitationKind(anniversaireDefaults(publishedContent(ANNIVERSAIRE_MODEL_ID) ?? DEFAULT_ANNIVERSAIRE), classifiedModels.find((m) => m.id === ANNIVERSAIRE_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
                 return null;
               })()}
             </div>

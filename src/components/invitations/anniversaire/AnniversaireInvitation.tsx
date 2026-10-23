@@ -21,7 +21,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import InvitationEndCta from "../InvitationEndCta";
-import InvitationStyleTag from "../InvitationStyleTag";
+import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import { cls } from "@/lib/invitationStyle";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import { anniversaireFontVars } from "./fonts";
 import s from "./anniversaire.module.css";
@@ -203,6 +204,16 @@ function RsvpSheet({ c, onRsvp, onClose }: { c: AnniversaireContent; onRsvp?: Pr
   );
 }
 
+/** Textes de ce modèle par catégorie, pour les réglages de style du studio des modèles */
+const STYLE_SELECTORS = modelSelectors({
+  names: cls(s.celebrant, s.coverTitle),
+  titles: cls(s.cardTitle, s.programmeTitle),
+  labels: cls(s.kicker, s.infoSmall, s.deadline, s.coverSubtitle, s.countdown),
+  numbers: cls(s.infoBig),
+  body: cls(s.message, s.closing, s.sheetText),
+  buttons: cls(s.submit, s.openBtn, s.actionPrimary, s.action),
+});
+
 export default function AnniversaireInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
   const c = useMemo(() => withDefaults(content ?? DEFAULT_ANNIVERSAIRE), [content]);
   const dates = formatDates(c);
@@ -239,7 +250,7 @@ export default function AnniversaireInvitation({ content, onRsvp, preview, onBac
 
   return (
     <div className={`${s.root} ${anniversaireFontVars}`} data-inv-style="">
-      <InvitationStyleTag style={c.style} />
+      <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
       {music.state !== "none" && (
         <button type="button" className={s.music} onClick={music.toggle} aria-label={music.state === "on" ? "Couper la musique" : "Activer la musique"}>
           {music.state === "on" ? <Volume2 size={18} /> : <VolumeX size={18} />}
