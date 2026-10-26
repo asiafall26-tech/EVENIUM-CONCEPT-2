@@ -15,7 +15,7 @@ export const CUSTOM_MODELS_TABLE = "custom_invitation_models";
 export const CUSTOM_PREFIX = "custom:";
 export const CUSTOM_STORAGE_DIR = "custom-models";
 
-export type CustomFieldType = "text" | "image" | "audio";
+export type CustomFieldType = "text" | "image" | "audio" | "video" | "link" | "color";
 
 export interface CustomField {
   id: string;
@@ -159,3 +159,32 @@ export function styleMessage(values: CustomValues) {
   const style = parseStyle(values);
   return { css: styleCss(style, "body", IMPORTED_SELECTORS), fonts: googleFontHrefs(styleFonts(style)) };
 }
+
+/* ---------- Rubriques : suppression et ajout par l'organisateur ---------- */
+
+/** Rubriques de la page supprimées (numéros de section) */
+export const HIDDEN_KEY = "__hidden";
+/** Rubriques ajoutées */
+export const RUBRIQUES_KEY = "__rubriques";
+
+export interface AddedRubrique {
+  id: string;
+  title: string;
+  text: string;
+  image: string;
+  /** numéro de la section après laquelle elle s'affiche (vide = à la fin) */
+  after: string;
+}
+
+const readJson = <T,>(v: string | undefined, fallback: T): T => {
+  try {
+    const x = JSON.parse(v || "null");
+    return x ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+export const hiddenSections = (values: CustomValues): string[] => readJson<unknown[]>(values[HIDDEN_KEY], []).map(String);
+export const addedRubriques = (values: CustomValues): AddedRubrique[] =>
+  readJson<AddedRubrique[]>(values[RUBRIQUES_KEY], []).filter((r) => r && typeof r === "object" && r.id);

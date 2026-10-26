@@ -57,22 +57,20 @@ export default function CustomGuestInvitation({ modelId, values, isStatic, onRsv
   };
 
   return (
-    <div className="relative min-h-dvh w-full bg-[#0d0a08] flex items-center justify-center p-0 sm:py-6 overflow-hidden">
-      {/* Halo lumineux d'ambiance luxueuse sur ordinateur */}
-      <div aria-hidden className="hidden sm:block absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full bg-[#b8924a]/12 blur-[140px] pointer-events-none" />
-      <div aria-hidden className="hidden sm:block absolute -bottom-40 right-1/4 w-[500px] h-[500px] rounded-full bg-[#6b1428]/25 blur-[140px] pointer-events-none" />
-
-      {/* Châssis smartphone vertical sur ordinateur, plein écran sur mobile */}
-      <div className="relative w-full sm:max-w-[460px] h-dvh sm:h-[92vh] sm:max-h-[920px] bg-white sm:rounded-[42px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_7px_#1c1714] overflow-hidden flex flex-col">
-        {/* Dynamic Island / encoche smartphone sur ordinateur */}
-        <div className="hidden sm:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/90 rounded-full z-30 pointer-events-none items-center justify-end pr-2.5 gap-1.5 shadow-md ring-1 ring-white/10">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#0a0a0c] ring-1 ring-white/15 flex items-center justify-center">
-            <span className="w-1 h-1 rounded-full bg-[#1c1c30]" />
-          </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-[#0d0d14]" />
-        </div>
-
-        <CustomInvitationFrame model={model} values={shown} hideCta className="w-full h-full border-0 block" />
+    <div className="relative h-dvh w-full bg-white overflow-hidden">
+      {/* Plein écran, comme les autres modèles */}
+      <div className="relative w-full h-dvh">
+        <CustomInvitationFrame
+          model={model}
+          values={shown}
+          hideCta
+          className="w-full h-full border-0 block"
+          // Formulaire de réponse du modèle lui-même : même enregistrement que le bouton ci-dessous
+          onRsvp={async (r) => {
+            await onRsvp({ name: r.name, phone: "", attending: r.attending, guests: r.attending ? Math.max(1, r.guests) : 0, message: r.message });
+            setDone(true);
+          }}
+        />
 
         <button
           type="button"

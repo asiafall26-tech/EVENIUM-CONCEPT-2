@@ -27,19 +27,29 @@ interface Props {
   onBackToEdit?: () => void;
   hideCta?: boolean;
   className?: string;
+  /** Réponse envoyée par le formulaire du modèle lui-même (message ev:rsvp) : enregistrée par le site */
+  onRsvp?: (rsvp: ModelRsvp) => Promise<void>;
+}
+
+/** Réponse d'un invité saisie dans le formulaire du modèle importé */
+export interface ModelRsvp {
+  name: string;
+  attending: boolean;
+  guests: number;
+  message: string;
 }
 
 /** Modèle importé affiché dans un cadre, alimenté par messages (public/ev-runtime.js). */
-export default function CustomInvitationFrame({ model, values, pick, onSelect, focusId, onFinalize, onBackToEdit, hideCta, className }: Props) {
+export default function CustomInvitationFrame({ model, values, pick, onSelect, focusId, onFinalize, onBackToEdit, hideCta, className, onRsvp }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const readyRef = useRef(false);
   const ctx = useInvitationCta();
   const custom = ctaText(ctx.variant);
   const cta = hideCta || (!onFinalize && !onBackToEdit) ? null : custom ?? CHECKOUT_CTA;
 
-  const latest = useRef({ values, pick, cta, onSelect, onFinalize, onBackToEdit });
+  const latest = useRef({ values, pick, cta, onSelect, onFinalize, onBackToEdit, onRsvp });
   useEffect(() => {
-    latest.current = { values, pick, cta, onSelect, onFinalize, onBackToEdit };
+    latest.current = { values, pick, cta, onSelect, onFinalize, onBackToEdit, onRsvp };
   });
 
   const post = (msg: object) => frameRef.current?.contentWindow?.postMessage(msg, window.location.origin);
@@ -56,6 +66,21 @@ export default function CustomInvitationFrame({ model, values, pick, onSelect, f
       } else if (m.type === "ev:select") latest.current.onSelect?.(m.id);
       else if (m.type === "evenium:open-checkout") latest.current.onFinalize?.();
       else if (m.type === "evenium:close-preview") latest.current.onBackToEdit?.();
+      else if (m.type === "ev:rsvp" && m.rsvp) {
+        // Aperçus (studio, création) : rien n'est enregistré, le modèle affiche simplement son remerciement
+        const save = latest.current.onRsvp;
+        const r = m.rsvp;
+        const rsvp: ModelRsvp = {
+          name: String(r.name ?? "").slice(0, 200),
+          attending: !!r.attending,
+          guests: Math.max(0, Math.min(50, Number(r.guests) || 0)),
+          message: String(r.message ?? "").slice(0, 2000),
+        };
+        (save && rsvp.name ? save(rsvp) : Promise.resolve()).then(
+          () => post({ type: "ev:rsvp-result", id: m.id, ok: true }),
+          () => post({ type: "ev:rsvp-result", id: m.id, ok: false })
+        );
+      }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);

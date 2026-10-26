@@ -157,7 +157,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
                     </button>
                   </div>
                   <p className="text-xs text-gray-500">
-                    {m.fields.length} élément(s) modifiable(s) · {m.fields.filter((f) => f.clientEditable).length} ouvert(s) au client
+                    {m.fields.length} élément(s) modifiable(s) par vous et par le client
                   </p>
                   <button
                     type="button"

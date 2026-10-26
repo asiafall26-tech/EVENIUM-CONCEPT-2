@@ -1,17 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ExternalLink, Eye, Image as ImageIcon, Layers, Lock, Music, Type, Unlock, LayoutList } from "lucide-react";
+import { LayoutList, Loader2, Music, Upload } from "lucide-react";
+import StudioShell from "../StudioShell";
 import { AudioField, PhotoField, inputCls } from "@/components/invitations/velours/VeloursStudio";
-import { modelAssetUrl } from "@/lib/customModelImport";
-import { MUSIC, customModelUrl, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
+import { modelAssetUrl, uploadModelFiles } from "@/lib/customModelImport";
+import {
+  HIDDEN_KEY,
+  MUSIC,
+  RUBRIQUES_KEY,
+  addedRubriques,
+  customModelUrl,
+  hiddenSections,
+  type CustomField,
+  type CustomModelRow,
+  type CustomValues,
+} from "@/lib/customModels";
 
 interface Props {
   model: Pick<CustomModelRow, "slug" | "entry" | "name">;
   fields: CustomField[];
   values: CustomValues;
   onChange: (values: CustomValues) => void;
-  /** Admin : renommer les éléments et choisir ce que le client peut modifier */
+  /** Admin : renommer les éléments */
   admin?: boolean;
   onFieldsChange?: (fields: CustomField[]) => void;
   /** Carte statique : pas de musique */
@@ -20,16 +31,6 @@ interface Props {
   musicMenu?: boolean;
   onViewFullScreen?: () => void;
 }
-
-interface Menu {
-  id: string;
-  label: string;
-  icon: typeof Type;
-  fields: CustomField[];
-  music?: boolean;
-}
-
-const ICON = { text: Type, image: ImageIcon, audio: Music };
 
 /** Bloc musique : musique d'ambiance (banque de sons) + musiques présentes dans le modèle */
 export function CustomMusicFields({
@@ -70,62 +71,82 @@ export function CustomMusicFields({
   );
 }
 
-/** Studio d'un modèle importé, présenté comme les studios des modèles Evenium : menus par section, étapes numérotées. */
-export default function CustomSectionsEditor({ model, fields, values, onChange, admin, onFieldsChange, isStatic, musicMenu = true, onViewFullScreen }: Props) {
-  const editable = useMemo(() => fields.filter((f) => (admin || f.clientEditable) && f.type !== "audio"), [fields, admin]);
-  const audios = useMemo(() => fields.filter((f) => (admin || f.clientEditable) && f.type === "audio"), [fields, admin]);
-
-  const menus = useMemo<Menu[]>(() => {
-    const out: Menu[] = [];
-    const hasSections = editable.some((f) => f.section);
-    if (hasSections) {
-      const order = [...new Set(editable.map((f) => f.section ?? 0))];
-      for (const sec of order) {
-        const list = editable.filter((f) => (f.section ?? 0) === sec);
-        out.push({ id: `s${sec}`, label: list[0]?.sectionTitle || `Section ${sec}`, icon: LayoutList, fields: list });
-      }
-    } else {
-      for (const type of ["text", "image"] as const) {
-        const list = editable.filter((f) => f.type === type);
-        if (list.length) out.push({ id: type, label: type === "text" ? "Textes" : "Images", icon: ICON[type], fields: list });
-      }
+/** Vidéo du modèle : lien d'une vidéo MP4 ; l'admin peut aussi en importer une dans le dossier du modèle. */
+function VideoField({ slug, admin, value, preview, onChange }: { slug: string; admin: boolean; value: string; preview: string; onChange: (v: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const upload = async (file?: File) => {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const path = `media/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "-")}`;
+      await uploadModelFiles(slug, [{ path, blob: file }]);
+      onChange(path);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Import impossible.");
+    } finally {
+      setBusy(false);
     }
-    if (musicMenu && !isStatic) out.push({ id: "music", label: "Musique", icon: Music, fields: audios, music: true });
-    return out;
-  }, [editable, audios, musicMenu, isStatic]);
+  };
+  return (
+    <div className="space-y-2">
+      {preview && <video src={preview} muted playsInline controls className="w-full max-h-56 rounded-xl bg-black object-contain" />}
+      <input
+        className={inputCls}
+        inputMode="url"
+        value={value}
+        placeholder="Lien d'une vidéo MP4 (https://…)"
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {admin && (
+        <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dashed border-[#b8924a]/60 text-xs font-semibold text-[#8f6f33] cursor-pointer">
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} {busy ? "Import en cours…" : "Importer une vidéo (MP4)"}
+          <input type="file" accept="video/mp4,video/webm,.mp4,.webm" className="hidden" disabled={busy} onChange={(e) => upload(e.target.files?.[0])} />
+        </label>
+      )}
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
 
-  const [active, setActive] = useState<string>(menus[0]?.id ?? "all");
-  const index = menus.findIndex((m) => m.id === active);
+/**
+ * Studio d'un modèle importé, dans le même cadre que les studios des modèles Evenium (StudioShell) :
+ * mêmes menus, mêmes étapes, même gestion des rubriques (supprimer, rétablir, ajouter).
+ */
+export default function CustomSectionsEditor({ model, fields, values, onChange, admin, onFieldsChange, isStatic, musicMenu = true, onViewFullScreen }: Props) {
+  const editable = useMemo(() => fields.filter((f) => f.type !== "audio"), [fields]);
+  const audios = useMemo(() => fields.filter((f) => f.type === "audio"), [fields]);
+  const hidden = hiddenSections(values);
+  const added = addedRubriques(values);
+
+  // Une rubrique de la page = un menu du studio
+  const sectionMenus = useMemo(() => {
+    const order = [...new Set(editable.map((f) => String(f.section ?? 1)))];
+    return order.map((sec) => {
+      const list = editable.filter((f) => String(f.section ?? 1) === sec);
+      return { section: sec, label: list[0]?.sectionTitle || `Rubrique ${sec}`, fields: list };
+    });
+  }, [editable]);
+  const showMusic = musicMenu && !isStatic;
+
+  const [active, setActive] = useState<string>(sectionMenus[0] ? `s${sectionMenus[0].section}` : "all");
   const set = (id: string, v: string) => onChange({ ...values, [id]: v });
   const patchField = (id: string, patch: Partial<CustomField>) => onFieldsChange?.(fields.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   const asset = (src: string) => (src ? modelAssetUrl(model.slug, model.entry, src) : src);
 
   const renderField = (f: CustomField) => (
-    <div key={f.id} className={`space-y-1.5 ${f.type !== "text" || f.multiline ? "xl:col-span-2" : ""} ${admin && !f.clientEditable ? "opacity-70" : ""}`}>
-      <div className="flex items-center gap-2">
-        {admin ? (
-          <input
-            value={f.label}
-            onChange={(e) => patchField(f.id, { label: e.target.value })}
-            aria-label="Nom de l'élément"
-            className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-gray-700 border-b border-dashed border-gray-300 focus:border-[#b8924a] outline-none py-0.5"
-          />
-        ) : (
-          <span className="flex-1 block text-xs font-semibold text-gray-700">{f.label}</span>
-        )}
-        {admin && (
-          <button
-            type="button"
-            onClick={() => patchField(f.id, { clientEditable: !f.clientEditable })}
-            className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold border ${
-              f.clientEditable ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-gray-200 bg-gray-50 text-gray-600"
-            }`}
-            title="Le client pourra-t-il modifier cet élément ?"
-          >
-            {f.clientEditable ? <Unlock size={11} /> : <Lock size={11} />} {f.clientEditable ? "Modifiable par le client" : "Verrouillé"}
-          </button>
-        )}
-      </div>
+    <div key={f.id} className={`space-y-1.5 ${(f.type !== "text" && f.type !== "link" && f.type !== "color") || f.multiline ? "2xl:col-span-2" : ""}`}>
+      {admin ? (
+        <input
+          value={f.label}
+          onChange={(e) => patchField(f.id, { label: e.target.value })}
+          aria-label="Nom de l'élément"
+          className="w-full bg-transparent text-xs font-semibold text-gray-700 border-b border-dashed border-gray-300 focus:border-[#b8924a] outline-none py-0.5"
+        />
+      ) : (
+        <span className="block text-xs font-semibold text-gray-700">{f.label}</span>
+      )}
       {f.type === "text" &&
         (f.multiline ? (
           <textarea rows={3} className={`${inputCls} resize-none`} value={values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
@@ -133,6 +154,30 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
           <input className={inputCls} value={values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
         ))}
       {f.type === "image" && <PhotoField label="" value={asset(values[f.id] ?? "")} onChange={(v) => set(f.id, v)} />}
+      {f.type === "link" && (
+        <input
+          className={inputCls}
+          inputMode="url"
+          value={values[f.id] ?? ""}
+          placeholder="https://maps.google.com/?q=… · tel:+221… · https://wa.me/221…"
+          onChange={(e) => set(f.id, e.target.value)}
+        />
+      )}
+      {f.type === "color" && (
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={/^#[0-9a-f]{6}$/i.test(values[f.id] ?? "") ? values[f.id] : "#c6a15b"}
+            onChange={(e) => set(f.id, e.target.value)}
+            className="w-12 h-12 rounded-xl border border-gray-200 bg-white p-1 cursor-pointer"
+            aria-label={f.label}
+          />
+          <input className={`${inputCls} font-mono`} value={values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
+        </div>
+      )}
+      {f.type === "video" && (
+        <VideoField slug={model.slug} admin={!!admin} value={values[f.id] ?? ""} preview={asset(values[f.id] ?? "")} onChange={(v) => set(f.id, v)} />
+      )}
       {values[f.id] !== f.original && (
         <button type="button" onClick={() => set(f.id, f.original)} className="text-[11px] font-semibold text-[#8f6f33]">
           Remettre la valeur d&apos;origine
@@ -141,128 +186,59 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
     </div>
   );
 
-  return (
-    <div className="flex flex-col h-full min-h-0 bg-[#faf7f5]">
-      {/* Barre du modèle */}
-      <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-200/70 shrink-0 gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-semibold shrink-0 max-w-[50%] truncate">{model.name}</span>
-          <p className="text-xs text-gray-500 truncate hidden sm:block">Renseignez et personnalisez les informations de votre événement ci-dessous.</p>
-        </div>
-        <a
-          href={customModelUrl(model)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold shadow-xs shrink-0"
-        >
-          <ExternalLink size={13} /> Démo modèle
-        </a>
+  const header = (n: number, label: string, desc: string) => (
+    <div className="border-b border-gray-100 pb-3">
+      <div className="flex items-center gap-2">
+        <span className="w-7 h-7 shrink-0 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">{n}</span>
+        <h4 className="font-serif text-lg font-bold text-gray-900">{label}</h4>
       </div>
+      <p className="text-xs text-gray-500 mt-1">{desc}</p>
+    </div>
+  );
+  const show = (id: string) => active === id || active === "all";
 
-      <div className="w-full flex-1 min-h-0 overflow-clip lg:overflow-hidden flex flex-col">
-        <div className="w-full flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-clip lg:overflow-hidden">
-          {/* Menus */}
-          <div className="border-b border-gray-100 bg-gray-50 p-2 shrink-0 sticky top-[var(--studio-sticky-top,0px)] z-20 lg:static">
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-              {menus.map((m) => {
-                const on = active === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setActive(m.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 max-w-[14rem] ${
-                      on ? "bg-[#7a1a2e] text-white shadow-sm" : "text-gray-700 hover:bg-gray-200/60"
-                    }`}
-                  >
-                    <m.icon size={14} className={on ? "text-white" : "text-[#7a1a2e]"} />
-                    <span className="truncate">{m.label}</span>
-                    {!m.music && (
-                      <span className={`text-[10px] px-1.5 rounded-full font-bold ${on ? "bg-white/20 text-white" : "bg-gray-200 text-gray-700"}`}>{m.fields.length}</span>
-                    )}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => setActive("all")}
-                className={`flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 ml-auto ${
-                  active === "all" ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:bg-gray-200/60"
-                }`}
-              >
-                <Layers size={13} /> Tous les menus
-              </button>
-            </div>
-          </div>
-
-          {/* Contenu du menu */}
-          <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
-            {menus.length === 0 && <p className="text-sm text-gray-500 text-center py-10">Aucun élément modifiable dans ce modèle.</p>}
-            {menus.map((m, i) =>
-              active === m.id || active === "all" ? (
-                <section key={m.id} className="space-y-4">
-                  <div className="border-b border-gray-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">{i + 1}</span>
-                      <h4 className="font-serif text-lg font-bold text-gray-900">{m.label}</h4>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {m.music
-                        ? "Musique jouée à l'ouverture de l'invitation : banque de sons Evenium ou votre propre fichier."
-                        : `${m.fields.length} élément(s) à personnaliser dans cette partie de l'invitation.`}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70">
-                    {m.music ? (
-                      <CustomMusicFields model={model} fields={m.fields} values={values} onChange={onChange} />
-                    ) : (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">{m.fields.map(renderField)}</div>
-                    )}
-                  </div>
-                </section>
-              ) : null
-            )}
-          </div>
-
-          {/* Étapes */}
-          {active !== "all" && menus.length > 0 && (
-            <div className="px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-2 shrink-0 sticky bottom-0 z-20 lg:static">
-              <button
-                type="button"
-                onClick={() => index > 0 && setActive(menus[index - 1].id)}
-                disabled={index <= 0}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-200/60 disabled:opacity-30"
-              >
-                <ChevronLeft size={14} /> Précédent
-              </button>
-              <span className="text-xs font-medium text-gray-500">
-                Menu {index + 1} sur {menus.length}
-              </span>
-              {index >= menus.length - 1 ? (
-                onViewFullScreen ? (
-                  <button
-                    type="button"
-                    onClick={onViewFullScreen}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-xs shadow-md border border-[#b8924a]/50"
-                  >
-                    <Eye size={14} /> Voir le résultat en plein écran
-                  </button>
-                ) : (
-                  <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-lg">Toutes les étapes complétées</span>
-                )
+  return (
+    <StudioShell
+      title={model.name}
+      demoUrl={customModelUrl(model)}
+      menus={[
+        ...sectionMenus.map((m) => ({ id: `s${m.section}`, label: m.label, icon: LayoutList, badge: m.fields.length, muted: hidden.includes(m.section) })),
+        ...(showMusic ? [{ id: "music", label: "Musique", icon: Music }] : []),
+      ]}
+      active={active}
+      onActive={setActive}
+      onViewFullScreen={onViewFullScreen}
+      sections={{
+        defs: sectionMenus.map((m) => ({ key: m.section, label: m.label })),
+        state: { hidden, rubriques: added },
+        onChange: (st) => onChange({ ...values, [HIDDEN_KEY]: JSON.stringify(st.hidden), [RUBRIQUES_KEY]: JSON.stringify(st.rubriques) }),
+      }}
+    >
+      {sectionMenus.length === 0 && !showMusic && <p className="text-sm text-gray-500 text-center py-10">Aucun élément modifiable dans ce modèle.</p>}
+      {sectionMenus.map((m, i) =>
+        show(`s${m.section}`) ? (
+          <section key={m.section} className="space-y-4">
+            {header(i + 1, m.label, `${m.fields.length} élément(s) à personnaliser dans cette rubrique.`)}
+            <div className="p-4 sm:p-6 bg-gray-50/70 rounded-2xl border border-gray-200/70">
+              {hidden.includes(m.section) ? (
+                <p className="text-sm text-gray-500">
+                  Cette rubrique est supprimée de l&apos;invitation. Vous pouvez la rétablir dans « Rubriques de l&apos;invitation ».
+                </p>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setActive(menus[index + 1].id)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#7a1a2e] text-white text-xs font-semibold shadow-xs"
-                >
-                  Suivant <ChevronRight size={14} />
-                </button>
+                <div className="grid grid-cols-1 2xl:grid-cols-2 gap-5">{m.fields.map(renderField)}</div>
               )}
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </section>
+        ) : null
+      )}
+      {showMusic && show("music") && (
+        <section className="space-y-4">
+          {header(sectionMenus.length + 1, "Musique", "Musique jouée à l'ouverture de l'invitation : banque de sons Evenium ou votre propre fichier.")}
+          <div className="p-4 sm:p-6 bg-gray-50/70 rounded-2xl border border-gray-200/70">
+            <CustomMusicFields model={model} fields={audios} values={values} onChange={onChange} />
+          </div>
+        </section>
+      )}
+    </StudioShell>
   );
 }

@@ -6,19 +6,11 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Reveal from "@/components/landing/Reveal";
 import SectionHeading from "@/components/landing/SectionHeading";
-import {
-  defaultClassification,
-  mockInvitationModels,
-  showcaseModelIds,
-  type InvitationModel,
-} from "@/data/mock/invitations";
+import type { InvitationModel } from "@/data/mock/invitations";
 import { createClient } from "@/utils/supabase/client";
-import {
-  classificationOf,
-  fetchModelDefaults,
-  hiddenModelIds,
-  modelNameOf,
-} from "@/lib/modelDefaults";
+import { fetchModelDefaults } from "@/lib/modelDefaults";
+import { fetchCustomModels } from "@/lib/customModels";
+import { buildShowcase } from "@/lib/showcase";
 
 interface HomeShowcaseProps {
   initialModels: InvitationModel[];
@@ -32,27 +24,9 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
 
     const reload = async () => {
       try {
-        const rows = await fetchModelDefaults(supabase);
-        const hidden = hiddenModelIds(rows);
-        const visible = mockInvitationModels
-          .filter((m) => !hidden.has(m.id))
-          .map((m) => {
-            const c = classificationOf(rows[m.id], defaultClassification(m.id));
-            return {
-              ...m,
-              name: modelNameOf(rows[m.id], m.name),
-              type: c.type,
-              category: (c.events[0] as any) ?? m.category,
-            };
-          });
-
-        const ordered = [
-          ...showcaseModelIds
-            .map((id) => visible.find((m) => m.id === id))
-            .filter((m): m is InvitationModel => m !== undefined),
-          ...visible.filter((m) => !showcaseModelIds.includes(m.id)),
-        ].slice(0, 4);
-
+        // Modèles Evenium (nom, couverture, retrait) et modèles importés publiés
+        const [rows, customs] = await Promise.all([fetchModelDefaults(supabase), fetchCustomModels(supabase, { publishedOnly: true })]);
+        const ordered = buildShowcase(rows, customs);
         setShowcaseModels(ordered);
       } catch (err) {
         console.error("Erreur lors de l'actualisation des modèles vitrine :", err);

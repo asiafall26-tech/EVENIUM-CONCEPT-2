@@ -99,11 +99,15 @@ export function detectFields(html: string): { html: string; fields: CustomField[
     return sectionIndex.get(key)!;
   };
 
-  const add = (el: Element, f: Omit<CustomField, "id" | "clientEditable">, domType: string) => {
-    if (fields.length >= 300) return;
+  /**
+   * Un élément peut porter plusieurs réglages : son texte (data-ev-field), son lien (data-ev-href),
+   * son image de fond (data-ev-bg) et sa couleur (data-ev-color), chacun avec son propre identifiant.
+   */
+  const add = (el: Element, f: Omit<CustomField, "id" | "clientEditable">, domType: string, attr = "data-ev-field") => {
+    if (fields.length >= 400) return;
     const id = `f${++n}`;
-    el.setAttribute("data-ev-field", id);
-    el.setAttribute("data-ev-type", domType);
+    el.setAttribute(attr, id);
+    if (attr === "data-ev-field") el.setAttribute("data-ev-type", domType);
     const section = sectionOf(el);
     if (f.type === "text" && /^H[1-3]$/.test(el.tagName.toUpperCase()) && !sectionHeading.has(section)) sectionHeading.set(section, f.original);
     fields.push({ id, clientEditable: true, section, ...f });
@@ -121,6 +125,13 @@ export function detectFields(html: string): { html: string; fields: CustomField[
       }
       return;
     }
+    if (tag === "VIDEO") {
+      const own = el.getAttribute("src");
+      const target = own ? el : el.querySelector("source[src]");
+      const src = target?.getAttribute("src");
+      if (target && src) add(target, { type: "video", label: `Vidéo ${fields.filter((f) => f.type === "video").length + 1}`, original: src }, "video");
+      return;
+    }
     if (tag === "AUDIO") {
       const own = el.getAttribute("src");
       const target = own ? el : el.querySelector("source[src]");
@@ -129,10 +140,34 @@ export function detectFields(html: string): { html: string; fields: CustomField[
       return;
     }
 
-    const bg = (el.getAttribute("style") ?? "").match(/background(?:-image)?\s*:[^;]*url\(\s*['"]?([^'")]+)['"]?\s*\)/i);
+    const style = el.getAttribute("style") ?? "";
+    const bg = style.match(/background(?:-image)?\s*:[^;]*url\(\s*['"]?([^'")]+)['"]?\s*\)/i);
     if (bg && !bg[1].startsWith("data:")) {
       cover ??= bg[1];
-      add(el, { type: "image", label: `Image de fond ${fields.filter((f) => f.type === "image").length + 1}`, original: bg[1] }, "bg");
+      add(el, { type: "image", label: `Image de fond ${fields.filter((f) => f.type === "image").length + 1}`, original: bg[1] }, "bg", "data-ev-bg");
+    }
+    // Couleurs posées dans la page (ex. pastilles du code vestimentaire)
+    const color = style.match(/background(?:-color)?\s*:\s*(#[0-9a-f]{3,8})\b/i);
+    if (color) {
+      const near = el.parentElement ? readText(el.parentElement) : "";
+      const label = near && near.length < 40 ? `Couleur « ${near} »` : `Couleur ${fields.filter((f) => f.type === "color").length + 1}`;
+      add(el, { type: "color", label, original: color[1] }, "color", "data-ev-color");
+    }
+
+    // Liens : itinéraire, téléphone, WhatsApp, site…
+    const href = tag === "A" ? el.getAttribute("href") : null;
+    if (href && !href.startsWith("#") && !/^javascript:/i.test(href)) {
+      const text = readText(el);
+      const kind = /maps|goo\.gl|waze/i.test(href)
+        ? "Lien d'itinéraire"
+        : /^tel:/i.test(href)
+          ? "Numéro de téléphone"
+          : /wa\.me|whatsapp/i.test(href)
+            ? "Lien WhatsApp"
+            : /^mailto:/i.test(href)
+              ? "Adresse e-mail"
+              : "Lien";
+      add(el, { type: "link", label: `${kind}${text ? ` « ${snippet(text)} »` : ""}`, original: href }, "link", "data-ev-href");
     }
 
     if (hasOwnText(el) && onlyInlineChildren(el)) {
@@ -145,6 +180,11 @@ export function detectFields(html: string): { html: string; fields: CustomField[
           multiline: text.includes("\n") || text.length > 70 || tag === "P" || tag === "BLOCKQUOTE",
         }, "text");
       }
+      // Couleurs posées sur des éléments à l'intérieur du texte (ex. pastille + nom de la couleur)
+      el.querySelectorAll("[style]").forEach((inner) => {
+        const c = (inner.getAttribute("style") ?? "").match(/background(?:-color)?\s*:\s*(#[0-9a-f]{3,8})\b/i);
+        if (c) add(inner, { type: "color", label: `Couleur « ${snippet(readText(el))} »`, original: c[1] }, "color", "data-ev-color");
+      });
       return;
     }
     Array.from(el.children).forEach(walk);

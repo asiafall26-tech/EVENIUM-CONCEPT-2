@@ -40,8 +40,8 @@ export default function IvoireEditorModal({ initial, onClose, onSave, saveLabel 
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-7xl 2xl:max-w-[1440px] h-dvh sm:h-[94vh] max-h-none sm:max-h-[960px] bg-[#faf7f5] rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300 border border-white/20">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-3 md:p-5 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="w-full max-w-7xl 2xl:max-w-[1680px] h-dvh sm:h-[96vh] max-h-none sm:max-h-[1020px] bg-[#faf7f5] rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300 border border-white/20">
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 lg:py-4 border-b border-gray-100 bg-white shrink-0">
           <div className="min-w-0">
             <h3 className="font-serif text-lg sm:text-2xl text-gray-900 font-bold leading-tight truncate">Personnalisez « Ivoire Couture »</h3>

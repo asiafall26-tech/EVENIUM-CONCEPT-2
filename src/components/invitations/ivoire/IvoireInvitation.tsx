@@ -19,6 +19,7 @@ import { createSoundtrack, type Soundtrack } from "../sceau/effects";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import InvitationEndCta from "../InvitationEndCta";
 import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import InvitationSections from "../InvitationSections";
 import { cls } from "@/lib/invitationStyle";
 
 interface Props {
@@ -495,6 +496,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
   return (
     <div className={cx(s.theme, s.root, ivoireFontVars, !opened && s.locked)} data-inv-style="">
       <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
+      <InvitationSections hidden={c.__hidden} rubriques={c.__rubriques} />
       <Defs />
       <main ref={mainRef} className={s.inv}>
         {/* ============ HERO ============ */}
@@ -532,7 +534,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
         </header>
 
         {/* ============ WELCOME ============ */}
-        <section className={cx(s.welcome, s.paper, s.center)} id="iv-mot">
+        <section data-inv-sec="welcome" className={cx(s.welcome, s.paper, s.center)} id="iv-mot">
           <div className={cx(s.mono, s.rv)} data-rv>
             {initial(c.partnerA)} &amp; {initial(c.partnerB)}
           </div>
@@ -553,7 +555,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
         </section>
 
         {/* ============ DETAILS ============ */}
-        <section className={cx(s.details, s.paper, s.paper2)}>
+        <section data-inv-sec="details" className={cx(s.details, s.paper, s.paper2)}>
           <div className={cx(s.ovalWrap, s.rv)} data-rv>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/models/ivoire/oval.svg" alt="" />
@@ -572,7 +574,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
 
         {/* ============ VENUES ============ */}
         {venues.length > 0 && (
-          <section className={cx(s.venues, s.paper, s.paper2)}>
+          <section data-inv-sec="venues" className={cx(s.venues, s.paper, s.paper2)}>
             {venues.map((v, i) => (
               <div key={i} className={cx(s.venue, s.rv)} data-rv>
                 {v.intro && <span className={s.label}>{v.intro}</span>}
@@ -598,7 +600,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
         )}
 
         {/* ============ PROGRAMME ============ */}
-        <section className={s.program}>
+        <section data-inv-sec="programme" className={s.program}>
           <h2 className={s.rv} data-rv>
             {c.programmeTitle}
           </h2>
@@ -632,7 +634,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
 
         {/* ============ DRESS CODE (optional) ============ */}
         {c.dressColors.length > 0 && (
-          <section className={cx(s.paper, s.dress)}>
+          <section data-inv-sec="dress" className={cx(s.paper, s.dress)}>
             <Torn fill="#4A0F17" seed={122} top />
             <h2 className={s.rv} data-rv>
               Dress code
@@ -654,7 +656,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
         )}
 
         {/* ============ RSVP ============ */}
-        <section className={cx(s.rsvp, s.paper, s.center)} id="rsvp">
+        <section data-inv-sec="rsvp" className={cx(s.rsvp, s.paper, s.center)} id="rsvp">
           {c.dressColors.length === 0 && <Torn fill="#4A0F17" seed={122} top />}
           <span className={cx(s.label, s.rv)} data-rv>
             Confirmation de présence
@@ -671,7 +673,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
         </section>
 
         {/* ============ COUNTDOWN & FINALE ============ */}
-        <section className={cx(s.finale, s.paper, s.center)}>
+        <section data-inv-sec="finale" className={cx(s.finale, s.paper, s.center)}>
           {mounted && <Countdown target={weddingDate(c)} />}
           <div className={cx(s.love, s.rv)} data-rv>
             {c.loveText}

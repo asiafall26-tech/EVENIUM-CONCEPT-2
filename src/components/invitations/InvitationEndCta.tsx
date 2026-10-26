@@ -196,9 +196,9 @@ export default function InvitationEndCta({
                   <span className="tracking-wide">Choisir ce modèle</span>
                 </Link>
 
-                {/* 2. Secondary Action: Retour à l'accueil */}
+                {/* 2. Retour à la galerie pour voir les autres modèles */}
                 <Link
-                  href="/"
+                  href="/invitations"
                   className={`w-full py-3 px-6 rounded-full text-sm font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer whitespace-nowrap ${
                     isDark
                       ? "bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50"
@@ -206,7 +206,7 @@ export default function InvitationEndCta({
                   }`}
                 >
                   <ArrowLeft size={16} className="shrink-0" />
-                  <span>Retour à l&apos;accueil</span>
+                  <span>Retour aux modèles</span>
                 </Link>
               </>
             )}

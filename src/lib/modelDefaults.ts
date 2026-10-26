@@ -288,9 +288,13 @@ export async function saveModelClassification(supabase: SupabaseClient, modelId:
 
 /** « Version d'origine » : efface les ajustements de contenu (publiés ou non) ; le classement et la présence sur le site sont gardés. */
 export async function resetModelDefault(supabase: SupabaseClient, modelId: string, resetName = false) {
+  // La photo de couverture de la vitrine est gardée (elle se remet à part, depuis « Couverture »)
+  const { data: current } = await supabase.from(MODEL_DEFAULTS_TABLE).select("content").eq("model_id", modelId).maybeSingle();
+  const cover = (current?.content as Record<string, unknown> | null | undefined)?.model_cover;
+  const kept = typeof cover === "string" && cover ? { model_cover: cover } : null;
   const updateData: Record<string, unknown> = {
-    content: null,
-    draft_content: null,
+    content: kept,
+    draft_content: kept,
     published_at: null,
     updated_at: new Date().toISOString(),
   };

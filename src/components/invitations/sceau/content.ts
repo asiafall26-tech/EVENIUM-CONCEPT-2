@@ -1,3 +1,4 @@
+import type { AddedRubrique } from "@/lib/invitationSections";
 import type { InvitationStyle } from "@/lib/invitationStyle";
 // Editable content of the "Sceau d'Or" invitation model (stored as JSON on the event).
 
@@ -27,6 +28,10 @@ export interface DressColor {
 export interface SceauContent {
   /** Retouches de polices, couleurs et tailles (studio des modèles) */
   style?: InvitationStyle;
+  /** Rubriques du modèle supprimées par l'organisateur (clés data-inv-sec) */
+  __hidden?: string[];
+  /** Rubriques ajoutées par l'organisateur */
+  __rubriques?: AddedRubrique[];
   partnerA: string;
   partnerB: string;
   /** Name on the envelope; a link ending in #famille-diop overrides it per guest */

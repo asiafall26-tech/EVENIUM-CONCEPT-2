@@ -1,3 +1,4 @@
+import type { AddedRubrique } from "@/lib/invitationSections";
 import type { InvitationStyle } from "@/lib/invitationStyle";
 // Editable content of the "Velours Bordeaux" invitation model (stored as JSON on the event).
 
@@ -11,6 +12,10 @@ export interface ProgrammeItem {
 export interface VeloursContent {
   /** Retouches de polices, couleurs et tailles (studio des modèles) */
   style?: InvitationStyle;
+  /** Rubriques du modèle supprimées par l'organisateur (clés data-inv-sec) */
+  __hidden?: string[];
+  /** Rubriques ajoutées par l'organisateur */
+  __rubriques?: AddedRubrique[];
   partnerA: string;
   partnerB: string;
   tagline: string;

@@ -287,12 +287,12 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
   </header>
 
   <!-- ========== CITATION ========== -->
-  <section style="padding-bottom:30px">
+  <section data-inv-sec="quote" style="padding-bottom:30px">
     <p class="quote reveal" data-f="quote">Là où l'amour commence,<br>l'éternité se dessine doucement.</p>
   </section>
 
   <!-- ========== COMPTE À REBOURS ========== -->
-  <section class="cd-sec">
+  <section data-inv-sec="countdown" class="cd-sec">
     <div class="cols reveal">
       <div class="col"><svg viewBox="0 0 70 230"><use href="#column"/></svg></div>
       <div class="cd-mid">
@@ -305,14 +305,14 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
   </section>
 
   <!-- ========== GALERIE ========== -->
-  <section style="padding-top:20px" id="gallerySec">
+  <section data-inv-sec="gallery" style="padding-top:20px" id="gallerySec">
     <h2 class="reveal" data-f="galleryTitle">Un aperçu de nous</h2>
     <div class="gallery reveal" id="gallery"></div>
     <div class="dots" id="dots"></div>
   </section>
 
   <!-- ========== NOTRE HISTOIRE (rideaux dorés) ========== -->
-  <section class="story">
+  <section data-inv-sec="story" class="story">
     <svg class="swag" viewBox="0 0 480 170" preserveAspectRatio="none">
       <path d="M0 0h480v26H0z" fill="url(#silk)"/>
       <path d="M0 20c60 70 180 80 240 26 60 54 180 44 240-26v18c-60 76-180 84-240 34C180 122 60 114 0 38z" fill="url(#silk)" opacity=".95"/>
@@ -337,7 +337,7 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
   </section>
 
   <!-- ========== DÉROULÉ ========== -->
-  <section class="events">
+  <section data-inv-sec="programme" class="events">
     <h2 class="reveal" data-f="programmeTitle">Le déroulé</h2>
     <div class="eyebrow reveal" data-f="programmeSubtitle">Notre jour spécial</div>
     <div class="ev-list" id="programme"></div>
@@ -345,7 +345,7 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
   </section>
 
   <!-- ========== INFORMATIONS (cadre doré + lustre) ========== -->
-  <section class="details">
+  <section data-inv-sec="details" class="details">
     <svg class="chand reveal" viewBox="0 0 120 120" fill="none" stroke="#b9904a" stroke-width="1.6" stroke-linecap="round">
       <path d="M60 0v24"/><circle cx="60" cy="28" r="5" fill="#e6c886"/>
       <path d="M60 33v40"/><ellipse cx="60" cy="78" rx="10" ry="6" fill="#e6c886"/>
@@ -373,7 +373,7 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
   </section>
 
   <!-- ========== RSVP ========== -->
-  <section class="rsvp-sec" id="rsvp">
+  <section data-inv-sec="rsvp" class="rsvp-sec" id="rsvp">
     <div class="reveal">
       <div class="eyebrow">Soyez nos invités</div>
       <h2 style="font-size:40px">RSVP</h2>
@@ -424,9 +424,9 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
         <span>Choisir ce modèle</span>
       </a>
-      <a href="/" target="_top" class="evenium-btn-home">
+      <a href="/invitations" target="_top" class="evenium-btn-home">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-        <span>Retour à l'accueil</span>
+        <span>Retour aux modèles</span>
       </a>
     </div>
     <div class="evenium-subtext">✓ Formules avec ou sans abonnement · Sans engagement</div>
@@ -679,6 +679,26 @@ form.addEventListener('submit',e=>{
 });
 $('editRsvp').addEventListener('click',()=>{form.style.display='';$('thanks').classList.remove('show')});
 
+/* Rubriques supprimées / ajoutées par l'organisateur (studio Evenium) */
+function applySections(c){
+  var off=(c&&Array.isArray(c.__hidden))?c.__hidden.map(String):[];
+  document.querySelectorAll('[data-inv-sec]').forEach(function(sec){ sec.style.display = off.indexOf(sec.getAttribute('data-inv-sec'))!==-1 ? 'none' : ''; });
+  document.querySelectorAll('[data-inv-rubrique]').forEach(function(n){ n.remove(); });
+  ((c&&Array.isArray(c.__rubriques))?c.__rubriques:[]).forEach(function(r){
+    if(!r||!r.id) return;
+    var all=document.querySelectorAll('[data-inv-sec]');
+    var anchor=(r.after&&document.querySelector('[data-inv-sec="'+String(r.after).replace(/"/g,'')+'"]'))||all[all.length-1];
+    var sec=document.createElement('section'); sec.setAttribute('data-inv-rubrique',r.id);
+    var inner=document.createElement('div'); inner.style.cssText='max-width:620px;margin:0 auto';
+    if(r.title){ var h=document.createElement('h2'); h.textContent=r.title; inner.appendChild(h); }
+    if(r.image){ var img=document.createElement('img'); img.src=r.image; img.alt=r.title||''; img.style.cssText='display:block;width:100%;max-width:520px;margin:18px auto;border-radius:6px;object-fit:cover'; inner.appendChild(img); }
+    String(r.text||'').split(/
+{2,}/).filter(Boolean).forEach(function(para){ var p=document.createElement('p'); setLines(p,para); inner.appendChild(p); });
+    sec.appendChild(inner);
+    if(anchor&&anchor.parentNode) anchor.parentNode.insertBefore(sec,anchor.nextSibling); else document.body.appendChild(sec);
+  });
+}
+
 /* Polices, couleurs et tailles choisies dans le studio des modèles */
 function applyStyle(st){
   document.querySelectorAll('link[data-inv-font]').forEach(n=>n.remove());
@@ -709,6 +729,7 @@ window.addEventListener('message',e=>{
     }
     applyStyle(m.style);
     render(m.content,m.view);
+    applySections(m.content);
   }
   else if(m.type===MSG.skip)skipEnvelope();
   else if(m.type===MSG.replay)replayEnvelope();
@@ -724,7 +745,7 @@ if(live){
   // Démo du site : version ajustée par l'admin dans le studio des modèles, sinon contenu d'origine
   fetch('/api/model-defaults/invit-10', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => { if (d && d.preview && d.preview.content) { applyStyle(d.preview.style); render(d.preview.content, d.preview.view); } else render(DEFAULT); })
+    .then(d => { if (d && d.preview && d.preview.content) { applyStyle(d.preview.style); render(d.preview.content, d.preview.view); applySections(d.preview.content); } else render(DEFAULT); })
     .catch(() => render(DEFAULT));
 }
 </script>

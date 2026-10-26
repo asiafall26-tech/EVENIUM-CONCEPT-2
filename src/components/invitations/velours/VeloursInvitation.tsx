@@ -17,6 +17,7 @@ import {
 } from "./content";
 import InvitationEndCta from "../InvitationEndCta";
 import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import InvitationSections from "../InvitationSections";
 import { cls } from "@/lib/invitationStyle";
 
 export interface RsvpPayload {
@@ -254,7 +255,7 @@ function Hero({ c, dates, start }: SectionProps & { start: boolean }) {
   });
 
   return (
-    <section className={`${s.section} ${s.hero} ${s.velvetBg}`}>
+    <section data-inv-sec="hero" className={`${s.section} ${s.hero} ${s.velvetBg}`}>
       <div className={s.folds} />
       <motion.div className={s.heroTop} {...fade(0.2, -10)}>
         <span>
@@ -334,7 +335,7 @@ function DateSection({ c, dates }: SectionProps) {
   const cd = useCountdown(weddingDate(c));
   const units = ["jours", "heures", "minutes", "secondes"] as const;
   return (
-    <section className={`${s.section} ${s.mist}`}>
+    <section data-inv-sec="welcome" className={`${s.section} ${s.mist}`}>
       <Reveal>
         <p className={s.bigDate}>{dates.long}</p>
         <p className={s.weekday}>{dates.weekday}</p>
@@ -362,7 +363,7 @@ function DateSection({ c, dates }: SectionProps) {
 
 function StorySection({ c }: SectionProps) {
   return (
-    <section className={`${s.section} ${s.satin} ${s.left}`}>
+    <section data-inv-sec="story" className={`${s.section} ${s.satin} ${s.left}`}>
       <div className={s.satinFolds} />
       <Reveal>
         <Label>À propos de nous</Label>
@@ -390,7 +391,7 @@ function StorySection({ c }: SectionProps) {
 
 function ProgrammeSection({ c }: SectionProps) {
   return (
-    <section className={`${s.section} ${s.satin} ${s.left}`}>
+    <section data-inv-sec="programme" className={`${s.section} ${s.satin} ${s.left}`}>
       <div className={s.satinFolds} />
       <Reveal>
         <Label>Programme</Label>
@@ -446,7 +447,7 @@ function DetailsSection({ c, dates }: SectionProps) {
     { key: "place", icon: MapPin, main: c.city, sub: [c.venue, c.address].filter(Boolean).join(" · ") },
   ];
   return (
-    <section className={`${s.section} ${s.satin} ${s.left} ${s.details}`}>
+    <section data-inv-sec="details" className={`${s.section} ${s.satin} ${s.left} ${s.details}`}>
       <div className={s.satinFolds} />
       <Reveal>
         <Label>Détails</Label>
@@ -501,7 +502,7 @@ function RsvpSection({ c, dates, onRsvp }: SectionProps & { onRsvp?: Props["onRs
   };
 
   return (
-    <section className={`${s.section} ${s.velvetBg} ${s.left} ${s.rsvp}`}>
+    <section data-inv-sec="rsvp" className={`${s.section} ${s.velvetBg} ${s.left} ${s.rsvp}`}>
       <div className={s.folds} />
       <Reveal>
         <Label light>RSVP</Label>
@@ -849,6 +850,7 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
   return (
     <div className={`${s.theme} ${s.root} ${veloursFontVars}`} data-inv-style="">
       <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
+      <InvitationSections hidden={c.__hidden} rubriques={c.__rubriques} />
       {c.audioUrl && (
         <audio
           ref={audioRef}

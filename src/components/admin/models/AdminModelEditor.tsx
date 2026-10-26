@@ -193,7 +193,7 @@ export default function AdminModelEditor({
         {/* Corps */}
         <div className="flex-1 min-h-0 overflow-hidden">
           {tab === "contenu" && (
-            <div className="h-full max-w-6xl mx-auto p-2 sm:p-4 lg:p-6 flex flex-col gap-3">
+            <div className="h-full w-full max-w-[1680px] mx-auto p-2 sm:p-4 lg:p-6 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3 p-3 px-4 rounded-2xl bg-white border border-gray-100 shadow-sm shrink-0">
                 <div className="min-w-0">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Nom public de l&apos;invitation</span>

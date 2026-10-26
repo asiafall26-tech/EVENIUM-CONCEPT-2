@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import InvitationEndCta from "../InvitationEndCta";
 import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import InvitationSections from "../InvitationSections";
 import { cls } from "@/lib/invitationStyle";
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import { anniversaireFontVars } from "./fonts";
@@ -251,6 +252,7 @@ export default function AnniversaireInvitation({ content, onRsvp, preview, onBac
   return (
     <div className={`${s.root} ${anniversaireFontVars}`} data-inv-style="">
       <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
+      <InvitationSections hidden={c.__hidden} rubriques={c.__rubriques} />
       {music.state !== "none" && (
         <button type="button" className={s.music} onClick={music.toggle} aria-label={music.state === "on" ? "Couper la musique" : "Activer la musique"}>
           {music.state === "on" ? <Volume2 size={18} /> : <VolumeX size={18} />}
@@ -271,7 +273,7 @@ export default function AnniversaireInvitation({ content, onRsvp, preview, onBac
           }}
         >
           {/* ── PAGE 1 : COUVERTURE ── */}
-          <section className={`${s.page} ${s.cover}`} aria-label="Page 1 : couverture">
+          <section data-inv-sec="cover" className={`${s.page} ${s.cover}`} aria-label="Page 1 : couverture">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className={s.coverPhoto} src={c.coverPhoto} alt="" style={{ objectPosition: c.coverFocus }} />
             <div className={s.coverGlow} />
@@ -295,7 +297,7 @@ export default function AnniversaireInvitation({ content, onRsvp, preview, onBac
           </section>
 
           {/* ── PAGE 2 : INVITATION ── */}
-          <section className={`${s.page} ${s.card} ${s.second}`} aria-label="Page 2 : invitation">
+          <section data-inv-sec="card" className={`${s.page} ${s.card} ${s.second}`} aria-label="Page 2 : invitation">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className={`${s.deco} ${s.decoTopLeft}`} src={`${ASSETS}/fleurs-haut.jpg`} alt="" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -306,7 +308,7 @@ export default function AnniversaireInvitation({ content, onRsvp, preview, onBac
             <img className={`${s.deco} ${s.decoBottomRight}`} src={`${ASSETS}/fleurs-bas.jpg`} alt="" />
             <div className={s.cardFrame} />
 
-            <div className={s.cardBody}>
+            <div className={s.cardBody} data-inv-slot="">
               {c.kicker && <p className={s.kicker}>{c.kicker}</p>}
               <h2 className={s.cardTitle}>{c.title}</h2>
               {c.celebrant && !c.coverSubtitle && <p className={s.celebrant}>{[c.celebrant, c.age && `${c.age} ans`].filter(Boolean).join(" · ")}</p>}

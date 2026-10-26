@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowLeft, Check, Eye, Globe, Loader2, Music, Palette, PenLine, Save, X } from "lucide-react";
-import { PhotoField } from "@/components/invitations/velours/VeloursStudio";
+import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Music, Palette, PenLine, Save, X } from "lucide-react";
+import CoverModal from "./CoverModal";
 import CustomSectionsEditor, { CustomMusicFields } from "@/components/invitations/custom/CustomSectionsEditor";
 import CustomInvitationFrame from "@/components/invitations/custom/CustomInvitationFrame";
 import { InvitationCtaContext } from "@/components/invitations/InvitationCtaContext";
@@ -26,6 +26,12 @@ interface Props {
 export default function CustomModelStudio({ model, onClose, onSave, onPublish }: Props) {
   const [name, setName] = useState(model.name);
   const [editingName, setEditingName] = useState(false);
+  const [coverOpen, setCoverOpen] = useState(false);
+  const confirmName = () => {
+    if (nameInput.trim()) setName(nameInput.trim());
+    setEditingName(false);
+    touch();
+  };
   const [nameInput, setNameInput] = useState(model.name);
   const [cover, setCover] = useState(model.cover_url ?? "");
   const [fields, setFields] = useState<CustomField[]>(model.fields);
@@ -86,10 +92,47 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
       <div className="w-full h-dvh overflow-hidden flex flex-col">
         {/* En-tête */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-gray-100 bg-white shrink-0">
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#8f6f33]">Studio des modèles · modèle importé</p>
-            <h3 className="font-serif text-lg sm:text-2xl text-gray-900 truncate">{name}</h3>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[#8f6f33]">Studio des modèles · nom public de l&apos;invitation</p>
+            {editingName ? (
+              <div className="flex items-center gap-2 mt-0.5 max-w-xl">
+                <input
+                  autoFocus
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && confirmName()}
+                  className="min-w-0 flex-1 px-3 py-2 border border-gray-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                />
+                <button
+                  type="button"
+                  onClick={confirmName}
+                  className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#2b2118] text-[#f5eee1] text-xs font-semibold"
+                >
+                  <Check size={14} /> OK
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setNameInput(name);
+                  setEditingName(true);
+                }}
+                className="group flex items-center gap-2 max-w-full text-left"
+                title="Modifier le nom"
+              >
+                <span className="font-serif text-lg sm:text-2xl text-gray-900 truncate">{name}</span>
+                <PenLine size={15} className="shrink-0 text-gray-400 group-hover:text-[#8f6f33]" />
+              </button>
+            )}
           </div>
+          <button
+            type="button"
+            onClick={() => setCoverOpen(true)}
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:border-[#b8924a]"
+          >
+            <ImageIcon size={14} /> <span className="hidden sm:inline">Couverture</span>
+          </button>
           <button type="button" onClick={close} aria-label="Fermer" className="shrink-0 w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
             <X size={20} />
           </button>
@@ -116,62 +159,7 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
         {/* Corps */}
         <div className="flex-1 min-h-0 overflow-hidden">
           {tab === "contenu" && (
-            <div className="h-full max-w-6xl mx-auto p-2 sm:p-4 lg:p-6 flex flex-col gap-3">
-              <div className="p-3 px-4 rounded-2xl bg-white border border-gray-100 shadow-sm shrink-0 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Nom public de l&apos;invitation</span>
-                    {editingName ? (
-                      <div className="flex items-center gap-2 mt-1">
-                        <input
-                          autoFocus
-                          value={nameInput}
-                          onChange={(e) => setNameInput(e.target.value)}
-                          className="min-w-0 flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#b8924a]/30"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (nameInput.trim()) setName(nameInput.trim());
-                            setEditingName(false);
-                            touch();
-                          }}
-                          className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#2b2118] text-[#f5eee1] text-xs font-semibold"
-                        >
-                          <Check size={14} /> OK
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="font-serif text-base sm:text-lg text-gray-900 truncate font-semibold">{name}</p>
-                    )}
-                  </div>
-                  {!editingName && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNameInput(name);
-                        setEditingName(true);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:border-[#b8924a] shrink-0"
-                    >
-                      <PenLine size={13} /> Modifier le nom
-                    </button>
-                  )}
-                </div>
-                <details>
-                  <summary className="cursor-pointer text-xs font-semibold text-gray-600">Image de couverture (galeries du site)</summary>
-                  <div className="pt-3 max-w-md">
-                    <PhotoField
-                      label=""
-                      value={cover}
-                      onChange={(v) => {
-                        setCover(v);
-                        touch();
-                      }}
-                    />
-                  </div>
-                </details>
-              </div>
+            <div className="h-full w-full max-w-[1680px] mx-auto p-2 sm:p-4 lg:p-6 flex flex-col">
               <div className="flex-1 min-h-0">
                 <CustomSectionsEditor
                   model={liveModel}
@@ -243,13 +231,23 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
         </div>
       </div>
 
-      {/* Aperçu plein écran : le modèle entier dans son châssis smartphone sur ordinateur, avec « Enregistrer » ou « Retour » */}
+      {coverOpen && (
+        <CoverModal
+          modelName={name}
+          current={cover}
+          onClose={() => setCoverOpen(false)}
+          onSave={async (url) => {
+            setCover(url);
+            touch();
+            setCoverOpen(false);
+          }}
+        />
+      )}
+
+      {/* Aperçu plein écran : le modèle entier en plein écran, avec « Enregistrer » ou « Retour » */}
       {preview && (
         <InvitationCtaContext.Provider value={{ force: true, variant: "save" }}>
-          <div className="fixed inset-0 z-[100] bg-[#0d0a08] flex items-center justify-center p-0 sm:py-6 overflow-hidden">
-            {/* Halo lumineux d'ambiance luxueuse sur grand écran */}
-            <div aria-hidden className="hidden sm:block absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full bg-[#b8924a]/12 blur-[140px] pointer-events-none" />
-            <div aria-hidden className="hidden sm:block absolute -bottom-40 right-1/4 w-[500px] h-[500px] rounded-full bg-[#6b1428]/25 blur-[140px] pointer-events-none" />
+          <div className="fixed inset-0 z-[100] bg-black">
 
             <button
               type="button"
@@ -260,27 +258,16 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
               <ArrowLeft size={18} />
             </button>
 
-            {/* Châssis smartphone vertical sur ordinateur, plein écran sur mobile */}
-            <div className="relative w-full sm:max-w-[460px] h-dvh sm:h-[92vh] sm:max-h-[920px] bg-white sm:rounded-[42px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_7px_#1c1714] overflow-hidden flex flex-col">
-              {/* Dynamic Island / encoche smartphone sur ordinateur */}
-              <div className="hidden sm:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/90 rounded-full z-30 pointer-events-none items-center justify-end pr-2.5 gap-1.5 shadow-md ring-1 ring-white/10">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#0a0a0c] ring-1 ring-white/15 flex items-center justify-center">
-                  <span className="w-1 h-1 rounded-full bg-[#1c1c30]" />
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0d0d14]" />
-              </div>
-
-              <CustomInvitationFrame
+            <CustomInvitationFrame
                 model={liveModel}
                 values={values}
-                className="w-full h-full border-0 block bg-white"
+                className="w-full h-dvh border-0 block bg-white"
                 onBackToEdit={() => setPreview(false)}
                 onFinalize={async () => {
                   setPreview(false);
                   await run("save");
                 }}
               />
-            </div>
           </div>
         </InvitationCtaContext.Provider>
       )}

@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles, Users, Wallet, Star, LayoutList } from "lucide-react";
-import Image from "next/image";
 import PricingSection from "@/components/ui/PricingSection";
 import HeroEvents from "@/components/landing/HeroEvents";
 import Reveal from "@/components/landing/Reveal";
 import SectionHeading from "@/components/landing/SectionHeading";
 import HomeShowcase from "@/components/landing/HomeShowcase";
-import { mockInvitationModels, showcaseModelIds } from "@/data/mock/invitations";
+import { mockInvitationModels } from "@/data/mock/invitations";
 import { createClient } from "@/utils/supabase/server";
-import { fetchModelDefaults, hiddenModelIds, modelNameOf, modelCoverOf } from "@/lib/modelDefaults";
+import { fetchModelDefaults } from "@/lib/modelDefaults";
+import { fetchCustomModels } from "@/lib/customModels";
+import { buildShowcase } from "@/lib/showcase";
 
 // Vitrine toujours à jour en temps réel : un modèle désactivé disparaît immédiatement
 export const dynamic = "force-dynamic";
@@ -17,20 +18,8 @@ export const revalidate = 0;
 async function getShowcaseModels() {
   try {
     const supabase = await createClient();
-    const rows = await fetchModelDefaults(supabase);
-    const hidden = hiddenModelIds(rows);
-    const visible = mockInvitationModels
-      .filter((m) => !hidden.has(m.id))
-      .map((m) => ({
-        ...m,
-        name: modelNameOf(rows[m.id], m.name),
-        thumbnail: modelCoverOf(rows[m.id], m.thumbnail),
-      }));
-    // Modèles mis en avant d'abord, complétés par les autres modèles en ligne
-    return [
-      ...showcaseModelIds.map((id) => visible.find((m) => m.id === id)).filter((m) => m !== undefined),
-      ...visible.filter((m) => !showcaseModelIds.includes(m.id)),
-    ].slice(0, 4);
+    const [rows, customs] = await Promise.all([fetchModelDefaults(supabase), fetchCustomModels(supabase, { publishedOnly: true })]);
+    return buildShowcase(rows, customs);
   } catch (e) {
     console.error("Erreur getShowcaseModels:", e);
     return mockInvitationModels.slice(0, 4);

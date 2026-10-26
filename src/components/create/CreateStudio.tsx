@@ -267,6 +267,18 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     }
   }, [modelParam]);
 
+  // Lien direct vers un modèle importé (ex. depuis sa démo) : ouvert dès que la liste est chargée
+  useEffect(() => {
+    if (!modelParam || !isCustomModelId(modelParam)) return;
+    const item = customItems.find((m) => m.id === modelParam);
+    if (!item) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedModelId(item.id);
+    setHasChosenModel(true);
+    if (!item.compatibleEvents.includes(selectedEventCategory) && selectedEventCategory !== "Tous") setSelectedEventCategory(item.category);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelParam, customItems]);
+
   // Choisir un modèle depuis la galerie
   const handleChooseModel = (modelId: string) => {
     const model = [...classifiedModels, ...customItems].find(m => m.id === modelId);
@@ -736,7 +748,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   };
 
   return (
-    <div className="w-full flex flex-col gap-6 animate-in fade-in duration-300">
+    <div className="w-full max-w-[1680px] mx-auto px-2 sm:px-4 lg:px-6 flex flex-col gap-6 animate-in fade-in duration-300">
       
       {!hasChosenModel ? (
         /* ─────────────── 1. GALERIE DES MODÈLES (POUR CEUX QUI CRÉENT SANS MODÈLE D'ABORD) ─────────────── */
@@ -855,26 +867,14 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
                   {/* Deux boutons d'action : Voir la démo + Choisir ce modèle */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-gray-100">
-                    {inDashboard ? (
-                      <button
-                        type="button"
-                        onClick={() => setDemoModelId(model.id)}
-                        className="px-4 py-3 rounded-2xl border border-gray-200 hover:border-black text-gray-800 font-bold text-xs flex items-center justify-center gap-2 transition-all bg-gray-50/60 hover:bg-gray-100"
-                      >
-                        <Eye size={15} className="text-[#b8924a]" />
-                        <span>Voir le modèle en entier</span>
-                      </button>
-                    ) : (
-                      <a
-                        href={model.liveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-3 rounded-2xl border border-gray-200 hover:border-black text-gray-800 font-bold text-xs flex items-center justify-center gap-2 transition-all bg-gray-50/60 hover:bg-gray-100 active:scale-95"
-                      >
-                        <Eye size={15} className="text-[#b8924a]" />
-                        <span>Voir la démo</span>
-                      </a>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setDemoModelId(model.id)}
+                      className="px-4 py-3 rounded-2xl border border-gray-200 hover:border-black text-gray-800 font-bold text-xs flex items-center justify-center gap-2 transition-all bg-gray-50/60 hover:bg-gray-100"
+                    >
+                      <Eye size={15} className="text-[#b8924a]" />
+                      <span>Voir le modèle en entier</span>
+                    </button>
 
                     <button
                       type="button"
@@ -970,7 +970,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
           </div>
 
           {/* Le Studio embarqué dédié uniquement au modèle choisi */}
-          <div className={`w-full bg-[#faf7f5] rounded-3xl shadow-xl border border-gray-200/90 overflow-clip lg:overflow-hidden flex flex-col lg:h-[900px] [--studio-sticky-top:4rem] ${inDashboard ? 'sm:[--studio-sticky-top:5rem]' : ''} lg:[--studio-sticky-top:0px]`}>
+          <div className={`w-full bg-[#faf7f5] rounded-3xl shadow-xl border border-gray-200/90 overflow-clip lg:overflow-hidden flex flex-col min-h-[750px] lg:h-[940px] 2xl:h-[980px] [--studio-sticky-top:4rem] ${inDashboard ? 'sm:[--studio-sticky-top:5rem]' : ''} lg:[--studio-sticky-top:0px]`}>
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursStudio
                 value={veloursContent}
@@ -1104,25 +1104,17 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
               if (!m) return null;
               const values = customContentOf(m);
               return (
-                <div className="w-full min-h-dvh flex items-center justify-center sm:py-6 sm:px-4 bg-[#0d0a08]">
-                  <div className="relative w-full sm:max-w-[460px] h-dvh sm:h-[92vh] sm:max-h-[920px] bg-white sm:rounded-[42px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_7px_#1c1714] overflow-hidden flex flex-col">
-                    <div className="hidden sm:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/90 rounded-full z-30 pointer-events-none items-center justify-end pr-2.5 gap-1.5 shadow-md ring-1 ring-white/10">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#0a0a0c] ring-1 ring-white/15 flex items-center justify-center">
-                        <span className="w-1 h-1 rounded-full bg-[#1c1c30]" />
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0d0d14]" />
-                    </div>
-                    <CustomInvitationFrame
+                <div className="w-full h-dvh">
+                  <CustomInvitationFrame
                       model={m}
                       values={isStaticCard ? withoutMusicValues(m.fields, values) : values}
-                      className="w-full h-full border-0 block bg-white"
+                      className="w-full h-dvh border-0 block bg-white"
                       onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                       onFinalize={() => {
                         setIsPreviewFullScreenOpen(false);
                         setIsCheckoutModalOpen(true);
                       }}
                     />
-                  </div>
                 </div>
               );
             })()}
@@ -1173,22 +1165,14 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 if (custom) {
                   const values = customValues(custom.fields, custom.content);
                   return (
-                    <div className="w-full min-h-dvh flex items-center justify-center sm:py-6 sm:px-4 bg-[#0d0a08]">
-                      <div className="relative w-full sm:max-w-[460px] h-dvh sm:h-[92vh] sm:max-h-[920px] bg-white sm:rounded-[42px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_7px_#1c1714] overflow-hidden flex flex-col">
-                        <div className="hidden sm:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/90 rounded-full z-30 pointer-events-none items-center justify-end pr-2.5 gap-1.5 shadow-md ring-1 ring-white/10">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#0a0a0c] ring-1 ring-white/15 flex items-center justify-center">
-                            <span className="w-1 h-1 rounded-full bg-[#1c1c30]" />
-                          </span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0d0d14]" />
-                        </div>
-                        <CustomInvitationFrame
+                    <div className="w-full h-dvh">
+                      <CustomInvitationFrame
                           model={custom}
                           values={custom.invitation_type === 'carte' ? withoutMusicValues(custom.fields, values) : values}
-                          className="w-full h-full border-0 block bg-white"
+                          className="w-full h-dvh border-0 block bg-white"
                           onBackToEdit={back}
                           onFinalize={choose}
                         />
-                      </div>
                     </div>
                   );
                 }

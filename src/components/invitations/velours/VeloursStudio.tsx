@@ -1,30 +1,9 @@
 "use client";
 
+import StudioShell from "../StudioShell";
+import { builtInSections, sectionsOf } from "@/lib/invitationSections";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ImagePlus,
-  Play,
-  Plus,
-  Trash2,
-  ExternalLink,
-  Layers,
-  Loader2,
-  Music,
-  UploadCloud,
-  Pause,
-  CheckCircle,
-  HeartHandshake,
-  BookHeart,
-  Clock,
-  Camera,
-  MapPin,
-  Quote,
-  Eye,
-  Sparkles,
-} from "lucide-react";
+import { ChevronDown, ImagePlus, Play, Plus, Trash2, Loader2, Music, UploadCloud, Pause, CheckCircle, HeartHandshake, BookHeart, Clock, Camera, MapPin, Quote, Sparkles } from "lucide-react";
 import { type VeloursContent } from "./content";
 import { uploadMedia } from "@/utils/uploadMedia";
 import { AudioPickerModal } from "@/components/media/AudioPickerModal";
@@ -368,92 +347,23 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
 
   const currentMenuIndex = MENUS.findIndex((m) => m.id === activeMenu);
 
-  const goToPrevious = () => {
-    if (currentMenuIndex > 0) setActiveMenu(MENUS[currentMenuIndex - 1].id);
-  };
-  const goToNext = () => {
-    if (currentMenuIndex >= 0 && currentMenuIndex < MENUS.length - 1) setActiveMenu(MENUS[currentMenuIndex + 1].id);
-  };
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-[#faf7f5]">
-      {/* Top Toolbar */}
-      <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-200/70 shrink-0 gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-100 text-[#5c0f21] text-xs font-semibold shrink-0">
-            Velours Bordeaux
-          </span>
-          <p className="text-xs text-gray-500 truncate hidden sm:block">
-            Renseignez et personnalisez les informations de votre événement ci-dessous.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <a
-            href="/invitation-mariage"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-black text-xs font-semibold transition-all shadow-xs shrink-0 hidden sm:inline-flex"
-          >
-            <ExternalLink size={13} />
-            <span>Démo modèle</span>
-          </a>
-        </div>
-      </div>
-
-      {/* Main Container - Full Width Form */}
-      <div className="w-full flex-1 min-h-0 overflow-clip lg:overflow-hidden flex flex-col">
-        {/* Category Menus & Editor Panel */}
-        <div className="w-full flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-clip lg:overflow-hidden">
-          {/* Horizontal Menu Navigation Bar */}
-          <div className="border-b border-gray-100 bg-gray-50 p-2 shrink-0 sticky top-[var(--studio-sticky-top,0px)] z-20 lg:static">
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth">
-              {MENUS.map((menu) => {
-                const Icon = menu.icon;
-                const isActive = activeMenu === menu.id;
-                return (
-                  <button
-                    key={menu.id}
-                    type="button"
-                    onClick={() => setActiveMenu(menu.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
-                      isActive
-                        ? "bg-[#5c0f21] text-white shadow-sm"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-200/60"
-                    }`}
-                  >
-                    <Icon size={14} className={isActive ? "text-white" : "text-[#5c0f21]"} />
-                    <span>{menu.shortLabel}</span>
-                    {menu.badge !== undefined && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                          isActive ? "bg-white/20 text-white" : "bg-gray-200 text-gray-700"
-                        }`}
-                      >
-                        {menu.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => setActiveMenu("all")}
-                className={`flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 ml-auto ${
-                  activeMenu === "all"
-                    ? "bg-gray-900 text-white shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/60"
-                }`}
-                title="Afficher l'ensemble des menus à la suite"
-              >
-                <Layers size={13} />
-                <span>Tous les menus</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Active Menu Content Area */}
-          <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+    <StudioShell
+      title="Velours Bordeaux"
+      subtitle={"Renseignez et personnalisez les informations de votre événement ci-dessous."}
+      demoUrl="/invitation-mariage"
+      menus={MENUS.map((m) => ({ id: m.id, label: String(("shortLabel" in m && m.shortLabel) || m.label), icon: m.icon, badge: "badge" in m ? m.badge : undefined }))}
+      active={activeMenu}
+      onActive={(id) => setActiveMenu(id as never)}
+      onViewFullScreen={onViewFullScreen}
+      onFinalize={onFinalize}
+      sections={{
+        defs: builtInSections("invit-7", value as unknown as Record<string, unknown>),
+        state: sectionsOf(value),
+        onChange: (st) => onChange({ ...value, __hidden: st.hidden, __rubriques: st.rubriques }),
+      }}
+    >
             {/* 1. Mariés & Date */}
             {(activeMenu === "general" || activeMenu === "all") && (
               <section className="space-y-4">
@@ -468,7 +378,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                 </div>
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Prénom du 1er marié">
                       <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
                     </Field>
@@ -479,7 +389,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                   <Field label="Phrase d'accroche" hint="Ex : « Nous allons nous dire oui »">
                     <input className={inputCls} value={value.tagline} onChange={(e) => set("tagline", e.target.value)} />
                   </Field>
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Date de l'événement">
                       <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
                     </Field>
@@ -652,54 +562,6 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                 </div>
               </section>
             )}
-          </div>
-
-          {/* Stepper Footer for Easy Navigation */}
-          {activeMenu !== "all" && (
-            <div className="px-3 sm:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-2 shrink-0 sticky bottom-0 z-20 lg:static">
-              <button
-                type="button"
-                onClick={goToPrevious}
-                disabled={currentMenuIndex <= 0}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-              >
-                <ChevronLeft size={14} />
-                <span>Précédent</span>
-              </button>
-
-              <span className="text-xs font-medium text-gray-500">
-                Menu {currentMenuIndex + 1} sur {MENUS.length}
-              </span>
-
-              {currentMenuIndex >= MENUS.length - 1 ? (
-                onViewFullScreen ? (
-                  <button
-                    type="button"
-                    onClick={onViewFullScreen}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-xs shadow-md hover:brightness-105 active:scale-95 transition-all border border-[#b8924a]/50"
-                  >
-                    <Eye size={14} />
-                    <span>Voir le résultat en plein écran</span>
-                  </button>
-                ) : (
-                  <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-lg">
-                    Toutes les étapes complétées
-                  </span>
-                )
-              ) : (
-                <button
-                  type="button"
-                  onClick={goToNext}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#5c0f21] hover:bg-[#7a1a2e] text-white text-xs font-semibold shadow-xs transition-colors"
-                >
-                  <span>Suivant</span>
-                  <ChevronRight size={14} />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </StudioShell>
   );
 }

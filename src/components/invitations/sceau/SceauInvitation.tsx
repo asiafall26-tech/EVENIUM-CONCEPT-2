@@ -20,6 +20,7 @@ import { createSoundtrack, paintBouquet, sealPath, startPetals, type PetalEngine
 import type { RsvpPayload } from "../velours/VeloursInvitation";
 import InvitationEndCta from "../InvitationEndCta";
 import InvitationStyleTag, { modelSelectors } from "../InvitationStyleTag";
+import InvitationSections from "../InvitationSections";
 import { cls } from "@/lib/invitationStyle";
 
 interface Props {
@@ -640,6 +641,7 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
   return (
     <div className={cx(s.theme, s.root, sceauFontVars, stateCls)} data-inv-style="">
       <InvitationStyleTag style={c.style} selectors={STYLE_SELECTORS} />
+      <InvitationSections hidden={c.__hidden} rubriques={c.__rubriques} />
       <DrapeDefs />
       <main className={cx(s.col, s.velvet)}>
         <header className={s.hero}>
@@ -729,7 +731,7 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
         {bouquet && <img className={cx(s.bouquet, s.rise)} src={bouquet} alt="Bouquet de roses ivoire et bordeaux" />}
 
         {pages.map((page, pi) => (
-          <section key={pi} className={cx(s.onVelvet, s.rise)}>
+          <section data-inv-sec={`prog-${pi}`} key={pi} className={cx(s.onVelvet, s.rise)}>
             {pages.length > 1 && (
               <p className={cx(s.caps, s.pageTag)}>
                 Programme · {pi + 1}/{pages.length}
@@ -765,7 +767,7 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
         ))}
 
         {c.dressColors.length > 0 && (
-          <section className={cx(s.onVelvet, s.rise)}>
+          <section data-inv-sec="dress" className={cx(s.onVelvet, s.rise)}>
             <h2 className={s.script}>Dress code</h2>
             {c.dressCodeText && <p>{c.dressCodeText}</p>}
             <div className={s.swatches}>
@@ -792,7 +794,7 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
           </div>
         )}
 
-        <section className={cx(s.onVelvet, s.rise)} id="rsvp">
+        <section data-inv-sec="rsvp" className={cx(s.onVelvet, s.rise)} id="rsvp">
           <h2 className={s.script}>Fiche invité</h2>
           {c.rsvpText && <p>{c.rsvpText}</p>}
           <GuestForm

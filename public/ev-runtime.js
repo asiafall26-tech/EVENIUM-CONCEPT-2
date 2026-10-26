@@ -11,6 +11,98 @@
   var inFrame = window.parent && window.parent !== window;
   var pickMode = false;
 
+  /*
+   * Rubriques de la page (mêmes règles qu'à l'import : <section>, <header>, <footer>, <article>,
+   * ou blocs principaux), numérotées dans l'ordre de leurs éléments modifiables. Calculées une fois,
+   * avant tout ajout de la page.
+   */
+  var SKIP = /^(SCRIPT|STYLE|NOSCRIPT|SVG|TEMPLATE|IFRAME|HEAD|CANVAS|SELECT|OPTION|TEXTAREA|LINK|META)$/;
+  var sections = null;
+  function findSections() {
+    if (sections) return sections;
+    sections = {};
+    var meaningful = function (el) {
+      return Array.prototype.filter.call(el.children, function (c) {
+        return !SKIP.test(c.tagName.toUpperCase()) && !/^ev-/.test(c.id || "");
+      });
+    };
+    var root = document.body;
+    for (var d = 0; d < 6 && meaningful(root).length === 1; d++) root = meaningful(root)[0];
+    var n = 0;
+    document.querySelectorAll("[data-ev-field],[data-ev-href],[data-ev-bg],[data-ev-color]").forEach(function (el) {
+      var cur = el;
+      while (cur && cur !== root && cur !== document.body) {
+        if (/^(SECTION|HEADER|FOOTER|ARTICLE|NAV)$/.test(cur.tagName.toUpperCase()) || cur.parentElement === root) break;
+        cur = cur.parentElement;
+      }
+      var box = cur && cur !== document.body ? cur : root;
+      if (!box.hasAttribute("data-ev-section")) box.setAttribute("data-ev-section", String(++n));
+    });
+    sections.root = root;
+    return sections;
+  }
+
+  function parseList(v) {
+    try {
+      var x = JSON.parse(v || "[]");
+      return Array.isArray(x) ? x : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /* Rubriques supprimées (masquées) et rubriques ajoutées par l'organisateur */
+  function structure(values) {
+    if (!values) return;
+    var root = findSections().root;
+    var hidden = parseList(values.__hidden).map(String);
+    document.querySelectorAll("[data-ev-section]").forEach(function (box) {
+      var off = hidden.indexOf(box.getAttribute("data-ev-section")) !== -1;
+      if (off) box.setAttribute("data-ev-hidden", "");
+      else box.removeAttribute("data-ev-hidden");
+      box.style.display = off ? "none" : "";
+    });
+
+    document.querySelectorAll("[data-ev-rubrique]").forEach(function (n) {
+      n.remove();
+    });
+    parseList(values.__rubriques).forEach(function (r) {
+      var sec = document.createElement("section");
+      sec.setAttribute("data-ev-rubrique", r.id || "");
+      sec.setAttribute("style", "display:block;box-sizing:border-box;padding:64px 24px;text-align:center;position:relative");
+      var inner = document.createElement("div");
+      inner.setAttribute("style", "max-width:620px;margin:0 auto");
+      if (r.title) {
+        var h = document.createElement("h2");
+        h.textContent = r.title;
+        inner.appendChild(h);
+      }
+      if (r.image) {
+        var img = document.createElement("img");
+        img.src = r.image;
+        img.alt = r.title || "";
+        img.setAttribute("style", "display:block;width:100%;max-width:520px;margin:18px auto;border-radius:6px;object-fit:cover");
+        inner.appendChild(img);
+      }
+      if (r.text) {
+        String(r.text).split(/\n{2,}/).forEach(function (para) {
+          var p = document.createElement("p");
+          setText(p, para);
+          inner.appendChild(p);
+        });
+      }
+      sec.appendChild(inner);
+      var anchor = r.after ? document.querySelector('[data-ev-section="' + r.after + '"]') : null;
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(sec, anchor.nextSibling);
+      else {
+        var all = document.querySelectorAll("[data-ev-section]");
+        var last = all[all.length - 1];
+        if (last && last.parentNode) last.parentNode.insertBefore(sec, last.nextSibling);
+        else root.appendChild(sec);
+      }
+    });
+  }
+
   /* Même lecture du texte qu'à l'import (lignes nettoyées, retours à la ligne gardés) */
   function readText(el) {
     var clone = el.cloneNode(true);
@@ -49,13 +141,27 @@
         el.removeAttribute("srcset");
         if (el.getAttribute("src") !== v) el.setAttribute("src", v);
       } else if (type === "bg") el.style.backgroundImage = v ? 'url("' + v + '")' : "none";
-      else if (type === "audio") {
+      else if (type === "audio" || type === "video") {
         if (el.getAttribute("src") !== v) {
           el.setAttribute("src", v);
           var media = el.tagName === "SOURCE" ? el.parentElement : el;
           if (media && media.load) media.load();
+          if (media && media.autoplay && media.play) media.play().catch(function () {});
         }
       }
+    });
+    // Liens (itinéraire, téléphone, WhatsApp…), images de fond et couleurs
+    document.querySelectorAll("[data-ev-href]").forEach(function (el) {
+      var id = el.getAttribute("data-ev-href");
+      if (id in values && el.getAttribute("href") !== values[id]) el.setAttribute("href", values[id]);
+    });
+    document.querySelectorAll("[data-ev-bg]").forEach(function (el) {
+      var id = el.getAttribute("data-ev-bg");
+      if (id in values) el.style.backgroundImage = values[id] ? 'url("' + values[id] + '")' : "none";
+    });
+    document.querySelectorAll("[data-ev-color]").forEach(function (el) {
+      var id = el.getAttribute("data-ev-color");
+      if (id in values && values[id]) el.style.background = values[id];
     });
   }
 
@@ -86,11 +192,14 @@
     var secondary = box.querySelector('[data-a="secondary"]');
     primary.textContent = text.primary || "Valider";
     secondary.textContent = text.secondary || "Retour";
+    // Dans le site (aperçu) : message à la page ; démo ouverte seule : liens vers la création et la galerie
     primary.onclick = function () {
-      window.parent.postMessage({ type: "evenium:open-checkout" }, location.origin);
+      if (text.primaryHref) location.href = text.primaryHref;
+      else window.parent.postMessage({ type: "evenium:open-checkout" }, location.origin);
     };
     secondary.onclick = function () {
-      window.parent.postMessage({ type: "evenium:close-preview" }, location.origin);
+      if (text.secondaryHref) location.href = text.secondaryHref;
+      else window.parent.postMessage({ type: "evenium:close-preview" }, location.origin);
     };
     document.body.appendChild(box);
   }
@@ -198,6 +307,55 @@
     }, 1600);
   }
 
+  /*
+   * Aucun texte ne doit déborder de l'écran : un texte agrandi (Style & polices) ou plus long que l'original
+   * (prénoms saisis) est réduit juste ce qu'il faut pour tenir dans sa largeur.
+   */
+  function fit() {
+    var vw = document.documentElement.clientWidth;
+    document.querySelectorAll('[data-ev-type="text"], h1, h2, h3').forEach(function (el) {
+      if (el.hasAttribute("data-ev-fit")) {
+        el.style.removeProperty("zoom");
+        el.removeAttribute("data-ev-fit");
+      }
+    });
+    document.querySelectorAll('[data-ev-type="text"], h1, h2, h3').forEach(function (el) {
+      if (el.closest("#ev-end-cta") || !el.offsetParent) return;
+      var over = el.scrollWidth - el.clientWidth;
+      var ratio = 1;
+      if (el.clientWidth > 0 && over > 2) ratio = el.clientWidth / el.scrollWidth;
+      // Largeur réelle du texte (lettres) comparée à celle de l'écran, marge comprise
+      var range = document.createRange();
+      range.selectNodeContents(el);
+      var text = range.getBoundingClientRect();
+      if (text.width > 0) {
+        var margin = 8;
+        if (getComputedStyle(el).textAlign === "center") {
+          // Texte centré dans sa boîte : il rétrécit autour du centre de la boîte
+          var box = el.getBoundingClientRect();
+          var center = (box.left + box.right) / 2;
+          var maxHalf = Math.min(center - margin, vw - margin - center);
+          if (text.width / 2 > maxHalf && maxHalf > 0) ratio = Math.min(ratio, maxHalf / (text.width / 2));
+        } else if (text.right > vw - margin) {
+          ratio = Math.min(ratio, Math.max(0.1, vw - margin - text.left) / text.width);
+        }
+      }
+      if (ratio < 0.995) {
+        var zoom = parseFloat(getComputedStyle(el).zoom) || 1;
+        el.style.zoom = String(Math.max(0.4, zoom * ratio * 0.98));
+        el.setAttribute("data-ev-fit", "");
+      }
+    });
+  }
+  var fitTimer = null;
+  function scheduleFit() {
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(fit, 60);
+  }
+  window.addEventListener("resize", scheduleFit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
+  window.addEventListener("load", scheduleFit);
+
   window.addEventListener("message", function (e) {
     if (e.origin !== location.origin || !e.data) return;
     var m = e.data;
@@ -205,45 +363,17 @@
       pickMode = !!m.pick;
       applyStyle(m.style);
       apply(m.values);
+      structure(m.values);
       music(m.values);
       cta(m.cta || null);
+      scheduleFit();
     } else if (m.type === "ev:focus") highlight(m.id);
   });
 
+  findSections();
   if (inFrame) {
     window.parent.postMessage({ type: "ev:ready" }, location.origin);
   } else {
-    /* Sur écran d'ordinateur (hors iframe), centrer l'invitation dans un format smartphone */
-    var desktopStyle = document.createElement("style");
-    desktopStyle.id = "ev-desktop-mobile-style";
-    desktopStyle.textContent = [
-      "@media (min-width: 641px) {",
-      "  html {",
-      "    background-color: #0d0a08 !important;",
-      "    min-height: 100vh !important;",
-      "    display: flex !important;",
-      "    justify-content: center !important;",
-      "    align-items: center !important;",
-      "    padding: 32px 16px !important;",
-      "    box-sizing: border-box !important;",
-      "  }",
-      "  body {",
-      "    width: 100% !important;",
-      "    max-width: 460px !important;",
-      "    min-height: 90vh !important;",
-      "    max-height: 940px !important;",
-      "    margin: auto !important;",
-      "    border-radius: 42px !important;",
-      "    box-shadow: 0 25px 90px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 0 7px #1c1714 !important;",
-      "    overflow-x: hidden !important;",
-      "    overflow-y: auto !important;",
-      "    position: relative !important;",
-      "    background-color: #fff;",
-      "  }",
-      "}"
-    ].join("\n");
-    document.head.appendChild(desktopStyle);
-
     if (slug) {
       // Démo publique : valeurs publiées par l'admin
       fetch("/api/custom-models/" + slug, { cache: "no-store" })
@@ -254,7 +384,19 @@
           if (d && d.values) {
             applyStyle(d.style);
             apply(d.values);
+            structure(d.values);
             music(d.values);
+            // Démo ouverte seule : choisir ce modèle (création d'événement) ou revenir aux autres modèles
+            cta({
+              kicker: "Aperçu du modèle",
+              title: "Ce modèle vous plaît ?",
+              desc: "Choisissez-le pour le personnaliser avec vos textes, photos et musique, puis validez votre événement.",
+              primary: "Choisir ce modèle",
+              secondary: "Retour aux modèles",
+              primaryHref: "/create?model=custom:" + slug,
+              secondaryHref: "/invitations",
+            });
+            scheduleFit();
           }
         })
         .catch(function () {});

@@ -1,3 +1,4 @@
+import type { AddedRubrique } from "@/lib/invitationSections";
 import { GENERIC_SELECTORS, googleFontHrefs, styleCss, styleFonts, type InvitationStyle, type PartSelectors } from "@/lib/invitationStyle";
 
 /** Textes de la page animée par catégorie, pour les réglages de style du studio des modèles */
@@ -45,6 +46,10 @@ export interface ProgrammeItem {
 export interface RoseOrContent {
   /** Retouches de polices, couleurs et tailles (studio des modèles) */
   style?: InvitationStyle;
+  /** Rubriques du modèle supprimées par l'organisateur (clés data-inv-sec) */
+  __hidden?: string[];
+  /** Rubriques ajoutées par l'organisateur */
+  __rubriques?: AddedRubrique[];
   partnerA: string;
   partnerB: string;
   /** YYYY-MM-DD */
