@@ -21,6 +21,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { getInvitationModelName, getInvitationModelThumbnail } from "@/data/mock/invitations";
 import { computeEventDates } from "@/utils/date-helpers";
+import { loadModelLabels } from "@/lib/customModels";
 
 export default async function AdminUserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,6 +31,8 @@ export default async function AdminUserProfilePage({ params }: { params: Promise
   const supabase = createSupabaseAdmin(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
+  // Noms et couvertures des modèles (dont ceux importés par l'admin) pour getInvitationModelName / Thumbnail
+  await loadModelLabels(supabase);
 
   // Fetch user profile
   let { data: profile } = await supabase

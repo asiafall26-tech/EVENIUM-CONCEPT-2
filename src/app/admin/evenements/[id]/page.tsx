@@ -5,10 +5,13 @@ import { notFound } from "next/navigation";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import EventClosureBlock from "@/components/admin/EventClosureBlock";
 import { computeEventDates } from "@/utils/date-helpers";
+import { loadModelLabels } from "@/lib/customModels";
 
 export default async function AdminEventDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  // Noms et couvertures des modèles (dont ceux importés par l'admin) pour getInvitationModelName / Thumbnail
+  await loadModelLabels(supabase);
 
   // 1. Fetch Event
   const { data: event, error: eventError } = await supabase

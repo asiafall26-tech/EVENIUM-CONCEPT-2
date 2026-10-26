@@ -4,7 +4,8 @@
  * et reçoivent leurs valeurs par messages (public/ev-runtime.js).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { InvitationKind } from "@/lib/modelDefaults";
+import { fetchModelDefaults, type InvitationKind } from "@/lib/modelDefaults";
+import { registerModelCovers, registerModelNames } from "@/data/mock/invitations";
 import { googleFontHrefs, styleCss, styleFonts, type InvitationStyle, type PartSelectors } from "@/lib/invitationStyle";
 
 /** Valeurs réservées : style (polices, couleurs) et musique d'ambiance ajoutée dans le studio */
@@ -80,6 +81,16 @@ export async function fetchCustomModels(supabase: SupabaseClient, opts: { publis
   const { data, error } = await q;
   if (error || !data) return [];
   return data as CustomModelRow[];
+}
+
+/**
+ * Noms et couvertures de tous les modèles (intégrés renommés par l'admin + importés, même retirés du site),
+ * pour les pages qui affichent le modèle d'un événement : getInvitationModelName / getInvitationModelThumbnail.
+ */
+export async function loadModelLabels(supabase: SupabaseClient) {
+  const [, customs] = await Promise.all([fetchModelDefaults(supabase), fetchCustomModels(supabase)]);
+  registerModelNames(Object.fromEntries(customs.map((m) => [customModelId(m.slug), m.name])));
+  registerModelCovers(Object.fromEntries(customs.filter((m) => m.cover_url).map((m) => [customModelId(m.slug), m.cover_url as string])));
 }
 
 export async function fetchCustomModel(supabase: SupabaseClient, slug: string): Promise<CustomModelRow | null> {

@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
 import { computeEventDates } from "@/utils/date-helpers";
+import { loadModelLabels } from "@/lib/customModels";
 
 export async function saveDebugData(data: any) {
   try {
@@ -220,6 +221,8 @@ export async function getClientsWithStats() {
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
+  // Noms et couvertures des modèles (dont ceux importés par l'admin) pour getInvitationModelName / Thumbnail
+  await loadModelLabels(supabaseAdmin);
 
   const { data: clients, error: clientsError } = await supabaseAdmin
     .from('profiles')
