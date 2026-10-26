@@ -87,7 +87,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#800020] to-[#4A0012]",
     badge: "Prestige Impérial",
     category: "Mariage",
-    compatibleEvents: ["Mariage"],
+    compatibleEvents: ["Mariage", "Anniversaire de mariage"],
     liveUrl: "/invitation-mariage"
   },
   {
@@ -98,7 +98,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#b8924a] to-[#8C6D1F]",
     badge: "Cérémonie Royale",
     category: "Mariage",
-    compatibleEvents: ["Mariage"],
+    compatibleEvents: ["Mariage", "Anniversaire de mariage"],
     liveUrl: "/invitation-sceau-dor"
   },
   {
@@ -109,7 +109,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#EAE0D5] to-[#C6AC8F]",
     badge: "Haute Couture",
     category: "Mariage",
-    compatibleEvents: ["Mariage"],
+    compatibleEvents: ["Mariage", "Anniversaire de mariage"],
     liveUrl: "/invitation-ivoire"
   },
   {
@@ -120,7 +120,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#F3D9DC] to-[#b8924a]",
     badge: "Romantique & Féerique",
     category: "Mariage",
-    compatibleEvents: ["Mariage"],
+    compatibleEvents: ["Mariage", "Anniversaire de mariage"],
     liveUrl: "/invitation-rose-or"
   },
   {
@@ -444,11 +444,24 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     let welcomeText = "";
     let contentJson: any = null;
 
+    const formatCoupleTitle = (cat: string, partnerA?: string, partnerB?: string) => {
+      const pA = partnerA?.trim();
+      const pB = partnerB?.trim();
+      if (cat === "Anniversaire de mariage") {
+        return pB
+          ? `Anniversaire de mariage de ${pA || "—"} & ${pB}`
+          : `Anniversaire de mariage de ${pA || "Mon Événement"}`;
+      }
+      const isSingle = ["Baptême", "Anniversaire"].includes(cat);
+      if (isSingle || !pB) {
+        const prefix = cat === "Anniversaire" ? "Anniversaire de" : cat === "Baptême" ? "Baptême de" : cat;
+        return `${prefix} ${pA || "Mon Événement"}`;
+      }
+      return `Mariage de ${pA} & ${pB}`;
+    };
+
     if (selectedModelId === VELOURS_MODEL_ID) {
-      const isSingle = ["Baptême", "Anniversaire"].includes(selectedEventCategory);
-      name = isSingle || !veloursContent.partnerB?.trim()
-        ? `${selectedEventCategory === "Anniversaire" ? "Anniversaire de" : selectedEventCategory === "Baptême" ? "Baptême de" : selectedEventCategory} ${veloursContent.partnerA || "Mon Événement"}`
-        : `Mariage de ${veloursContent.partnerA} & ${veloursContent.partnerB}`;
+      name = formatCoupleTitle(selectedEventCategory, veloursContent.partnerA, veloursContent.partnerB);
       date = veloursContent.date;
       time = veloursContent.time;
       location = [veloursContent.venue, veloursContent.city].filter(Boolean).join(", ");
@@ -456,10 +469,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       welcomeText = veloursContent.welcomeText;
       contentJson = veloursContent;
     } else if (selectedModelId === SCEAU_MODEL_ID) {
-      const isSingle = ["Baptême", "Anniversaire"].includes(selectedEventCategory);
-      name = isSingle || !sceauContent.partnerB?.trim()
-        ? `${selectedEventCategory === "Anniversaire" ? "Anniversaire de" : selectedEventCategory === "Baptême" ? "Baptême de" : selectedEventCategory} ${sceauContent.partnerA || "Mon Événement"}`
-        : `Mariage de ${sceauContent.partnerA} & ${sceauContent.partnerB}`;
+      name = formatCoupleTitle(selectedEventCategory, sceauContent.partnerA, sceauContent.partnerB);
       date = sceauContent.date;
       time = sceauContent.time;
       location = [sceauContent.venue, sceauContent.city].filter(Boolean).join(", ");
@@ -467,10 +477,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       welcomeText = sceauContent.welcomeText;
       contentJson = sceauContent;
     } else if (selectedModelId === IVOIRE_MODEL_ID) {
-      const isSingle = ["Baptême", "Anniversaire"].includes(selectedEventCategory);
-      name = isSingle || !ivoireContent.partnerB?.trim()
-        ? `${selectedEventCategory === "Anniversaire" ? "Anniversaire de" : selectedEventCategory === "Baptême" ? "Baptême de" : selectedEventCategory} ${ivoireContent.partnerA || "Mon Événement"}`
-        : `Mariage de ${ivoireContent.partnerA} & ${ivoireContent.partnerB}`;
+      name = formatCoupleTitle(selectedEventCategory, ivoireContent.partnerA, ivoireContent.partnerB);
       date = ivoireContent.date;
       time = ivoireContent.time;
       const v0 = ivoireContent.venues?.[0];
@@ -479,10 +486,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       welcomeText = ivoireContent.welcomeText;
       contentJson = ivoireContent;
     } else if (selectedModelId === ROSE_OR_MODEL_ID) {
-      const isSingle = ["Baptême", "Anniversaire"].includes(selectedEventCategory);
-      name = isSingle || !roseOrContent.partnerB?.trim()
-        ? `${selectedEventCategory === "Anniversaire" ? "Anniversaire de" : selectedEventCategory === "Baptême" ? "Baptême de" : selectedEventCategory} ${roseOrContent.partnerA || "Mon Événement"}`
-        : `Mariage de ${roseOrContent.partnerA} & ${roseOrContent.partnerB}`;
+      name = formatCoupleTitle(selectedEventCategory, roseOrContent.partnerA, roseOrContent.partnerB);
       date = roseOrContent.date;
       time = roseOrContent.time;
       location = [roseOrContent.venue, roseOrContent.address].filter(Boolean).join(", ");

@@ -32,7 +32,17 @@ const EASE = [0.2, 0.7, 0.2, 1] as const;
 
 function Marquee() {
   const reduce = useReducedMotion();
-  const items = EVENTS.map((e) => e.label);
+  const items = [
+    "Mariage",
+    "Anniversaire de mariage",
+    "Fiançailles",
+    "Anniversaire",
+    "Henné time",
+    "Baptême",
+    "Baby shower",
+    "Gala & dîner",
+    "Conférence",
+  ];
   const row = (
     <div className="flex shrink-0 items-center">
       {items.map((label) => (

@@ -149,6 +149,48 @@ export default function InvitationsDashboardPage({
     const whereText = event.location && event.location !== "À définir" ? event.location : "";
     const type = (event.type || "").toLowerCase().trim();
 
+    // 0. Anniversaire de mariage
+    if (type.includes("anniversaire de mariage")) {
+      if (tone === "prestige") {
+        return (
+          `🥂 *CÉLÉBRATION DES NOCES · INVITATION OFFICIELLE D'HONNEUR* 🥂\n\n` +
+          `Chers invités d'honneur,\n\n` +
+          `À l'occasion de la célébration de notre anniversaire de mariage :\n` +
+          `👑 *${event.name}*\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `🏛️ *${whereText}*\n` : "") +
+          `\nNous avons l'immense honneur et la joie de solliciter votre présence pour commémorer ces années d'amour et renouveler nos vœux les plus précieux.\n\n` +
+          `Veuillez découvrir votre faire-part interactif et enregistrer votre confirmation nominative :\n` +
+          `👉 ${link}\n\n` +
+          `Dans l'impatience de partager ce moment d'exception et de souvenir à vos côtés.\n` +
+          `Avec nos sentiments les plus distingués. ✨🥂`
+        );
+      }
+      if (tone === "court") {
+        return (
+          `🥂 *JOYEUX ANNIVERSAIRE DE MARIAGE ! · SAVE THE DATE* ✨\n\n` +
+          `Nous fêtons nos années d'amour et d'union : *${event.name}* !\n` +
+          (whenText ? `📅 *${whenText}*\n` : "") +
+          (whereText ? `📍 *${whereText}*\n` : "") +
+          `\nRetrouvez tous les détails, le programme et votre carton interactif ici :\n` +
+          `👉 ${link}\n\n` +
+          `Merci de confirmer votre présence sur le lien en 1 clic. On a hâte de célébrer cette belle aventure avec vous ! 🍾🎉`
+        );
+      }
+      // Chaleureux
+      return (
+        `✨ *DES ANNÉES D'AMOUR QUI CONTINUENT DE S'ÉCRIRE...* 🥂💍\n\n` +
+        `Bonjour !\n\n` +
+        `C'est le cœur rempli d'émotion et de gratitude que nous vous convions à célébrer notre anniversaire de mariage :\n` +
+        `🕊️ *${event.name}*\n` +
+        (whenText ? `📅 *${whenText}*\n` : "") +
+        (whereText ? `📍 *${whereText}*\n` : "") +
+        `\nNous avons créé une invitation interactive spécialement pour vous. Découvrez tous les détails et partagez ce grand bonheur avec nous :\n` +
+        `👉 ${link}\n\n` +
+        `Merci de nous confirmer votre présence directement sur le lien. Votre présence à nos côtés rendra cette fête inoubliable ! Avec toute notre affection 🤍🥂`
+      );
+    }
+
     // 1. Mariage, Fiançailles, Henné
     if (type.includes("mariage") || type.includes("fiançaille") || type.includes("henné") || type.includes("henne")) {
       if (tone === "prestige") {

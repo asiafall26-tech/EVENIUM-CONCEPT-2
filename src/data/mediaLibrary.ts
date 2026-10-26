@@ -2,6 +2,7 @@ export type EventCategory =
   | "Tous"
   | "Mariage"
   | "Anniversaire"
+  | "Anniversaire de mariage"
   | "Gala"
   | "Baptême"
   | "Corporate";
@@ -9,7 +10,7 @@ export type EventCategory =
 export interface PresetPhoto {
   id: string;
   title: string;
-  category: "Mariage" | "Anniversaire" | "Gala" | "Baptême" | "Corporate";
+  category: "Mariage" | "Anniversaire" | "Anniversaire de mariage" | "Gala" | "Baptême" | "Corporate";
   url: string;
   alt: string;
 }
@@ -60,6 +61,36 @@ export const PRESET_PHOTOS: PresetPhoto[] = [
     category: "Mariage",
     url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=80",
     alt: "Sortie des mariés",
+  },
+
+  // --- ANNIVERSAIRE DE MARIAGE ---
+  {
+    id: "am-1",
+    title: "Trinquer aux années d'amour & flûtes de champagne",
+    category: "Anniversaire de mariage",
+    url: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1200&q=80",
+    alt: "Flûtes de champagne pour anniversaire de mariage",
+  },
+  {
+    id: "am-2",
+    title: "Dîner romantique aux chandelles",
+    category: "Anniversaire de mariage",
+    url: "https://images.unsplash.com/photo-1529516548873-9ce57c8f155e?auto=format&fit=crop&w=1200&q=80",
+    alt: "Dîner romantique aux chandelles",
+  },
+  {
+    id: "am-3",
+    title: "Renouvellement des vœux & alliances",
+    category: "Anniversaire de mariage",
+    url: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1200&q=80",
+    alt: "Alliances et renouvellement des vœux",
+  },
+  {
+    id: "am-4",
+    title: "Roses romantiques & lumières dorées",
+    category: "Anniversaire de mariage",
+    url: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=1200&q=80",
+    alt: "Roses romantiques pour célébration de noces",
   },
 
   // --- ANNIVERSAIRE ---

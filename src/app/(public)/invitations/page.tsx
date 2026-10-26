@@ -1,6 +1,6 @@
 "use client";
 
-import { mockInvitationModels } from "@/data/mock/invitations";
+import { mockInvitationModels, defaultClassification } from "@/data/mock/invitations";
 import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 import { Sparkles, PlayCircle, Eye, ArrowRight } from "lucide-react";
 import Image from "next/image";
@@ -43,7 +43,7 @@ export default function InvitationsPage() {
   const siteModels = mockInvitationModels
     .filter((m) => !rows[m.id]?.is_hidden)
     .map((m) => {
-      const c = classificationOf(rows[m.id], { type: m.type, events: [m.category] });
+      const c = classificationOf(rows[m.id], defaultClassification(m.id));
       return {
         ...m,
         name: modelNameOf(rows[m.id], m.name),

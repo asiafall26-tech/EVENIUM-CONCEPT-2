@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import Reveal from "@/components/landing/Reveal";
 import SectionHeading from "@/components/landing/SectionHeading";
 import {
+  defaultClassification,
   mockInvitationModels,
   showcaseModelIds,
   type InvitationModel,
@@ -36,7 +37,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
         const visible = mockInvitationModels
           .filter((m) => !hidden.has(m.id))
           .map((m) => {
-            const c = classificationOf(rows[m.id], { type: m.type, events: [m.category] });
+            const c = classificationOf(rows[m.id], defaultClassification(m.id));
             return {
               ...m,
               name: modelNameOf(rows[m.id], m.name),

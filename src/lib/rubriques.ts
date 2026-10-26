@@ -95,6 +95,8 @@ function offerByEventType(type: string): Seed[] {
   switch (type) {
     case "Mariage":
       return [l("Cérémonies couvertes", ["Mariage civil", "Mariage religieux", "Dot / mariage coutumier", "Réception"])];
+    case "Anniversaire de mariage":
+      return [l("Célébrations couvertes", ["Renouvellement de vœux", "Dîner romantique", "Réception de noces", "Cérémonie d'anniversaire"])];
     case "Baptême":
       return [t("Déroulé du baptême", "Ngénte, cérémonie, réception…")];
     case "Henné time":

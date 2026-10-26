@@ -1,5 +1,5 @@
 export type InvitationType = "carte" | "animée";
-export type EventCategory = "Mariage" | "Anniversaire" | "Gala" | "Baptême" | "Corporate";
+export type EventCategory = "Mariage" | "Anniversaire" | "Anniversaire de mariage" | "Gala" | "Baptême" | "Corporate";
 
 export interface InvitationModel {
   id: string;
@@ -72,6 +72,9 @@ export const showcaseModelIds: string[] = ["invit-7", "invit-8", "invit-9", "inv
 /** Classement d'origine d'un modèle (type d'invitation et événement), remplaçable dans le studio des modèles */
 export function defaultClassification(id: string): { type: InvitationType; events: string[] } {
   const m = mockInvitationModels.find((x) => x.id === id);
+  if (id === "invit-7" || id === "invit-8" || id === "invit-9" || id === "invit-10") {
+    return { type: m?.type ?? "animée", events: [m?.category ?? "Mariage", "Anniversaire de mariage"] };
+  }
   return { type: m?.type ?? "animée", events: m ? [m.category] : [] };
 }
 
