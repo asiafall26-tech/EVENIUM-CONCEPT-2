@@ -16,6 +16,8 @@ import * as roseOr from "@/components/invitations/rose-or/content";
 import AnniversaireInvitation from "@/components/invitations/anniversaire/AnniversaireInvitation";
 import * as anniversaire from "@/components/invitations/anniversaire/content";
 import type { RsvpPayload } from "@/components/invitations/velours/VeloursInvitation";
+import CustomGuestInvitation from "@/components/invitations/custom/CustomGuestInvitation";
+import { isCustomModelId } from "@/lib/customModels";
 import { CheckCircle, XCircle, Users, Phone, Mail, User, Loader2, Music, MapPin, Clock, Camera, Navigation, Gift, Car, Hotel, Info } from "lucide-react";
 
 const FadeInScroll = ({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) => (
@@ -96,6 +98,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
       event_id: event.id,
       nom: rsvp.name,
       ...(rsvp.email ? { email: rsvp.email } : {}),
+      ...(rsvp.phone ? { telephone: rsvp.phone } : {}),
       nombre_accompagnants: rsvp.attending ? Math.max(0, rsvp.guests - 1) : 0,
       statut_rsvp: rsvp.attending ? "Confirmé" : "Refusé",
     };
@@ -125,6 +128,18 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
     const rawContent = event.invitation_content ? anniversaire.withDefaults(event.invitation_content) : anniversaire.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
     return <AnniversaireInvitation content={content} onRsvp={saveRsvp} hideCta />;
+  }
+
+  // Modèle importé par l'admin (ZIP / HTML)
+  if (isCustomModelId(event.invitation_model_id)) {
+    return (
+      <CustomGuestInvitation
+        modelId={event.invitation_model_id}
+        values={event.invitation_content?.values ?? null}
+        isStatic={isStatic}
+        onRsvp={saveRsvp}
+      />
+    );
   }
 
   if (event.invitation_model_id === roseOr.ROSE_OR_MODEL_ID) {

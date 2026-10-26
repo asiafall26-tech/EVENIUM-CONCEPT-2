@@ -60,7 +60,19 @@ import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, withDefaults as anniversai
 import AnniversaireInvitation from '@/components/invitations/anniversaire/AnniversaireInvitation';
 import { InvitationCtaContext } from '@/components/invitations/InvitationCtaContext';
 import { forInvitationKind } from '@/lib/staticCard';
-import { classificationOf, fetchModelDefaults, hiddenModelIds, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
+import CustomSectionsEditor from '@/components/invitations/custom/CustomSectionsEditor';
+import CustomInvitationFrame from '@/components/invitations/custom/CustomInvitationFrame';
+import {
+  customModelId,
+  customModelUrl,
+  customValues,
+  fetchCustomModels,
+  isCustomModelId,
+  withoutMusicValues,
+  type CustomModelRow,
+  type CustomValues,
+} from '@/lib/customModels';
+import { classificationOf, fetchModelDefaults, hiddenModelIds, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -177,6 +189,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         return {
           ...m,
           name: modelNameOf(publishedModels[m.id], m.name),
+          image: modelCoverOf(publishedModels[m.id], m.image),
           compatibleEvents: c.events,
           category: c.events[0] ?? m.category,
           kind: c.type as InvitationKind,
@@ -184,10 +197,46 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       }),
     [publishedModels]
   );
+  // Modèles importés par l'admin (ZIP / HTML), publiés
+  const [customModels, setCustomModels] = useState<CustomModelRow[]>([]);
+  const [customContents, setCustomContents] = useState<Record<string, CustomValues>>({});
+  useEffect(() => {
+    let cancelled = false;
+    // Rechargés au retour sur l'onglet : un modèle publié ou retiré par l'admin apparaît / disparaît
+    const reload = () =>
+      fetchCustomModels(createClient(), { publishedOnly: true }).then((rows) => {
+        if (!cancelled) setCustomModels(rows);
+      });
+    reload();
+    window.addEventListener("focus", reload);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", reload);
+    };
+  }, []);
+  const customItems = useMemo(
+    () =>
+      customModels.map((m) => ({
+        id: customModelId(m.slug),
+        name: m.name,
+        subtitle: "Création exclusive Evenium",
+        image: m.cover_url || "/invit-velours-cover.jpg",
+        color: "",
+        badge: "Nouveau",
+        category: m.event_types[0] ?? "Mariage",
+        compatibleEvents: m.event_types,
+        liveUrl: customModelUrl(m),
+        kind: m.invitation_type as InvitationKind,
+      })),
+    [customModels]
+  );
   const siteModels = useMemo(() => {
     const hidden = hiddenModelIds(publishedModels);
-    return classifiedModels.filter((m) => !hidden.has(m.id));
-  }, [classifiedModels, publishedModels]);
+    return [...classifiedModels.filter((m) => !hidden.has(m.id)), ...customItems];
+  }, [classifiedModels, publishedModels, customItems]);
+  const customOf = (id: string) => (isCustomModelId(id) ? customModels.find((m) => customModelId(m.slug) === id) ?? null : null);
+  /** Contenu en cours d'un modèle importé (sinon celui publié par l'admin) */
+  const customContentOf = (m: CustomModelRow) => customContents[customModelId(m.slug)] ?? customValues(m.fields, m.content);
   const eventCategories = useMemo(() => buildEventCategories(siteModels), [siteModels]);
 
   // Synchronisation du modèle choisi depuis les paramètres d'URL (ex: /create?model=invit-9)
@@ -220,7 +269,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
   // Choisir un modèle depuis la galerie
   const handleChooseModel = (modelId: string) => {
-    const model = classifiedModels.find(m => m.id === modelId);
+    const model = [...classifiedModels, ...customItems].find(m => m.id === modelId);
     if (model && selectedEventCategory !== "Tous" && !model.compatibleEvents.includes(selectedEventCategory)) setSelectedEventCategory(model.category);
     setSelectedModelId(modelId);
     setHasChosenModel(true);
@@ -327,8 +376,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
   // Modèle actuel
   const currentModel = useMemo(() => {
-    return classifiedModels.find(m => m.id === selectedModelId) || classifiedModels[0];
-  }, [selectedModelId, classifiedModels]);
+    return [...classifiedModels, ...customItems].find(m => m.id === selectedModelId) || classifiedModels[0];
+  }, [selectedModelId, classifiedModels, customItems]);
 
   // Carte statique : pas de musique (à l'édition, à l'achat et après)
   const isStaticCard = currentModel?.kind === 'carte';
@@ -502,6 +551,14 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       welcomeTitle = [c.kicker, c.title].filter(Boolean).join(" ") || name;
       welcomeText = c.message;
       contentJson = c;
+    } else if (isCustomModelId(selectedModelId)) {
+      const m = customOf(selectedModelId);
+      if (m) {
+        const type = selectedEventCategory === "Tous" ? m.event_types[0] ?? "Événement" : selectedEventCategory;
+        name = `${type} · ${m.name}`;
+        welcomeTitle = name;
+        contentJson = { values: customContentOf(m) };
+      }
     }
 
     return {
@@ -517,7 +574,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       welcomeText,
       contentJson
     };
-  }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent, customModels, customContents]);
 
   // Montant selon la formule
   const planPrice = selectedPlan === "Gold" ? 20000 : selectedPlan === "Premium" ? 10000 : 5000;
@@ -613,7 +671,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         invitation_model_id: selectedModelId,
         invitation_title: eventMetadata.welcomeTitle,
         invitation_message: eventMetadata.welcomeText,
-        invitation_content: eventMetadata.contentJson ? forInvitationKind(eventMetadata.contentJson, isStaticCard) : eventMetadata.contentJson,
+        invitation_content: (() => {
+          const c = eventMetadata.contentJson;
+          if (!c) return c;
+          const m = customOf(selectedModelId);
+          if (m) return { values: isStaticCard ? withoutMusicValues(m.fields, c.values) : c.values };
+          return forInvitationKind(c, isStaticCard);
+        })(),
         // Détails saisis à l'achat (Premium / Gold) : nombre d'invités, date, lieu, budget…
         ...(requiresEventDetails(selectedPlan) ? eventDetailsToRow(detailsWithInvitation) : {})
       };
@@ -943,6 +1007,20 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 isStatic={isStaticCard}
               />
             )}
+            {(() => {
+              const m = customOf(selectedModelId);
+              if (!m) return null;
+              return (
+                <CustomSectionsEditor
+                  model={m}
+                  fields={m.fields}
+                  values={customContentOf(m)}
+                  onChange={(v) => setCustomContents((all) => ({ ...all, [customModelId(m.slug)]: v }))}
+                  isStatic={isStaticCard}
+                  onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
+                />
+              );
+            })()}
             {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
               <AnniversaireStudio
                 value={anniversaireContent}
@@ -1021,6 +1099,33 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 }}
               />
             )}
+            {(() => {
+              const m = customOf(selectedModelId);
+              if (!m) return null;
+              const values = customContentOf(m);
+              return (
+                <div className="w-full min-h-dvh flex items-center justify-center sm:py-6 sm:px-4 bg-[#0d0a08]">
+                  <div className="relative w-full sm:max-w-[460px] h-dvh sm:h-[92vh] sm:max-h-[920px] bg-white sm:rounded-[42px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_7px_#1c1714] overflow-hidden flex flex-col">
+                    <div className="hidden sm:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/90 rounded-full z-30 pointer-events-none items-center justify-end pr-2.5 gap-1.5 shadow-md ring-1 ring-white/10">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#0a0a0c] ring-1 ring-white/15 flex items-center justify-center">
+                        <span className="w-1 h-1 rounded-full bg-[#1c1c30]" />
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0d0d14]" />
+                    </div>
+                    <CustomInvitationFrame
+                      model={m}
+                      values={isStaticCard ? withoutMusicValues(m.fields, values) : values}
+                      className="w-full h-full border-0 block bg-white"
+                      onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
+                      onFinalize={() => {
+                        setIsPreviewFullScreenOpen(false);
+                        setIsCheckoutModalOpen(true);
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
             {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
               <AnniversaireInvitation
                 content={forInvitationKind(anniversaireContent, isStaticCard)}
@@ -1064,6 +1169,29 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 if (demoModelId === SCEAU_MODEL_ID) return <SceauInvitation content={forInvitationKind(sceauDefaults(publishedContent(SCEAU_MODEL_ID) ?? DEFAULT_SCEAU), classifiedModels.find((m) => m.id === SCEAU_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
                 if (demoModelId === IVOIRE_MODEL_ID) return <IvoireInvitation content={forInvitationKind(ivoireDefaults(publishedContent(IVOIRE_MODEL_ID) ?? DEFAULT_IVOIRE), classifiedModels.find((m) => m.id === IVOIRE_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
                 if (demoModelId === ROSE_OR_MODEL_ID) return <RoseOrInvitation content={forInvitationKind(roseOrDefaults(publishedContent(ROSE_OR_MODEL_ID) ?? DEFAULT_ROSE_OR), classifiedModels.find((m) => m.id === ROSE_OR_MODEL_ID)?.kind === 'carte')} onBackToEdit={back} onFinalize={choose} />;
+                const custom = customOf(demoModelId);
+                if (custom) {
+                  const values = customValues(custom.fields, custom.content);
+                  return (
+                    <div className="w-full min-h-dvh flex items-center justify-center sm:py-6 sm:px-4 bg-[#0d0a08]">
+                      <div className="relative w-full sm:max-w-[460px] h-dvh sm:h-[92vh] sm:max-h-[920px] bg-white sm:rounded-[42px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_7px_#1c1714] overflow-hidden flex flex-col">
+                        <div className="hidden sm:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/90 rounded-full z-30 pointer-events-none items-center justify-end pr-2.5 gap-1.5 shadow-md ring-1 ring-white/10">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#0a0a0c] ring-1 ring-white/15 flex items-center justify-center">
+                            <span className="w-1 h-1 rounded-full bg-[#1c1c30]" />
+                          </span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0d0d14]" />
+                        </div>
+                        <CustomInvitationFrame
+                          model={custom}
+                          values={custom.invitation_type === 'carte' ? withoutMusicValues(custom.fields, values) : values}
+                          className="w-full h-full border-0 block bg-white"
+                          onBackToEdit={back}
+                          onFinalize={choose}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
                 if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={forInvitationKind(anniversaireDefaults(publishedContent(ANNIVERSAIRE_MODEL_ID) ?? DEFAULT_ANNIVERSAIRE), classifiedModels.find((m) => m.id === ANNIVERSAIRE_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
                 return null;
               })()}

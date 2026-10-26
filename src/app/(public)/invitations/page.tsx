@@ -7,16 +7,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { classificationOf, fetchModelDefaults, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
+import { classificationOf, fetchModelDefaults, modelCoverOf, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
+import { customModelId, customModelUrl, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
 
 export default function InvitationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Mariage");
 
   // Classement et présence sur le site choisis par l'admin (studio des modèles)
   const [rows, setRows] = useState<Record<string, ModelDefaultRow>>({});
+  // Modèles importés par l'admin (ZIP / HTML) et publiés
+  const [customs, setCustoms] = useState<CustomModelRow[]>([]);
   useEffect(() => {
     const supabase = createClient();
-    const reload = () => fetchModelDefaults(supabase).then(setRows);
+    const reload = () => {
+      fetchModelDefaults(supabase).then(setRows);
+      fetchCustomModels(supabase, { publishedOnly: true }).then(setCustoms);
+    };
     reload();
 
     const channel = supabase
@@ -47,11 +53,25 @@ export default function InvitationsPage() {
       return {
         ...m,
         name: modelNameOf(rows[m.id], m.name),
+        thumbnail: modelCoverOf(rows[m.id], m.thumbnail),
         type: c.type,
         category: c.events[0] ?? m.category,
         events: c.events,
       };
-    });
+    })
+    .concat(
+      customs.map((m) => ({
+        id: customModelId(m.slug),
+        name: m.name,
+        type: m.invitation_type,
+        category: (m.event_types[0] ?? "Mariage") as (typeof mockInvitationModels)[number]["category"],
+        events: m.event_types,
+        thumbnail: m.cover_url || "/invit-velours-cover.jpg",
+        isPremium: true,
+        description: "Création exclusive Evenium, personnalisable de A à Z.",
+        liveUrl: customModelUrl(m),
+      }))
+    );
 
   const categoryFilter = (m: (typeof siteModels)[number]) =>
     selectedCategory === "Tous" ? true : m.events.includes(selectedCategory);

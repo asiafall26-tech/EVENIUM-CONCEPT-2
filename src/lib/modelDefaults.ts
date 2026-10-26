@@ -306,3 +306,37 @@ export async function resetModelDefault(supabase: SupabaseClient, modelId: strin
   if (error) throw new Error(error.message);
 }
 
+
+/* ---------- Photo de couverture (vitrine et galeries) ---------- */
+
+/** Photo de couverture choisie par l'admin, sinon celle d'origine du modèle. */
+export function modelCoverOf(row: ModelDefaultRow | undefined, fallback: string): string {
+  const pick = (c: unknown) => {
+    const v = (c as Record<string, unknown> | null | undefined)?.model_cover;
+    return typeof v === "string" && v.trim() ? v.trim() : null;
+  };
+  return pick(row?.content) ?? pick(row?.draft_content) ?? fallback;
+}
+
+/**
+ * Change la photo de couverture d'un modèle (vide = photo d'origine), tout de suite sur le site.
+ * Rangée dans le contenu du modèle : aucune colonne à ajouter dans la base.
+ */
+export async function saveModelCover(supabase: SupabaseClient, modelId: string, cover: string, userId?: string) {
+  const existing = await supabase.from(MODEL_DEFAULTS_TABLE).select("content, draft_content").eq("model_id", modelId).maybeSingle();
+  const asObject = (v: unknown) => (v && typeof v === "object" ? { ...(v as Record<string, unknown>) } : {});
+  const content = asObject(existing.data?.content);
+  const draft = asObject(existing.data?.draft_content);
+  for (const c of [content, draft]) {
+    if (cover) c.model_cover = cover;
+    else delete c.model_cover;
+  }
+  await write(supabase, {
+    model_id: modelId,
+    // Sans contenu publié, le modèle garde son contenu d'origine : seule la couverture est enregistrée
+    content: Object.keys(content).length ? content : null,
+    draft_content: Object.keys(draft).length ? draft : null,
+    updated_at: new Date().toISOString(),
+    updated_by: userId ?? null,
+  });
+}

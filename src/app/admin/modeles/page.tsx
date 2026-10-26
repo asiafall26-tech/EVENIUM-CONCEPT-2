@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Brush, CheckCircle2, ExternalLink, EyeOff, Globe, Loader2, Pencil, RotateCcw, Sparkles, Tags } from "lucide-react";
+import { Brush, Camera, CheckCircle2, ExternalLink, EyeOff, Globe, Loader2, Pencil, RotateCcw, Sparkles, Tags } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
   classificationOf,
   fetchModelDefaults,
+  modelCoverOf,
   modelNameOf,
   saveModelClassification,
+  saveModelCover,
   saveModelName,
   type InvitationKind,
   publishModel,
@@ -21,7 +23,9 @@ import { SITE_MODELS, type ModelContent, type SiteModel } from "@/components/adm
 import AdminModelEditor from "@/components/admin/models/AdminModelEditor";
 import { withoutMusic } from "@/lib/staticCard";
 import ClassifyModal from "@/components/admin/models/ClassifyModal";
+import ImportedModelsSection from "@/components/admin/models/ImportedModelsSection";
 import RenameModelModal from "@/components/admin/models/RenameModelModal";
+import CoverModal from "@/components/admin/models/CoverModal";
 import { defaultClassification } from "@/data/mock/invitations";
 import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 
@@ -35,10 +39,17 @@ const formatDate = (iso: string) =>
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
+/** Contenu sans le nom ni la couverture (réglages de vitrine) */
+const bodyOf = (c: unknown) => {
+  if (!c || typeof c !== "object") return null;
+  const { model_name: _n, model_cover: _c, ...rest } = c as Record<string, unknown>;
+  return Object.keys(rest).length ? rest : null;
+};
+
 function status(row?: ModelDefaultRow) {
   if (row?.is_hidden) return { label: "Retiré du site", cls: "bg-gray-900/85 text-white" };
-  if (row?.draft_content && !same(row.draft_content, row.content)) return { label: "Modifications non publiées", cls: "bg-amber-100 text-amber-900" };
-  if (row?.content) return { label: "Publié · personnalisé", cls: "bg-[#b8924a] text-white" };
+  if (bodyOf(row?.draft_content) && !same(bodyOf(row?.draft_content), bodyOf(row?.content))) return { label: "Modifications non publiées", cls: "bg-amber-100 text-amber-900" };
+  if (bodyOf(row?.content)) return { label: "Publié · personnalisé", cls: "bg-[#b8924a] text-white" };
   return { label: "En ligne · version d'origine", cls: "bg-white/90 text-gray-700" };
 }
 
@@ -52,6 +63,7 @@ export default function AdminModelsStudioPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [classifyingId, setClassifyingId] = useState<string | null>(null);
   const [renamingModel, setRenamingModel] = useState<SiteModel | null>(null);
+  const [coverModel, setCoverModel] = useState<SiteModel | null>(null);
   const [kindFilter, setKindFilter] = useState<"Tous" | InvitationKind>("Tous");
   const [eventFilter, setEventFilter] = useState<string>("Tous");
 
@@ -149,6 +161,11 @@ export default function AdminModelsStudioPage() {
         </div>
       </div>
 
+      {/* Modèles importés (ZIP / HTML) */}
+      <ImportedModelsSection kindFilter={kindFilter} eventFilter={eventFilter} onNotice={setNotice} />
+
+      <h2 className="font-serif text-2xl text-gray-900 pt-2">Modèles Evenium</h2>
+
       {loading ? (
         <div className="py-16 flex justify-center text-gray-400">
           <Loader2 className="animate-spin" />
@@ -170,7 +187,15 @@ export default function AdminModelsStudioPage() {
             return (
               <article key={model.id} className={`bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col ${row?.is_hidden ? "opacity-80" : ""}`}>
                 <div className="relative h-48 bg-gray-900">
-                  <Image src={model.image} alt={name} fill className={`object-cover ${row?.is_hidden ? "grayscale" : ""}`} sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={modelCoverOf(row, model.image)} alt={name} className={`absolute inset-0 w-full h-full object-cover ${row?.is_hidden ? "grayscale" : ""}`} />
+                  <button
+                    type="button"
+                    onClick={() => setCoverModel(model)}
+                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/55 hover:bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold"
+                  >
+                    <Camera size={13} /> Couverture
+                  </button>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                   <span className={`absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${st.cls}`}>{st.label}</span>
                   <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
@@ -283,6 +308,21 @@ export default function AdminModelsStudioPage() {
         </section>
         ))}
         </div>
+      )}
+
+      {coverModel && (
+        <CoverModal
+          modelName={currentName(coverModel)}
+          current={modelCoverOf(rows[coverModel.id], coverModel.image)}
+          original={coverModel.image}
+          onClose={() => setCoverModel(null)}
+          onSave={async (url) => {
+            await saveModelCover(supabase, coverModel.id, url, await userId());
+            setCoverModel(null);
+            setNotice({ ok: true, text: `La photo de couverture de « ${currentName(coverModel)} » est à jour sur le site.` });
+            await load();
+          }}
+        />
       )}
 
       {renamingModel && (

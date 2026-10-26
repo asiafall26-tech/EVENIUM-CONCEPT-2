@@ -14,6 +14,9 @@ import * as ivoire from "@/components/invitations/ivoire/content";
 import RoseOrEditorModal from "@/components/invitations/rose-or/RoseOrEditorModal";
 import * as roseOr from "@/components/invitations/rose-or/content";
 import AnniversaireEditorModal from "@/components/invitations/anniversaire/AnniversaireEditorModal";
+import CustomEditorModal from "@/components/invitations/custom/CustomEditorModal";
+import { createClient as createBrowserClient } from "@/utils/supabase/client";
+import { fetchCustomModel, isCustomModelId, slugOfModelId, type CustomModelRow } from "@/lib/customModels";
 import * as anniversaire from "@/components/invitations/anniversaire/content";
 import EventQRCode from "@/components/ui/EventQRCode";
 import { createClient } from "@/utils/supabase/client";
@@ -122,6 +125,13 @@ export default function InvitationsDashboardPage({
       setShareUrl(`${window.location.origin}/invite/${event.id}`);
     }
   }, [event]);
+
+  // Modèle importé par l'admin (ZIP / HTML) : chargé pour l'aperçu et la personnalisation
+  const [customModel, setCustomModel] = useState<CustomModelRow | null>(null);
+  useEffect(() => {
+    if (!isCustomModelId(event?.invitationModelId)) return;
+    fetchCustomModel(createBrowserClient(), slugOfModelId(event.invitationModelId)).then(setCustomModel);
+  }, [event?.invitationModelId]);
 
   const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
   const [waCopiedText, setWaCopiedText] = useState(false);
@@ -431,6 +441,7 @@ export default function InvitationsDashboardPage({
       else if (isIvoire) defaultSeed = ivoire.seedFromEvent(event) as unknown as Record<string, unknown>;
       else if (isRoseOr) defaultSeed = roseOr.seedFromEvent(event) as unknown as Record<string, unknown>;
       else if (isAnniversaire) defaultSeed = anniversaire.seedFromEvent(event) as unknown as Record<string, unknown>;
+      else if (isCustom) defaultSeed = { values: {} };
 
       await updateEventInvitationContent(event.id, defaultSeed);
       setShowResetPageModal(false);
@@ -449,7 +460,10 @@ export default function InvitationsDashboardPage({
   const isRoseOr = event.invitationModelId === roseOr.ROSE_OR_MODEL_ID;
   const isAnniversaire = event.invitationModelId === anniversaire.ANNIVERSAIRE_MODEL_ID;
   const isStatic = event.format === "Carte";
-  const cover = isVelours
+  const isCustom = isCustomModelId(event.invitationModelId) && !!customModel;
+  const cover = isCustom
+    ? customModel?.cover_url ?? null
+    : isVelours
     ? "/invit-velours-cover.jpg"
     : isSceau
       ? "/invit-sceau-dor-cover.jpg"
@@ -467,6 +481,7 @@ export default function InvitationsDashboardPage({
     if (isIvoire) return "Ivoire Couture";
     if (isRoseOr) return "Rose Poudrée & Or Impérial";
     if (isAnniversaire) return "Anniversaire Bordeaux & Or";
+    if (isCustom && customModel) return customModel.name;
     return event.invitationModelId || "Modèle Exclusif";
   };
 
@@ -506,7 +521,7 @@ export default function InvitationsDashboardPage({
         </div>
 
         <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
+          {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire || isCustom) && (
             <button
               onClick={() => setIsStudioOpen(true)}
               className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-[#6b1f2a] text-white px-3 py-4 text-sm font-semibold"
@@ -536,7 +551,7 @@ export default function InvitationsDashboardPage({
           </button>
         </div>
 
-        {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire) && (
+        {(isVelours || isSceau || isIvoire || isRoseOr || isAnniversaire || isCustom) && (
           <button
             type="button"
             onClick={() => setShowResetPageModal(true)}
@@ -685,6 +700,20 @@ export default function InvitationsDashboardPage({
             } catch {
               throw new Error("Enregistrement impossible : exécutez supabase_invitation_content.sql dans Supabase.");
             }
+            setIsStudioOpen(false);
+          }}
+        />
+      )}
+
+      {isStudioOpen && isCustom && customModel && (
+        <CustomEditorModal
+          model={customModel}
+          initial={(event.invitationContent as { values?: Record<string, string> } | null)?.values ?? null}
+          isStatic={isStatic}
+          saveLabel="Mettre à jour l'invitation"
+          onClose={() => setIsStudioOpen(false)}
+          onSave={async (values) => {
+            await updateEventInvitationContent(event.id, { values });
             setIsStudioOpen(false);
           }}
         />
