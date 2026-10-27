@@ -906,10 +906,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       ) : (
         /* ─────────────── 2. STUDIO D'ÉDITION DU MODÈLE CHOISI (SANS AUTRES MODÈLES DISTRAYANTS) ─────────────── */
         <>
-          {/* Bannière du modèle sélectionné */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="flex items-center gap-4 sm:gap-5">
-              <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-2xl overflow-hidden relative shrink-0 shadow-md border border-gray-200 bg-gray-100">
+          {/* Bannière du modèle sélectionné : compacte sur téléphone, pour laisser la place aux champs */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border border-gray-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-5">
+            <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+              <div className="w-11 h-14 sm:w-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden relative shrink-0 shadow-md border border-gray-200 bg-gray-100">
                 <Image
                   key={currentModel.id}
                   src={currentModel.image}
@@ -918,59 +918,63 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   className="object-cover"
                 />
               </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="inline-flex items-center gap-1.5 bg-[#fbf7f0] border border-[#b8924a]/30 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5 sm:mb-1">
+                  <span className="inline-flex items-center gap-1.5 sm:bg-[#fbf7f0] sm:border border-[#b8924a]/30 sm:px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
                     <Sparkles size={11} className="text-[#b8924a]" />
                     Modèle sélectionné
                   </span>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                  <span className="hidden sm:inline text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
                     {currentModel.badge}
                   </span>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-serif font-bold text-gray-950">
-                  Personnalisation · {currentModel.name}
+                <h1 className="text-lg sm:text-2xl font-serif font-bold text-gray-950 truncate">
+                  <span className="hidden sm:inline">Personnalisation · </span>
+                  {currentModel.name}
                 </h1>
-                <p className="text-xs text-gray-500 mt-1 max-w-xl leading-relaxed">
+                <p className="hidden sm:block text-xs text-gray-500 mt-1 max-w-xl leading-relaxed">
                   Renseignez vos textes, photos, programme et musiques ci-dessous. Vous pourrez prévisualiser le résultat complet en plein écran à la dernière étape avant de valider votre création.
                 </p>
-                <div className="mt-2.5 flex items-center gap-3">
+                <div className="mt-0.5 sm:mt-2.5 flex items-center gap-3">
                   <button
                     type="button"
                     onClick={handleReturnToGallery}
                     className="text-xs text-[#8f6f33] hover:text-black font-semibold underline underline-offset-2 flex items-center gap-1 transition-colors"
                   >
-                    ← Choisir un autre modèle dans la galerie
+                    ← <span className="sm:hidden">Changer de modèle</span>
+                    <span className="hidden sm:inline">Choisir un autre modèle dans la galerie</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Boutons d'action rapides */}
-            <div className="flex items-center gap-2.5 flex-wrap self-start md:self-center">
+            {/* Boutons d'action rapides : côte à côte sur téléphone */}
+            <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 sm:flex-wrap md:self-center">
               <button
                 type="button"
                 onClick={() => setIsPreviewFullScreenOpen(true)}
-                className="px-4 py-3 rounded-2xl border border-gray-300 hover:border-black bg-white text-gray-800 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center gap-2 active:scale-95"
+                className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-300 hover:border-black bg-white text-gray-800 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95"
               >
-                <Eye size={16} className="text-[#b8924a]" />
-                <span>Voir le résultat en plein écran</span>
+                <Eye size={16} className="text-[#b8924a] shrink-0" />
+                <span className="sm:hidden">Aperçu</span>
+                <span className="hidden sm:inline">Voir le résultat en plein écran</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsCheckoutModalOpen(true)}
-                className="px-5 py-3 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 border border-[#b8924a]/30 transition-all flex items-center gap-2 group active:scale-95"
+                className="px-3 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 border border-[#b8924a]/30 transition-all flex items-center justify-center gap-1.5 sm:gap-2 group active:scale-95"
               >
-                <Crown size={16} className="text-[#b8924a]" />
-                <span>Valider &amp; Finaliser l&apos;achat</span>
-                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                <Crown size={16} className="text-[#b8924a] shrink-0" />
+                <span className="sm:hidden">Valider</span>
+                <span className="hidden sm:inline">Valider &amp; Finaliser l&apos;achat</span>
+                <ArrowRight size={14} className="hidden sm:block group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
 
-          {/* Le Studio embarqué dédié uniquement au modèle choisi */}
-          <div className={`w-full bg-[#faf7f5] rounded-3xl shadow-xl border border-gray-200/90 overflow-clip lg:overflow-hidden flex flex-col min-h-[750px] lg:h-[940px] 2xl:h-[980px] [--studio-sticky-top:4rem] ${inDashboard ? 'sm:[--studio-sticky-top:5rem]' : ''} lg:[--studio-sticky-top:0px]`}>
+          {/* Le Studio embarqué dédié uniquement au modèle choisi (sans cadre en double sur téléphone) */}
+          <div className={`w-full bg-[#faf7f5] rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-xl border border-gray-200/90 overflow-clip lg:overflow-hidden flex flex-col sm:min-h-[750px] lg:h-[940px] 2xl:h-[980px] [--studio-sticky-top:4rem] ${inDashboard ? 'sm:[--studio-sticky-top:5rem]' : ''} lg:[--studio-sticky-top:0px]`}>
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursStudio
                 value={veloursContent}

@@ -178,8 +178,8 @@ export default function StudioShell({ title, subtitle, demoUrl, menus, active, o
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-[#faf7f5]">
-      {/* Barre du modèle */}
-      <div className="flex items-center justify-between pb-2 mb-2 shrink-0 gap-3">
+      {/* Barre du modèle (sur téléphone, le nom est déjà dans la bannière au-dessus) */}
+      <div className="hidden sm:flex items-center justify-between pb-2 mb-2 shrink-0 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-semibold shrink-0 max-w-[60%] truncate">{title}</span>
           <p className="text-xs text-gray-500 truncate hidden sm:block">{subtitle ?? "Renseignez et personnalisez les informations de votre événement ci-dessous."}</p>
@@ -197,7 +197,8 @@ export default function StudioShell({ title, subtitle, demoUrl, menus, active, o
       </div>
 
       <div className="w-full flex-1 min-h-0 overflow-clip lg:overflow-hidden flex flex-col">
-        <div className="w-full flex-1 flex flex-col lg:flex-row min-h-0 bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-clip lg:overflow-hidden">
+        {/* Sur téléphone, pas de second cadre dans celui de la page : toute la largeur pour les champs */}
+        <div className="w-full flex-1 flex flex-col lg:flex-row min-h-0 bg-white sm:rounded-2xl sm:border border-gray-200/80 sm:shadow-xs overflow-clip lg:overflow-hidden">
           {/* Menus : barre sur téléphone, colonne sur grand écran */}
           <div className="border-b lg:border-b-0 lg:border-r border-gray-100 bg-gray-50 p-2 lg:p-3 shrink-0 lg:w-64 lg:overflow-y-auto sticky top-[var(--studio-sticky-top,0px)] z-20 lg:static">
             <p className="hidden lg:block px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Rubriques</p>
@@ -244,7 +245,7 @@ export default function StudioShell({ title, subtitle, demoUrl, menus, active, o
 
           <div className="flex-1 min-w-0 min-h-0 flex flex-col">
             {/* Contenu */}
-            <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8 space-y-8">
+            <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
               {children}
               {showAll ? added.map(rubriqueEditor) : activeAdded && rubriqueEditor(activeAdded)}
               {sections && (showAll || active === RUBRIQUES_MENU) && rubriquesManager()}
