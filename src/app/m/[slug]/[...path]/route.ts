@@ -38,23 +38,34 @@ const RUNTIME = '<script src="/ev-runtime.js" defer></script>';
  * Fichiers d'un modèle importé, servis depuis le stockage sur le même domaine que le site
  * (les liens relatifs du modèle fonctionnent, et la page peut dialoguer avec l'éditeur).
  */
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string; path: string[] }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string; path: string[] }> }) {
   const { slug, path } = await params;
   if (!/^[a-z0-9-]{3,60}$/.test(slug) || path.some((p) => p === ".." || p === "")) return new Response("Introuvable", { status: 404 });
 
   const rel = path.map((p) => decodeURIComponent(p)).join("/");
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const res = await fetch(`${base}/storage/v1/object/public/evenium_assets/${CUSTOM_STORAGE_DIR}/${slug}/${storageKey(rel)}`, { cache: "no-store" });
-  if (!res.ok) return new Response("Introuvable", { status: 404 });
-
   const ext = rel.split(".").pop()?.toLowerCase() ?? "";
+  const isHtml = ext === "html" || ext === "htm";
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Vidéos et musiques : Safari (iPhone, iPad, Mac) ne les lit que s'il peut les demander par morceaux (Range)
+  const range = isHtml ? null : req.headers.get("range");
+  const res = await fetch(`${base}/storage/v1/object/public/evenium_assets/${CUSTOM_STORAGE_DIR}/${slug}/${storageKey(rel)}`, {
+    cache: "no-store",
+    headers: range ? { Range: range } : undefined,
+  });
+  if (!res.ok) return new Response(res.status === 416 ? "Plage invalide" : "Introuvable", { status: res.status === 416 ? 416 : 404 });
+
   const type = TYPES[ext] ?? res.headers.get("content-type") ?? "application/octet-stream";
 
-  if (ext === "html" || ext === "htm") {
+  if (isHtml) {
     let html = await res.text();
     html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${RUNTIME}</body>`) : html + RUNTIME;
     return new Response(html, { headers: { "Content-Type": type, "Cache-Control": "no-cache, must-revalidate" } });
   }
 
-  return new Response(res.body, { headers: { "Content-Type": type, "Cache-Control": "public, max-age=3600" } });
+  const headers: Record<string, string> = { "Content-Type": type, "Cache-Control": "public, max-age=3600", "Accept-Ranges": "bytes" };
+  for (const h of ["content-length", "content-range", "etag", "last-modified"]) {
+    const v = res.headers.get(h);
+    if (v) headers[h] = v;
+  }
+  return new Response(res.body, { status: res.status, headers });
 }
