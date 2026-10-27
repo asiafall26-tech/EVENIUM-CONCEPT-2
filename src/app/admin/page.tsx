@@ -1,7 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getInvitationModelName, getInvitationModelThumbnail } from "@/data/mock/invitations";
 import { computeEventDates } from "@/utils/date-helpers";
-import { loadModelLabels } from "@/lib/customModels";
 import AdminPurchasesDashboard, {
   ClientPurchase,
   PrestatairePurchase,
@@ -13,8 +12,6 @@ export const revalidate = 0;
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
-  // Noms et couvertures des modèles (dont ceux importés par l'admin) pour getInvitationModelName / Thumbnail
-  await loadModelLabels(supabase);
 
   // 1. Fetch real events from Supabase
   const { data: dbEvents } = await supabase

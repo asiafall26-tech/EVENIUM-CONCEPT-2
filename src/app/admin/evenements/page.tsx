@@ -4,15 +4,12 @@ import Link from "next/link";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import EventClosureBlock from "@/components/admin/EventClosureBlock";
 import { computeEventDates } from "@/utils/date-helpers";
-import { loadModelLabels } from "@/lib/customModels";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function AdminEvenementsPage() {
   const supabase = await createClient();
-  // Noms et couvertures des modèles (dont ceux importés par l'admin) pour getInvitationModelName / Thumbnail
-  await loadModelLabels(supabase);
 
   // Fetch real events
   const { data: events } = await supabase

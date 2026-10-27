@@ -1,15 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Camera, ExternalLink, EyeOff, FileArchive, Globe, Loader2, Sparkles, Tags, Trash2, UploadCloud } from "lucide-react";
+import { FileArchive, Loader2, UploadCloud } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 import { customModelUrl, fetchCustomModels, saveCustomModel, type CustomModelRow } from "@/lib/customModels";
 import type { InvitationKind } from "@/lib/modelDefaults";
 import ImportModelModal from "./ImportModelModal";
 import CustomModelStudio from "./CustomModelStudio";
 import ClassifyModal from "./ClassifyModal";
 import CoverModal from "./CoverModal";
+import ModelCard from "./ModelCard";
+import RenameModelModal from "./RenameModelModal";
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
@@ -35,6 +36,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [classifyingSlug, setClassifyingSlug] = useState<string | null>(null);
   const [coverSlug, setCoverSlug] = useState<string | null>(null);
+  const [renamingSlug, setRenamingSlug] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -87,6 +89,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
   );
   const editing = models.find((m) => m.slug === editingSlug) ?? null;
   const classifying = models.find((m) => m.slug === classifyingSlug) ?? null;
+  const renaming = models.find((m) => m.slug === renamingSlug) ?? null;
 
   return (
     <section className="space-y-3">
@@ -117,112 +120,34 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-          {shown.map((m) => {
-            const st = status(m);
-            const isBusy = busy === m.slug;
-            return (
-              <article key={m.slug} className={`bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col ${m.status === "hidden" ? "opacity-80" : ""}`}>
-                <div className="relative h-48 bg-gray-900">
-                  {m.cover_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.cover_url} alt={m.name} className={`absolute inset-0 w-full h-full object-cover ${m.status === "hidden" ? "grayscale" : ""}`} />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-[#b8924a]/40">
-                      <FileArchive size={48} />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                  <span className={`absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${st.cls}`}>{st.label}</span>
-                  <button
-                    type="button"
-                    onClick={() => setCoverSlug(m.slug)}
-                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/55 hover:bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold"
-                  >
-                    <Camera size={13} /> Couverture
-                  </button>
-                  <h3 className="absolute bottom-3 left-4 right-4 font-serif text-2xl text-white">{m.name}</h3>
-                </div>
-                <div className="p-4 flex-1 flex flex-col gap-2.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                      {m.invitation_type === "carte" ? "Carte" : "Animée"}
-                    </span>
-                    {m.event_types.map((e) => (
-                      <span key={e} className="text-[11px] px-2 py-0.5 rounded-full bg-[#fbf7f0] border border-[#b8924a]/25 text-[#6f5527]">
-                        {EVENT_TYPE_ICONS[e as keyof typeof EVENT_TYPE_ICONS]} {e}
-                      </span>
-                    ))}
-                    <button type="button" onClick={() => setClassifyingSlug(m.slug)} className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-[#8f6f33]">
-                      <Tags size={13} /> Classer
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    {m.fields.length} élément(s) modifiable(s) par vous et par le client
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onNotice(null);
-                      setEditingSlug(m.slug);
-                    }}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#2b2118] text-[#f5eee1] px-4 py-3 text-sm font-semibold"
-                  >
-                    <Sparkles size={16} className="text-[#d9c08c]" /> Ouvrir dans le studio
-                  </button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => act(m, () => publish(m), `« ${m.name} » est publié sur le site.`)}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#b8924a]/50 bg-[#fbf7f0] px-3 py-2.5 text-xs font-semibold text-[#6f5527] disabled:opacity-50"
-                    >
-                      {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />} Publier
-                    </button>
-                    {m.status === "published" ? (
-                      <button
-                        type="button"
-                        disabled={isBusy}
-                        onClick={() => {
-                          if (!confirm(`Retirer « ${m.name} » du site ? Les invitations déjà achetées restent intactes.`)) return;
-                          act(m, () => saveCustomModel(supabase, m.slug, { status: "hidden" }), `« ${m.name} » est retiré du site.`);
-                        }}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-xs font-semibold text-red-700 disabled:opacity-50"
-                      >
-                        <EyeOff size={14} /> Retirer du site
-                      </button>
-                    ) : (
-                      <a
-                        href={customModelUrl(m)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700"
-                      >
-                        <ExternalLink size={14} /> Voir le fichier
-                      </a>
-                    )}
-                    {m.status === "published" && (
-                      <a
-                        href={customModelUrl(m)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-700"
-                      >
-                        <ExternalLink size={14} /> Voir sur le site
-                      </a>
-                    )}
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => remove(m)}
-                      className={`inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-600 disabled:opacity-50 ${m.status === "published" ? "" : "col-span-2"}`}
-                    >
-                      <Trash2 size={14} /> Supprimer
-                    </button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+          {shown.map((m) => (
+            <ModelCard
+              key={m.slug}
+              name={m.name}
+              cover={m.cover_url}
+              status={status(m)}
+              presence={m.status === "published" ? "online" : m.status === "hidden" ? "hidden" : "draft"}
+              kind={m.invitation_type}
+              events={m.event_types}
+              info={`${m.fields.length} élément(s) modifiable(s) par vous et par le client`}
+              busy={busy === m.slug}
+              viewUrl={customModelUrl(m)}
+              onOpen={() => {
+                onNotice(null);
+                setEditingSlug(m.slug);
+              }}
+              onRename={() => setRenamingSlug(m.slug)}
+              onClassify={() => setClassifyingSlug(m.slug)}
+              onCover={() => setCoverSlug(m.slug)}
+              onPublish={() => act(m, () => publish(m), `« ${m.name} » est publié sur le site.`)}
+              onShow={() => act(m, () => saveCustomModel(supabase, m.slug, { status: "published" }), `« ${m.name} » est de retour sur le site.`)}
+              onHide={() => {
+                if (!confirm(`Retirer « ${m.name} » du site ? Les invitations déjà achetées restent intactes.`)) return;
+                act(m, () => saveCustomModel(supabase, m.slug, { status: "hidden" }), `« ${m.name} » est retiré du site.`);
+              }}
+              onDelete={() => remove(m)}
+            />
+          ))}
         </div>
       )}
 
@@ -270,6 +195,20 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
           />
         );
       })()}
+
+      {renaming && (
+        <RenameModelModal
+          modelName={renaming.name}
+          modelImage={renaming.cover_url}
+          onClose={() => setRenamingSlug(null)}
+          onSave={async (newName) => {
+            await saveCustomModel(supabase, renaming.slug, { name: newName });
+            setRenamingSlug(null);
+            onNotice({ ok: true, text: `Le modèle s'appelle désormais « ${newName} » sur l'ensemble du site.` });
+            await load();
+          }}
+        />
+      )}
 
       {classifying && (
         <ClassifyModal

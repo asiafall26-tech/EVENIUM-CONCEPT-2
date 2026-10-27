@@ -7,6 +7,25 @@
   if (window.__evRuntime) return;
   window.__evRuntime = true;
 
+  /*
+   * Fondus sonores des modèles : un volume calculé hors de 0 – 1 (ex. -0.0002 en fin de fondu) fait planter
+   * leur script ; il est ramené dans les limites au lieu de lever une erreur.
+   */
+  try {
+    var vol = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "volume");
+    if (vol && vol.set) {
+      Object.defineProperty(HTMLMediaElement.prototype, "volume", {
+        configurable: true,
+        enumerable: vol.enumerable,
+        get: vol.get,
+        set: function (v) {
+          var n = Number(v);
+          vol.set.call(this, isFinite(n) ? Math.min(1, Math.max(0, n)) : 1);
+        },
+      });
+    }
+  } catch (e) {}
+
   var slug = (location.pathname.match(/^\/m\/([a-z0-9-]+)\//) || [])[1];
   var inFrame = window.parent && window.parent !== window;
   var pickMode = false;
@@ -165,24 +184,197 @@
     });
   }
 
-  /* Bloc de fin (création d'événement, studio admin) : boutons renvoyés au site */
+  /*
+   * Conteneur qui défile réellement : la page elle-même, ou un bloc intérieur plein écran
+   * (modèles dont le corps ne défile pas et dont tout le contenu est dans un conteneur).
+   */
+  function scrollHost() {
+    var vh = window.innerHeight;
+    var best = null;
+    document.body.querySelectorAll("*").forEach(function (el) {
+      if (el.id === "ev-end-cta" || el.closest("#ev-end-cta")) return;
+      var oy = getComputedStyle(el).overflowY;
+      if (oy !== "auto" && oy !== "scroll") return;
+      if (el.clientHeight < vh * 0.6 || el.scrollHeight <= el.clientHeight + 1) return;
+      if (!best || el.clientHeight > best.clientHeight) best = el;
+    });
+    var page = document.scrollingElement || document.documentElement;
+    var pageScrolls = page.scrollHeight > vh + 1 && getComputedStyle(document.body).overflowY !== "hidden";
+    return best && !pageScrolls ? best : document.body;
+  }
+
+  /*
+   * Le bloc de fin doit toujours rester visible et en dernier : remis en place si le modèle
+   * réécrit sa page, ajoute des éléments après lui, ou défile dans un conteneur intérieur.
+   */
+  var ctaBox = null;
+  function placeCta() {
+    if (!ctaBox) return;
+    var host = scrollHost();
+    if (ctaBox.parentNode !== host || host.lastElementChild !== ctaBox) {
+      // Les éléments ajoutés par le site (musique) peuvent rester après le bloc
+      var last = host.lastElementChild;
+      while (last && last !== ctaBox && (last.tagName === "SCRIPT" || /^ev-/.test(last.id || "") || last === bgBtn)) last = last.previousElementSibling;
+      if (last !== ctaBox) {
+        host.appendChild(ctaBox);
+        paintCta();
+      }
+    }
+    bleedCta();
+  }
+
+  /* Bloc de fin d'un bord à l'autre de l'écran et tout en bas, même si la page du modèle a des marges */
+  function bleedCta() {
+    if (!ctaBox || !ctaBox.parentNode) return;
+    var s = ctaBox.style;
+    s.marginLeft = "0px";
+    s.marginBottom = "0px";
+    s.width = "100%";
+    var vw = document.documentElement.clientWidth;
+    var r = ctaBox.getBoundingClientRect();
+    if (r.left > 0.5 || r.right < vw - 0.5) {
+      s.marginLeft = -r.left + "px";
+      s.width = vw + "px";
+    }
+    // Marge du bas de la page sous le bloc
+    var page = document.scrollingElement || document.documentElement;
+    var gap = page.scrollHeight - (ctaBox.getBoundingClientRect().bottom + page.scrollTop);
+    if (ctaBox.parentNode === document.body && gap > 0.5) s.marginBottom = -gap + "px";
+  }
+
+  /* Couleurs « r, g, b, a » lues dans un style calculé (rgb(), rgba(), dégradés) */
+  function rgbList(s) {
+    var out = [];
+    String(s || "").replace(/rgba?\(([^)]+)\)/g, function (_, v) {
+      var p = v.split(/[ ,/]+/).filter(Boolean).map(parseFloat);
+      out.push({ r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 });
+      return _;
+    });
+    return out;
+  }
+  function solidBg(el) {
+    var cs = getComputedStyle(el);
+    var c = rgbList(cs.backgroundColor)[0];
+    if (c && c.a > 0.5) return c;
+    // Dégradé : la couleur du bas, celle qui touche le bloc de fin
+    var g = rgbList(cs.backgroundImage).filter(function (x) {
+      return x.a > 0.5;
+    });
+    return g.length ? g[g.length - 1] : null;
+  }
+  function visible(el) {
+    return el.offsetHeight > 0 && getComputedStyle(el).position !== "fixed" && !/^ev-/.test(el.id || "") && el.tagName !== "SCRIPT";
+  }
+  /* Couleur du bas de l'invitation, juste au-dessus du bloc de fin */
+  function bottomColor() {
+    var start = ctaBox.previousElementSibling;
+    while (start && !visible(start)) start = start.previousElementSibling;
+    var chain = [];
+    var cur = start;
+    // Blocs pleine largeur imbriqués en fin de page (section > div > …)
+    for (var d = 0; cur && d < 6; d++) {
+      chain.push(cur);
+      var kid = cur.lastElementChild;
+      while (kid && !visible(kid)) kid = kid.previousElementSibling;
+      cur = kid && kid.offsetWidth >= cur.offsetWidth * 0.9 ? kid : null;
+    }
+    var found = null;
+    chain.forEach(function (el) {
+      found = solidBg(el) || found;
+    });
+    if (found) return found;
+    for (var up = ctaBox.parentElement; up; up = up.parentElement) {
+      var c = solidBg(up);
+      if (c) return c;
+    }
+    return { r: 20, g: 16, b: 12, a: 1 };
+  }
+  function lum(c) {
+    var f = function (v) {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  }
+  function mix(c, to, k) {
+    return "rgb(" + [c.r, c.g, c.b].map(function (v, i) {
+      return Math.round(v + ([to.r, to.g, to.b][i] - v) * k);
+    }).join(",") + ")";
+  }
+  /* Couleur marquante du modèle (titres), sinon l'or Evenium */
+  function accentColor(light) {
+    var hs = document.querySelectorAll("h1, h2, [data-ev-type='text']");
+    for (var i = 0; i < hs.length && i < 40; i++) {
+      if (hs[i].closest("#ev-end-cta") || !hs[i].offsetParent) continue;
+      var c = rgbList(getComputedStyle(hs[i]).color)[0];
+      if (!c) continue;
+      var max = Math.max(c.r, c.g, c.b), min = Math.min(c.r, c.g, c.b);
+      // Assez coloré, et lisible sur le fond du bloc
+      if (max - min > 50 && (light ? lum(c) < 0.45 : lum(c) > 0.18)) return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
+    }
+    return light ? "#a8832a" : "#d4af37";
+  }
+  function titleFont() {
+    var h = document.querySelector("h1, h2");
+    var f = h && !h.closest("#ev-end-cta") ? getComputedStyle(h).fontFamily : "";
+    return f ? f + ", Georgia, serif" : "Georgia, serif";
+  }
+
+  /* Le bloc de fin prend les couleurs et la police de l'invitation, dans son prolongement */
+  function paintCta() {
+    if (!ctaBox || !ctaBox.parentNode) return;
+    var base = bottomColor();
+    var light = lum(base) > 0.4;
+    var ink = light ? { r: 0, g: 0, b: 0 } : { r: 255, g: 255, b: 255 };
+    var accent = accentColor(light);
+    var s = ctaBox.style;
+    s.background = "linear-gradient(180deg," + mix(base, ink, 0) + " 0%," + mix(base, ink, light ? 0.05 : 0.07) + " 100%)";
+    s.color = light ? "#2a1f1a" : "#f5eee1";
+    s.borderTop = "1px solid " + accent;
+    var q = function (r) {
+      return ctaBox.querySelector('[data-r="' + r + '"]');
+    };
+    q("kicker").style.color = accent;
+    q("title").style.color = light ? "#1f1715" : "#ffffff";
+    q("title").style.fontFamily = titleFont();
+    q("desc").style.color = light ? "rgba(31,23,21,.72)" : "rgba(255,255,255,.75)";
+    var sec = q("secondary").style;
+    sec.color = light ? "#1f1715" : "#ffffff";
+    sec.border = "1px solid " + (light ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.28)");
+    sec.background = light ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.06)";
+  }
+  var placeTimer = null;
+  var ctaObserver = new MutationObserver(function () {
+    if (placeTimer) return;
+    placeTimer = setTimeout(function () {
+      placeTimer = null;
+      placeCta();
+    }, 300);
+  });
+
+  /* Bloc de fin (création d'événement, studio admin, démo) : boutons renvoyés au site */
   function cta(text) {
     var old = document.getElementById("ev-end-cta");
     if (old) old.remove();
+    ctaBox = null;
+    ctaObserver.disconnect();
     if (!text) return;
     var box = document.createElement("section");
     box.id = "ev-end-cta";
+    box.setAttribute("data-inv-cta", "");
+    // Au-dessus des décors du modèle (ballons, particules…), sous le bouton musique
     box.setAttribute(
       "style",
-      "all:initial;display:block;box-sizing:border-box;width:100%;padding:48px 16px 64px;background:#14100c;font-family:system-ui,-apple-system,sans-serif;text-align:center;color:#f5eee1"
+      "all:initial;display:block;position:relative;z-index:2147482000;box-sizing:border-box;width:100%;padding:48px 16px 64px;background:#14100c;font-family:system-ui,-apple-system,sans-serif;text-align:center;color:#f5eee1;visibility:visible;opacity:1;transform:none"
     );
+    // Couleurs posées par paintCta selon l'invitation
     box.innerHTML =
       '<div style="max-width:420px;margin:0 auto">' +
-      '<p style="margin:0 0 8px;font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:#d4af37"></p>' +
-      '<h3 style="margin:0 0 10px;font-family:Georgia,serif;font-size:26px;font-weight:600;color:#fff"></h3>' +
-      '<p style="margin:0 0 24px;font-size:14px;line-height:1.5;color:#cfc6b8"></p>' +
-      '<button data-a="primary" style="display:block;width:100%;margin:0 0 10px;padding:14px;border:0;border-radius:999px;background:linear-gradient(90deg,#d4af37,#f3e5ab,#d4af37);color:#000;font-weight:800;font-size:15px;cursor:pointer"></button>' +
-      '<button data-a="secondary" style="display:block;width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:transparent;color:#fff;font-weight:600;font-size:14px;cursor:pointer"></button>' +
+      '<p data-r="kicker" style="margin:0 0 8px;font-size:11px;letter-spacing:.25em;text-transform:uppercase"></p>' +
+      '<h3 data-r="title" style="margin:0 0 10px;font-size:26px;font-weight:600;line-height:1.2"></h3>' +
+      '<p data-r="desc" style="margin:0 0 24px;font-size:14px;line-height:1.5"></p>' +
+      '<button data-a="primary" style="display:block;width:100%;margin:0 0 10px;padding:14px;border:0;border-radius:999px;background:linear-gradient(90deg,#d4af37,#f3e5ab,#d4af37);color:#000;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 8px 24px rgba(212,175,55,.3)"></button>' +
+      '<button data-a="secondary" data-r="secondary" style="display:block;width:100%;padding:12px;border-radius:999px;font-weight:600;font-size:14px;cursor:pointer"></button>' +
       "</div>";
     var ps = box.querySelectorAll("p");
     ps[0].textContent = text.kicker || "";
@@ -193,16 +385,26 @@
     primary.textContent = text.primary || "Valider";
     secondary.textContent = text.secondary || "Retour";
     // Dans le site (aperçu) : message à la page ; démo ouverte seule : liens vers la création et la galerie
+    // Liens : dans la page entière, même quand la démo est affichée dans le cadre téléphone (/apercu)
     primary.onclick = function () {
-      if (text.primaryHref) location.href = text.primaryHref;
+      if (text.primaryHref) window.top.location.href = text.primaryHref;
       else window.parent.postMessage({ type: "evenium:open-checkout" }, location.origin);
     };
     secondary.onclick = function () {
-      if (text.secondaryHref) location.href = text.secondaryHref;
+      if (text.secondaryHref) window.top.location.href = text.secondaryHref;
       else window.parent.postMessage({ type: "evenium:close-preview" }, location.origin);
     };
-    document.body.appendChild(box);
+    ctaBox = box;
+    placeCta();
+    paintCta();
+    ctaObserver.observe(document.body, { childList: true, subtree: true });
   }
+  window.addEventListener("load", function () {
+    placeCta();
+    paintCta();
+  });
+  window.addEventListener("resize", placeCta);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(bleedCta);
 
   /* Polices, couleurs et tailles choisies dans « Style & polices » */
   function applyStyle(st) {
@@ -371,10 +573,23 @@
   });
 
   findSections();
-  if (inFrame) {
+  // ?demo=1 : démo publique affichée dans le cadre téléphone de la page d'aperçu (ordinateur)
+  var demo = /[?&]demo=1(&|$)/.test(location.search);
+  if (inFrame && !demo) {
     window.parent.postMessage({ type: "ev:ready" }, location.origin);
   } else {
     if (slug) {
+      // Démo ouverte seule : choisir ce modèle (création d'événement) ou revenir aux autres modèles.
+      // Affiché d'emblée, même si les valeurs publiées ne se chargent pas : le client n'est jamais sans issue.
+      cta({
+        kicker: "Aperçu du modèle",
+        title: "Ce modèle vous plaît ?",
+        desc: "Choisissez-le pour le personnaliser avec vos textes, photos et musique, puis validez votre événement.",
+        primary: "Choisir ce modèle",
+        secondary: "Retour aux modèles",
+        primaryHref: "/create?model=custom:" + slug,
+        secondaryHref: "/invitations",
+      });
       // Démo publique : valeurs publiées par l'admin
       fetch("/api/custom-models/" + slug, { cache: "no-store" })
         .then(function (r) {
@@ -386,16 +601,8 @@
             apply(d.values);
             structure(d.values);
             music(d.values);
-            // Démo ouverte seule : choisir ce modèle (création d'événement) ou revenir aux autres modèles
-            cta({
-              kicker: "Aperçu du modèle",
-              title: "Ce modèle vous plaît ?",
-              desc: "Choisissez-le pour le personnaliser avec vos textes, photos et musique, puis validez votre événement.",
-              primary: "Choisir ce modèle",
-              secondary: "Retour aux modèles",
-              primaryHref: "/create?model=custom:" + slug,
-              secondaryHref: "/invitations",
-            });
+            placeCta();
+            paintCta();
             scheduleFit();
           }
         })

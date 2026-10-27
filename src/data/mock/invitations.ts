@@ -92,22 +92,11 @@ export function registerModelNames(map: Record<string, string>) {
   dynamicModelNames = { ...dynamicModelNames, ...map };
 }
 
-/** Cache en mémoire des couvertures (modèles importés, couvertures choisies par l'admin) */
-let dynamicModelCovers: Record<string, string> = {};
-
-export function registerModelCovers(map: Record<string, string>) {
-  dynamicModelCovers = { ...dynamicModelCovers, ...map };
-}
-
-/** Modèle importé par l'admin (identifiant « custom:<slug> ») : jamais deviné d'après son identifiant */
-const isImportedId = (id: string) => id.startsWith("custom:");
-
 /** Retrieve the human-readable, official name of an invitation model */
 export function getInvitationModelName(id?: string | null, customNames?: Record<string, string>): string {
   if (!id) return "Modèle Exclusif";
   if (customNames && customNames[id]) return customNames[id];
   if (dynamicModelNames[id]) return dynamicModelNames[id];
-  if (isImportedId(id)) return "Modèle Exclusif";
   const model = getInvitationModel(id);
   if (model) return model.name;
 
@@ -122,10 +111,8 @@ export function getInvitationModelName(id?: string | null, customNames?: Record<
 
 /** Retrieve the thumbnail image of an invitation model */
 export function getInvitationModelThumbnail(id?: string | null): string {
-  if (id && dynamicModelCovers[id]) return dynamicModelCovers[id];
   const model = getInvitationModel(id);
   if (model?.thumbnail) return model.thumbnail;
-  if (id && isImportedId(id)) return "/invit-velours-cover.jpg";
 
   const lower = (id || "").toLowerCase();
   if (id === "invit-7" || lower.includes("velours")) return "/invit-velours-cover.jpg";

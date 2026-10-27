@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Check, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 
 interface RenameModelModalProps {
   modelName: string;
-  originalName: string;
-  modelImage: string;
+  /** Nom d'origine (modèles Evenium) : proposé pour revenir en arrière */
+  originalName?: string;
+  modelImage: string | null;
   onClose: () => void;
   onSave: (newName: string) => Promise<void>;
 }
@@ -43,7 +43,7 @@ export default function RenameModelModal({
     }
   };
 
-  const isCustomized = name.trim() !== originalName.trim();
+  const isCustomized = !!originalName && name.trim() !== originalName.trim();
 
   return (
     <Modal isOpen onClose={onClose} title="Renommer l'invitation" maxWidth="lg">
@@ -51,12 +51,16 @@ export default function RenameModelModal({
         {/* Aperçu du modèle */}
         <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
           <div className="relative w-16 h-14 rounded-xl overflow-hidden bg-gray-900 shrink-0 border border-gray-200">
-            <Image src={modelImage} alt={modelName} fill className="object-cover" sizes="64px" />
+            {modelImage && (
+              // Couverture du site ou du stockage (modèles importés)
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={modelImage} alt={modelName} className="absolute inset-0 w-full h-full object-cover" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs text-gray-500 font-medium">Modèle sélectionné</p>
             <h4 className="font-serif text-base text-gray-900 truncate font-semibold">{modelName}</h4>
-            {originalName !== modelName && (
+            {originalName && originalName !== modelName && (
               <p className="text-[11px] text-[#8f6f33]">Nom d&apos;origine : {originalName}</p>
             )}
           </div>
@@ -86,7 +90,7 @@ export default function RenameModelModal({
             {isCustomized && (
               <button
                 type="button"
-                onClick={() => setName(originalName)}
+                onClick={() => setName(originalName ?? name)}
                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#8f6f33] hover:underline"
               >
                 <RotateCcw size={12} /> Rétablir « {originalName} »

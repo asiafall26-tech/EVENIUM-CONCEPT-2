@@ -11,6 +11,7 @@ import { createClient } from "@/utils/supabase/client";
 import { fetchModelDefaults } from "@/lib/modelDefaults";
 import { fetchCustomModels } from "@/lib/customModels";
 import { buildShowcase } from "@/lib/showcase";
+import { previewHref } from "@/lib/modelPreview";
 
 interface HomeShowcaseProps {
   initialModels: InvitationModel[];
@@ -90,7 +91,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
             {showcaseModels.map((model, i) => (
               <Link
                 key={model.id}
-                href={model.liveUrl || "/invitations"}
+                href={previewHref(model)}
                 className={`${
                   showcaseModels.length >= 4
                     ? ""

@@ -25,6 +25,8 @@ export default function InvitationEndCta({
 }: InvitationEndCtaProps) {
   const [mounted, setMounted] = useState(false);
   const [isIframe, setIsIframe] = useState(false);
+  // Démo publique affichée dans le cadre téléphone de la page d'aperçu (/apercu, sur ordinateur)
+  const [isDemo, setIsDemo] = useState(false);
   const pathname = usePathname();
   const cta = useInvitationCta();
   const custom = ctaText(cta.variant);
@@ -32,6 +34,7 @@ export default function InvitationEndCta({
 
   useEffect(() => {
     setMounted(true);
+    setIsDemo(new URLSearchParams(window.location.search).get("demo") === "1");
     try {
       setIsIframe(window.self !== window.top);
     } catch {
@@ -61,7 +64,7 @@ export default function InvitationEndCta({
 
   // When rendered inside an editor studio side-by-side iframe (not the fullscreen view),
   // do not display the public marketing footer
-  if (!cta.force && mounted && isIframe && !isCreate) {
+  if (!cta.force && mounted && isIframe && !isCreate && !isDemo) {
     return null;
   }
 
@@ -190,6 +193,7 @@ export default function InvitationEndCta({
                 {/* 1. Primary Action: Choisir ce modèle */}
                 <Link
                   href={createUrl}
+                  target={isDemo ? "_top" : undefined}
                   className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-sm sm:text-base shadow-xl shadow-[#D4AF37]/25 hover:shadow-[#D4AF37]/45 hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-[#D4AF37]/60 group cursor-pointer whitespace-nowrap"
                 >
                   <Sparkles size={17} className="text-black group-hover:rotate-12 transition-transform shrink-0" />
@@ -199,6 +203,7 @@ export default function InvitationEndCta({
                 {/* 2. Retour à la galerie pour voir les autres modèles */}
                 <Link
                   href="/invitations"
+                  target={isDemo ? "_top" : undefined}
                   className={`w-full py-3 px-6 rounded-full text-sm font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer whitespace-nowrap ${
                     isDark
                       ? "bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50"

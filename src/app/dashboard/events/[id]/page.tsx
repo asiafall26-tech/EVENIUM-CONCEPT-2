@@ -7,7 +7,6 @@ import { use, useState, useEffect } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
 import { getInvitationModelName } from "@/data/mock/invitations";
-import { loadModelLabels } from "@/lib/customModels";
 import { eventDetailsFromRow, hasExtraDetails, requiresEventDetails } from "@/lib/eventDetails";
 
 export default function EventDashboardPage({
@@ -25,13 +24,6 @@ export default function EventDashboardPage({
   const [notFoundTriggered, setNotFoundTriggered] = useState(false);
 
   const event = eventFromContext || directEvent;
-
-  // Nom du modèle choisi (dont les modèles importés par l'admin) : chargé puis réaffiché
-  const [, setLabelsLoaded] = useState(false);
-  useEffect(() => {
-    loadModelLabels(supabase).then(() => setLabelsLoaded(true)).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (eventFromContext) {

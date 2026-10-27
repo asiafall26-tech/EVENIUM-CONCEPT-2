@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { classificationOf, fetchModelDefaults, modelCoverOf, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
 import { customModelId, customModelUrl, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
+import { previewHref } from "@/lib/modelPreview";
 
 export default function InvitationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Mariage");
@@ -171,7 +172,7 @@ export default function InvitationsPage() {
             {animatedModels.map((model) => (
               <Link
                 key={model.id}
-                href={model.liveUrl || "/invitation-mariage"}
+                href={previewHref(model)}
                 className="group relative flex flex-col items-center block w-full focus:outline-none"
               >
                 <div className="w-full aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all relative cursor-pointer border border-gray-200 group-hover:border-[#b8924a]/60 group-hover:-translate-y-1">
@@ -250,7 +251,7 @@ export default function InvitationsPage() {
             {cardModels.map((model) => (
               <Link
                 key={model.id}
-                href={model.liveUrl || "/invitation-mariage"}
+                href={previewHref(model)}
                 className="group relative flex flex-col items-center block w-full focus:outline-none"
               >
                 <div className="w-full aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all relative cursor-pointer border border-gray-200 group-hover:border-[#b8924a]/60 group-hover:-translate-y-1">

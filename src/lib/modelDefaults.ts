@@ -311,6 +311,31 @@ export async function resetModelDefault(supabase: SupabaseClient, modelId: strin
 }
 
 
+/* ---------- Suppression d'un modèle Evenium ---------- */
+
+/** Modèle Evenium supprimé par l'admin : absent du studio et du site (son code reste, pour les invitations déjà achetées). */
+export const isModelDeleted = (row: ModelDefaultRow | undefined) => (row?.content as Record<string, unknown> | null | undefined)?.model_deleted === true;
+
+/**
+ * « Supprimer » / « Restaurer » un modèle Evenium. Rangé dans le contenu du modèle (aucune colonne à ajouter) ;
+ * supprimé, il est aussi retiré du site. Restauré, il revient dans le studio, retiré du site jusqu'à sa remise en ligne.
+ */
+export async function setModelDeleted(supabase: SupabaseClient, modelId: string, deleted: boolean, userId?: string) {
+  const existing = await supabase.from(MODEL_DEFAULTS_TABLE).select("content, draft_content").eq("model_id", modelId).maybeSingle();
+  const asObject = (v: unknown) => (v && typeof v === "object" ? { ...(v as Record<string, unknown>) } : {});
+  const content = asObject(existing.data?.content);
+  if (deleted) content.model_deleted = true;
+  else delete content.model_deleted;
+  await write(supabase, {
+    model_id: modelId,
+    content: Object.keys(content).length ? content : null,
+    draft_content: existing.data?.draft_content ?? null,
+    is_hidden: true,
+    updated_at: new Date().toISOString(),
+    updated_by: userId ?? null,
+  });
+}
+
 /* ---------- Photo de couverture (vitrine et galeries) ---------- */
 
 /** Photo de couverture choisie par l'admin, sinon celle d'origine du modèle. */
