@@ -974,7 +974,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
           </div>
 
           {/* Le Studio embarqué dédié uniquement au modèle choisi (sans cadre en double sur téléphone) */}
-          <div className={`w-full bg-[#faf7f5] rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-xl border border-gray-200/90 overflow-clip lg:overflow-hidden flex flex-col sm:min-h-[750px] lg:h-[940px] 2xl:h-[980px] [--studio-sticky-top:4rem] ${inDashboard ? 'sm:[--studio-sticky-top:5rem]' : ''} lg:[--studio-sticky-top:0px]`}>
+          <div className={`w-full bg-white rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-xl border border-gray-200/90 overflow-hidden flex flex-col sm:min-h-[750px] lg:h-[940px] 2xl:h-[980px] [--studio-sticky-top:4rem] ${inDashboard ? 'sm:[--studio-sticky-top:5rem]' : ''} lg:[--studio-sticky-top:0px]`}>
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursStudio
                 value={veloursContent}

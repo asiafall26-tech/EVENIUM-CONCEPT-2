@@ -229,44 +229,50 @@ export function AudioField({
       <span className="block text-xs font-semibold text-gray-700">{label}</span>
       <input ref={fileRef} type="file" accept="audio/*,.mp3,.m4a,.wav" className="hidden" onChange={importFile} />
 
-      <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-[#5c0f21]/10 text-[#5c0f21] flex items-center justify-center shrink-0">
-            <Music size={22} />
+      <div className="p-3 sm:p-4 bg-gray-50/90 rounded-2xl border border-gray-200/90 flex flex-col gap-3 shadow-2xs">
+        {/* En-tête : Morceau actuel + contrôles avec pleine largeur sur mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#5c0f21]/10 text-[#5c0f21] flex items-center justify-center shrink-0">
+              <Music size={20} />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              {value.url ? (
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900 truncate" title={value.title || "Musique d'ouverture sélectionnée"}>
+                    {value.title || "Musique d'ouverture sélectionnée"}
+                  </p>
+                  <p className="text-[11px] text-green-700 font-medium flex items-center gap-1 mt-0.5">
+                    <CheckCircle size={12} className="shrink-0" /> Prête pour l&apos;ouverture
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700">Aucune musique ajoutée</p>
+                  <p className="text-[11px] text-gray-400 truncate">{emptyHint}</p>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex-1 min-w-0">
-            {value.url ? (
-              <div>
-                <p className="text-xs font-bold text-gray-900 truncate">{value.title || "Musique d'ouverture sélectionnée"}</p>
-                <p className="text-[11px] text-green-700 font-medium flex items-center gap-1 mt-0.5">
-                  <CheckCircle size={12} /> Prête pour l&apos;ouverture
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-xs font-medium text-gray-700">Aucune musique ajoutée</p>
-                <p className="text-[11px] text-gray-400">{emptyHint}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-end">
             {value.url && (
               <button
                 type="button"
                 onClick={togglePlay}
-                className="w-9 h-9 rounded-xl bg-white border border-gray-200 hover:bg-gray-100 text-gray-800 flex items-center justify-center transition-colors shadow-sm"
+                className="flex-1 sm:flex-initial h-9 px-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-100 text-gray-800 flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors shadow-2xs"
                 title={isPlaying ? "Mettre en pause" : "Écouter"}
               >
-                {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                {isPlaying ? <Pause size={14} className="text-[#5c0f21]" /> : <Play size={14} className="text-[#5c0f21]" />}
+                <span>{isPlaying ? "Pause" : "Écouter"}</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#5c0f21] hover:bg-[#7a1a2e] text-white text-xs font-semibold transition-colors shadow-sm"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#5c0f21] hover:bg-[#7a1a2e] text-white text-xs font-semibold transition-colors shadow-2xs"
             >
               <Music size={14} />
               <span>{value.url ? "Changer" : "Choisir une musique"}</span>
@@ -274,11 +280,12 @@ export function AudioField({
           </div>
         </div>
 
+        {/* Bouton Import personnel */}
         <button
           type="button"
           disabled={uploading}
           onClick={() => fileRef.current?.click()}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-[#D4AF37]/50 bg-white text-xs font-semibold text-[#8a6d1f] hover:bg-[#FFFBF0] hover:border-[#D4AF37] transition-colors disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-[#D4AF37]/50 bg-white text-xs font-semibold text-[#8a6d1f] hover:bg-[#FFFBF0] hover:border-[#D4AF37] transition-colors disabled:opacity-60 shadow-2xs"
         >
           {uploading ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
           {uploading ? "Import en cours…" : "Importer mon propre son (MP3, M4A, WAV)"}
@@ -286,9 +293,9 @@ export function AudioField({
         {uploadError && <p className="text-[11px] text-red-600">{uploadError}</p>}
 
         {value.url && (
-          <div className="flex items-center justify-between pt-2 border-t border-gray-200/60">
+          <div className="flex items-center justify-between pt-1 border-t border-gray-200/60">
             <audio ref={audioPlayerRef} src={value.url} onEnded={() => setIsPlaying(false)} className="hidden" />
-            <span className="text-[10px] text-gray-500">Se lance automatiquement à l&apos;ouverture de l&apos;invitation</span>
+            <span className="text-[11px] text-gray-500">Se lance automatiquement à l&apos;ouverture</span>
             <button
               type="button"
               onClick={() => {
@@ -296,7 +303,7 @@ export function AudioField({
                 setIsPlaying(false);
                 onChange({ url: "", title: "", start: 0, end: 0 });
               }}
-              className="text-xs text-red-600 hover:underline"
+              className="text-xs text-red-600 hover:underline font-medium"
             >
               Retirer le morceau
             </button>
@@ -377,7 +384,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                   <p className="text-xs text-gray-500 mt-1">Prénoms affichés au cœur de l'invitation, date et lieu de réception.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Prénom du 1er marié">
                       <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
@@ -423,7 +430,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                   <p className="text-xs text-gray-500 mt-1">Mots de bienvenue et récit romantique partagés avec vos convives.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Titre d'accueil">
                     <input className={inputCls} value={value.welcomeTitle} onChange={(e) => set("welcomeTitle", e.target.value)} />
                   </Field>
@@ -453,7 +460,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                   <p className="text-xs text-gray-500 mt-1">Déroulé chronologique heure par heure pour rythmer votre journée.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <div className="space-y-2.5">
                     {value.programme.map((p, i) => (
                       <div key={i} className="flex gap-2 items-center bg-white p-3 rounded-xl border border-gray-200 shadow-xs">
@@ -515,7 +522,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                   </p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <PhotoField label="Photo « Notre histoire »" value={value.photoStory} onChange={(v) => set("photoStory", v)} />
                   <PhotoField label="Photo « Programme »" value={value.photoProgramme} onChange={(v) => set("photoProgramme", v)} />
                   {isStatic ? (
@@ -552,7 +559,7 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                   <p className="text-xs text-gray-500 mt-1">Consignes adressées à vos invités et signature finale.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Texte de confirmation (RSVP)">
                     <textarea rows={2} className={`${inputCls} resize-none`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
                   </Field>

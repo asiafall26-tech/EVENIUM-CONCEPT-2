@@ -161,7 +161,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Prénoms, date, textes d&apos;enveloppe et photos d&apos;ambiance.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Prénom 1">
                       <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
@@ -183,7 +183,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   </Field>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <h5 className="text-xs font-bold uppercase tracking-wider text-gray-700">Photos &amp; Cadrage</h5>
                   <PhotoField
                     label="Photo principale (couverture)"
@@ -235,7 +235,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Introduction chaleureuse adressée à vos proches et invités.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Première phrase d'accroche">
                     <input className={inputCls} value={value.welcomeLead} onChange={(e) => set("welcomeLead", e.target.value)} />
                   </Field>
@@ -305,7 +305,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Déroulé chronologique par parties, horaires et moments clés.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Titre principal du programme">
                     <input className={inputCls} value={value.programmeTitle} onChange={(e) => set("programmeTitle", e.target.value)} />
                   </Field>
@@ -372,7 +372,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Palette de couleurs des tenues, date de réponse et mot final.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <h5 className="text-xs font-bold uppercase tracking-wider text-gray-700">Dress Code</h5>
                   <Field label="Consigne pour les tenues">
                     <textarea
@@ -386,7 +386,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   <DressCodeEditor value={value.dressColors} onChange={(v) => set("dressColors", v)} />
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <h5 className="text-xs font-bold uppercase tracking-wider text-gray-700">Confirmation &amp; Fin</h5>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Titre de la confirmation">
@@ -419,7 +419,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   </p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   {isStatic ? (
                     <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
                       <span className="text-base">🔇</span>

@@ -182,13 +182,17 @@ export function AudioTrimmer({ url, start: startProp, end: endProp, onChange }: 
   const isWhole = start === 0 && end === 0;
 
   return (
-    <div className="rounded-2xl border border-[#b8924a]/30 bg-gradient-to-b from-[#fbf7f0] to-white p-3.5 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+    <div className="rounded-2xl border border-[#b8924a]/30 bg-gradient-to-b from-[#fbf7f0] to-white p-3 sm:p-4 space-y-3 shadow-2xs">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-xs sm:text-sm font-bold text-gray-900 flex items-center gap-1.5">
           <Scissors size={14} className="text-[#8f6f33]" /> Partie du morceau jouée sur l&apos;invitation
         </p>
         {!isWhole && (
-          <button type="button" onClick={() => onChange(0, 0)} className="text-[11px] font-semibold text-gray-500 hover:text-gray-900 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onChange(0, 0)}
+            className="text-[11px] font-semibold text-[#8f6f33] hover:text-black flex items-center gap-1 transition-colors"
+          >
             <RotateCcw size={12} /> Tout le morceau
           </button>
         )}
@@ -201,7 +205,7 @@ export function AudioTrimmer({ url, start: startProp, end: endProp, onChange }: 
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className="relative h-20 rounded-xl bg-gray-100/80 overflow-hidden cursor-pointer select-none touch-none"
+        className="relative h-20 sm:h-24 rounded-xl bg-gray-100/90 overflow-hidden cursor-pointer select-none touch-none border border-gray-200/60"
       >
         {/* Bars */}
         <div className="absolute inset-0 flex items-center gap-[2px] px-1">
@@ -230,11 +234,11 @@ export function AudioTrimmer({ url, start: startProp, end: endProp, onChange }: 
             <div
               onPointerDown={(e) => startDrag("move", e)}
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-0 bottom-0 bg-[#b8924a]/10 border-y-2 border-[#b8924a] cursor-grab active:cursor-grabbing"
+              className="absolute top-0 bottom-0 bg-[#b8924a]/15 border-y-2 border-[#b8924a] cursor-grab active:cursor-grabbing"
               style={{ left: pct(start), width: `calc(${pct(realEnd)} - ${pct(start)})` }}
               title="Faites glisser pour déplacer l'extrait"
             />
-            {/* Handles */}
+            {/* Handles : zone tactile élargie pour le confort mobile */}
             {(["start", "end"] as const).map((k) => (
               <div
                 key={k}
@@ -250,10 +254,10 @@ export function AudioTrimmer({ url, start: startProp, end: endProp, onChange }: 
                   if (e.key === "ArrowLeft") nudge(k, -1);
                   if (e.key === "ArrowRight") nudge(k, 1);
                 }}
-                className="absolute top-0 bottom-0 w-4 -ml-2 flex items-center justify-center cursor-ew-resize z-10 focus:outline-none group"
+                className="absolute top-0 bottom-0 w-6 -ml-3 flex items-center justify-center cursor-ew-resize z-10 focus:outline-none group touch-none"
                 style={{ left: pct(k === "start" ? start : realEnd) }}
               >
-                <span className="w-1.5 h-12 rounded-full bg-[#241b13] ring-2 ring-white shadow-md group-focus:ring-[#b8924a]" />
+                <span className="w-2 h-14 rounded-full bg-[#241b13] ring-2 ring-white shadow-lg group-focus:ring-[#b8924a] transition-transform group-hover:scale-110" />
               </div>
             ))}
             {/* Playhead */}
@@ -262,34 +266,54 @@ export function AudioTrimmer({ url, start: startProp, end: endProp, onChange }: 
         )}
       </div>
 
-      {/* Times + controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3 text-[11px] text-gray-600">
-          {(["start", "end"] as const).map((k) => (
-            <span key={k} className="inline-flex items-center gap-1">
-              <span className="font-semibold text-gray-500">{k === "start" ? "Début" : "Fin"}</span>
-              <button type="button" onClick={() => nudge(k, -1)} aria-label="Reculer d'une seconde" className="w-6 h-6 rounded-md bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center">
-                <Minus size={11} />
+      {/* Times + controls : 2 cards spacieuses Début / Fin pour mobile et desktop */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        {(["start", "end"] as const).map((k) => (
+          <div key={k} className="bg-white rounded-xl border border-gray-200/90 p-2 sm:p-2.5 flex items-center justify-between gap-1 shadow-2xs">
+            <span className="text-[11px] sm:text-xs font-semibold text-gray-500">{k === "start" ? "Début" : "Fin"}</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => nudge(k, -1)}
+                aria-label="Reculer d'une seconde"
+                className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 flex items-center justify-center transition-colors"
+              >
+                <Minus size={12} />
               </button>
-              <span className="font-mono font-bold text-gray-900 w-9 text-center">{formatTime(k === "start" ? start : realEnd)}</span>
-              <button type="button" onClick={() => nudge(k, 1)} aria-label="Avancer d'une seconde" className="w-6 h-6 rounded-md bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center">
-                <Plus size={11} />
+              <span className="font-mono font-bold text-xs sm:text-sm text-gray-900 w-10 text-center">
+                {formatTime(k === "start" ? start : realEnd)}
+              </span>
+              <button
+                type="button"
+                onClick={() => nudge(k, 1)}
+                aria-label="Avancer d'une seconde"
+                className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 flex items-center justify-center transition-colors"
+              >
+                <Plus size={12} />
               </button>
-            </span>
-          ))}
-          <span className="text-gray-400">
-            Durée <b className="font-mono text-gray-700">{formatTime(Math.max(0, realEnd - start))}</b>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+        <span className="text-[11px] text-gray-600 flex items-center gap-1.5">
+          <span className="font-medium">Durée de l&apos;extrait :</span>
+          <span className="font-mono font-bold text-gray-900 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md">
+            {formatTime(Math.max(0, realEnd - start))}
           </span>
-        </div>
+        </span>
+
         <button
           type="button"
           onClick={togglePreview}
           disabled={!duration}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#241b13] text-[#d9c08c] text-xs font-semibold hover:bg-black disabled:opacity-40"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#241b13] text-[#d9c08c] text-xs font-bold hover:bg-black shadow-sm disabled:opacity-40 transition-all active:scale-98"
         >
-          {playing ? <Pause size={13} /> : <Play size={13} />} {playing ? "Arrêter" : "Écouter l'extrait"}
+          {playing ? <Pause size={14} /> : <Play size={14} />} {playing ? "Arrêter la lecture" : "Écouter l'extrait choisi"}
         </button>
       </div>
+
       <p className="text-[10px] text-gray-400">Faites glisser les poignées ou l&apos;extrait doré. L&apos;extrait est joué en boucle sur l&apos;invitation.</p>
     </div>
   );

@@ -136,7 +136,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Prénoms affichés au cœur de l'invitation, date officielle et compte à rebours.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Prénom du 1er marié">
                       <input className={inputCls} value={value.partnerA} placeholder="Ex: Adama" onChange={(e) => set("partnerA", e.target.value)} />
@@ -173,7 +173,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Phrases poétiques et message de célébration affichés sous la vidéo.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Citation des mariés" hint="Sautez une ligne pour couper la phrase harmonieusement.">
                     <textarea rows={4} className={`${inputCls} min-h-[110px] resize-y`} value={value.quote} onChange={(e) => set("quote", e.target.value)} />
                   </Field>
@@ -199,7 +199,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Photos haute définition qui défilent dans le carrousel animé.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Titre de la galerie">
                     <input className={inputCls} value={value.galleryTitle} onChange={(e) => set("galleryTitle", e.target.value)} />
                   </Field>
@@ -249,7 +249,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Racontez votre parcours : la rencontre, le premier voyage, la demande en mariage.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Titre de la section">
                     <input className={inputCls} value={value.storyTitle} onChange={(e) => set("storyTitle", e.target.value)} />
                   </Field>
@@ -299,7 +299,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Programme chronologique pour guider vos invités tout au long de la fête.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Titre principal">
                       <input className={inputCls} value={value.programmeTitle} onChange={(e) => set("programmeTitle", e.target.value)} />
@@ -354,7 +354,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                   <p className="text-xs text-gray-500 mt-1">Permet à vos convives d'ouvrir l'itinéraire directement dans leur application GPS.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Nom du lieu ou de la salle">
                     <input className={inputCls} value={value.venue} placeholder="Ex: Les Jardins de la Corniche" onChange={(e) => set("venue", e.target.value)} />
                   </Field>
@@ -388,7 +388,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                   </p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Date limite de confirmation" hint="Laissez vide si vous ne souhaitez pas de date butoir.">
                     <input className={inputCls} value={value.rsvpDeadline} placeholder="Ex: 8 novembre 2026" onChange={(e) => set("rsvpDeadline", e.target.value)} />
                   </Field>

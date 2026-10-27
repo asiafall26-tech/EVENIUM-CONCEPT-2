@@ -41,7 +41,7 @@ function Section({ n, title, desc, children }: { n: number; title: string; desc:
   );
 }
 
-const box = "p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4";
+const box = "p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4";
 
 /** Éditeur du modèle « Anniversaire Bordeaux & Or » (deux pages). */
 export default function AnniversaireStudio({ value, onChange, onViewFullScreen, onFinalize, isStatic }: Props) {

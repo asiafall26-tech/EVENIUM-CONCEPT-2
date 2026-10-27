@@ -303,7 +303,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   <p className="text-xs text-gray-500 mt-1">Prénoms gravés sous le sceau royal, date et message d'accueil.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <Field label="Prénom du 1er marié">
                       <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
@@ -352,7 +352,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   <p className="text-xs text-gray-500 mt-1">Coordonnées du lieu de réception et carte interactive.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Titre de la carte">
                     <input className={inputCls} value={value.venueTitle} onChange={(e) => set("venueTitle", e.target.value)} />
                   </Field>
@@ -396,7 +396,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   <p className="text-xs text-gray-500 mt-1">Chaque page du livret correspond à un moment de la célébration.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <div className="space-y-3.5">
                     {pages.map((p, i) => (
                       <ProgrammePageEditor
@@ -437,7 +437,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   <p className="text-xs text-gray-500 mt-1">Guide vestimentaire et nuances d'honneur suggérées aux invités.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Consigne du dress code">
                     <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={value.dressCodeText} onChange={(e) => set("dressCodeText", e.target.value)} />
                   </Field>
@@ -459,7 +459,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   <p className="text-xs text-gray-500 mt-1">Facilitez les attentions de vos convives avec votre message ou liste de mariage.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Titre">
                     <input className={inputCls} value={value.giftsTitle} onChange={(e) => set("giftsTitle", e.target.value)} />
                   </Field>
@@ -483,7 +483,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   <p className="text-xs text-gray-500 mt-1">Menu des rafraîchissements servis et signature de clôture.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Texte au-dessus du formulaire">
                     <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
                   </Field>
@@ -540,7 +540,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                   </p>
                 </div>
 
-                <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
+                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   {isStatic ? (
                     <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
                       <span className="text-base">🔇</span>

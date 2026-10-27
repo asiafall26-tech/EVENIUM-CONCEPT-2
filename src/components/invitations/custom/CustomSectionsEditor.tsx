@@ -187,12 +187,12 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
   );
 
   const header = (n: number, label: string, desc: string) => (
-    <div className="border-b border-gray-100 pb-3">
+    <div className="border-b border-gray-100 pb-2.5 sm:pb-3">
       <div className="flex items-center gap-2">
-        <span className="w-7 h-7 shrink-0 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">{n}</span>
-        <h4 className="font-serif text-lg font-bold text-gray-900">{label}</h4>
+        <span className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">{n}</span>
+        <h4 className="font-serif text-base sm:text-lg font-bold text-gray-900">{label}</h4>
       </div>
-      <p className="text-xs text-gray-500 mt-1">{desc}</p>
+      <p className="text-xs text-gray-500 mt-0.5 sm:mt-1">{desc}</p>
     </div>
   );
   const show = (id: string) => active === id || active === "all";
@@ -217,24 +217,24 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
       {sectionMenus.length === 0 && !showMusic && <p className="text-sm text-gray-500 text-center py-10">Aucun élément modifiable dans ce modèle.</p>}
       {sectionMenus.map((m, i) =>
         show(`s${m.section}`) ? (
-          <section key={m.section} className="space-y-4">
+          <section key={m.section} className="space-y-3 sm:space-y-4">
             {header(i + 1, m.label, `${m.fields.length} élément(s) à personnaliser dans cette rubrique.`)}
-            <div className="p-4 sm:p-6 bg-gray-50/70 rounded-2xl border border-gray-200/70">
+            <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70">
               {hidden.includes(m.section) ? (
                 <p className="text-sm text-gray-500">
                   Cette rubrique est supprimée de l&apos;invitation. Vous pouvez la rétablir dans « Rubriques de l&apos;invitation ».
                 </p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">{m.fields.map(renderField)}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">{m.fields.map(renderField)}</div>
               )}
             </div>
           </section>
         ) : null
       )}
       {showMusic && show("music") && (
-        <section className="space-y-4">
+        <section className="space-y-3 sm:space-y-4">
           {header(sectionMenus.length + 1, "Musique", "Musique jouée à l'ouverture de l'invitation : banque de sons Evenium ou votre propre fichier.")}
-          <div className="p-4 sm:p-6 bg-gray-50/70 rounded-2xl border border-gray-200/70">
+          <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70">
             <CustomMusicFields model={model} fields={audios} values={values} onChange={onChange} />
           </div>
         </section>
