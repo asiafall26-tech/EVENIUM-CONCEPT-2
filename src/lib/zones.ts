@@ -195,6 +195,43 @@ export function quartiersOf(country?: string | null, region?: string | null): st
   return GEOGRAPHIC_HIERARCHY[country].flatMap((r) => r.quartiers);
 }
 
+/** Toutes les régions avec leur pays d'appartenance */
+export function getAllRegionsWithCountry(): { country: string; region: string }[] {
+  const result: { country: string; region: string }[] = [];
+  for (const country of MAIN_COUNTRIES) {
+    for (const r of GEOGRAPHIC_HIERARCHY[country] || []) {
+      result.push({ country, region: r.region });
+    }
+  }
+  return result;
+}
+
+/** Retrouve le pays associé à une région donnée */
+export function findCountryOfRegion(region: string): string | null {
+  if (!region) return null;
+  const target = region.toLowerCase().trim();
+  for (const country of MAIN_COUNTRIES) {
+    if ((GEOGRAPHIC_HIERARCHY[country] || []).some(r => r.region.toLowerCase().trim() === target)) {
+      return country;
+    }
+  }
+  return null;
+}
+
+/** Retrouve le pays et la région associés à un quartier/ville */
+export function findHierarchyOfQuartier(quartier: string): { country: string; region: string } | null {
+  if (!quartier) return null;
+  const target = quartier.toLowerCase().trim();
+  for (const country of MAIN_COUNTRIES) {
+    for (const r of GEOGRAPHIC_HIERARCHY[country] || []) {
+      if (r.quartiers.some(q => q.toLowerCase().trim() === target)) {
+        return { country, region: r.region };
+      }
+    }
+  }
+  return null;
+}
+
 export const zonesOf = (country?: string | null) => {
   if (!country) return [];
   if (GEOGRAPHIC_HIERARCHY[country]) {

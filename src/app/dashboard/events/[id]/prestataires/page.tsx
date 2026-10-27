@@ -401,13 +401,13 @@ export default function PrestatairesDashboardPage({
       </div>
 
       {/* 3 Onglets sur la même ligne : 1er Annuaire Evenium, 2ème Prestataires Evenium, 3ème Prestataires Externes */}
-      <div className="flex items-center gap-2 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto no-scrollbar py-1">
         {/* 1ER : Annuaire Evenium */}
         <Link
           href={`/dashboard/events/${event.id}/prestataires/catalogue`}
-          className="pb-3 text-sm font-bold text-[#b8924a] hover:text-[#8f6f33] transition-colors relative flex items-center gap-2 shrink-0 group"
+          className="pb-3 text-xs sm:text-sm font-bold text-[#b8924a] hover:text-[#8f6f33] transition-colors relative flex items-center gap-2 shrink-0 group whitespace-nowrap"
         >
-          <div className="w-6 h-6 rounded-lg bg-[#b8924a]/10 text-[#b8924a] flex items-center justify-center group-hover:bg-[#b8924a] group-hover:text-white transition-colors">
+          <div className="w-6 h-6 rounded-lg bg-[#b8924a]/10 text-[#b8924a] flex items-center justify-center group-hover:bg-[#b8924a] group-hover:text-white transition-colors shrink-0">
             <Search size={13} />
           </div>
           <span>Annuaire Evenium</span>
@@ -420,12 +420,12 @@ export default function PrestatairesDashboardPage({
         <button
           type="button"
           onClick={() => setActiveTab('evenium')}
-          className={`pb-3 text-sm font-bold transition-colors relative flex items-center gap-2 shrink-0 cursor-pointer ${
+          className={`pb-3 text-xs sm:text-sm font-bold transition-colors relative flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
             activeTab === 'evenium' ? 'text-black' : 'text-gray-500 hover:text-gray-900'
           }`}
         >
           <span>Prestataires Evenium</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${
             activeTab === 'evenium' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
           }`}>
             {myPrestataires.filter(p => p.isPlatformProvider).length}
@@ -439,12 +439,12 @@ export default function PrestatairesDashboardPage({
         <button
           type="button"
           onClick={() => setActiveTab('externe')}
-          className={`pb-3 text-sm font-bold transition-colors relative flex items-center gap-2 shrink-0 cursor-pointer ${
+          className={`pb-3 text-xs sm:text-sm font-bold transition-colors relative flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
             activeTab === 'externe' ? 'text-black' : 'text-gray-500 hover:text-gray-900'
           }`}
         >
           <span>Prestataires Externes</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${
             activeTab === 'externe' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
           }`}>
             {myPrestataires.filter(p => !p.isPlatformProvider).length}

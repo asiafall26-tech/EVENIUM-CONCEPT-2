@@ -2,12 +2,19 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Users, CheckCircle, Clock, Wallet, CheckSquare, Sparkles } from "lucide-react";
+import { Users, CheckCircle, Clock, Wallet, CheckSquare, Sparkles, MapPin, Calendar } from "lucide-react";
 import { use, useState, useEffect } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import { eventDetailsFromRow, hasExtraDetails, requiresEventDetails } from "@/lib/eventDetails";
+
+const formatFrenchDate = (d?: string) => {
+  if (!d || d === "À définir") return d || "Date à définir";
+  const parsed = new Date(d);
+  if (Number.isNaN(parsed.getTime())) return d;
+  return parsed.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+};
 
 export default function EventDashboardPage({
   params,
@@ -22,6 +29,22 @@ export default function EventDashboardPage({
   const [directEvent, setDirectEvent] = useState<any>(null);
   const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
   const [notFoundTriggered, setNotFoundTriggered] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', data.user.id).maybeSingle();
+        if (profile?.full_name?.trim()) {
+          setUserName(profile.full_name.trim());
+        } else if (data.user.user_metadata?.full_name?.trim()) {
+          setUserName(data.user.user_metadata.full_name.trim());
+        } else if (data.user.email) {
+          setUserName(data.user.email.split('@')[0]);
+        }
+      }
+    });
+  }, [supabase]);
 
   const event = eventFromContext || directEvent;
 
@@ -124,31 +147,63 @@ export default function EventDashboardPage({
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Event Header */}
-      <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200 shadow-sm mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16" />
-        <div className="relative z-10 flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="bg-accent/10 text-accent px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">
+      {/* Event Header avec Message d'accueil clair & Présentation responsive aérée */}
+      <div className="bg-white rounded-3xl p-5 sm:p-7 lg:p-8 border border-gray-200/90 shadow-sm mb-6 sm:mb-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#b8924a]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        
+        {/* En-tête d'accueil */}
+        <div className="relative z-10 mb-4 pb-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#8f6f33] flex items-center gap-1.5">
+              <Sparkles size={13} className="text-[#b8924a]" /> Espace Organisateur · Tableau de bord
+            </span>
+          </div>
+          <span className="text-[11px] font-medium text-gray-500">
+            {userName ? `Bienvenue, ${userName}` : "Événement actif"}
+          </span>
+        </div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-start justify-between gap-5 sm:gap-6">
+          <div className="flex-1 min-w-0">
+            {/* Badges Type & Date */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2.5">
+              <span className="bg-[#b8924a]/10 text-[#8f6f33] border border-[#b8924a]/25 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
                 {event.type}
               </span>
-              <span className="text-gray-500 text-sm font-medium">
+              <span className="text-gray-600 text-xs sm:text-sm font-medium flex items-center gap-1.5">
+                <Calendar size={14} className="text-[#b8924a] shrink-0" />
                 {(event as any).end_date && (event as any).end_date !== event.date
-                  ? `Du ${event.date} au ${(event as any).end_date}`
-                  : event.date}
-                {event.time ? ` à ${event.time}` : ''}
+                  ? `Du ${formatFrenchDate(event.date)} au ${formatFrenchDate((event as any).end_date)}`
+                  : formatFrenchDate(event.date)}
+                {event.time && event.time !== "À définir" ? ` à ${event.time}` : ''}
               </span>
             </div>
-            <h1 className="font-serif text-4xl font-semibold mb-2">{event.name}</h1>
-            <p className="text-gray-500">{event.location}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wider">Formule & Modèle</p>
-            <div className="flex items-center justify-end gap-1 text-[#b8924a] font-semibold text-sm">
-              <Sparkles size={14} /> Formule {event.plan}
+
+            {/* Titre de l'événement en pleine largeur */}
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-2.5 break-words">
+              {event.name}
+            </h1>
+
+            {/* Lieu */}
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <MapPin size={14} className="text-[#b8924a] shrink-0" />
+              <span className="font-medium text-gray-700">{event.location || "Lieu à définir"}</span>
             </div>
-            <p className="text-xs text-gray-600 font-medium mt-1">
+          </div>
+
+          {/* Formule & Modèle Badge */}
+          <div className="bg-[#fbf7f0] border border-[#b8924a]/30 rounded-2xl p-4 sm:p-5 shrink-0 flex flex-col justify-between sm:min-w-[240px]">
+            <div className="flex items-center justify-between sm:justify-end gap-2 mb-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Formule &amp; Modèle</span>
+              <span className="bg-[#b8924a]/15 text-[#8f6f33] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                Actif
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[#b8924a] font-bold text-sm sm:text-base sm:justify-end">
+              <Sparkles size={16} className="shrink-0" />
+              <span>Formule {event.plan}</span>
+            </div>
+            <p className="text-xs text-gray-600 font-medium mt-1 sm:text-right">
               Modèle : <strong className="text-gray-900">{getInvitationModelName(event.invitationModelId)}</strong>
             </p>
           </div>
