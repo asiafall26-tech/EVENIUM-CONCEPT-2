@@ -1192,16 +1192,16 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       {/* MODALE DE FINALISATION, FORMULE & ACTIVATION DU COMPTE             */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {isCheckoutModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
-          <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+          <div className="w-full max-w-5xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-3 sm:my-auto animate-in zoom-in-95 duration-200">
             
             {/* Header Modal */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-[#fbf7f0]">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33] bg-[#fbf7f0] px-2.5 py-0.5 rounded-full border border-[#b8924a]/30">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-gray-100 bg-[#fbf7f0] gap-3">
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33] bg-white px-2.5 py-0.5 rounded-full border border-[#b8924a]/30">
                   {standardSuccessEvent ? "Paiement Validé · Accès Dashboard Débloqué" : "Étape finale"}
                 </span>
-                <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                <h3 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 mt-1 leading-snug">
                   {standardSuccessEvent 
                     ? "Votre Événement & Votre Dashboard sont Prêts !" 
                     : "Activez votre Événement & Partagez votre Invitation"}
@@ -1213,7 +1213,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   setIsCheckoutModalOpen(false);
                   if (standardSuccessEvent) setStandardSuccessEvent(null);
                 }}
-                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-black flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-black flex items-center justify-center transition-colors shrink-0"
               >
                 <X size={18} />
               </button>
@@ -1240,12 +1240,12 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 </div>
 
                 {/* Carte d'accès & Lien direct */}
-                <div className="bg-[#fbf7f0] p-5 sm:p-6 rounded-3xl border border-[#b8924a]/30 space-y-4 max-w-xl mx-auto">
+                <div className="bg-[#fbf7f0] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#b8924a]/30 space-y-4 max-w-xl mx-auto">
                   <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
                     <div className="w-12 h-16 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
                       <Image
                         key={currentModel.id}
-                  src={currentModel.image}
+                        src={currentModel.image}
                         alt={currentModel.name}
                         fill
                         className="object-cover"
@@ -1275,7 +1275,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         type="text"
                         readOnly
                         value={typeof window !== 'undefined' ? `${window.location.origin}/invite/${standardSuccessEvent.id}` : `/invite/${standardSuccessEvent.id}`}
-                        className="flex-1 bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-gray-900 outline-none select-all"
+                        className="flex-1 min-w-0 bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-mono font-bold text-gray-900 outline-none select-all"
                       />
                       <button
                         type="button"
@@ -1285,7 +1285,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           setCopiedLink(true);
                           setTimeout(() => setCopiedLink(false), 2500);
                         }}
-                        className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${
+                        className={`px-3 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${
                           copiedLink
                             ? "bg-emerald-600 text-white"
                             : "bg-black hover:bg-gray-800 text-[#b8924a] border border-[#b8924a]/30"
@@ -1404,31 +1404,31 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
               </div>
             ) : (
               /* Corps Modal Formulaire : Choix formule + Nom organisateur & Auth + Paiement */
-              <form onSubmit={handleFinalActivation} className="p-6 sm:p-8 space-y-6">
+              <form onSubmit={handleFinalActivation} className="p-3.5 sm:p-8 space-y-5 sm:space-y-6">
                 
                 {errorMessage && (
-                  <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-2xl text-xs sm:text-sm font-medium">
+                  <div className="p-3.5 sm:p-4 bg-red-50 text-red-700 border border-red-200 rounded-2xl text-xs sm:text-sm font-medium">
                     {errorMessage}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
                   
                   {/* Colonne Gauche : Formule, Compte & Paiement (7 cols) */}
-                  <div className="lg:col-span-7 space-y-6">
+                  <div className="lg:col-span-7 space-y-5 sm:space-y-6 min-w-0">
                     
                     {/* 1. Choix Formule */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                          <Crown size={15} className="text-[#b8924a]" /> 1. Choisissez votre formule Evenium
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                          <Crown size={15} className="text-[#b8924a] shrink-0" /> 1. Choisissez votre formule Evenium
                         </label>
                       </div>
                       <p className="text-[11px] text-gray-500 mb-3">
                         Sélectionnez la formule correspondant à votre besoin d&apos;organisation.
                       </p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                         {/* Formule Standard */}
                         <div
                           onClick={() => choosePlan('Standard')}
@@ -1441,7 +1441,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           <div>
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-serif font-bold text-sm text-gray-900">Standard</span>
-                              {selectedPlan === 'Standard' && <CheckCircle2 size={16} className="text-[#b8924a]" />}
+                              {selectedPlan === 'Standard' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
                             </div>
                             <p className="text-lg font-bold text-black mb-2">
                               5 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
@@ -1483,7 +1483,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           <div>
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-serif font-bold text-sm text-gray-900">Premium</span>
-                              {selectedPlan === 'Premium' && <CheckCircle2 size={16} className="text-[#b8924a]" />}
+                              {selectedPlan === 'Premium' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
                             </div>
                             <p className="text-lg font-bold text-black mb-2">
                               10 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
@@ -1512,19 +1512,19 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         {/* Formule Gold */}
                         <div
                           onClick={() => choosePlan('Gold')}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative ${
+                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${
                             selectedPlan === 'Gold'
                               ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
                               : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                         >
-                          <span className="absolute -top-2 right-2 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                          <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
                             Recommandée
                           </span>
                           <div>
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-serif font-bold text-sm text-gray-900">Gold VIP</span>
-                              {selectedPlan === 'Gold' && <CheckCircle2 size={16} className="text-[#b8924a]" />}
+                              {selectedPlan === 'Gold' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
                             </div>
                             <p className="text-lg font-bold text-black mb-2">
                               20 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
@@ -1556,14 +1556,14 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     {requiresEventDetails(selectedPlan) && (
                       <div className="pt-2 border-t border-gray-100">
                         <div className="mb-3">
-                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                            <Crown size={15} className="text-[#b8924a]" /> Détails de votre événement
+                          <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                            <Crown size={15} className="text-[#b8924a] shrink-0" /> Détails de votre événement
                           </label>
                           <p className="text-[11px] text-gray-500 mt-0.5">
                             Inclus dans la formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} : ces informations sont reportées automatiquement dans votre dashboard, où vous pourrez les modifier.
                           </p>
                         </div>
-                        <div className="bg-[#fbf7f0] p-4 rounded-2xl border border-[#b8924a]/30">
+                        <div className="bg-[#fbf7f0] p-3 sm:p-4 rounded-2xl border border-[#b8924a]/30 overflow-hidden">
                           <EventDetailsFields value={detailsWithInvitation} onChange={setEventDetails} showErrors={showDetailsErrors} compact />
                         </div>
                       </div>
@@ -1572,8 +1572,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     {/* 2. Nom de l'Organisateur & Éléments d'Authentification */}
                     <div className={`pt-2 border-t border-gray-100 ${inDashboard && currentUser ? 'hidden' : ''}`}>
                       <div className="mb-2.5">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                          <User size={15} className="text-[#b8924a]" /> 2. Nom de l&apos;organisateur &amp; Éléments d&apos;authentification
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                          <User size={15} className="text-[#b8924a] shrink-0" /> 2. Nom de l&apos;organisateur &amp; Éléments d&apos;authentification
                         </label>
                         <p className="text-[11px] text-gray-500 mt-0.5">
                           Renseignez le nom de l&apos;organisateur et vos éléments d&apos;authentification (mail et mot de passe) pour télécharger votre lien officiel, votre QR Code actif et accéder à votre tableau de bord Organisateur.
@@ -1581,13 +1581,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                       </div>
 
                       {currentUser ? (
-                        <div className="space-y-3 bg-[#fbf7f0] p-4 rounded-2xl border border-[#b8924a]/30">
+                        <div className="space-y-3 bg-[#fbf7f0] p-3.5 sm:p-4 rounded-2xl border border-[#b8924a]/30">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 size={16} className="text-emerald-600" />
-                              <span className="text-xs font-bold text-gray-900">Compte Organisateur vérifié</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                              <span className="text-xs font-bold text-gray-900 truncate">Compte Organisateur vérifié</span>
                             </div>
-                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full shrink-0">
                               Connecté
                             </span>
                           </div>
@@ -1602,16 +1602,16 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                               value={fullName}
                               onChange={(e) => setFullName(e.target.value)}
                               placeholder="Ex: Alexandre Diop ou Famille Diop"
-                              className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
+                              className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
                             />
                           </div>
 
-                          <div className="p-2.5 bg-white rounded-xl border border-gray-200 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2">
-                              <Mail size={14} className="text-gray-400" />
-                              <span className="text-gray-600 font-medium">{currentUser.email}</span>
+                          <div className="p-2.5 bg-white rounded-xl border border-gray-200 flex items-center justify-between text-xs gap-2 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Mail size={14} className="text-gray-400 shrink-0" />
+                              <span className="text-gray-600 font-medium truncate">{currentUser.email}</span>
                             </div>
-                            <span className="text-[10px] text-gray-400">Authentification validée</span>
+                            <span className="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">Authentification validée</span>
                           </div>
                           
                           <p className="text-[10px] text-gray-500 italic">
@@ -1619,7 +1619,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                        <div className="space-y-3 bg-gray-50 p-3.5 sm:p-4 rounded-2xl border border-gray-200">
                           <div>
                             <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
                               <span>Nom de l&apos;organisateur</span>
@@ -1631,15 +1631,15 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                               value={fullName}
                               onChange={(e) => setFullName(e.target.value)}
                               placeholder="Ex: Alexandre Diop (ou Famille Diop)"
-                              className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
+                              className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
                             />
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
+                            <div className="min-w-0">
                               <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
                                 <span>Adresse Mail (Identifiant)</span>
-                                <Mail size={12} className="text-gray-400" />
+                                <Mail size={12} className="text-gray-400 shrink-0" />
                               </label>
                               <input
                                 type="email"
@@ -1647,14 +1647,14 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="organisateur@exemple.com"
-                                className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
+                                className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
                               />
                             </div>
 
-                            <div>
+                            <div className="min-w-0">
                               <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
                                 <span>Mot de passe</span>
-                                <Lock size={12} className="text-gray-400" />
+                                <Lock size={12} className="text-gray-400 shrink-0" />
                               </label>
                               <input
                                 type="password"
@@ -1662,7 +1662,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
+                                className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
                               />
                             </div>
                           </div>
@@ -1679,48 +1679,48 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
                     {/* 3. Moyen de paiement */}
                     <div className="pt-2 border-t border-gray-100">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-3 flex items-center gap-1.5">
-                        <CreditCard size={15} className="text-[#b8924a]" /> 3. Moyen de paiement
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2.5 flex items-center gap-1.5">
+                        <CreditCard size={15} className="text-[#b8924a] shrink-0" /> 3. Moyen de paiement
                       </label>
 
-                      <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-3">
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('wave')}
-                          className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
+                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${
                             paymentMethod === 'wave'
                               ? "border-[#1DA1F2] bg-[#E8F5FD] text-[#1DA1F2] font-bold"
                               : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                           }`}
                         >
-                          <span className="text-lg">🌊</span>
-                          <span className="text-[11px] font-bold">Wave</span>
+                          <span className="text-base sm:text-lg">🌊</span>
+                          <span className="text-[10px] sm:text-[11px] font-bold truncate w-full">Wave</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('om')}
-                          className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
+                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${
                             paymentMethod === 'om'
                               ? "border-[#FF6600] bg-[#FFF2E8] text-[#FF6600] font-bold"
                               : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                           }`}
                         >
-                          <span className="text-lg">🟠</span>
-                          <span className="text-[11px] font-bold">Orange Money</span>
+                          <span className="text-base sm:text-lg">🟠</span>
+                          <span className="text-[10px] sm:text-[11px] font-bold leading-tight truncate w-full">Orange Money</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('card')}
-                          className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
+                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${
                             paymentMethod === 'card'
                               ? "border-black bg-gray-50 text-black font-bold"
                               : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                           }`}
                         >
-                          <CreditCard size={18} />
-                          <span className="text-[11px] font-bold">Carte Bancaire</span>
+                          <CreditCard size={16} className="sm:w-[18px] sm:h-[18px]" />
+                          <span className="text-[10px] sm:text-[11px] font-bold leading-tight truncate w-full">Carte Bancaire</span>
                         </button>
                       </div>
 
@@ -1734,7 +1734,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             placeholder="Ex: 77 000 00 00"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
+                            className="w-full min-w-0 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
                           />
                         </div>
                       )}
@@ -1743,26 +1743,26 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   </div>
 
                   {/* Colonne Droite : Récapitulatif Direct de l'Événement (5 cols) */}
-                  <div className="lg:col-span-5 bg-[#fbf7f0] p-5 sm:p-6 rounded-3xl border border-gray-200 space-y-4">
+                  <div className="lg:col-span-5 bg-[#fbf7f0] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-200 space-y-3.5 sm:space-y-4 min-w-0">
                     
-                    <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3 pb-3 border-b border-gray-200 min-w-0">
                       <div className="w-14 h-20 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
                         <Image
                           key={currentModel.id}
-                  src={currentModel.image}
+                          src={currentModel.image}
                           alt={currentModel.name}
                           fill
                           className="object-cover"
                         />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
                           {currentModel.badge}
                         </span>
-                        <h4 className="font-serif font-bold text-gray-900 text-sm">
+                        <h4 className="font-serif font-bold text-gray-900 text-sm truncate">
                           {currentModel.name}
                         </h4>
-                        <p className="text-[11px] text-gray-500">
+                        <p className="text-[11px] text-gray-500 truncate">
                           {selectedEventCategory}
                         </p>
                       </div>
@@ -1774,22 +1774,22 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         Reprise automatique des données
                       </span>
 
-                      <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1.5">
+                      <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1 min-w-0">
                         <p className="text-gray-500 text-[11px]">Nom officiel de l&apos;événement :</p>
-                        <p className="font-serif font-bold text-gray-900 text-sm">
+                        <p className="font-serif font-bold text-gray-900 text-sm break-words">
                           {eventMetadata.name}
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/80">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
                           <p className="text-gray-400 text-[10px]">Date &amp; Heure :</p>
-                          <p className="font-semibold text-gray-800 text-[11px]">
+                          <p className="font-semibold text-gray-800 text-[11px] truncate">
                             {eventMetadata.date} à {eventMetadata.time}
                           </p>
                         </div>
 
-                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/80">
+                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
                           <p className="text-gray-400 text-[10px]">Lieu :</p>
                           <p className="font-semibold text-gray-800 text-[11px] truncate">
                             {eventMetadata.location || "Non spécifié"}
@@ -1814,30 +1814,30 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-4 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-2xl font-bold text-sm shadow-xl shadow-black/10 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/40 disabled:opacity-50 active:scale-98"
+                      className="w-full py-3.5 sm:py-4 px-4 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/40 disabled:opacity-50 active:scale-98 text-center"
                     >
                       {isSubmitting ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
-                          <span>Activation de votre invitation...</span>
+                          <div className="w-4 h-4 border-2 border-[#b8924a] border-t-transparent rounded-full animate-spin shrink-0" />
+                          <span>Activation en cours...</span>
                         </>
                       ) : (
                         <>
-                          <ShieldCheck size={18} />
-                          <span>Confirmer &amp; Accéder au Dashboard ({selectedPlan === "Gold" ? "Gold VIP" : selectedPlan})</span>
+                          <ShieldCheck size={18} className="shrink-0" />
+                          <span className="sm:hidden">Confirmer &amp; Accéder au Dashboard</span>
+                          <span className="hidden sm:inline">Confirmer &amp; Accéder au Dashboard ({selectedPlan === "Gold" ? "Gold VIP" : selectedPlan})</span>
                         </>
                       )}
                     </button>
 
                     <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-1">
-                      <Lock size={11} /> 
-                      Paiement chiffré &amp; sécurisé — Lien officiel, QR Code actif &amp; Accès Dashboard immédiats
+                      <Lock size={11} className="shrink-0" /> 
+                      <span>Paiement sécurisé — Lien officiel, QR Code actif &amp; Dashboard</span>
                     </p>
 
                   </div>
 
                 </div>
-
               </form>
             )}
 

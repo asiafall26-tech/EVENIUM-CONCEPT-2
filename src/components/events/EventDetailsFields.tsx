@@ -5,7 +5,7 @@ import { PRESTATION_TYPES } from "@/lib/devis/categories";
 import type { EventDetails } from "@/lib/eventDetails";
 
 const input =
-  "w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#b8924a] focus:ring-2 focus:ring-[#b8924a]/20";
+  "w-full max-w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm outline-none focus:border-[#b8924a] focus:ring-2 focus:ring-[#b8924a]/20";
 const label = "block text-[11px] font-semibold uppercase tracking-wider text-gray-600 mb-1.5";
 
 interface Props {
