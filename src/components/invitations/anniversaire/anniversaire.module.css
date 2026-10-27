@@ -1,7 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Great+Vibes&display=swap');
+
 /* Invitation « Anniversaire Bordeaux & Or » — deux pages (couverture photo + carte).
    Les tailles de texte sont en cqw (largeur de la page) : la page se lit comme un faire-part imprimé. */
 
 .root {
+  --anniv-script: 'Great Vibes', cursive;
+  --anniv-caps: 'Cinzel', serif;
+  --anniv-serif: 'Cormorant Garamond', 'Times New Roman', serif;
   --bordeaux: #5b0e1d;
   --bordeaux-deep: #3d0812;
   --bordeaux-ink: #6b1428;
