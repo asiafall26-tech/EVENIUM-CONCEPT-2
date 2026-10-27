@@ -136,20 +136,20 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
   const asset = (src: string) => (src ? modelAssetUrl(model.slug, model.entry, src) : src);
 
   const renderField = (f: CustomField) => (
-    <div key={f.id} className={`space-y-1.5 ${(f.type !== "text" && f.type !== "link" && f.type !== "color") || f.multiline ? "2xl:col-span-2" : ""}`}>
+    <div key={f.id} className={`space-y-1.5 ${(f.type !== "text" && f.type !== "link" && f.type !== "color") || f.multiline ? "md:col-span-2" : "col-span-1"}`}>
       {admin ? (
         <input
           value={f.label}
           onChange={(e) => patchField(f.id, { label: e.target.value })}
           aria-label="Nom de l'élément"
-          className="w-full bg-transparent text-xs font-semibold text-gray-700 border-b border-dashed border-gray-300 focus:border-[#b8924a] outline-none py-0.5"
+          className="w-full bg-transparent text-xs sm:text-sm font-semibold text-gray-800 border-b border-dashed border-gray-300 focus:border-[#b8924a] outline-none py-1 mb-1"
         />
       ) : (
-        <span className="block text-xs font-semibold text-gray-700">{f.label}</span>
+        <span className="block text-xs sm:text-sm font-semibold text-gray-800 mb-1">{f.label}</span>
       )}
       {f.type === "text" &&
         (f.multiline ? (
-          <textarea rows={3} className={`${inputCls} resize-none`} value={values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
+          <textarea rows={5} className={`${inputCls} min-h-[130px] resize-y`} value={values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
         ) : (
           <input className={inputCls} value={values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
         ))}
@@ -225,7 +225,7 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
                   Cette rubrique est supprimée de l&apos;invitation. Vous pouvez la rétablir dans « Rubriques de l&apos;invitation ».
                 </p>
               ) : (
-                <div className="grid grid-cols-1 2xl:grid-cols-2 gap-5">{m.fields.map(renderField)}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">{m.fields.map(renderField)}</div>
               )}
             </div>
           </section>

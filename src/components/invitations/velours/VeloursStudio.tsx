@@ -18,14 +18,14 @@ interface Props {
 }
 
 export const inputCls =
-  "w-full min-h-[3.25rem] px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#7a1a2e]/40 focus:bg-white transition-colors";
+  "w-full min-h-[3.25rem] px-4 py-3 bg-white hover:bg-gray-50/50 border border-gray-200 focus:border-[#b8924a] rounded-xl text-sm sm:text-base text-gray-900 leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30 transition-all shadow-2xs";
 
 export function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
-    <label className="block">
-      <span className="block text-xs font-semibold text-gray-700 mb-1.5">{label}</span>
+    <label className="block space-y-1.5 w-full">
+      <span className="block text-xs sm:text-sm font-semibold text-gray-800">{label}</span>
       {children}
-      {hint && <span className="block text-[11px] text-gray-400 mt-1">{hint}</span>}
+      {hint && <span className="block text-xs text-gray-500 mt-1">{hint}</span>}
     </label>
   );
 }
@@ -428,10 +428,10 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
                     <input className={inputCls} value={value.welcomeTitle} onChange={(e) => set("welcomeTitle", e.target.value)} />
                   </Field>
                   <Field label="Message d'accueil">
-                    <textarea rows={3} className={`${inputCls} resize-none`} value={value.welcomeText} onChange={(e) => set("welcomeText", e.target.value)} />
+                    <textarea rows={4} className={`${inputCls} min-h-[110px] resize-y`} value={value.welcomeText} onChange={(e) => set("welcomeText", e.target.value)} />
                   </Field>
                   <Field label="Notre histoire">
-                    <textarea rows={4} className={`${inputCls} resize-none`} value={value.storyText} onChange={(e) => set("storyText", e.target.value)} />
+                    <textarea rows={5} className={`${inputCls} min-h-[140px] resize-y`} value={value.storyText} onChange={(e) => set("storyText", e.target.value)} />
                   </Field>
                   <Field label="Citation (histoire)">
                     <input className={inputCls} value={value.storyQuote} onChange={(e) => set("storyQuote", e.target.value)} />

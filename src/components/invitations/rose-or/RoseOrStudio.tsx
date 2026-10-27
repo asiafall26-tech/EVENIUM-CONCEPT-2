@@ -175,10 +175,10 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Citation des mariés" hint="Sautez une ligne pour couper la phrase harmonieusement.">
-                    <textarea rows={3} className={`${inputCls} resize-none`} value={value.quote} onChange={(e) => set("quote", e.target.value)} />
+                    <textarea rows={4} className={`${inputCls} min-h-[110px] resize-y`} value={value.quote} onChange={(e) => set("quote", e.target.value)} />
                   </Field>
                   <Field label="Texte sous le compte à rebours" hint="Ex : « jusqu'au plus beau jour de nos vies »">
-                    <textarea rows={2} className={`${inputCls} resize-none`} value={value.countdownText} onChange={(e) => set("countdownText", e.target.value)} />
+                    <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={value.countdownText} onChange={(e) => set("countdownText", e.target.value)} />
                   </Field>
                 </div>
               </section>
@@ -273,7 +273,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                           </Field>
                         </div>
                         <Field label="Récit de l'étape">
-                          <textarea rows={3} className={`${inputCls} resize-none`} value={s.text} onChange={(e) => setStory(i, { text: e.target.value })} />
+                          <textarea rows={4} className={`${inputCls} min-h-[110px] resize-y`} value={s.text} onChange={(e) => setStory(i, { text: e.target.value })} />
                         </Field>
                       </div>
                     ))}
@@ -328,7 +328,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                           </Field>
                         </div>
                         <Field label="Description courte">
-                          <textarea rows={2} className={`${inputCls} resize-none`} value={p.text} placeholder="Ex: Là où deux cœurs n'en font plus qu'un" onChange={(e) => setStep(i, { text: e.target.value })} />
+                          <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={p.text} placeholder="Ex: Là où deux cœurs n'en font plus qu'un" onChange={(e) => setStep(i, { text: e.target.value })} />
                         </Field>
                       </div>
                     ))}
@@ -393,7 +393,7 @@ export default function RoseOrStudio({ value, onChange, onViewFullScreen, onFina
                     <input className={inputCls} value={value.rsvpDeadline} placeholder="Ex: 8 novembre 2026" onChange={(e) => set("rsvpDeadline", e.target.value)} />
                   </Field>
                   <Field label="Message pour les convives" hint="Ex : « Les places étant limitées, chaque invitation est nominative. »">
-                    <textarea rows={2} className={`${inputCls} resize-none`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
+                    <textarea rows={3} className={`${inputCls} min-h-[90px] resize-y`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
                   </Field>
                   <PhotoField
                     label="Photo de signature de fin (facultatif)"

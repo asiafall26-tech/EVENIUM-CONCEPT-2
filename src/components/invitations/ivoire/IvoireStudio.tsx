@@ -242,7 +242,7 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   <Field label="Texte principal (en italique)" hint="Laissez une ligne vide pour créer un nouveau paragraphe.">
                     <textarea
                       rows={6}
-                      className={`${inputCls} resize-none`}
+                      className={`${inputCls} min-h-[140px] resize-y`}
                       value={value.welcomeText}
                       onChange={(e) => set("welcomeText", e.target.value)}
                     />
@@ -311,8 +311,8 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   </Field>
                   <Field label="Introduction du programme">
                     <textarea
-                      rows={2}
-                      className={`${inputCls} resize-none`}
+                      rows={3}
+                      className={`${inputCls} min-h-[85px] resize-y`}
                       value={value.programmeIntro}
                       onChange={(e) => set("programmeIntro", e.target.value)}
                     />
@@ -376,8 +376,8 @@ export default function IvoireStudio({ value, onChange, onViewFullScreen, onFina
                   <h5 className="text-xs font-bold uppercase tracking-wider text-gray-700">Dress Code</h5>
                   <Field label="Consigne pour les tenues">
                     <textarea
-                      rows={2}
-                      className={`${inputCls} resize-none`}
+                      rows={3}
+                      className={`${inputCls} min-h-[85px] resize-y`}
                       value={value.dressCodeText}
                       placeholder="Nous serions ravis que vos tenues s'accordent à nos couleurs"
                       onChange={(e) => set("dressCodeText", e.target.value)}

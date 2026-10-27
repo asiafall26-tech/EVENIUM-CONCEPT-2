@@ -126,7 +126,7 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
                   <input className={inputCls} value={value.title} onChange={(e) => set("title", e.target.value)} />
                 </Field>
                 <Field label="Message">
-                  <textarea rows={5} className={`${inputCls} resize-none`} value={value.message} onChange={(e) => set("message", e.target.value)} />
+                  <textarea rows={6} className={`${inputCls} min-h-[140px] resize-y`} value={value.message} onChange={(e) => set("message", e.target.value)} />
                 </Field>
               </div>
             </Section>

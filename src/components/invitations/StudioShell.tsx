@@ -98,10 +98,10 @@ export default function StudioShell({ title, subtitle, demoUrl, menus, active, o
           <input className={inputCls} value={r.title} onChange={(e) => patchRubrique(r.id, { title: e.target.value })} />
         </label>
         <label className="block space-y-1.5">
-          <span className="block text-xs font-semibold text-gray-700">Texte</span>
+          <span className="block text-xs sm:text-sm font-semibold text-gray-800">Texte</span>
           <textarea
-            rows={4}
-            className={`${inputCls} resize-none`}
+            rows={5}
+            className={`${inputCls} min-h-[130px] resize-y`}
             value={r.text}
             placeholder="Ex : informations pratiques, hébergement, remerciements…"
             onChange={(e) => patchRubrique(r.id, { text: e.target.value })}
@@ -197,12 +197,11 @@ export default function StudioShell({ title, subtitle, demoUrl, menus, active, o
       </div>
 
       <div className="w-full flex-1 min-h-0 overflow-clip lg:overflow-hidden flex flex-col">
-        {/* Sur téléphone, pas de second cadre dans celui de la page : toute la largeur pour les champs */}
-        <div className="w-full flex-1 flex flex-col lg:flex-row min-h-0 bg-white sm:rounded-2xl sm:border border-gray-200/80 sm:shadow-xs overflow-clip lg:overflow-hidden">
-          {/* Menus : barre sur téléphone, colonne sur grand écran */}
-          <div className="border-b lg:border-b-0 lg:border-r border-gray-100 bg-gray-50 p-2 lg:p-3 shrink-0 lg:w-64 lg:overflow-y-auto sticky top-[var(--studio-sticky-top,0px)] z-20 lg:static">
-            <p className="hidden lg:block px-2 pt-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Rubriques</p>
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar lg:flex-col lg:items-stretch lg:overflow-visible">
+        {/* Conteneur principal plein écran sans colonne latérale compressante */}
+        <div className="w-full flex-1 flex flex-col min-h-0 bg-white sm:rounded-2xl sm:border border-gray-200/80 sm:shadow-xs overflow-clip lg:overflow-hidden">
+          {/* Barre de navigation horizontale supérieure pour tous les écrans */}
+          <div className="border-b border-gray-100 bg-gray-50/90 backdrop-blur-xs p-2 sm:p-2.5 shrink-0 sticky top-[var(--studio-sticky-top,0px)] z-20">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
               {allMenus.map((m) => {
                 const on = active === m.id;
                 return (
@@ -210,14 +209,20 @@ export default function StudioShell({ title, subtitle, demoUrl, menus, active, o
                     key={m.id}
                     type="button"
                     onClick={() => onActive(m.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 lg:py-2.5 rounded-xl text-xs lg:text-sm font-semibold whitespace-nowrap lg:whitespace-normal shrink-0 max-w-[14rem] lg:max-w-none text-left ${
-                      on ? "bg-[#7a1a2e] text-white shadow-sm" : m.muted ? "text-gray-400" : "text-gray-700 hover:bg-gray-200/60"
+                    className={`flex items-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 transition-all ${
+                      on
+                        ? "bg-[#2b2118] text-[#f5eee1] shadow-sm ring-1 ring-[#b8924a]/40"
+                        : m.muted
+                          ? "text-gray-400 hover:bg-gray-100"
+                          : "text-gray-700 hover:text-gray-950 hover:bg-gray-200/60"
                     }`}
                   >
-                    <m.icon size={14} className={`shrink-0 ${on ? "text-white" : m.muted ? "text-gray-300" : "text-[#7a1a2e]"}`} />
-                    <span className={`truncate lg:overflow-visible lg:whitespace-normal lg:flex-1 ${m.muted ? "line-through" : ""}`}>{m.label}</span>
+                    <m.icon size={15} className={`shrink-0 ${on ? "text-[#d4af37]" : m.muted ? "text-gray-300" : "text-[#8f6f33]"}`} />
+                    <span className={m.muted ? "line-through" : ""}>{m.label}</span>
                     {m.badge !== undefined && !m.muted && (
-                      <span className={`shrink-0 text-[10px] px-1.5 rounded-full font-bold ${on ? "bg-white/20 text-white" : "bg-gray-200 text-gray-700"}`}>{m.badge}</span>
+                      <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-bold ${on ? "bg-white/20 text-white" : "bg-gray-200 text-gray-700"}`}>
+                        {m.badge}
+                      </span>
                     )}
                   </button>
                 );
@@ -226,26 +231,27 @@ export default function StudioShell({ title, subtitle, demoUrl, menus, active, o
                 <button
                   type="button"
                   onClick={addRubrique}
-                  className="flex items-center gap-1 px-3 py-2 lg:py-2.5 lg:mt-2 rounded-xl text-xs lg:text-sm font-semibold whitespace-nowrap shrink-0 border border-dashed border-[#b8924a]/60 text-[#8f6f33] hover:bg-[#fbf7f0]"
+                  className="flex items-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 border border-dashed border-[#b8924a]/60 text-[#8f6f33] hover:bg-[#fbf7f0] transition-colors"
                 >
-                  <Plus size={13} /> Ajouter une rubrique
+                  <Plus size={14} /> Ajouter une rubrique
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => onActive("all")}
-                className={`flex items-center gap-1 px-2.5 py-2 lg:py-2.5 rounded-xl text-xs lg:text-sm font-semibold whitespace-nowrap shrink-0 ml-auto lg:ml-0 ${
-                  showAll ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:bg-gray-200/60"
+                className={`flex items-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 ml-auto ${
+                  showAll ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-950 hover:bg-gray-200/60"
                 }`}
+                title="Afficher tous les menus à la suite"
               >
-                <Layers size={13} /> Tous les menus
+                <Layers size={14} /> Tous les menus
               </button>
             </div>
           </div>
 
           <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-            {/* Contenu */}
-            <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+            {/* Contenu - Pleine largeur sans compression */}
+            <div className="studio-fields flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-full">
               {children}
               {showAll ? added.map(rubriqueEditor) : activeAdded && rubriqueEditor(activeAdded)}
               {sections && (showAll || active === RUBRIQUES_MENU) && rubriquesManager()}

@@ -333,7 +333,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                     <input className={inputCls} value={value.welcomeTitle} onChange={(e) => set("welcomeTitle", e.target.value)} />
                   </Field>
                   <Field label="Message d'accueil">
-                    <textarea rows={4} className={`${inputCls} resize-none`} value={value.welcomeText} onChange={(e) => set("welcomeText", e.target.value)} />
+                    <textarea rows={5} className={`${inputCls} min-h-[130px] resize-y`} value={value.welcomeText} onChange={(e) => set("welcomeText", e.target.value)} />
                   </Field>
                 </div>
               </section>
@@ -439,7 +439,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Consigne du dress code">
-                    <textarea rows={2} className={`${inputCls} resize-none`} value={value.dressCodeText} onChange={(e) => set("dressCodeText", e.target.value)} />
+                    <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={value.dressCodeText} onChange={(e) => set("dressCodeText", e.target.value)} />
                   </Field>
                   <DressCodeEditor value={value.dressColors} onChange={(v) => set("dressColors", v)} />
                 </div>
@@ -464,7 +464,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
                     <input className={inputCls} value={value.giftsTitle} onChange={(e) => set("giftsTitle", e.target.value)} />
                   </Field>
                   <Field label="Texte" hint="Laissez le titre et le texte vides pour masquer cette carte.">
-                    <textarea rows={4} className={`${inputCls} resize-none`} value={value.giftsText} onChange={(e) => set("giftsText", e.target.value)} />
+                    <textarea rows={5} className={`${inputCls} min-h-[130px] resize-y`} value={value.giftsText} onChange={(e) => set("giftsText", e.target.value)} />
                   </Field>
                 </div>
               </section>
@@ -485,7 +485,7 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
 
                 <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
                   <Field label="Texte au-dessus du formulaire">
-                    <textarea rows={2} className={`${inputCls} resize-none`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
+                    <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
                   </Field>
                   <div>
                     <span className="block text-xs font-semibold text-gray-700 mb-1.5">Boissons proposées</span>

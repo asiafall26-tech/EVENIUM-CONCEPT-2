@@ -160,7 +160,7 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
         <div className="flex-1 min-h-0 overflow-hidden">
           {tab === "contenu" && (
             <div className="h-full w-full max-w-[1680px] mx-auto p-2 sm:p-4 lg:p-6 flex flex-col">
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 flex flex-col">
                 <CustomSectionsEditor
                   model={liveModel}
                   fields={fields}

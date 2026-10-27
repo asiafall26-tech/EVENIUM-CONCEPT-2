@@ -210,7 +210,7 @@ export default function AdminModelEditor({
                   <PenLine size={13} /> Modifier le nom
                 </button>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 flex flex-col">
                 <Studio value={draft} onChange={update} onViewFullScreen={() => setPreview(true)} isStatic={isStatic} />
               </div>
             </div>
