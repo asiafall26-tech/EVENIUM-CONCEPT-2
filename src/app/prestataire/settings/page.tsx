@@ -254,56 +254,86 @@ export default function PrestataireSettingsPage() {
               </div>
 
               <div className="space-y-3 pt-2">
-                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
-                  <div>
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors">
+                  <div className="pr-4">
                     <div className="font-bold text-xs sm:text-sm text-stone-900">
                       Nouvelles demandes de devis
                     </div>
-                    <div className="text-xs text-stone-500">
-                      Recevoir un email dès qu'un client vous sollicite.
+                    <div className="text-xs text-stone-500 mt-0.5">
+                      Recevoir une alerte instantanée dès qu'un organisateur vous sollicite pour son événement.
                     </div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={notifs.devis}
-                    onChange={() => setNotifs({ ...notifs, devis: !notifs.devis })}
-                    className="w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
-                  />
-                </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={notifs.devis}
+                    onClick={() => setNotifs({ ...notifs, devis: !notifs.devis })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      notifs.devis ? "bg-[#b8924a]" : "bg-stone-300"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        notifs.devis ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
 
-                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
-                  <div>
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors">
+                  <div className="pr-4">
                     <div className="font-bold text-xs sm:text-sm text-stone-900">
                       Nouveaux messages chat
                     </div>
-                    <div className="text-xs text-stone-500">
-                      Alerte en cas de nouveau message client ou organisateur.
+                    <div className="text-xs text-stone-500 mt-0.5">
+                      Alerte en direct en cas de nouveau message client dans la messagerie Evenium.
                     </div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={notifs.messages}
-                    onChange={() => setNotifs({ ...notifs, messages: !notifs.messages })}
-                    className="w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
-                  />
-                </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={notifs.messages}
+                    onClick={() => setNotifs({ ...notifs, messages: !notifs.messages })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      notifs.messages ? "bg-[#b8924a]" : "bg-stone-300"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        notifs.messages ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
 
-                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
-                  <div>
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors">
+                  <div className="pr-4">
                     <div className="font-bold text-xs sm:text-sm text-stone-900">
-                      Paiements validés
+                      Paiements & Acomptes validés
                     </div>
-                    <div className="text-xs text-stone-500">
-                      Confirmation dès qu'un devis est validé et payé.
+                    <div className="text-xs text-stone-500 mt-0.5">
+                      Notification immédiate dès qu'un devis est validé et que l'acompte est sécurisé.
                     </div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={notifs.paiements}
-                    onChange={() => setNotifs({ ...notifs, paiements: !notifs.paiements })}
-                    className="w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
-                  />
-                </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={notifs.paiements}
+                    onClick={() => setNotifs({ ...notifs, paiements: !notifs.paiements })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      notifs.paiements ? "bg-[#b8924a]" : "bg-stone-300"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        notifs.paiements ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-stone-100">
@@ -352,7 +382,7 @@ export default function PrestataireSettingsPage() {
                   type="text"
                   value={bankInfo.bankName}
                   onChange={(e) => setBankInfo({ ...bankInfo, bankName: e.target.value })}
-                  placeholder="Ex: CBAO, BOA, Ecobank…"
+                  placeholder="Ex: CBAO, BOA, Ecobank, SGBS…"
                   className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
                 />
               </div>
@@ -365,12 +395,12 @@ export default function PrestataireSettingsPage() {
                   type="text"
                   value={bankInfo.accountName}
                   onChange={(e) => setBankInfo({ ...bankInfo, accountName: e.target.value })}
-                  placeholder="Nom exact du bénéficiaire"
+                  placeholder="Nom exact du bénéficiaire ou société"
                   className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
                   Numéro de compte / IBAN
                 </label>
@@ -379,6 +409,19 @@ export default function PrestataireSettingsPage() {
                   value={bankInfo.iban}
                   onChange={(e) => setBankInfo({ ...bankInfo, iban: e.target.value })}
                   placeholder="SN00 0000 0000 0000 0000 0000"
+                  className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-mono font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Code BIC / SWIFT (Optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={bankInfo.swift || ""}
+                  onChange={(e) => setBankInfo({ ...bankInfo, swift: e.target.value })}
+                  placeholder="Ex: CBAOSNDA"
                   className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-mono font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
                 />
               </div>

@@ -79,6 +79,12 @@ export default function GlobalSettingsPage() {
   const [userEvents, setUserEvents] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [clientNotifs, setClientNotifs] = useState({
+    rsvp: true,
+    messages: true,
+    sms: true,
+  });
+  const [notifSaved, setNotifSaved] = useState(false);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -507,54 +513,113 @@ export default function GlobalSettingsPage() {
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="mt-1 w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
-                  />
-                  <div>
+              <div className="space-y-3 pt-2">
+                {/* Switch 1: RSVP */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors">
+                  <div className="pr-4">
                     <div className="font-bold text-xs sm:text-sm text-stone-900">
                       Confirmations RSVP des invités
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-stone-500 mt-0.5">
                       Recevoir une alerte instantanée dès qu'un invité valide ou décline son invitation.
                     </div>
                   </div>
-                </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={clientNotifs.rsvp}
+                    onClick={() => setClientNotifs({ ...clientNotifs, rsvp: !clientNotifs.rsvp })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      clientNotifs.rsvp ? "bg-[#b8924a]" : "bg-stone-300"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        clientNotifs.rsvp ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
 
-                <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="mt-1 w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
-                  />
-                  <div>
+                {/* Switch 2: Messages prestataires */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors">
+                  <div className="pr-4">
                     <div className="font-bold text-xs sm:text-sm text-stone-900">
                       Messages et devis des prestataires
                     </div>
-                    <div className="text-xs text-stone-500">
-                      Être notifié en cas de proposition, révision ou message dans la messagerie.
+                    <div className="text-xs text-stone-500 mt-0.5">
+                      Être notifié en temps réel lors d'une nouvelle proposition, devis révisé ou message reçu.
                     </div>
                   </div>
-                </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={clientNotifs.messages}
+                    onClick={() => setClientNotifs({ ...clientNotifs, messages: !clientNotifs.messages })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      clientNotifs.messages ? "bg-[#b8924a]" : "bg-stone-300"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        clientNotifs.messages ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
 
-                <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="mt-1 w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
-                  />
-                  <div>
+                {/* Switch 3: Alertes importantes */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors">
+                  <div className="pr-4">
                     <div className="font-bold text-xs sm:text-sm text-stone-900">
                       Alertes prioritaires (WhatsApp / SMS)
                     </div>
-                    <div className="text-xs text-stone-500">
-                      Rappels de calendrier et alertes importantes pour ne rien manquer le jour J.
+                    <div className="text-xs text-stone-500 mt-0.5">
+                      Rappels de calendrier, tâches urgentes et alertes pour ne rien manquer le jour J.
                     </div>
                   </div>
-                </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={clientNotifs.sms}
+                    onClick={() => setClientNotifs({ ...clientNotifs, sms: !clientNotifs.sms })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      clientNotifs.sms ? "bg-[#b8924a]" : "bg-stone-300"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        clientNotifs.sms ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                {notifSaved ? (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                    <CheckCircle2 size={14} /> Préférences enregistrées
+                  </span>
+                ) : <span />}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                      await supabase.auth.updateUser({ data: { clientNotifs } });
+                    }
+                    setNotifSaved(true);
+                    setTimeout(() => setNotifSaved(false), 3000);
+                  }}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-[#241b13] text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                >
+                  <Save size={14} className="inline mr-1.5" />
+                  Enregistrer les préférences
+                </button>
               </div>
             </div>
 
