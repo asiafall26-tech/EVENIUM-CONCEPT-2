@@ -35,13 +35,14 @@ export default function GlobalSettingsPage() {
       if (user) {
         const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
         if (data) {
-          setProfile({ ...data, email: user.email });
+          setProfile({ ...data, email: user.email, role: data.role || user.user_metadata?.role || 'client' });
         } else {
           setProfile({
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Mon Profil",
-            phone: user.user_metadata?.phone || ""
+            phone: user.user_metadata?.phone || "",
+            role: user.user_metadata?.role || "client"
           });
         }
 
@@ -102,7 +103,11 @@ export default function GlobalSettingsPage() {
       const { data } = supabase.storage.from('evenium_assets').getPublicUrl(filePath);
 
       if (profile?.id) {
-        await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', profile.id);
+        await supabase.from('profiles').upsert({
+          id: profile.id,
+          avatar_url: data.publicUrl,
+          role: profile.role || 'client',
+        }, { onConflict: 'id' });
         setProfile({ ...profile, avatar_url: data.publicUrl });
       }
     } catch (error: any) {
@@ -124,17 +129,22 @@ export default function GlobalSettingsPage() {
     
     if (profile?.id) {
       try {
+        const roleToSave = profile.role || "client";
         const { error } = await supabase.from('profiles').upsert({
           id: profile.id,
           full_name: profile.full_name,
           phone: profile.phone,
-          email: profile.email
-        });
+          email: profile.email,
+          role: roleToSave,
+        }, { onConflict: 'id' });
 
         if (error) throw error;
         
         await supabase.auth.updateUser({
-          data: { full_name: profile.full_name }
+          data: {
+            full_name: profile.full_name,
+            phone: profile.phone,
+          }
         });
         
         router.refresh();
@@ -142,7 +152,7 @@ export default function GlobalSettingsPage() {
         setShowSaveSuccess(true);
         setTimeout(() => setShowSaveSuccess(false), 3000);
       } catch (error: any) {
-        alert("Erreur lors de la sauvegarde : " + error.message);
+        alert("Erreur lors de la sauvegarde : " + (error?.message || error));
       }
     }
     
