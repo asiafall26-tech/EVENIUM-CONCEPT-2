@@ -21,12 +21,11 @@ const parisienne = Parisienne({
   weight: "400",
 });
 
-// Affichage mobile : largeur de l'appareil, zoom autorisé (accessibilité), encoche iPhone prise en compte
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f5eee1",
+  themeColor: "#fbf7f0",
 };
 
 export const metadata: Metadata = {
@@ -34,7 +33,7 @@ export const metadata: Metadata = {
   description: "Créez, personnalisez et gérez votre événement de A à Z avec Evenium.",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Evenium",
   },
 };

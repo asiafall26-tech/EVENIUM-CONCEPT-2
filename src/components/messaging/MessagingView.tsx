@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Menu,
 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { extractFirstName, formatDisplayName } from "@/lib/devis/revisionMessages";
@@ -881,18 +882,33 @@ export function MessagingView({
         } w-full md:w-[320px] lg:w-[360px] xl:w-[410px] shrink-0 flex-col border-r border-stone-200/90 bg-[#fcfbfa] h-full min-h-0 overflow-hidden`}
       >
         {/* En-tête de la liste */}
-        <div className="p-4 lg:p-5 pb-3 border-b border-stone-200/70 shrink-0">
+        <div
+          className="p-4 lg:p-5 pb-3 border-b border-stone-200/70 shrink-0"
+          style={{
+            paddingTop: "max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))",
+          }}
+        >
           <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="min-w-0">
-              <h1 className="font-serif text-2xl font-bold text-stone-900 flex items-center gap-2">
-                Messagerie
-                {totalUnread > 0 && (
-                  <span className="text-[11px] font-sans font-bold px-2 py-0.5 rounded-full bg-[#E53935] text-white">
-                    {totalUnread > 99 ? "99+" : totalUnread}
-                  </span>
-                )}
-              </h1>
-              <p className="text-xs text-stone-600 font-medium truncate mt-0.5">{subtitle}</p>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("evenium:open-sidebar"))}
+                aria-label="Ouvrir le menu"
+                className="md:hidden p-1.5 -ml-1 rounded-xl text-stone-700 hover:bg-stone-200/60 transition-colors cursor-pointer shrink-0"
+              >
+                <Menu size={22} />
+              </button>
+              <div className="min-w-0">
+                <h1 className="font-serif text-2xl font-bold text-stone-900 flex items-center gap-2">
+                  Messagerie
+                  {totalUnread > 0 && (
+                    <span className="text-[11px] font-sans font-bold px-2 py-0.5 rounded-full bg-[#E53935] text-white">
+                      {totalUnread > 99 ? "99+" : totalUnread}
+                    </span>
+                  )}
+                </h1>
+                <p className="text-xs text-stone-600 font-medium truncate mt-0.5">{subtitle}</p>
+              </div>
             </div>
             <button
               type="button"
@@ -1108,7 +1124,13 @@ export function MessagingView({
         ) : (
           <>
             {/* Header de la discussion active */}
-            <header className="h-[74px] shrink-0 px-4 sm:px-6 flex items-center justify-between gap-3 bg-white border-b border-stone-200/90 shadow-2xs z-10">
+            <header
+              className="shrink-0 px-4 sm:px-6 flex items-center justify-between gap-3 bg-white border-b border-stone-200/90 shadow-2xs z-10 transition-all"
+              style={{
+                paddingTop: "max(0.6rem, env(safe-area-inset-top, 0px))",
+                minHeight: "calc(4.5rem + env(safe-area-inset-top, 0px))",
+              }}
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   type="button"
@@ -1333,7 +1355,12 @@ export function MessagingView({
             </div>
 
             {/* Composer d'envoi en bas */}
-            <div className="shrink-0 p-3 sm:p-4 bg-white border-t border-stone-200/90 shadow-2xs relative z-10">
+            <div
+              className="shrink-0 p-3 sm:p-4 bg-white border-t border-stone-200/90 shadow-2xs relative z-10 transition-all"
+              style={{
+                paddingBottom: "max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))",
+              }}
+            >
               <input
                 ref={imageInputRef}
                 type="file"
@@ -1529,6 +1556,10 @@ export function MessagingView({
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-2xs animate-in fade-in duration-200">
           <div
             className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col overflow-y-auto animate-in slide-in-from-right duration-300 border-l border-stone-200"
+            style={{
+              paddingTop: "env(safe-area-inset-top, 0px)",
+              paddingBottom: "env(safe-area-inset-bottom, 0px)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Profil */}

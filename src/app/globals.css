@@ -425,9 +425,18 @@ textarea {
   }
 }
 
-/* Barres fixées en bas d'écran : au-dessus de la barre d'accueil de l'iPhone */
+/* Barres et en-têtes adaptés aux PWA épinglées et encoches de smartphone */
+.safe-top {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+}
+
 .safe-bottom {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.pwa-header-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+  min-height: calc(4rem + env(safe-area-inset-top, 0px));
 }
 
 /* Tableaux « empilés » sur téléphone : chaque ligne devient une carte lisible.

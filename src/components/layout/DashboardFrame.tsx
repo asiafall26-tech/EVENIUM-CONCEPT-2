@@ -48,6 +48,13 @@ export function DashboardFrame({
       document.body.style.overflow = prev;
     };
   }, [mobileOpen]);
+  // Support pour ouvrir le menu latéral depuis n'importe quel composant (ex: barre messagerie mobile)
+  useEffect(() => {
+    const handleOpen = () => setMobileOpen(true);
+    window.addEventListener("evenium:open-sidebar", handleOpen);
+    return () => window.removeEventListener("evenium:open-sidebar", handleOpen);
+  }, []);
+
   const isDark = variant === "dark";
   const isSidebarDark = sidebarVariant ? sidebarVariant === "dark" : isDark;
 
@@ -64,7 +71,7 @@ export function DashboardFrame({
 
       {/* SIDEBAR CONTAINER (DESKTOP + MOBILE DRAWER) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[min(20.5rem,86vw)] sm:w-80 lg:w-72 h-dvh lg:h-auto pb-[env(safe-area-inset-bottom)] flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(20.5rem,86vw)] sm:w-80 lg:w-72 h-dvh lg:h-auto pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${
           isSidebarDark
@@ -131,13 +138,19 @@ export function DashboardFrame({
 
       {/* MAIN WRAPPER (HEADER + CONTENT) */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* TOPBAR / HEADER */}
+        {/* TOPBAR / HEADER (Masquée sur mobile pour la messagerie afin d'éviter le double en-tête et offrir le plein écran) */}
         <header
-          className={`sticky top-0 z-30 h-16 sm:h-20 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4 border-b backdrop-blur-md ${
+          className={`sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4 border-b backdrop-blur-md transition-all ${
+            pathname?.includes("/messages") ? "hidden md:flex" : "flex"
+          } ${
             isDark
               ? "bg-[#0B0907]/90 border-[#b8924a]/15"
               : "bg-white/85 border-stone-200/60 shadow-xs"
           }`}
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            minHeight: "calc(4rem + env(safe-area-inset-top, 0px))",
+          }}
         >
           {/* Mobile open drawer button */}
           <button
@@ -167,11 +180,11 @@ export function DashboardFrame({
         <main
           className={
             pathname?.includes("/messages")
-              ? "flex-1 min-w-0 min-h-0 flex flex-col p-0 overflow-hidden h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5rem)]"
+              ? "flex-1 min-w-0 min-h-0 flex flex-col p-0 overflow-hidden h-dvh md:h-[calc(100dvh-5rem)]"
               : `flex-1 min-w-0 px-3 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8 overflow-x-hidden ${
                   mobileTabs?.length
-                    ? "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-8"
-                    : "pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pb-8"
+                    ? "pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8"
+                    : "pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] lg:pb-8"
                 }`
           }
         >
