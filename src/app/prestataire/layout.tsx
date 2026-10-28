@@ -19,6 +19,7 @@ import {
 import { PrestataireSidebarNav } from "@/components/PrestataireSidebarNav";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { UserMenu } from "@/components/ui/UserMenu";
+import { PinAppButton } from "@/components/pwa/PinAppButton";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { activityFromProfile, hasActivityColumns, isActivityComplete } from "@/lib/providerProfile";
@@ -100,6 +101,7 @@ export default async function PrestataireLayout({
             <p className="hidden md:block text-xs text-gray-500">Organisez. Collaborez. Créez des événements inoubliables.</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <PinAppButton />
             <NotificationBell role="prestataire" />
             <span className="hidden sm:block w-px h-8 bg-gray-100" />
             <UserMenu

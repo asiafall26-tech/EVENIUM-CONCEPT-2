@@ -15,6 +15,8 @@ import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
 import { locationLabel } from "@/lib/zones";
 import { offerTagLine } from "@/lib/offres";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
+import { sendQuoteAcceptedPushAction } from "@/app/actions/notify";
+import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
 
 export default function PrestatairesDashboardPage({
   params,
@@ -59,6 +61,7 @@ export default function PrestatairesDashboardPage({
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<any | null>(null);
 
   const supabase = createClient();
 
@@ -155,6 +158,9 @@ export default function PrestatairesDashboardPage({
         }
 
         if (status === 'Accepté') {
+          // Alerte Push directe sur l'appareil du prestataire (même application fermée)
+          sendQuoteAcceptedPushAction(selectedDevis.prestataire_id, clientName, event?.name || event?.type);
+
           const acompte = Number(selectedDevis.deposit_amount || 0);
 
           if (acompte > 0) {
@@ -544,9 +550,19 @@ export default function PrestatairesDashboardPage({
                     </button>
                   )}
                   {p.isPlatformProvider && (
-                    <button onClick={() => { setSelectedProvider(p); }} className="text-xs font-medium text-gray-500 hover:text-black transition-colors cursor-pointer">
-                      Voir profil
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setReviewTarget({ id: p.prestataire_id || p.id, name: p.name, role: p.role })}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-[#8f6f33] border border-[#b8924a]/30 hover:bg-amber-100 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        title="Donner une note et un avis à ce prestataire"
+                      >
+                        <Star size={12} className="fill-[#b8924a]" /> Noter
+                      </button>
+                      <button onClick={() => { setSelectedProvider(p); }} className="text-xs font-medium text-gray-500 hover:text-black transition-colors cursor-pointer">
+                        Voir profil
+                      </button>
+                    </>
                   )}
                   {p.status === 'En attente' && (
                     <>
@@ -1348,6 +1364,22 @@ export default function PrestatairesDashboardPage({
             providerName: devisProviderName,
           }}
           shareUrl={typeof window !== 'undefined' ? `${window.location.origin}/dashboard/devis/${selectedDevis.id}` : undefined}
+        />
+      )}
+
+      {/* Modal Avis & Note Prestataire */}
+      {reviewTarget && (
+        <LeaveReviewModal
+          isOpen={!!reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={() => {
+            fetchDemandes();
+          }}
+          providerId={reviewTarget.id}
+          providerName={reviewTarget.name}
+          providerRole={reviewTarget.role}
+          eventId={id}
+          eventName={event?.name || event?.type}
         />
       )}
 

@@ -17,6 +17,7 @@ import {
   type DevisDraft,
 } from "@/lib/devis/persist";
 import { useBadgeStore } from "@/store/BadgeStore";
+import { sendQuoteSubmittedPushAction } from "@/app/actions/notify";
 
 export default function BuilderDevisPage({
   params,
@@ -119,6 +120,13 @@ export default function BuilderDevisPage({
               (summary ? `\n\nPrestations proposées :\n${summary}` : "") +
               `\n\nVous pouvez consulter le détail de ma proposition et la valider directement dans votre espace Devis.\n\nJe reste à votre entière disposition pour tout renseignement complémentaire !`,
           });
+
+          // Alerte Push directe sur l'appareil du client (même application fermée)
+          sendQuoteSubmittedPushAction(
+            targetClientId,
+            user?.user_metadata?.full_name || "Un prestataire",
+            amounts.total
+          );
         }
         useBadgeStore.getState().refresh();
       }

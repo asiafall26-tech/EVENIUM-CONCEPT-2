@@ -1,16 +1,17 @@
 "use client";
 
-import { Save, User, Bell, Shield, CreditCard, Camera, LogOut, Check, CreditCard as CardIcon, Download, Smartphone, Plus, Trash2, X } from "lucide-react";
+import { Save, User, Bell, Shield, CreditCard, Camera, LogOut, Check, CreditCard as CardIcon, Download, Smartphone, Plus, Trash2, X, Sparkles, Mail, Phone, Lock, FileText, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { DeleteAccountSection } from "@/components/ui/DeleteAccountSection";
+import { NotificationSoundSettings } from "@/components/settings/NotificationSoundSettings";
 
-// Helper pour calculer les initiales de manière consistante avec la navbar (ex: "Famille diallo" -> "FD")
+// Helper pour calculer les initiales de manière consistante avec la navbar
 const getInitials = (name?: string) => {
-  if (!name?.trim()) return "NA";
+  if (!name?.trim()) return "EV";
   return name
     .trim()
     .split(/\s+/)
@@ -18,7 +19,7 @@ const getInitials = (name?: string) => {
     .map((n: string) => n[0])
     .join('')
     .substring(0, 2)
-    .toUpperCase() || "NA";
+    .toUpperCase() || "EV";
 };
 
 export default function GlobalSettingsPage() {
@@ -123,7 +124,6 @@ export default function GlobalSettingsPage() {
     
     if (profile?.id) {
       try {
-        // Mettre à jour ou créer la ligne dans la table profiles
         const { error } = await supabase.from('profiles').upsert({
           id: profile.id,
           full_name: profile.full_name,
@@ -133,12 +133,10 @@ export default function GlobalSettingsPage() {
 
         if (error) throw error;
         
-        // Mettre à jour les metadata de l'utilisateur pour la cohérence globale
         await supabase.auth.updateUser({
           data: { full_name: profile.full_name }
         });
         
-        // Rafraîchir les Server Components (comme la Navbar)
         router.refresh();
         
         setShowSaveSuccess(true);
@@ -268,429 +266,608 @@ export default function GlobalSettingsPage() {
   };
 
   return (
-    <div className="px-0 sm:px-4 lg:px-6 py-2 sm:py-6 max-w-4xl mx-auto w-full relative mb-8">
-      <div className="mb-5 sm:mb-8 px-1 sm:px-0">
-        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-black mb-1 sm:mb-2">Mon Profil</h1>
-        <p className="text-gray-500 text-xs sm:text-sm">Gérez vos informations personnelles et les paramètres de votre compte.</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-300">
+      {/* En-tête de la page */}
+      <div className="mb-8">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
+          Paramètres du compte
+        </h1>
+        <p className="text-stone-500 text-xs sm:text-sm">
+          Gérez votre profil, vos préférences de notifications, votre sécurité et votre facturation.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-        {/* Navigation des paramètres : Onglets horizontaux défilables sur mobile, barre latérale sur desktop */}
-        <div className="md:col-span-1">
-          <div className="flex md:flex-col overflow-x-auto pb-2 md:pb-0 gap-1.5 md:space-y-2 no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
-            <button 
-              onClick={() => setActiveTab("profil")}
-              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
-                activeTab === "profil" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
-              }`}
+      {/* Carte Résumé Profil & Avatar */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-xs mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <div className="relative group shrink-0">
+            <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-[#241b13] flex items-center justify-center font-serif text-2xl font-bold overflow-hidden shadow-md ring-4 ring-[#faf6ee]">
+              {uploadingAvatar ? (
+                <span className="text-xs font-sans font-bold">Upload…</span>
+              ) : profile?.avatar_url ? (
+                <Image src={profile.avatar_url} alt="Avatar" fill className="object-cover" unoptimized />
+              ) : (
+                getInitials(profile?.full_name)
+              )}
+            </div>
+            <label
+              htmlFor="avatar-input"
+              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-md hover:bg-[#b8924a] transition-colors cursor-pointer"
+              title="Changer la photo de profil"
             >
-              <User size={16} className="shrink-0" /> <span className="whitespace-nowrap">Mon Profil</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab("notifications")}
-              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
-                activeTab === "notifications" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
-              }`}
-            >
-              <Bell size={16} className="shrink-0" /> <span className="whitespace-nowrap">Notifications</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab("securite")}
-              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
-                activeTab === "securite" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
-              }`}
-            >
-              <Shield size={16} className="shrink-0" /> <span className="whitespace-nowrap">Sécurité</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab("facturation")}
-              className={`shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 sm:gap-3 transition-all ${
-                activeTab === "facturation" ? "bg-black text-white shadow-md shadow-black/10" : "bg-white md:bg-transparent text-gray-600 hover:bg-gray-100 hover:text-black border border-gray-100 md:border-transparent"
-              }`}
-            >
-              <CreditCard size={16} className="shrink-0" /> <span className="whitespace-nowrap">Facturation</span>
-            </button>
-            <div className="hidden md:block h-px bg-gray-100 my-4 w-full"></div>
-            <button 
-              onClick={() => router.push('/login')} 
-              className="shrink-0 text-left px-3.5 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm text-red-500 hover:bg-red-50 font-medium rounded-xl flex items-center gap-2 sm:gap-3 transition-colors bg-white md:bg-transparent border border-red-100 md:border-transparent"
-            >
-              <LogOut size={16} className="shrink-0" /> <span className="whitespace-nowrap">Déconnexion</span>
-            </button>
+              <Camera size={14} />
+            </label>
+            <input
+              id="avatar-input"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+              disabled={uploadingAvatar}
+            />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-950 truncate">
+                {profile?.full_name || "Organisateur"}
+              </h2>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#faf6ee] text-[#8f6f33] border border-[#b8924a]/30">
+                <Sparkles size={11} /> Client Organisateur
+              </span>
+            </div>
+            <p className="text-xs text-stone-500 font-medium truncate mt-0.5">
+              {profile?.email || "chargement…"}
+            </p>
+            {profile?.phone && (
+              <p className="text-xs text-stone-600 font-medium mt-0.5">
+                📞 {profile.phone}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Contenu principal */}
-        <div className="md:col-span-3">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-            {/* Cover Photo */}
-            <div className="h-28 sm:h-32 bg-gradient-to-r from-gray-900 to-gray-700 relative group cursor-pointer overflow-hidden">
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium flex items-center gap-2">
-                  <Camera size={16} /> Changer la couverture
+        <div className="flex items-center gap-2 self-end sm:self-center">
+          {showSaveSuccess && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-in fade-in">
+              <Check size={14} /> Enregistré !
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-[#241b13] text-xs font-bold shadow-md shadow-[#b8924a]/20 hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 cursor-pointer"
+          >
+            <Save size={15} />
+            <span>{isSaving ? "Enregistrement…" : "Enregistrer"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation par Onglets Épurée */}
+      <div className="flex items-center gap-2 border-b border-stone-200 pb-2 mb-6 overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => setActiveTab("profil")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "profil"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+          }`}
+        >
+          <User size={16} />
+          <span>Mon Profil</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("notifications")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "notifications"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+          }`}
+        >
+          <Bell size={16} />
+          <span>Notifications & Sonneries</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("securite")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "securite"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+          }`}
+        >
+          <Shield size={16} />
+          <span>Sécurité & Accès</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("facturation")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "facturation"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+          }`}
+        >
+          <CreditCard size={16} />
+          <span>Facturation & Cartes</span>
+        </button>
+
+        <button
+          onClick={() => router.push('/login')}
+          className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors whitespace-nowrap cursor-pointer"
+        >
+          <LogOut size={15} />
+          <span className="hidden sm:inline">Déconnexion</span>
+        </button>
+      </div>
+
+      {/* Contenu des Onglets */}
+      <div className="space-y-6">
+        {/* TAB 1: PROFIL */}
+        {activeTab === "profil" && (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+            <div>
+              <h3 className="font-serif text-lg font-bold text-stone-900">
+                Informations du compte organisateur
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Ces informations sont automatiquement synchronisées dans vos échanges, invitations et fiches de messagerie.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Nom et Prénom
+                </label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="text"
+                    value={profile?.full_name || ""}
+                    onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                    placeholder="Votre nom complet"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40 focus:border-[#b8924a] transition-all"
+                  />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Numéro de Téléphone
+                </label>
+                <div className="relative">
+                  <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="tel"
+                    value={profile?.phone || ""}
+                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    placeholder="Ex: +221 77 000 00 00"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40 focus:border-[#b8924a] transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Adresse E-mail de connexion
+                </label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="email"
+                    value={profile?.email || ""}
+                    disabled
+                    className="w-full pl-10 pr-4 py-2.5 bg-stone-100 border border-stone-200 rounded-xl text-sm font-semibold text-stone-500 cursor-not-allowed"
+                  />
+                </div>
+                <p className="text-[11px] text-stone-500 mt-1">
+                  L'adresse email est liée à votre compte Evenium et ne peut être modifiée qu'auprès du support.
+                </p>
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 md:p-8 relative">
-              {/* Photo de profil (Avatar) */}
-              <div className="absolute -top-14 sm:-top-16 left-6 sm:left-8">
-                <label className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white p-1 shadow-lg block cursor-pointer">
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#b8924a] to-[#8f6f33] text-white flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold relative group overflow-hidden">
-                    {uploadingAvatar ? (
-                      <span className="text-sm">...</span>
-                    ) : profile?.avatar_url ? (
-                      <Image src={profile.avatar_url} alt="Avatar" fill className="object-cover" unoptimized />
-                    ) : (
-                      profile?.full_name ? getInitials(profile.full_name) : "NA"
-                    )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Camera size={20} className="text-white" />
+            <div className="flex justify-end pt-4 border-t border-stone-100">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-[#241b13] text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? "Sauvegarde en cours…" : "Sauvegarder les modifications"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: NOTIFICATIONS */}
+        {activeTab === "notifications" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Canaux de notifications */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-5">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Préférences de réception
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Définissez comment Evenium vous prévient en cas de nouvelle activité.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="mt-1 w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
+                  />
+                  <div>
+                    <div className="font-bold text-xs sm:text-sm text-stone-900">
+                      Confirmations RSVP des invités
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      Recevoir une alerte instantanée dès qu'un invité valide ou décline son invitation.
                     </div>
                   </div>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+                </label>
+
+                <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="mt-1 w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
+                  />
+                  <div>
+                    <div className="font-bold text-xs sm:text-sm text-stone-900">
+                      Messages et devis des prestataires
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      Être notifié en cas de proposition, révision ou message dans la messagerie.
+                    </div>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="mt-1 w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
+                  />
+                  <div>
+                    <div className="font-bold text-xs sm:text-sm text-stone-900">
+                      Alertes prioritaires (WhatsApp / SMS)
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      Rappels de calendrier et alertes importantes pour ne rien manquer le jour J.
+                    </div>
+                  </div>
                 </label>
               </div>
-
-              {/* Spacer for avatar */}
-              <div className="h-8 sm:h-10 mb-4"></div>
-
-              {/* Profil Tab */}
-              {activeTab === "profil" && (
-                <section className="space-y-6">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Informations personnelles</h2>
-                    <p className="text-xs sm:text-sm text-gray-500">Mettez à jour vos informations de contact et votre identité.</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 bg-gray-50/50 p-4 sm:p-6 rounded-xl border border-gray-100">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nom complet</label>
-                      <input 
-                        type="text" 
-                        value={profile?.full_name || ""} 
-                        onChange={(e) => setProfile({...profile, full_name: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm text-sm" 
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Adresse Email</label>
-                      <input type="email" value={profile?.email || ""} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm text-sm" disabled />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Numéro de téléphone</label>
-                      <input 
-                        type="tel" 
-                        value={profile?.phone || ""} 
-                        onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none transition-all shadow-sm text-sm" 
-                      />
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Notifications Tab */}
-              {activeTab === "notifications" && (
-                <section className="space-y-8">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">Préférences de notification</h2>
-                    <p className="text-sm text-gray-500">Choisissez comment vous souhaitez être informé de l'activité de vos événements.</p>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900">Notifications par Email</h3>
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-4">
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" defaultChecked className="mt-1 w-4 h-4 text-[#b8924a] rounded border-gray-300 focus:ring-[#b8924a]" />
-                        <div>
-                          <div className="font-semibold text-sm text-gray-900">Nouvelles inscriptions</div>
-                          <div className="text-xs text-gray-500">Recevoir un email lorsqu'un invité confirme sa présence.</div>
-                        </div>
-                      </label>
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" defaultChecked className="mt-1 w-4 h-4 text-[#b8924a] rounded border-gray-300 focus:ring-[#b8924a]" />
-                        <div>
-                          <div className="font-semibold text-sm text-gray-900">Messages des prestataires</div>
-                          <div className="text-xs text-gray-500">Recevoir une alerte pour les nouveaux messages et devis.</div>
-                        </div>
-                      </label>
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" className="mt-1 w-4 h-4 text-[#b8924a] rounded border-gray-300 focus:ring-[#b8924a]" />
-                        <div>
-                          <div className="font-semibold text-sm text-gray-900">Marketing & Astuces</div>
-                          <div className="text-xs text-gray-500">Recevoir nos newsletters et conseils pour réussir vos événements.</div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Smartphone size={18} /> Notifications Mobiles (SMS / WhatsApp)</h3>
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" defaultChecked className="mt-1 w-4 h-4 text-[#b8924a] rounded border-gray-300 focus:ring-[#b8924a]" />
-                        <div>
-                          <div className="font-semibold text-sm text-gray-900">Alertes importantes via WhatsApp</div>
-                          <div className="text-xs text-gray-500">Notifications instantanées pour les annulations de prestataires ou urgences.</div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Sécurité Tab */}
-              {activeTab === "securite" && (
-                <section className="space-y-8">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">Mot de passe et Sécurité</h2>
-                    <p className="text-sm text-gray-500">Gérez votre mot de passe et protégez votre compte.</p>
-                  </div>
-                  
-                  <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100 space-y-4">
-                    <h3 className="font-semibold text-gray-900 mb-2">Changer le mot de passe</h3>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Mot de passe actuel</label>
-                      <input type="password" placeholder="••••••••" className="w-full md:w-2/3 px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none shadow-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nouveau mot de passe</label>
-                      <input type="password" placeholder="••••••••" className="w-full md:w-2/3 px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none shadow-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirmer le nouveau mot de passe</label>
-                      <input type="password" placeholder="••••••••" className="w-full md:w-2/3 px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b8924a] focus:border-[#b8924a] outline-none shadow-sm" />
-                    </div>
-                    <button className="mt-2 px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors">
-                      Mettre à jour le mot de passe
-                    </button>
-                  </div>
-
-                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Authentification à deux facteurs (2FA)</h3>
-                      <p className="text-sm text-gray-500">Ajoute une couche de sécurité supplémentaire à votre compte.</p>
-                    </div>
-                    <button className="px-5 py-2.5 bg-[#f5eee1] text-[#8f6f33] text-sm font-bold rounded-lg hover:bg-[#e4d8c4] transition-colors whitespace-nowrap">
-                      Activer 2FA
-                    </button>
-                  </div>
-
-                  {/* Zone de Danger : Suppression du compte */}
-                  <DeleteAccountSection role="client" />
-                </section>
-              )}
-
-              {/* Facturation Tab */}
-              {activeTab === "facturation" && (
-                <section className="space-y-8">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">Facturation & Abonnement</h2>
-                    <p className="text-sm text-gray-500">Gérez votre formule, vos moyens de paiement et vos factures.</p>
-                  </div>
-
-                  {/* Plan actuel */}
-                  {userEvents.length > 0 ? (
-                    <div className="bg-gradient-to-br from-[#2b2118] to-black p-6 rounded-xl border border-gray-800 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl shadow-black/20">
-                      <div>
-                        <div className="text-[#b8924a] text-xs font-bold uppercase tracking-wider mb-2">Formule Actuelle</div>
-                        <h3 className="text-2xl font-serif font-bold mb-1">
-                          Formule {userEvents[0].plan || "Standard"}
-                        </h3>
-                        <p className="text-gray-400 text-sm">
-                          Événement : <span className="text-white font-medium">{userEvents[0].name}</span>
-                          {userEvents[0].plan === 'Gold' ? " (20 000 FCFA - Tous les outils débloqués)" : userEvents[0].plan === 'Premium' ? " (10 000 FCFA - Suivi RSVP & Outils)" : " (5 000 FCFA - Dashboard, Lien officiel & QR Code)"}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="px-4 py-2 bg-green-500/10 text-green-400 text-sm font-bold rounded-lg border border-green-500/20 whitespace-nowrap flex items-center gap-2">
-                          <Check size={14} /> Actif
-                        </span>
-                        <Link href={`/dashboard/events/${userEvents[0].id}`} className="text-[11px] font-semibold text-[#b8924a] hover:underline mt-2 bg-white/10 px-3 py-1.5 rounded-md transition-colors hover:bg-white/20">
-                          Accéder à l&apos;événement
-                        </Link>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 border border-gray-200 p-6 rounded-xl text-center flex flex-col items-center justify-center">
-                      <p className="text-gray-700 font-semibold mb-1">Aucun événement actif</p>
-                      <p className="text-gray-500 text-xs mb-4">Créez votre événement pour activer votre formule et accéder à tous vos outils.</p>
-                      <Link href="/dashboard/new" className="px-4 py-2 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-colors">
-                        Créer un événement
-                      </Link>
-                    </div>
-                  )}
-
-                  {/* Moyens de paiement */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-4">Moyens de paiement</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {paymentMethods.length === 0 ? (
-                        <div className="border border-gray-200 bg-white p-6 rounded-xl flex flex-col items-center justify-center text-center">
-                          <CardIcon size={28} className="text-gray-300 mb-2" />
-                          <p className="text-sm font-medium text-gray-600">Aucune carte bancaire enregistrée</p>
-                          <p className="text-xs text-gray-400 mt-0.5">Ajoutez une carte pour sécuriser vos futurs règlements.</p>
-                        </div>
-                      ) : (
-                        paymentMethods.map((pm) => (
-                          <div key={pm.id} className={`border ${pm.isDefault ? 'border-[#b8924a] bg-[#f5eee1]' : 'border-gray-200 bg-white'} p-4 rounded-xl flex flex-col relative overflow-hidden group transition-all`}>
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white border border-gray-100 rounded-lg flex items-center justify-center shadow-sm">
-                                  <CardIcon size={20} className={pm.isDefault ? "text-[#8f6f33]" : "text-gray-400"} />
-                                </div>
-                                <div>
-                                  <div className="font-bold text-gray-900 text-sm">Carte {pm.type} •••• {pm.last4}</div>
-                                  <div className="text-xs text-gray-500">Expire le {pm.expiry}</div>
-                                </div>
-                              </div>
-                              {pm.isDefault && (
-                                <div className="text-xs font-bold text-[#2E7D32] bg-[#E8F5E9] px-2 py-1 rounded">Défaut</div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 mt-auto pt-3 border-t border-gray-100/50">
-                              {!pm.isDefault && (
-                                <button onClick={() => handleSetDefault(pm.id)} className="text-xs font-medium text-gray-500 hover:text-black transition-colors">
-                                  Définir par défaut
-                                </button>
-                              )}
-                              <button onClick={() => handleDeleteCard(pm.id)} className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors ml-auto flex items-center gap-1">
-                                <Trash2 size={12} /> Supprimer
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                      
-                      <button onClick={() => setIsAddCardModalOpen(true)} className="border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 p-4 rounded-xl flex items-center justify-center gap-2 text-gray-600 text-sm font-semibold transition-colors min-h-[120px]">
-                        <Plus size={18} /> Ajouter un moyen de paiement
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Historique */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-4">Historique de facturation</h3>
-                    <div className="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-gray-200 text-gray-500 bg-gray-50 text-[10px] sm:text-[11px] uppercase tracking-wider">
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Date</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Description</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Montant</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right">Facture</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {invoices.length === 0 ? (
-                            <tr>
-                              <td colSpan={4} className="py-8 text-center text-gray-500 text-xs sm:text-sm">Aucune facture enregistrée.</td>
-                            </tr>
-                          ) : (
-                            invoices.map(inv => (
-                              <tr key={inv.id} className="text-gray-700 hover:bg-gray-50/50 transition-colors text-xs sm:text-sm">
-                                <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">{inv.date}</td>
-                                <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-gray-900">{inv.desc}</td>
-                                <td className="px-3 sm:px-6 py-3 sm:py-4 font-bold whitespace-nowrap">{inv.amount}</td>
-                                <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
-                                  <button onClick={() => handleDownloadInvoice(inv.id)} className="text-[#8f6f33] hover:text-[#7a5e2b] bg-[#f5eee1] p-1.5 sm:p-2 rounded-lg transition-colors" title="Télécharger">
-                                    <Download size={15} />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </section>
-              )}
-
             </div>
-            
-            <div className="bg-gray-50 p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              {showSaveSuccess ? (
-                <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-green-600 animate-in fade-in duration-200">
-                  <Check size={16} className="shrink-0" />
-                  <span>Modifications enregistrées</span>
+
+            {/* Personnalisation Sonneries & Push */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs">
+              <NotificationSoundSettings role="client" />
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SECURITE */}
+        {activeTab === "securite" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Changement de mot de passe */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Sécurité du compte & Mot de passe
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Modifiez votre mot de passe pour protéger l'accès à vos événements et données privées.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                    Mot de passe actuel
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                  />
                 </div>
-              ) : (
-                <div className="hidden sm:block" />
-              )}
-              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
-                <button 
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                    Nouveau mot de passe
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                    Confirmer
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
                   type="button"
-                  onClick={() => router.refresh()}
-                  className="flex-1 sm:flex-initial text-center px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-200/60 border border-gray-200 sm:border-transparent transition-colors"
+                  onClick={() => alert("Pour mettre à jour votre mot de passe, utilisez l'email de réinitialisation sécurisé ou contactez le support.")}
+                  className="px-5 py-2.5 rounded-xl bg-stone-900 text-white text-xs font-bold hover:bg-black transition-colors"
                 >
-                  Annuler
-                </button>
-                <button 
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors disabled:bg-gray-400 shrink-0 shadow-sm"
-                >
-                  <Save size={16} className="shrink-0" />
-                  <span>{isSaving ? "Enregistrement..." : "Enregistrer"}</span>
+                  Mettre à jour le mot de passe
                 </button>
               </div>
             </div>
+
+            {/* Authentification 2FA */}
+            <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="font-bold text-sm text-stone-900 mb-1">
+                  Authentification à deux facteurs (2FA)
+                </h4>
+                <p className="text-xs text-stone-500">
+                  Renforcez la protection de vos paiements et contrats d'événements.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => alert("L'authentification 2FA est gérée automatiquement avec les sessions sécurisées Supabase.")}
+                className="px-4 py-2 rounded-xl bg-[#faf6ee] text-[#8f6f33] text-xs font-bold hover:bg-[#efe6d6] transition-colors shrink-0"
+              >
+                Activer 2FA
+              </button>
+            </div>
+
+            {/* Suppression du compte */}
+            <DeleteAccountSection role="client" />
           </div>
-        </div>
+        )}
+
+        {/* TAB 4: FACTURATION */}
+        {activeTab === "facturation" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Formule active */}
+            {userEvents.length > 0 ? (
+              <div className="bg-gradient-to-br from-[#241b13] to-stone-950 p-6 sm:p-7 rounded-3xl border border-[#b8924a]/30 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-lg">
+                <div>
+                  <div className="text-[#d9c08c] text-[11px] font-bold uppercase tracking-wider mb-1">
+                    Formule Actuelle
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-serif font-bold text-white mb-1">
+                    Formule {userEvents[0].plan || "Standard"}
+                  </h3>
+                  <p className="text-stone-300 text-xs sm:text-sm">
+                    Événement lié : <span className="text-white font-bold">{userEvents[0].name}</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 self-end sm:self-center">
+                  <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5">
+                    <CheckCircle2 size={14} /> Actif
+                  </span>
+                  <Link
+                    href={`/dashboard/events/${userEvents[0].id}`}
+                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
+                  >
+                    Voir l'événement →
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl p-6 border border-stone-200 text-center">
+                <p className="text-sm font-bold text-stone-800">Aucun événement actif enregistré.</p>
+                <Link
+                  href="/dashboard/new"
+                  className="mt-3 inline-block px-4 py-2 rounded-xl bg-stone-900 text-white text-xs font-bold"
+                >
+                  Créer un événement
+                </Link>
+              </div>
+            )}
+
+            {/* Cartes et moyens de paiement */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-stone-900">
+                    Moyens de paiement
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Cartes bancaires enregistrées pour le règlement sécurisé de vos formules Evenium.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCardModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#faf6ee] text-[#8f6f33] text-xs font-bold hover:bg-[#efe6d6] transition-colors"
+                >
+                  <Plus size={14} /> Ajouter une carte
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                {paymentMethods.length === 0 ? (
+                  <div className="md:col-span-2 border border-dashed border-stone-200 rounded-2xl p-6 text-center text-xs text-stone-500">
+                    Aucun moyen de paiement enregistré pour le moment.
+                  </div>
+                ) : (
+                  paymentMethods.map((pm) => (
+                    <div
+                      key={pm.id}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        pm.isDefault ? "bg-[#fcfaf6] border-[#b8924a]" : "bg-white border-stone-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2.5">
+                          <CardIcon size={20} className={pm.isDefault ? "text-[#8f6f33]" : "text-stone-400"} />
+                          <span className="text-xs font-bold text-stone-900">
+                            {pm.type} •••• {pm.last4}
+                          </span>
+                        </div>
+                        {pm.isDefault && (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            Par défaut
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-stone-500 pt-2 border-t border-stone-100">
+                        <span>Exp : {pm.expiry}</span>
+                        <div className="flex items-center gap-2">
+                          {!pm.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetDefault(pm.id)}
+                              className="text-stone-700 hover:text-black font-semibold"
+                            >
+                              Définir par défaut
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCard(pm.id)}
+                            className="text-rose-500 hover:text-rose-700"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Historique de facturation */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Historique de facturation
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Consultez et téléchargez vos reçus officiels Evenium.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-stone-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#faf8f5] text-stone-600 font-bold uppercase tracking-wider text-[10px] border-b border-stone-200">
+                    <tr>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Désignation</th>
+                      <th className="px-4 py-3">Montant</th>
+                      <th className="px-4 py-3 text-right">Reçu officiel</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {invoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-6 text-center text-stone-500">
+                          Aucune facture enregistrée pour le moment.
+                        </td>
+                      </tr>
+                    ) : (
+                      invoices.map((inv) => (
+                        <tr key={inv.id} className="hover:bg-[#faf8f5]/50 transition-colors">
+                          <td className="px-4 py-3 font-medium text-stone-600 whitespace-nowrap">{inv.date}</td>
+                          <td className="px-4 py-3 font-bold text-stone-900">{inv.desc}</td>
+                          <td className="px-4 py-3 font-bold text-[#8f6f33] whitespace-nowrap">{inv.amount}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadInvoice(inv.id)}
+                              className="p-1.5 rounded-lg bg-[#faf6ee] text-[#8f6f33] hover:bg-[#efe6d6] transition-colors"
+                              title="Télécharger le reçu PDF"
+                            >
+                              <Download size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Modal Add Card */}
+      {/* Modale Ajout de Carte */}
       {isAddCardModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="font-bold text-lg text-gray-900">Ajouter une carte</h3>
-              <button onClick={() => setIsAddCardModalOpen(false)} className="text-gray-400 hover:text-black transition-colors bg-white rounded-full p-1 shadow-sm border border-gray-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-2xs animate-in fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden border border-stone-200">
+            <div className="p-5 border-b border-stone-100 flex justify-between items-center bg-[#faf8f5]">
+              <h3 className="font-bold text-sm text-stone-900">Ajouter une carte bancaire</h3>
+              <button
+                onClick={() => setIsAddCardModalOpen(false)}
+                className="text-stone-400 hover:text-stone-800 transition-colors"
+              >
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleAddCard} className="p-6 space-y-4">
+            <form onSubmit={handleAddCard} className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Numéro de carte</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">
+                  Numéro de carte
+                </label>
+                <input
+                  type="text"
                   required
-                  placeholder="0000 0000 0000 0000" 
+                  placeholder="0000 0000 0000 0000"
                   maxLength={16}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#b8924a]/50 outline-none font-mono"
+                  className="w-full px-3.5 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-[#b8924a]/50 outline-none"
                   value={newCard.number}
-                  onChange={e => setNewCard({...newCard, number: e.target.value})}
+                  onChange={(e) => setNewCard({ ...newCard, number: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Date d'expiration</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">
+                    Expiration
+                  </label>
+                  <input
+                    type="text"
                     required
                     placeholder="MM/AA"
                     maxLength={5}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#b8924a]/50 outline-none font-mono"
+                    className="w-full px-3.5 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-[#b8924a]/50 outline-none"
                     value={newCard.expiry}
-                    onChange={e => setNewCard({...newCard, expiry: e.target.value})}
+                    onChange={(e) => setNewCard({ ...newCard, expiry: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">CVC</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">
+                    CVC
+                  </label>
+                  <input
+                    type="text"
                     required
-                    placeholder="123" 
+                    placeholder="123"
                     maxLength={3}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#b8924a]/50 outline-none font-mono"
+                    className="w-full px-3.5 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-[#b8924a]/50 outline-none"
                     value={newCard.cvc}
-                    onChange={e => setNewCard({...newCard, cvc: e.target.value})}
+                    onChange={(e) => setNewCard({ ...newCard, cvc: e.target.value })}
                   />
                 </div>
               </div>
-              <button type="submit" className="w-full py-3 mt-2 bg-black text-white font-bold rounded-xl hover:bg-gray-900 transition-colors">
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-stone-900 text-white font-bold rounded-xl hover:bg-black transition-colors text-xs"
+              >
                 Enregistrer la carte
               </button>
             </form>

@@ -165,16 +165,19 @@ export function DashboardFrame({
 
         {/* PAGE CONTENT */}
         <main
-          className={`flex-1 min-w-0 px-3 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8 overflow-x-hidden ${
-            // Marge basse distincte : la barre d'onglets mobile ne doit jamais recouvrir le bas des pages
-            mobileTabs?.length
-              ? "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-8"
-              : "pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pb-8"
-          }`}
+          className={
+            pathname?.includes("/messages")
+              ? "flex-1 min-w-0 min-h-0 flex flex-col p-0 overflow-hidden h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5rem)]"
+              : `flex-1 min-w-0 px-3 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8 overflow-x-hidden ${
+                  mobileTabs?.length
+                    ? "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-8"
+                    : "pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pb-8"
+                }`
+          }
         >
           {children}
         </main>
-        {mobileTabs?.length ? <MobileTabBar tabs={mobileTabs} dark={isDark} /> : null}
+        {mobileTabs?.length && !pathname?.includes("/messages") ? <MobileTabBar tabs={mobileTabs} dark={isDark} /> : null}
       </div>
     </div>
   );

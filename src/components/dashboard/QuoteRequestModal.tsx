@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { CheckCircle, ArrowRight, ArrowLeft, X, Calendar, MapPin, Users, Info, Plus, Music, Camera, Utensils, Home, Briefcase, Paperclip } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { sendQuoteRequestPushAction } from "@/app/actions/notify";
 
 interface QuoteRequestModalProps {
   isOpen: boolean;
@@ -815,6 +816,7 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
           receiver_id: provider.id,
           content: `Bonjour ${providerName},\n\nJe souhaiterais solliciter une proposition de devis de votre part pour la prestation « ${service.nom_service} ».\n\nPourriez-vous consulter votre espace « Demandes de devis » afin de m'établir une proposition tarifaire détaillée ?\n\nMerci d'avance pour votre proposition !`
         });
+        sendQuoteRequestPushAction(provider.id, user.user_metadata?.full_name || "Un client", event?.name).catch(() => {});
       }
       setLoading(false);
       setIsSuccess(true);

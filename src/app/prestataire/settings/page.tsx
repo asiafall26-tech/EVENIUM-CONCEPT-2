@@ -1,14 +1,17 @@
 "use client";
 
-import { Save, Bell, CreditCard, Shield, Map, Lock, Upload, CheckCircle2 } from "lucide-react";
+import { Save, Bell, CreditCard, Shield, Map, Lock, Upload, CheckCircle2, User, Phone, Mail, Sparkles, ExternalLink, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { DeleteAccountSection } from "@/components/ui/DeleteAccountSection";
+import { NotificationSoundSettings } from "@/components/settings/NotificationSoundSettings";
 
 export default function PrestataireSettingsPage() {
   const [activeTab, setActiveTab] = useState<"preferences" | "facturation" | "securite">("preferences");
   const [isSaving, setIsSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   
   // States
   const [coverageArea, setCoverageArea] = useState("Dakar et environs");
@@ -30,9 +33,11 @@ export default function PrestataireSettingsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
     if (data) {
-      setProfile(data);
+      setProfile({ ...data, email: user.email });
+    } else {
+      setProfile({ id: user.id, email: user.email, full_name: user.user_metadata?.full_name || "Prestataire" });
     }
 
     const meta = user.user_metadata || {};
@@ -53,7 +58,8 @@ export default function PrestataireSettingsPage() {
         }
       });
       if (error) throw error;
-      alert("Préférences de service enregistrées avec succès !");
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 3000);
     } catch (err: any) {
       alert("Erreur lors de l'enregistrement : " + err.message);
     } finally {
@@ -70,7 +76,8 @@ export default function PrestataireSettingsPage() {
         }
       });
       if (error) throw error;
-      alert("Informations bancaires enregistrées avec succès !");
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 3000);
     } catch (err: any) {
       alert("Erreur lors de l'enregistrement : " + err.message);
     } finally {
@@ -104,219 +111,361 @@ export default function PrestataireSettingsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2">Paramètres Avancés</h1>
-          <p className="text-gray-500 text-sm">Gérez vos préférences de service, votre facturation et votre sécurité.</p>
-        </div>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-300">
+      {/* En-tête de la page */}
+      <div className="mb-8">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
+          Paramètres du compte prestataire
+        </h1>
+        <p className="text-stone-500 text-xs sm:text-sm">
+          Gérez vos préférences de service, vos coordonnées bancaires et la sécurité de votre compte.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        
-        {/* Navigation Latérale */}
-        <div className="space-y-2">
-          <button 
-            onClick={() => setActiveTab("preferences")}
-            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all text-left font-medium ${activeTab === 'preferences' ? 'bg-black text-white shadow-xl translate-x-2' : 'bg-transparent hover:bg-white text-gray-600 hover:shadow-sm hover:translate-x-1'}`}
-          >
-            <Map size={18} className={activeTab === 'preferences' ? 'text-[#b8924a]' : ''} />
-            Service & Notifications
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab("facturation")}
-            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all text-left font-medium ${activeTab === 'facturation' ? 'bg-black text-white shadow-xl translate-x-2' : 'bg-transparent hover:bg-white text-gray-600 hover:shadow-sm hover:translate-x-1'}`}
-          >
-            <CreditCard size={18} className={activeTab === 'facturation' ? 'text-[#b8924a]' : ''} />
-            Coordonnées Bancaires
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab("securite")}
-            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all text-left font-medium ${activeTab === 'securite' ? 'bg-black text-white shadow-xl translate-x-2' : 'bg-transparent hover:bg-white text-gray-600 hover:shadow-sm hover:translate-x-1'}`}
-          >
-            <Lock size={18} className={activeTab === 'securite' ? 'text-[#b8924a]' : ''} />
-            Sécurité & Mot de passe
-          </button>
+      {/* Carte Résumé Prestataire */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-xs mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-[#241b13] flex items-center justify-center font-serif text-2xl font-bold overflow-hidden shadow-md shrink-0">
+            {profile?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              (profile?.full_name?.[0] || "P").toUpperCase()
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-950 truncate">
+                {profile?.full_name || "Prestataire Evenium"}
+              </h2>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#faf6ee] text-[#8f6f33] border border-[#b8924a]/30">
+                <Sparkles size={11} /> {profile?.category || "Prestataire de services"}
+              </span>
+            </div>
+            <p className="text-xs text-stone-500 font-medium truncate mt-0.5">
+              {profile?.email || ""}
+              {profile?.phone ? ` • 📞 ${profile.phone}` : ""}
+            </p>
+          </div>
         </div>
 
-        {/* Contenu Principal */}
-        <div className="md:col-span-3">
-          
-          {/* TAB 1 : PREFERENCES */}
-          {activeTab === "preferences" && (
-            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-100 shadow-sm">
-                <h2 className="text-xl font-serif font-bold mb-6 flex items-center gap-2">
-                  <Map className="text-[#b8924a]" size={20} /> Zone et Capacité
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rayon d'action (Villes couvertes)</label>
-                    <input 
-                      type="text" 
-                      value={coverageArea}
-                      onChange={(e) => setCoverageArea(e.target.value)}
-                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] focus:bg-white transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Capacité maximale (invités/personnes)</label>
-                    <input 
-                      type="number" 
-                      value={maxCapacity}
-                      onChange={(e) => setMaxCapacity(e.target.value)}
-                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] focus:bg-white transition-all"
-                    />
-                  </div>
-                </div>
+        <Link
+          href="/prestataire/profil"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs shrink-0 self-end sm:self-center"
+        >
+          <span>Modifier ma vitrine complète</span>
+          <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      {/* Navigation par Onglets */}
+      <div className="flex items-center gap-2 border-b border-stone-200 pb-2 mb-6 overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => setActiveTab("preferences")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "preferences"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+          }`}
+        >
+          <Map size={16} />
+          <span>Services & Alertes</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("facturation")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "facturation"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+          }`}
+        >
+          <CreditCard size={16} />
+          <span>Coordonnées Bancaires (RIB)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("securite")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "securite"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+          }`}
+        >
+          <Shield size={16} />
+          <span>Sécurité & Mot de passe</span>
+        </button>
+      </div>
+
+      {/* Contenu */}
+      <div className="space-y-6">
+        {/* TAB 1: PREFERENCES */}
+        {activeTab === "preferences" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Zone & Capacité */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Zone d'intervention & Capacité d'accueil
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Ces critères aident les organisateurs à vérifier votre disponibilité lors de leurs demandes.
+                </p>
               </div>
 
-              <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-100 shadow-sm">
-                <h2 className="text-xl font-serif font-bold mb-6 flex items-center gap-2">
-                  <Bell className="text-[#b8924a]" size={20} /> Alertes & Notifications
-                </h2>
-                <div className="space-y-4">
-                  <label className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 cursor-pointer transition-colors">
-                    <div>
-                      <h4 className="font-bold text-gray-900">Nouvelles demandes de devis</h4>
-                      <p className="text-sm text-gray-500">M'alerter par email lorsqu'un client me sollicite.</p>
-                    </div>
-                    <div className={`w-14 h-8 rounded-full flex items-center transition-colors p-1 ${notifs.devis ? 'bg-black' : 'bg-gray-200'}`} onClick={() => setNotifs({...notifs, devis: !notifs.devis})}>
-                      <div className={`w-6 h-6 rounded-full bg-white transition-transform ${notifs.devis ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                    Zone géographique couverte
                   </label>
-                  <label className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 cursor-pointer transition-colors">
-                    <div>
-                      <h4 className="font-bold text-gray-900">Nouveaux messages</h4>
-                      <p className="text-sm text-gray-500">M'alerter par email en cas de nouveau message chat.</p>
-                    </div>
-                    <div className={`w-14 h-8 rounded-full flex items-center transition-colors p-1 ${notifs.messages ? 'bg-black' : 'bg-gray-200'}`} onClick={() => setNotifs({...notifs, messages: !notifs.messages})}>
-                      <div className={`w-6 h-6 rounded-full bg-white transition-transform ${notifs.messages ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                    </div>
+                  <input
+                    type="text"
+                    value={coverageArea}
+                    onChange={(e) => setCoverageArea(e.target.value)}
+                    placeholder="Ex: Dakar, Thiès, Saly et environs"
+                    className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                    Capacité maximale de convives
                   </label>
-                  <label className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 cursor-pointer transition-colors">
-                    <div>
-                      <h4 className="font-bold text-gray-900">Paiements validés</h4>
-                      <p className="text-sm text-gray-500">Confirmation lorsqu'un paiement Evenium est validé.</p>
-                    </div>
-                    <div className={`w-14 h-8 rounded-full flex items-center transition-colors p-1 ${notifs.paiements ? 'bg-black' : 'bg-gray-200'}`} onClick={() => setNotifs({...notifs, paiements: !notifs.paiements})}>
-                      <div className={`w-6 h-6 rounded-full bg-white transition-transform ${notifs.paiements ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                    </div>
-                  </label>
+                  <input
+                    type="number"
+                    value={maxCapacity}
+                    onChange={(e) => setMaxCapacity(e.target.value)}
+                    placeholder="Ex: 500"
+                    className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                  />
                 </div>
               </div>
+            </div>
 
-              <div className="flex justify-end">
-                <button onClick={handleSavePreferences} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-4 sm:px-6 lg:px-8 py-4 rounded-full font-bold shadow-lg hover:-translate-y-1 hover:bg-[#8f6f33] hover:shadow-xl transition-all disabled:opacity-50">
-                  <Save size={20} /> {isSaving ? "Enregistrement..." : "Enregistrer"}
+            {/* Alertes & Notifications */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Alertes de demandes & Rendez-vous
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Choisissez les notifications actives pour votre activité.
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
+                  <div>
+                    <div className="font-bold text-xs sm:text-sm text-stone-900">
+                      Nouvelles demandes de devis
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      Recevoir un email dès qu'un client vous sollicite.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifs.devis}
+                    onChange={() => setNotifs({ ...notifs, devis: !notifs.devis })}
+                    className="w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
+                  <div>
+                    <div className="font-bold text-xs sm:text-sm text-stone-900">
+                      Nouveaux messages chat
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      Alerte en cas de nouveau message client ou organisateur.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifs.messages}
+                    onChange={() => setNotifs({ ...notifs, messages: !notifs.messages })}
+                    className="w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:bg-[#faf8f5] transition-colors cursor-pointer">
+                  <div>
+                    <div className="font-bold text-xs sm:text-sm text-stone-900">
+                      Paiements validés
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      Confirmation dès qu'un devis est validé et payé.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifs.paiements}
+                    onChange={() => setNotifs({ ...notifs, paiements: !notifs.paiements })}
+                    className="w-4 h-4 text-[#b8924a] rounded border-stone-300 focus:ring-[#b8924a]"
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                {showSaveSuccess ? (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                    <CheckCircle2 size={14} /> Préférences enregistrées
+                  </span>
+                ) : <span />}
+                <button
+                  type="button"
+                  onClick={handleSavePreferences}
+                  disabled={isSaving}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-[#241b13] text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 cursor-pointer"
+                >
+                  <Save size={14} className="inline mr-1.5" />
+                  {isSaving ? "Enregistrement…" : "Enregistrer les préférences"}
                 </button>
               </div>
             </div>
-          )}
 
-          {/* TAB 2 : FACTURATION */}
-          {activeTab === "facturation" && (
-            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-gradient-to-br from-gray-900 to-black p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-800 shadow-2xl relative overflow-hidden text-white">
-                <div className="absolute right-0 top-0 opacity-10">
-                  <CreditCard size={200} />
-                </div>
-                <h2 className="text-xl font-serif font-bold mb-2 relative z-10">Coordonnées de virement</h2>
-                <p className="text-gray-400 text-sm mb-8 relative z-10 max-w-md">
-                  Ces informations sont utilisées par Evenium pour vous reverser les paiements effectués par vos clients.
+            {/* Sonneries & Push */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs">
+              <NotificationSoundSettings role="prestataire" />
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: FACTURATION */}
+        {activeTab === "facturation" && (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+            <div>
+              <h3 className="font-serif text-lg font-bold text-stone-900">
+                Coordonnées de virement bancaire (RIB)
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Ces informations sont utilisées par la plateforme Evenium pour vous reverser les acomptes et règlements de vos clients.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Nom de la banque
+                </label>
+                <input
+                  type="text"
+                  value={bankInfo.bankName}
+                  onChange={(e) => setBankInfo({ ...bankInfo, bankName: e.target.value })}
+                  placeholder="Ex: CBAO, BOA, Ecobank…"
+                  className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Titulaire du compte
+                </label>
+                <input
+                  type="text"
+                  value={bankInfo.accountName}
+                  onChange={(e) => setBankInfo({ ...bankInfo, accountName: e.target.value })}
+                  placeholder="Nom exact du bénéficiaire"
+                  className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Numéro de compte / IBAN
+                </label>
+                <input
+                  type="text"
+                  value={bankInfo.iban}
+                  onChange={(e) => setBankInfo({ ...bankInfo, iban: e.target.value })}
+                  placeholder="SN00 0000 0000 0000 0000 0000"
+                  className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm font-mono font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+              {showSaveSuccess ? (
+                <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                  <CheckCircle2 size={14} /> RIB mis à jour avec succès
+                </span>
+              ) : <span />}
+              <button
+                type="button"
+                onClick={handleSaveBank}
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-[#241b13] text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 cursor-pointer"
+              >
+                <Upload size={14} className="inline mr-1.5" />
+                {isSaving ? "Enregistrement…" : "Mettre à jour le RIB"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SECURITE */}
+        {activeTab === "securite" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs space-y-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Modifier le mot de passe
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Recommandé si votre mot de passe temporaire a été créé par un administrateur.
                 </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Nom de la Banque</label>
-                    <input 
-                      type="text" 
-                      value={bankInfo.bankName}
-                      onChange={e => setBankInfo({...bankInfo, bankName: e.target.value})}
-                      placeholder="Ex: Ecobank"
-                      className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-[#b8924a] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Titulaire du compte</label>
-                    <input 
-                      type="text" 
-                      value={bankInfo.accountName}
-                      onChange={e => setBankInfo({...bankInfo, accountName: e.target.value})}
-                      className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-[#b8924a] transition-all"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-400 mb-2">IBAN ou Numéro de compte complet</label>
-                    <input 
-                      type="text" 
-                      value={bankInfo.iban}
-                      onChange={e => setBankInfo({...bankInfo, iban: e.target.value})}
-                      className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-2xl text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#b8924a] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-8 flex justify-end relative z-10">
-                  <button onClick={handleSaveBank} disabled={isSaving} className="flex items-center gap-2 bg-[#b8924a] text-white px-4 sm:px-6 lg:px-8 py-4 rounded-full font-bold shadow-lg hover:bg-[#8f6f33] transition-all disabled:opacity-50">
-                    <Upload size={20} /> {isSaving ? "Enregistrement..." : "Mettre à jour le RIB"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3 : SECURITE */}
-          {activeTab === "securite" && (
-            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-bl-full -z-0"></div>
-                <h2 className="text-xl font-serif font-bold mb-2 flex items-center gap-2 relative z-10">
-                  <Lock className="text-red-500" size={20} /> Modifier le mot de passe
-                </h2>
-                <p className="text-gray-500 text-sm mb-6 relative z-10">Si votre mot de passe a été généré par un administrateur, nous vous recommandons fortement de le changer ici.</p>
-
-                <form onSubmit={handleUpdatePassword} className="space-y-6 relative z-10 max-w-md">
-                  {passwordError && (
-                    <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
-                      {passwordError}
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nouveau mot de passe</label>
-                    <input 
-                      type="password" 
-                      required
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirmez le mot de passe</label>
-                    <input 
-                      type="password" 
-                      required
-                      value={confirmPassword}
-                      onChange={e => setConfirmPassword(e.target.value)}
-                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all"
-                    />
-                  </div>
-                  
-                  <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-black text-white px-4 sm:px-6 lg:px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-gray-900 transition-all disabled:opacity-50">
-                    <Shield size={20} /> {isSaving ? "Modification..." : "Modifier mon mot de passe"}
-                  </button>
-                </form>
               </div>
 
-              {/* Zone de Danger : Suppression du compte prestataire */}
-              <DeleteAccountSection role="prestataire" />
-            </div>
-          )}
+              {passwordError && (
+                <div className="p-3 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold border border-rose-200">
+                  {passwordError}
+                </div>
+              )}
 
-        </div>
+              <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-md pt-2">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                    Nouveau mot de passe
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Au moins 6 caractères"
+                    className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                    Confirmez le nouveau mot de passe
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirmez à l'identique"
+                    className="w-full px-4 py-2.5 bg-[#faf8f5] border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  <Shield size={14} className="inline mr-1.5" />
+                  {isSaving ? "Modification…" : "Mettre à jour le mot de passe"}
+                </button>
+              </form>
+            </div>
+
+            {/* Suppression du compte */}
+            <DeleteAccountSection role="prestataire" />
+          </div>
+        )}
       </div>
     </div>
   );

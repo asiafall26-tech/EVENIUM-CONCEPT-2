@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { X, Upload, DollarSign, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { buildRevisionRequestMessage, RevisionRequestData } from '@/lib/devis/revisionMessages';
 import { useBadgeStore } from '@/store/BadgeStore';
+import { sendRevisionRequestedPushAction } from '@/app/actions/notify';
 
 interface QuoteRevisionModalProps {
   isOpen: boolean;
@@ -220,6 +221,14 @@ export function QuoteRevisionModal({ isOpen, onClose, onSuccess, devis }: QuoteR
           content: messageContent,
           is_read: false
         });
+
+        // Alerte Push directe sur l'appareil du prestataire (même application fermée)
+        sendRevisionRequestedPushAction(
+          devis.prestataire_id,
+          clientDisplayName,
+          devis.events?.name || devis.events?.type,
+          devisRef
+        );
       }
 
       // Rafraîchir les compteurs et fermer

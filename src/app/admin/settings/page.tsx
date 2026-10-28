@@ -3,6 +3,7 @@
 import { Save, User, Lock, Bell, Globe, Key, ShieldCheck, Smartphone, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { NotificationSoundSettings } from "@/components/settings/NotificationSoundSettings";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<"profil" | "securite" | "notifications" | "langues">("profil");
@@ -261,6 +262,10 @@ export default function AdminSettingsPage() {
                       <div className="text-xs text-gray-500 mt-1">Être notifié en cas d'erreur serveur critique ou de panne technique.</div>
                     </div>
                   </label>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <NotificationSoundSettings role="admin" />
                 </div>
               </div>
             </div>

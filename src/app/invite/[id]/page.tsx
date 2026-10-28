@@ -18,6 +18,7 @@ import * as anniversaire from "@/components/invitations/anniversaire/content";
 import type { RsvpPayload } from "@/components/invitations/velours/VeloursInvitation";
 import CustomGuestInvitation from "@/components/invitations/custom/CustomGuestInvitation";
 import { isCustomModelId } from "@/lib/customModels";
+import { sendRsvpPushAction } from "@/app/actions/notify";
 import { CheckCircle, XCircle, Users, Phone, Mail, User, Loader2, Music, MapPin, Clock, Camera, Navigation, Gift, Car, Hotel, Info } from "lucide-react";
 
 const FadeInScroll = ({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) => (
@@ -88,6 +89,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
             statut_rsvp: rsvp.attending ? "Confirmé" : "Refusé",
           }]);
           if (error) throw error;
+          sendRsvpPushAction(event.id, rsvp.name).catch(() => {});
         }}
       />
     );
@@ -110,6 +112,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
       ({ error } = await supabase.from('guests').insert([row]));
     }
     if (error) throw error;
+    sendRsvpPushAction(event.id, rsvp.name).catch(() => {});
   };
 
   if (event.invitation_model_id === sceau.SCEAU_MODEL_ID) {

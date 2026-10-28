@@ -9,6 +9,9 @@ import { createClient } from '@/utils/supabase/client';
 import { Bell, X, CheckCircle, Info, MessageSquare, LifeBuoy } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
+import { getNotificationSoundConfig, playNotificationSound } from '@/lib/notifications/soundManager';
+import { autoSyncPushSubscription } from '@/lib/notifications/pushManager';
+import { PushNotificationPrompt } from '@/components/notifications/PushNotificationPrompt';
 
 /** Fallback when realtime is not enabled on a table: counters are re-read every 30 s */
 const POLL_MS = 30_000;
@@ -136,6 +139,12 @@ export function NotificationProvider() {
     return () => clearTimeout(t);
   }, [total, pathname]);
 
+  // Synchronisation automatique de l'abonnement push en arrière-plan
+  useEffect(() => {
+    if (!userId) return;
+    autoSyncPushSubscription(userId);
+  }, [userId]);
+
   // Realtime: every table that feeds a counter triggers a refresh
   useEffect(() => {
     if (!userId) return;
@@ -153,6 +162,10 @@ export function NotificationProvider() {
             const { data: sender } = await supabase.from('profiles').select('full_name, role').eq('id', payload.new.sender_id).single();
             const senderName = sender?.role === 'admin' ? 'Support Evenium' : (sender?.full_name || 'Utilisateur');
             const content = String(payload.new.content ?? '');
+            const cfg = getNotificationSoundConfig();
+            if (cfg.enabled) {
+              playNotificationSound(cfg.messageSound, cfg.volume);
+            }
             addNotification({
               title: `Nouveau message de ${senderName}`,
               message: content.substring(0, 60) + (content.length > 60 ? '…' : ''),
@@ -214,6 +227,18 @@ export function NotificationProvider() {
       const href = w.href(store);
       if (pathname.startsWith(href)) continue; // already on the page that lists them
       if (w.key === 'unreadMessages' && Date.now() - lastRealtimeMessage.current < 60_000) continue;
+      const cfg = getNotificationSoundConfig();
+      if (cfg.enabled) {
+        if (w.key === 'unreadMessages') {
+          playNotificationSound(cfg.messageSound, cfg.volume);
+        } else if (w.key === 'pendingDevis' || w.key === 'pendingDemandes') {
+          playNotificationSound(cfg.devisSound, cfg.volume);
+        } else if (w.key === 'newRsvps') {
+          playNotificationSound(cfg.rsvpSound, cfg.volume);
+        } else {
+          playNotificationSound(cfg.defaultSound, cfg.volume);
+        }
+      }
       addNotification({ title: w.title(value - previous), message: w.detail(value), type: 'warning', href });
     }
     // pathname is read only to skip the toast on the page itself
@@ -221,8 +246,10 @@ export function NotificationProvider() {
   }, [store, role, addNotification]);
 
   return (
-    <div className="fixed top-20 right-4 z-50 flex flex-col gap-3 pointer-events-none w-[350px] max-w-[calc(100vw-2rem)]">
-      <AnimatePresence>
+    <>
+      <PushNotificationPrompt userId={userId} />
+      <div className="fixed top-20 right-4 z-50 flex flex-col gap-3 pointer-events-none w-[350px] max-w-[calc(100vw-2rem)]">
+        <AnimatePresence>
         {notifications.map((notif) => (
           <motion.div
             key={notif.id}
@@ -266,6 +293,7 @@ export function NotificationProvider() {
           </motion.div>
         ))}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   );
 }

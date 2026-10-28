@@ -11,6 +11,7 @@ import { DevisVersionHistory } from "@/components/devis/DevisVersionHistory";
 import { DevisForm } from "@/components/devis/DevisForm";
 import { buildNewVersionMessage, RevisionRequestData } from "@/lib/devis/revisionMessages";
 import { useBadgeStore } from "@/store/BadgeStore";
+import { sendQuoteSubmittedPushAction } from "@/app/actions/notify";
 import {
   draftAmounts,
   draftFromDevis,
@@ -196,6 +197,9 @@ export default function EditDevisPage({
             content: messageText,
             is_read: false,
           });
+
+          // Alerte Push directe sur l'appareil du client (même application fermée)
+          sendQuoteSubmittedPushAction(clientId, providerName, newTotal);
         }
 
         useBadgeStore.getState().refresh();

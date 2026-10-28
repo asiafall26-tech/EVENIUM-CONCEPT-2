@@ -20,6 +20,7 @@ import {
 import { AdminSidebarNav } from "@/components/AdminSidebarNav";
 import { UserMenu } from "@/components/ui/UserMenu";
 import { NotificationBell } from "@/components/ui/NotificationBell";
+import { PinAppButton } from "@/components/pwa/PinAppButton";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -96,6 +97,7 @@ export default async function AdminLayout({
             />
           </div>
           <div className="flex items-center gap-2 sm:gap-4 ml-auto">
+            <PinAppButton />
             <NotificationBell role="admin" />
             <span className="hidden sm:block w-px h-8 bg-gray-200" />
             <UserMenu

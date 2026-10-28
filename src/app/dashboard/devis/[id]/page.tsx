@@ -12,6 +12,7 @@ import { DevisVersionHistory } from "@/components/devis/DevisVersionHistory";
 import { buildRevisionAcceptedMessage, buildRevisedQuoteRefusedMessage } from "@/lib/devis/revisionMessages";
 import { categoryDetailsForDisplay } from "@/lib/devis/categories";
 import { lineBreakdown, resolveDeposit, resolveDiscount } from "@/lib/devis/pricing";
+import { sendQuoteAcceptedPushAction } from "@/app/actions/notify";
 
 export default function DetailedDevisClientPage({
   params,
@@ -210,6 +211,9 @@ export default function DetailedDevisClientPage({
               content: messageContent,
               is_read: false
             });
+
+            // Alerte Push directe sur l'appareil du prestataire (même application fermée)
+            sendQuoteAcceptedPushAction(devis.prestataire_id, clientName, eventName);
           }
         }
       }

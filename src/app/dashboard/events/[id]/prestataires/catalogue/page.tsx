@@ -12,7 +12,7 @@ import { offerEventTypes, offerPrestations, offerTagLine } from "@/lib/offres";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
 import { MAIN_COUNTRIES, WHOLE_COUNTRY, locationLabel, regionsOf, quartiersOf, zonesOf, getAllRegionsWithCountry, findCountryOfRegion, findHierarchyOfQuartier } from "@/lib/zones";
-import { mockProviders } from "@/data/mock/prestataires";
+import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
 
 const ALL_EVENTS = "Tous événements";
 
@@ -47,8 +47,32 @@ export default function CataloguePrestatairesPage({
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [serviceToRequest, setServiceToRequest] = useState<any | null>(null);
   const [providerToRequest, setProviderToRequest] = useState<any | null>(null);
+
+  const [providerReviews, setProviderReviews] = useState<any[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   
   const supabase = createClient();
+
+  const fetchSelectedProviderReviews = async (providerId: string) => {
+    if (!providerId) return;
+    setLoadingReviews(true);
+    const { data } = await supabase
+      .from('reviews')
+      .select('*, profiles:client_id(full_name, avatar_url)')
+      .eq('prestataire_id', providerId)
+      .order('created_at', { ascending: false });
+    setProviderReviews(data || []);
+    setLoadingReviews(false);
+  };
+
+  useEffect(() => {
+    if (selectedProvider?.id) {
+      fetchSelectedProviderReviews(selectedProvider.id);
+    } else {
+      setProviderReviews([]);
+    }
+  }, [selectedProvider?.id]);
 
   useEffect(() => {
     fetchData();
@@ -79,10 +103,21 @@ export default function CataloguePrestatairesPage({
       }
     }
     
+    // Récupérer les avis pour calculer les moyennes réelles
+    const { data: reviewsData } = await supabase
+      .from('reviews')
+      .select('prestataire_id, rating');
+
     const dbProviders = (profs || []).map(p => {
       const publishedServices = Array.isArray(p.services) 
         ? p.services.filter((s: any) => s.status === 'Publié') 
         : [];
+
+      const pReviews = (reviewsData || []).filter(r => r.prestataire_id === p.id);
+      const reviewCount = pReviews.length;
+      const avgRating = reviewCount > 0
+        ? Math.round((pReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviewCount) * 10) / 10
+        : 5;
 
       const activity = activityFromProfile(p);
       return {
@@ -96,9 +131,9 @@ export default function CataloguePrestatairesPage({
         region: activity.zones?.[0] || "",
         quartier: activity.zones?.[1] || "",
         zones: activity.zones,
-        description: p.description || 'Prestataire partenaire de la plateforme Evenium.',
-        rating: 5,
-        reviews: 0,
+        description: p.description || 'Prestataire certifié de la plateforme Evenium.',
+        rating: avgRating,
+        reviews: reviewCount,
         zone: locationLabel(activity.country, activity.zones) || p.address || 'Non renseigné',
         priceRange: 'Sur devis',
         phone: p.phone || 'Non renseigné',
@@ -114,13 +149,8 @@ export default function CataloguePrestatairesPage({
       };
     });
 
-    // 2. Fusion avec le catalogue certifié Evenium (garantit que l'annuaire est complet et testable)
-    const combinedProviders = [
-      ...dbProviders,
-      ...mockProviders.filter(mp => !dbProviders.some(dp => dp.id === mp.id))
-    ];
-
-    setPrestataires(combinedProviders);
+    // Uniquement les vrais prestataires enregistrés
+    setPrestataires(dbProviders);
     setLoading(false);
   };
 
@@ -761,12 +791,83 @@ export default function CataloguePrestatairesPage({
                 )}
 
                 {activeModalTab === "avis" && (
-                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <h3 className="font-serif text-3xl font-bold text-gray-900 mb-2">Avis clients</h3>
-                    <p className="text-gray-500 text-sm mb-8">Découvrez les retours d'expérience des clients ayant travaillé avec {selectedProvider.name}.</p>
-                    <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 lg:p-8 text-center text-gray-500 text-sm border border-gray-100">
-                      Aucun avis publié pour ce prestataire pour le moment.
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
+                      <div>
+                        <h3 className="font-serif text-3xl font-bold text-gray-900 mb-1">Avis clients</h3>
+                        <p className="text-gray-500 text-sm">
+                          Découvrez les retours d&apos;expérience des organisateurs ayant collaboré avec {selectedProvider.name}.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsReviewModalOpen(true)}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#b8924a] to-[#d4af37] text-stone-950 font-bold text-xs hover:brightness-110 active:scale-95 transition-all shadow-sm flex items-center gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
+                      >
+                        <Star size={15} className="fill-stone-950" />
+                        Donner mon avis
+                      </button>
                     </div>
+
+                    {loadingReviews ? (
+                      <div className="text-center py-12 text-gray-500 font-medium">Chargement des avis...</div>
+                    ) : providerReviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {providerReviews.map((rev) => (
+                          <div key={rev.id} className="p-5 rounded-2xl bg-[#faf8f5] border border-stone-200/80 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-stone-900 text-white font-bold text-xs flex items-center justify-center uppercase shadow-xs">
+                                  {rev.profiles?.full_name?.substring(0, 2) || "CL"}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-sm text-stone-900">
+                                    {rev.profiles?.full_name || "Organisateur Evenium"}
+                                  </p>
+                                  <span className="text-[11px] text-stone-400">
+                                    {rev.created_at ? new Date(rev.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "Récemment"}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-full border border-stone-200 shadow-2xs">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <Star
+                                    key={s}
+                                    size={13}
+                                    className={s <= Number(rev.rating) ? "text-[#b8924a] fill-[#b8924a]" : "text-stone-300 fill-transparent"}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-stone-700 text-sm whitespace-pre-wrap leading-relaxed">
+                              {rev.comment}
+                            </p>
+                            {rev.reply && (
+                              <div className="mt-3 p-3.5 rounded-xl bg-white border border-[#b8924a]/30 space-y-1">
+                                <p className="text-xs font-bold text-[#8f6f33]">
+                                  Réponse de {selectedProvider.name} :
+                                </p>
+                                <p className="text-xs text-stone-600 whitespace-pre-wrap">{rev.reply}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-2xl p-8 text-center text-gray-500 text-sm border border-gray-100 space-y-3">
+                        <p className="font-medium text-stone-700">Aucun avis publié pour ce prestataire pour le moment.</p>
+                        <p className="text-xs text-stone-500 max-w-md mx-auto">
+                          Avez-vous déjà sollicité ou collaboré avec {selectedProvider.name} ? Soyez le premier à partager votre expérience !
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setIsReviewModalOpen(true)}
+                          className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-black text-white text-xs font-bold hover:bg-stone-800 transition-colors cursor-pointer"
+                        >
+                          <Star size={13} className="fill-white" /> Évaluer en premier
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -995,6 +1096,23 @@ export default function CataloguePrestatairesPage({
           fetchData();
         }}
       />
+
+      {/* Modal Avis & Note Prestataire */}
+      {selectedProvider && isReviewModalOpen && (
+        <LeaveReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          onSuccess={() => {
+            fetchSelectedProviderReviews(selectedProvider.id);
+            fetchData();
+          }}
+          providerId={selectedProvider.id}
+          providerName={selectedProvider.name}
+          providerRole={selectedProvider.role}
+          eventId={id}
+          eventName={event?.name}
+        />
+      )}
 
     </div>
   );

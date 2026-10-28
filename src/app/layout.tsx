@@ -32,6 +32,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Evenium | Plateforme d'organisation événementielle",
   description: "Créez, personnalisez et gérez votre événement de A à Z avec Evenium.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Evenium",
+  },
 };
 
 import { Providers } from "@/components/Providers";

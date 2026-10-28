@@ -4,6 +4,7 @@ import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { Bell, Plus, ChevronDown } from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { UserMenu } from "@/components/ui/UserMenu";
+import { PinAppButton } from "@/components/pwa/PinAppButton";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -56,6 +57,7 @@ export default async function DashboardLayout({
         <>
           <div className="flex-1" />
           <div className="flex items-center gap-2 sm:gap-4">
+            <PinAppButton />
             <NotificationBell role="client" />
             <span className="hidden sm:block w-px h-8 bg-gray-100" />
             <UserMenu

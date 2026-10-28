@@ -228,11 +228,12 @@ function ClientMessagesInner() {
     });
   }, [activeConvId, activeUnread, refreshBadges]);
 
-  const handleSendPrivate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!myId || !activeConvId || !newMessage.trim()) return;
+  const handleSendPrivate = async (e?: React.FormEvent, customContent?: string) => {
+    e?.preventDefault?.();
+    const contentToSend = (typeof customContent === "string" ? customContent : newMessage).trim();
+    if (!myId || !activeConvId || !contentToSend) return;
 
-    const { error } = await sendMessage(myId, activeConvId, newMessage.trim());
+    const { error } = await sendMessage(myId, activeConvId, contentToSend);
     
     if (error) {
       alert("Erreur lors de l'envoi : " + error);
@@ -270,6 +271,7 @@ function ClientMessagesInner() {
       reply={newMessage}
       onReplyChange={setNewMessage}
       onSendReply={handleSendPrivate}
+      onSendMessageContent={(content) => handleSendPrivate(undefined, content)}
       messagesEndRef={messagesEndRef}
       compose={{
         isOpen: isModalOpen,
