@@ -66,7 +66,7 @@ export function LeaveReviewModal({
         throw new Error("Vous devez être connecté pour laisser un avis.");
       }
 
-      const { error: insertError } = await supabase.from("reviews").insert({
+      let { error: insertError } = await supabase.from("reviews").insert({
         prestataire_id: providerId,
         client_id: user.id,
         event_id: eventId || null,
@@ -75,8 +75,20 @@ export function LeaveReviewModal({
         created_at: new Date().toISOString(),
       });
 
+      // Si la colonne event_id n'existe pas encore dans la table Supabase, réessayer sans event_id
+      if (insertError && (insertError.message?.includes("event_id") || insertError.code === "PGRST204")) {
+        console.warn("Colonne event_id absente de 'reviews', nouvel essai sans event_id...");
+        const retry = await supabase.from("reviews").insert({
+          prestataire_id: providerId,
+          client_id: user.id,
+          rating: rating,
+          comment: comment.trim(),
+          created_at: new Date().toISOString(),
+        });
+        insertError = retry.error;
+      }
+
       if (insertError) {
-        // Si la table reviews a une contrainte ou erreur RLS
         console.warn("Erreur insertion avis reviews:", insertError);
         throw new Error(insertError.message || "Erreur lors de l'enregistrement de l'avis.");
       }

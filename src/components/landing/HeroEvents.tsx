@@ -38,7 +38,7 @@ export default function HeroEvents() {
   });
 
   return (
-    <section className="relative w-full min-h-[calc(100svh-5rem)] flex items-center justify-center overflow-hidden bg-[#faf8f4]">
+    <section className="relative w-full min-h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-5rem)] flex items-center justify-center overflow-hidden bg-[#faf8f4]">
       {/* ── Ambiance : halos doux ── */}
       <motion.div
         aria-hidden
@@ -101,10 +101,10 @@ export default function HeroEvents() {
       </motion.div>
 
       {/* ── Contenu ── */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-8 sm:px-12 py-20 md:py-16 flex flex-col items-center text-center">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-5 sm:px-12 py-10 sm:py-16 md:py-16 flex flex-col items-center text-center">
         <motion.p
           {...fade(0.1, 6)}
-          className="pl-[0.5em] text-[10px] sm:text-xs md:text-[13px] font-normal uppercase tracking-[0.5em] text-[#8f6f33]"
+          className="pl-[0.5em] text-[10px] sm:text-xs md:text-[13px] font-normal uppercase tracking-[0.4em] sm:tracking-[0.5em] text-[#8f6f33]"
         >
           L’élite de l’événementiel
         </motion.p>
@@ -113,15 +113,15 @@ export default function HeroEvents() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
-          className="hero-shimmer mt-5 md:mt-4 font-serif not-italic font-normal text-[4.2rem] sm:text-8xl md:text-[7.25rem] leading-[0.95] tracking-[0.01em]"
+          className="hero-shimmer mt-3 sm:mt-5 md:mt-4 font-serif not-italic font-normal text-[3.25rem] sm:text-8xl md:text-[7.25rem] leading-[0.95] tracking-[0.01em]"
         >
           Evenium
         </motion.h1>
 
         {/* Filet + losange */}
-        <div aria-hidden className="mt-7 md:mt-7 flex items-center gap-4 md:gap-5">
+        <div aria-hidden className="mt-5 sm:mt-7 md:mt-7 flex items-center gap-4 md:gap-5">
           <motion.span
-            className="block h-px w-20 sm:w-28 md:w-40 bg-gradient-to-l from-[#b8924a] to-transparent origin-right"
+            className="block h-px w-16 sm:w-28 md:w-40 bg-gradient-to-l from-[#b8924a] to-transparent origin-right"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
@@ -133,14 +133,14 @@ export default function HeroEvents() {
             transition={{ duration: 0.4, delay: 0.45, ease: EASE }}
           />
           <motion.span
-            className="block h-px w-20 sm:w-28 md:w-40 bg-gradient-to-r from-[#b8924a] to-transparent origin-left"
+            className="block h-px w-16 sm:w-28 md:w-40 bg-gradient-to-r from-[#b8924a] to-transparent origin-left"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
           />
         </div>
 
-        <h2 className="mt-10 md:mt-10 font-serif italic font-normal text-[2.1rem] sm:text-5xl md:text-[3.5rem] leading-[1.18] text-[#2b2118]">
+        <h2 className="mt-6 sm:mt-10 md:mt-10 font-serif italic font-normal text-[1.75rem] sm:text-5xl md:text-[3.5rem] leading-[1.2] text-[#2b2118]">
           {TAGLINE.map((line, i) => (
             <motion.span
               key={line}
@@ -156,7 +156,7 @@ export default function HeroEvents() {
 
         <motion.p
           {...fade(0.8, 10)}
-          className="mt-9 md:mt-8 max-w-2xl text-base sm:text-lg md:text-xl font-light leading-relaxed text-gray-500"
+          className="mt-6 sm:mt-9 md:mt-8 max-w-2xl text-sm sm:text-lg md:text-xl font-light leading-relaxed text-gray-500"
         >
           Mariage, baptême, anniversaire, henné time…
           <br />
@@ -165,18 +165,18 @@ export default function HeroEvents() {
 
         <motion.div
           {...fade(0.95, 10)}
-          className="mt-10 md:mt-10 flex flex-col sm:flex-row items-center gap-5 sm:gap-8"
+          className="mt-7 sm:mt-10 md:mt-10 flex flex-col sm:flex-row items-center gap-3.5 sm:gap-8"
         >
           <Link
             href="/create"
-            className="group inline-flex items-center justify-center gap-3 rounded-full bg-black px-9 py-4 text-[11px] sm:text-xs font-normal uppercase tracking-[0.25em] text-[#f5eee1] border border-[#b8924a]/40 shadow-[0_18px_40px_-18px_rgba(43,33,24,0.6)] hover:border-[#b8924a] hover:-translate-y-0.5"
+            className="group inline-flex items-center justify-center gap-3 rounded-full bg-black px-7 sm:px-9 py-3.5 sm:py-4 text-[10.5px] sm:text-xs font-normal uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#f5eee1] border border-[#b8924a]/40 shadow-[0_18px_40px_-18px_rgba(43,33,24,0.6)] hover:border-[#b8924a] hover:-translate-y-0.5"
           >
             Créer mon événement
             <ArrowRight size={14} className="text-[#d9c08c] transition-transform group-hover:translate-x-1" />
           </Link>
           <Link
             href="/invitations"
-            className="relative py-2 text-[11px] sm:text-xs font-normal uppercase tracking-[0.25em] text-[#8f6f33] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-px after:bg-[#b8924a]/50 after:origin-left after:transition-transform hover:after:scale-x-50"
+            className="relative py-2 text-[10.5px] sm:text-xs font-normal uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[#8f6f33] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-px after:bg-[#b8924a]/50 after:origin-left after:transition-transform hover:after:scale-x-50"
           >
             Découvrir les modèles
           </Link>

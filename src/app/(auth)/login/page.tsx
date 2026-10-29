@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { ArrowRight, Sparkles, Eye, EyeOff, CalendarHeart, Store } from "lucide-react";
 import Link from "next/link";
 import { login } from "../auth-actions";
@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation";
 const inputCls =
   "w-full bg-white border border-[#e4d8c4] text-gray-900 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-[#b8924a]/25 focus:border-[#b8924a] outline-none transition-all";
 
-export default function LoginPage() {
+function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const searchParams = useSearchParams();
@@ -17,7 +17,13 @@ export default function LoginPage() {
   const redirectTo = searchParams.get("redirectTo");
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center bg-[#faf8f4] px-4 py-10 font-sans text-gray-900">
+    <main
+      className="min-h-dvh flex flex-col items-center justify-center bg-[#faf8f4] px-4 font-sans text-gray-900"
+      style={{
+        paddingTop: "max(2rem, calc(env(safe-area-inset-top, 0px) + 1.5rem))",
+        paddingBottom: "max(2rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))",
+      }}
+    >
       <Link href="/" className="inline-flex items-center gap-2 text-[#b8924a] font-serif text-3xl mb-8">
         <Sparkles size={24} /> Evenium
       </Link>
@@ -97,5 +103,13 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh flex items-center justify-center bg-[#faf8f4] text-stone-500 text-sm">Chargement...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

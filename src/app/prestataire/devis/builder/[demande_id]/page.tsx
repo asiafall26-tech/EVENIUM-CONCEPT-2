@@ -38,16 +38,53 @@ export default function BuilderDevisPage({
 
   useEffect(() => {
     const load = async () => {
-      const [{ data }, { data: auth }] = await Promise.all([
-        supabase
-          .from('demandes_devis')
-          .select('*, events(*, profiles:client_id(full_name))')
+      setLoading(true);
+      const { data: auth } = await supabase.auth.getUser();
+
+      // 1. Tenter de charger la demande
+      let { data, error } = await supabase
+        .from('demandes_devis')
+        .select('*')
+        .eq('id', demande_id)
+        .maybeSingle();
+
+      // Si introuvable par demande_id, vérifier si c'était par hasard un devis_id
+      if (!data) {
+        const { data: devisCheck } = await supabase
+          .from('devis')
+          .select('id')
           .eq('id', demande_id)
-          .single(),
-        supabase.auth.getUser(),
-      ]);
+          .maybeSingle();
+        if (devisCheck) {
+          router.replace(`/prestataire/devis/${devisCheck.id}/edit`);
+          return;
+        }
+      }
 
       if (data) {
+        // 2. Charger l'événement associé en toute sécurité
+        if (data.event_id) {
+          const { data: ev } = await supabase
+            .from('events')
+            .select('*')
+            .eq('id', data.event_id)
+            .maybeSingle();
+          if (ev) {
+            data.events = ev;
+            const clientId = ev.client_id || data.client_id;
+            if (clientId) {
+              const { data: clientProf } = await supabase
+                .from('profiles')
+                .select('full_name, email, phone')
+                .eq('id', clientId)
+                .maybeSingle();
+              if (clientProf) {
+                data.events.profiles = clientProf;
+              }
+            }
+          }
+        }
+
         setDemande(data);
         const pid = auth.user?.id || data.prestataire_id;
         setProviderId(pid);
@@ -58,7 +95,7 @@ export default function BuilderDevisPage({
       setLoading(false);
     };
     load();
-  }, [demande_id, supabase]);
+  }, [demande_id, supabase, router]);
 
   const saveDevis = async (isDraft: boolean) => {
     if (!demande || !draft || saving) return;
@@ -149,7 +186,23 @@ export default function BuilderDevisPage({
   };
 
   if (loading) return <div className="p-20 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#b8924a]"></div></div>;
-  if (!demande || !draft) return <div className="p-20 text-center text-red-500 font-bold">Demande introuvable</div>;
+  if (!demande || !draft) {
+    return (
+      <div className="p-8 max-w-lg mx-auto text-center mt-12 bg-white rounded-3xl border border-gray-100 shadow-md">
+        <div className="w-16 h-16 rounded-full bg-amber-50 text-[#b8924a] flex items-center justify-center mx-auto mb-4">
+          <FileText size={28} />
+        </div>
+        <h2 className="text-xl font-serif font-bold text-gray-900 mb-2">Demande de devis introuvable</h2>
+        <p className="text-sm text-gray-500 mb-6">Cette demande a peut-être déjà été traitée, supprimée ou n'existe plus.</p>
+        <Link
+          href="/prestataire/demandes"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white font-bold rounded-xl hover:bg-stone-800 transition-colors text-sm shadow-md"
+        >
+          <ArrowLeft size={16} /> Retour aux demandes
+        </Link>
+      </div>
+    );
+  }
 
   const saveButtons = (mobile: boolean) => (
     <>
@@ -172,8 +225,15 @@ export default function BuilderDevisPage({
 
   return (
     <div className="min-h-screen pb-20">
-      <header className="bg-white/90 backdrop-blur border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <header
+        className="bg-white/90 backdrop-blur border-b border-gray-200 sticky top-0 z-30 transition-all"
+        style={{
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingLeft: "env(safe-area-inset-left, 0px)",
+          paddingRight: "env(safe-area-inset-right, 0px)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[4rem] sm:h-20 py-2 sm:py-0 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-6 min-w-0">
             <Link href="/prestataire/demandes" className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 shrink-0" aria-label="Retour aux demandes">
               <ArrowLeft size={22} />

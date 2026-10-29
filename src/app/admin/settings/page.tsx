@@ -23,6 +23,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import { NotificationSoundSettings } from "@/components/settings/NotificationSoundSettings";
+import { useImageEditor } from "@/components/media/ImageEditorModal";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<
@@ -37,6 +38,7 @@ export default function AdminSettingsPage() {
   const [role, setRole] = useState("Super Administrateur");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const { editImage, editorElement } = useImageEditor();
 
   // Security
   const [newPassword, setNewPassword] = useState("");
@@ -119,10 +121,14 @@ export default function AdminSettingsPage() {
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      setUploadingAvatar(true);
       if (!event.target.files || event.target.files.length === 0) return;
 
-      const file = event.target.files[0];
+      const picked = event.target.files[0];
+      event.target.value = "";
+      const file = await editImage(picked, { aspect: 1, title: "Photo de profil Administrateur (Rogner & Ajuster)" });
+      if (!file) return;
+
+      setUploadingAvatar(true);
       const fileExt = file.name.split(".").pop();
       const fileName = `admin-avatar-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
@@ -936,6 +942,7 @@ export default function AdminSettingsPage() {
           </div>
         )}
       </div>
+      {editorElement}
     </div>
   );
 }

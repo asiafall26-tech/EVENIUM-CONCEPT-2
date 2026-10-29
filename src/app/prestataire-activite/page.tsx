@@ -68,8 +68,15 @@ export default function PrestataireActivitePage() {
 
   return (
     <div className="min-h-screen pb-28">
-      <header className="border-b border-[#e4d8c4]/70 bg-[#f5eee1]/80 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-20 flex items-center">
+      <header
+        className="border-b border-[#e4d8c4]/70 bg-[#f5eee1]/80 backdrop-blur sticky top-0 z-20 transition-all"
+        style={{
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingLeft: "env(safe-area-inset-left, 0px)",
+          paddingRight: "env(safe-area-inset-right, 0px)",
+        }}
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center">
           <Image src="/logo-horizontal-dark.png" alt="Evenium" width={120} height={30} className="object-contain h-auto" priority />
         </div>
       </header>
@@ -91,7 +98,14 @@ export default function PrestataireActivitePage() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
+      <div
+        className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-200 transition-all z-20"
+        style={{
+          paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
+          paddingLeft: "env(safe-area-inset-left, 0px)",
+          paddingRight: "env(safe-area-inset-right, 0px)",
+        }}
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <p className={`text-sm ${error ? "text-[#6b1f2a]" : "text-gray-500"}`}>{error || "Tous les champs sont obligatoires. Vous pourrez les modifier dans votre profil."}</p>
           <button

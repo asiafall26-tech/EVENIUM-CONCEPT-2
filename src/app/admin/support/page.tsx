@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LifeBuoy, CheckCircle, Clock, AlertCircle, RefreshCw, Eye, MoreHorizontal } from "lucide-react";
-import { getSupportTickets, updateTicketStatus } from "@/app/actions/support";
+import { LifeBuoy, CheckCircle, Clock, AlertCircle, RefreshCw, Eye, MoreHorizontal, Paperclip, Download, Volume2, FileText, Image as ImageIcon } from "lucide-react";
+import { getSupportTickets, updateTicketStatus, type SupportAttachment } from "@/app/actions/support";
 import { Modal } from "@/components/ui/Modal";
 import { useBadgeStore } from "@/store/BadgeStore";
+import { AudioMessagePlayer } from "@/components/messaging/AudioMessagePlayer";
 
 export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -170,9 +171,54 @@ export default function AdminSupportPage() {
               <div>{getStatusBadge(selectedTicket.status)}</div>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-800 whitespace-pre-wrap text-sm leading-relaxed max-h-64 overflow-y-auto">
-              {selectedTicket.message}
-            </div>
+            {/* Message texte de l'utilisateur */}
+            {(selectedTicket.cleanMessage || selectedTicket.message) && (
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-800 whitespace-pre-wrap text-sm leading-relaxed max-h-64 overflow-y-auto">
+                {selectedTicket.cleanMessage || selectedTicket.message}
+              </div>
+            )}
+
+            {/* Note vocale si présente */}
+            {selectedTicket.audioUrl && (
+              <div className="space-y-1.5">
+                <span className="text-xs font-bold text-[#b8924a] flex items-center gap-1.5 uppercase tracking-wider">
+                  <Volume2 size={14} /> Message vocal de l'utilisateur :
+                </span>
+                <div className="p-3.5 bg-[#faf6ee] rounded-xl border border-[#b8924a]/30">
+                  <AudioMessagePlayer src={selectedTicket.audioUrl} duration={selectedTicket.audioDuration} isMe={false} />
+                </div>
+              </div>
+            )}
+
+            {/* Pièces jointes si présentes */}
+            {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Paperclip size={14} /> Pièces jointes ({selectedTicket.attachments.length}) :
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {selectedTicket.attachments.map((att: SupportAttachment, i: number) => (
+                    <a
+                      key={i}
+                      href={att.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200 hover:border-[#b8924a] hover:bg-[#faf6ee]/50 transition-all text-xs group"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {att.type === "image" ? (
+                          <ImageIcon size={16} className="text-[#b8924a] shrink-0" />
+                        ) : (
+                          <FileText size={16} className="text-blue-600 shrink-0" />
+                        )}
+                        <span className="font-semibold text-gray-900 truncate group-hover:text-[#8f6f33]">{att.name}</span>
+                      </div>
+                      <Download size={14} className="text-gray-400 group-hover:text-[#8f6f33] shrink-0 ml-2" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="border-t border-gray-100 pt-4">
               <label className="block text-sm font-medium text-gray-700 mb-3">Changer le statut :</label>

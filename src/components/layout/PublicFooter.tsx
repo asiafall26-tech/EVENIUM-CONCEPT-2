@@ -48,7 +48,14 @@ export function PublicFooter() {
       : "/dashboard";
 
   return (
-    <footer className="bg-gray-50 border-t border-gray-200 py-12 mt-auto">
+    <footer
+      className="bg-gray-50 border-t border-gray-200 py-10 sm:py-12 mt-auto"
+      style={{
+        paddingBottom: "max(2.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem))",
+        paddingLeft: "env(safe-area-inset-left, 0px)",
+        paddingRight: "env(safe-area-inset-right, 0px)",
+      }}
+    >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
         <p className="text-gray-500">© 2026 Evenium. Tous droits réservés.</p>
         <div className="flex flex-wrap items-center gap-6">

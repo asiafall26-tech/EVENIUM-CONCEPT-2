@@ -94,35 +94,35 @@ export default function PrestataireCataloguePage() {
   const set = <K extends keyof OfferForm>(k: K, v: OfferForm[K]) => setForm(f => ({ ...f, [k]: v }));
   const toggle = (list: string[], item: string) => (list.includes(item) ? list.filter(x => x !== item) : [...list, item]);
 
-  // ── Photos (avec recadrage et retouches) ─────────────────────
+  // ── Photos (taille réelle d'origine avec recadrage et retouches au choix) ──
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const edited = await editImage(file, { aspect: 16 / 9, title: "Photo de couverture" });
+    const edited = await editImage(file, { aspect: null, title: "Photo de couverture (Taille réelle d'origine)" });
     if (edited) setForm(f => ({ ...f, imageFile: edited, imagePreview: URL.createObjectURL(edited) }));
   };
 
   const editCover = async () => {
     const source = form.imageFile ?? form.imagePreview;
     if (!source) return;
-    const edited = await editImage(source, { aspect: 16 / 9, title: "Photo de couverture" });
+    const edited = await editImage(source, { aspect: null, title: "Modifier / Recadrer la couverture" });
     if (edited) setForm(f => ({ ...f, imageFile: edited, imagePreview: URL.createObjectURL(edited) }));
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    // Chaque photo passe par l'éditeur ; « Annuler » l'ignore
+    // Les photos conservent leur taille réelle sans forcer de rognage
     for (const file of files) {
-      const edited = await editImage(file, { aspect: 4 / 3, title: `Photo de la galerie (${files.indexOf(file) + 1}/${files.length})` });
+      const edited = await editImage(file, { aspect: null, title: `Photo de la galerie (${files.indexOf(file) + 1}/${files.length}) - Taille réelle` });
       if (edited) setForm(f => ({ ...f, gallery: [...f.gallery, { preview: URL.createObjectURL(edited), file: edited }] }));
     }
   };
 
   const editGalleryItem = async (index: number) => {
     const item = form.gallery[index];
-    const edited = await editImage(item.file ?? item.preview, { aspect: 4 / 3, title: "Photo de la galerie" });
+    const edited = await editImage(item.file ?? item.preview, { aspect: null, title: "Modifier / Recadrer la photo" });
     if (edited) setForm(f => ({ ...f, gallery: f.gallery.map((g, i) => (i === index ? { preview: URL.createObjectURL(edited), file: edited } : g)) }));
   };
 

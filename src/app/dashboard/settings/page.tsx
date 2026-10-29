@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { DeleteAccountSection } from "@/components/ui/DeleteAccountSection";
 import { NotificationSoundSettings } from "@/components/settings/NotificationSoundSettings";
+import { useImageEditor } from "@/components/media/ImageEditorModal";
 
 // Helper pour calculer les initiales de manière consistante avec la navbar
 const getInitials = (name?: string) => {
@@ -79,6 +80,7 @@ export default function GlobalSettingsPage() {
   const [userEvents, setUserEvents] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const { editImage, editorElement } = useImageEditor();
   const [clientNotifs, setClientNotifs] = useState({
     rsvp: true,
     messages: true,
@@ -88,14 +90,18 @@ export default function GlobalSettingsPage() {
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      setUploadingAvatar(true);
       if (!event.target.files || event.target.files.length === 0) {
         throw new Error("Vous devez sélectionner une image.");
       }
 
-      const file = event.target.files[0];
+      const picked = event.target.files[0];
+      event.target.value = "";
+      const file = await editImage(picked, { aspect: 1, title: "Photo de profil (Ajuster & Rogner)" });
+      if (!file) return;
+
+      setUploadingAvatar(true);
       const fileExt = file.name.split('.').pop();
-      const fileName = `${profile?.id || 'avatar'}-${Math.random()}.${fileExt}`;
+      const fileName = `${profile?.id || 'avatar'}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -115,6 +121,7 @@ export default function GlobalSettingsPage() {
           role: profile.role || 'client',
         }, { onConflict: 'id' });
         setProfile({ ...profile, avatar_url: data.publicUrl });
+        await supabase.auth.updateUser({ data: { avatar_url: data.publicUrl } });
       }
     } catch (error: any) {
       alert(error.message);
@@ -949,6 +956,7 @@ export default function GlobalSettingsPage() {
           </div>
         </div>
       )}
+      {editorElement}
     </div>
   );
 }

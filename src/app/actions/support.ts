@@ -11,20 +11,51 @@ function getSupabaseAdmin() {
   });
 }
 
-export async function createSupportTicket(userId: string, subject: string, message: string) {
-  if (!userId || !subject || !message) {
-    return { error: "Tous les champs sont requis." };
+import { SupportAttachment, encodeSupportMessage, decodeSupportTicket } from "@/lib/support/supportPayload";
+export type { SupportAttachment };
+
+export async function createSupportTicket(
+  userId: string,
+  subject: string,
+  message: string,
+  attachments?: SupportAttachment[],
+  audioUrl?: string,
+  audioDuration?: number
+) {
+  if (!userId || !subject || (!message && !audioUrl)) {
+    return { error: "Un sujet et un message ou note vocale sont requis." };
   }
 
+  const encodedMessage = encodeSupportMessage(message || "Message vocal support", attachments, audioUrl, audioDuration);
+
   try {
-    const { error } = await getSupabaseAdmin()
+    // Tentative d'insertion avec colonnes enrichies si présentes
+    const payloadWithColumns: any = {
+      user_id: userId,
+      subject,
+      message: encodedMessage,
+      status: "en attente",
+      attachments: attachments && attachments.length > 0 ? attachments : null,
+      audio_url: audioUrl || null,
+      audio_duration: audioDuration || null
+    };
+
+    let { error } = await getSupabaseAdmin()
       .from("support_tickets")
-      .insert({
-        user_id: userId,
-        subject,
-        message,
-        status: "en attente"
-      });
+      .insert(payloadWithColumns);
+
+    // Si erreur de schéma (colonnes non créées), repli transparent vers colonnes de base
+    if (error && (error.code === '42703' || error.message?.includes('column') || error.message?.includes('schema'))) {
+      const fallbackResult = await getSupabaseAdmin()
+        .from("support_tickets")
+        .insert({
+          user_id: userId,
+          subject,
+          message: encodedMessage,
+          status: "en attente"
+        });
+      error = fallbackResult.error;
+    }
 
     if (error) {
       if (error.code === '42P01') {
@@ -68,10 +99,13 @@ export async function getSupportTickets() {
     return acc;
   }, {});
 
-  const enrichedTickets = tickets.map(t => ({
-    ...t,
-    profiles: profileMap[t.user_id] || null
-  }));
+  const enrichedTickets = tickets.map(t => {
+    const decoded = decodeSupportTicket(t);
+    return {
+      ...decoded,
+      profiles: profileMap[t.user_id] || null
+    };
+  });
 
   return { data: enrichedTickets, error: null };
 }
@@ -135,5 +169,5 @@ export async function getUserSupportTickets(userId: string) {
     return { data: [], error: error.message };
   }
 
-  return { data: data || [], error: null };
+  return { data: (data || []).map(decodeSupportTicket), error: null };
 }

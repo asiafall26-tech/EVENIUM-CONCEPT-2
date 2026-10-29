@@ -20,6 +20,8 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
   const [isSuccess, setIsSuccess] = useState(false);
   const [inspirations, setInspirations] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [customItemInput, setCustomItemInput] = useState("");
+  const [customItems, setCustomItems] = useState<string[]>([]);
   
   // Base Form State
   const [form, setForm] = useState({
@@ -37,8 +39,6 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
     specifics: {} as Record<string, any>,
     
     // Preferences
-    theme_style: "",
-    colors: "",
     level: "Standard",
     options: [] as string[],
     constraints: "",
@@ -69,6 +69,8 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
       setIsSuccess(false);
       setInspirations([]);
       setIsUploading(false);
+      setCustomItems([]);
+      setCustomItemInput("");
       setForm(prev => ({ 
         ...prev, 
         event_id: event?.id || "",
@@ -80,6 +82,21 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
   }, [isOpen, provider, service, event]);
 
   if (!isOpen || !provider || !service) return null;
+
+  const handleAddCustomItem = () => {
+    const val = customItemInput.trim();
+    if (!val) return;
+    if (customItems.includes(val)) {
+      setCustomItemInput("");
+      return;
+    }
+    setCustomItems(prev => [...prev, val]);
+    setCustomItemInput("");
+  };
+
+  const handleRemoveCustomItem = (index: number) => {
+    setCustomItems(prev => prev.filter((_, i) => i !== index));
+  };
 
   const categoryStr = String(provider?.role || provider?.category || '').toLowerCase();
   const serviceCatStr = String(service?.categorie || service?.category || '').toLowerCase();
@@ -748,9 +765,8 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
       fullDescription += `\n`;
     }
 
-    fullDescription += `=== PRÉFÉRENCES ===\n`;
-    if (form.theme_style) fullDescription += `- Thème/Style: ${form.theme_style}\n`;
-    if (form.colors) fullDescription += `- Couleurs: ${form.colors}\n`;
+    fullDescription += `=== PRÉFÉRENCES & BESOINS ===\n`;
+    if (customItems.length > 0) fullDescription += `- Éléments personnalisés ajoutés: ${customItems.join(', ')}\n`;
     if (form.level) fullDescription += `- Niveau de prestation: ${form.level}\n`;
     if (form.options.length > 0) fullDescription += `- Options supplémentaires: ${form.options.join(', ')}\n`;
     if (form.constraints) fullDescription += `- Contraintes: ${form.constraints}\n`;
@@ -795,7 +811,7 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
       event_location: event?.location || '',
       event_guests: event?.guestsCount || 0,
       needs_description: fullDescription,
-      needs_options: "", // Stored in fullDescription
+      needs_options: customItems.length > 0 ? customItems.join(', ') : "",
       needs_quantity: form.needs_quantity || 1,
       budget_indicatif: form.budget_indicatif ? Number(form.budget_indicatif) : null,
       budget_propose: form.budget_indicatif ? Number(form.budget_indicatif) : 0,
@@ -807,16 +823,10 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
       alert("Erreur lors de l'envoi de la demande : " + error.message);
       setLoading(false);
     } else {
-      // Notification personnalisée selon le correspondant
+      // Notification push envoyée au prestataire (pas de message direct dans le chat à ce stade)
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const providerName = provider?.nom || provider?.full_name || provider?.name || "Prestataire";
-        await supabase.from('messages').insert({
-          sender_id: user.id,
-          receiver_id: provider.id,
-          content: `Bonjour ${providerName},\n\nJe souhaiterais solliciter une proposition de devis de votre part pour la prestation « ${service.nom_service} ».\n\nPourriez-vous consulter votre espace « Demandes de devis » afin de m'établir une proposition tarifaire détaillée ?\n\nMerci d'avance pour votre proposition !`
-        });
-        sendQuoteRequestPushAction(provider.id, user.user_metadata?.full_name || "Un client", event?.name).catch(() => {});
+        sendQuoteRequestPushAction(provider.id, user.user_metadata?.full_name || form.client_name || "Un client", event?.name).catch(() => {});
       }
       setLoading(false);
       setIsSuccess(true);
@@ -961,18 +971,57 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
                   </section>
 
                   <section className="pt-6 border-t border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-900 mb-6">Vos préférences globales</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Thème / Ambiance souhaitée</label>
-                        <input type="text" value={form.theme_style} onChange={e => setForm({...form, theme_style: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-gray-50 focus:bg-white" placeholder="Ex: Bohème chic, Champêtre, Moderne, Traditionnel..." />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Couleurs dominantes</label>
-                        <input type="text" value={form.colors} onChange={e => setForm({...form, colors: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-gray-50 focus:bg-white" placeholder="Ex: Blanc et Or, Tons pastel..." />
-                      </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">✦ Éléments personnalisés ou besoins non listés</h3>
+                      {customItems.length > 0 && (
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#f5eee1] text-[#8f6f33]">
+                          {customItems.length} ajout{customItems.length > 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Ajoutez les prestations, menus, équipements ou demandes spécifiques supplémentaires que vous souhaitez inclure.
+                    </p>
+                    
+                    <div className="flex gap-2 mb-3">
+                      <input 
+                        type="text" 
+                        value={customItemInput} 
+                        onChange={e => setCustomItemInput(e.target.value)} 
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomItem();
+                          }
+                        }}
+                        className="flex-1 border-gray-200 border rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white text-gray-900" 
+                        placeholder="Ex: Barbe à papa pour enfants, Cocktail signature, Navette soirée..." 
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomItem}
+                        className="px-4 py-3 bg-[#b8924a] text-white font-bold rounded-xl hover:bg-[#9d7938] transition-all flex items-center gap-1.5 text-xs shadow-sm shrink-0 cursor-pointer"
+                      >
+                        <Plus size={16} /> Ajouter
+                      </button>
+                    </div>
+
+                    {customItems.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {customItems.map((item, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-2 bg-[#f5eee1] text-[#78591f] font-semibold text-xs px-3.5 py-1.5 rounded-full border border-[#e4d8c4] shadow-xs">
+                            <span>✓ {item}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomItem(idx)}
+                              className="text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
+                            >
+                              <X size={14} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="mt-6">
                       <label className="block text-sm font-bold text-gray-700 mb-3">Niveau de prestation attendu</label>
@@ -991,7 +1040,7 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
 
                     <div className="mt-6">
                       <label className="block text-sm font-bold text-gray-700 mb-1">Contraintes ou particularités</label>
-                      <textarea value={form.constraints} onChange={e => setForm({...form, constraints: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-gray-50 focus:bg-white min-h-[80px] resize-y" placeholder="Ex: Accès difficile au 3ème étage sans ascenseur, horaires stricts de démontage..."></textarea>
+                      <textarea value={form.constraints} onChange={e => setForm({...form, constraints: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white text-gray-900 min-h-[80px] resize-y" placeholder="Ex: Accès difficile au 3ème étage sans ascenseur, horaires stricts de démontage..."></textarea>
                     </div>
                   </section>
                 </div>
@@ -1008,7 +1057,7 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="flex-1">
                         <label className="block text-sm font-bold text-gray-700 mb-1">Budget indicatif (FCFA)</label>
-                        <input type="number" min="0" value={form.budget_indicatif} onChange={e => setForm({...form, budget_indicatif: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white" placeholder="Ex: 500000" />
+                        <input type="number" min="0" value={form.budget_indicatif} onChange={e => setForm({...form, budget_indicatif: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white text-gray-900" placeholder="Ex: 500000" />
                       </div>
                       <div className="flex flex-col justify-center mt-6">
                         <label className="flex items-center gap-3 cursor-pointer">
@@ -1028,19 +1077,19 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Nom complet *</label>
-                        <input required type="text" value={form.client_name} onChange={e => setForm({...form, client_name: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-gray-50 focus:bg-white" />
+                        <input required type="text" value={form.client_name} onChange={e => setForm({...form, client_name: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white text-gray-900" />
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Téléphone *</label>
-                        <input required type="tel" value={form.client_phone} onChange={e => setForm({...form, client_phone: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-gray-50 focus:bg-white" />
+                        <input required type="tel" value={form.client_phone} onChange={e => setForm({...form, client_phone: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white text-gray-900" />
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">E-mail</label>
-                        <input type="email" value={form.client_email} onChange={e => setForm({...form, client_email: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-gray-50 focus:bg-white" />
+                        <input type="email" value={form.client_email} onChange={e => setForm({...form, client_email: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white text-gray-900" />
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp</label>
-                        <input type="tel" value={form.client_whatsapp} onChange={e => setForm({...form, client_whatsapp: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-gray-50 focus:bg-white" />
+                        <input type="tel" value={form.client_whatsapp} onChange={e => setForm({...form, client_whatsapp: e.target.value})} className="w-full border-gray-200 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none bg-white text-gray-900" />
                       </div>
                     </div>
                   </section>
@@ -1088,50 +1137,126 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
                 </div>
               )}
 
-              {/* STEP 5 - RECAP */}
+              {/* STEP 5 - RECAPITULATIF REDESIGNE */}
               {step === 5 && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-6">
-                  <h3 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-2">{getStepTitle(5)}</h3>
-                  
-                  <div className="bg-[#f5eee1] p-6 rounded-2xl border border-[#e4d8c4] space-y-6">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                     <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-gray-900 uppercase tracking-wider text-xs">Votre Événement</h4>
-                        <button type="button" onClick={() => setStep(1)} className="text-xs font-bold text-[#b8924a] hover:underline">Modifier</button>
-                      </div>
-                      <p className="text-sm text-gray-700">{event?.type} • {event?.date} • {event?.location} • {event?.guestsCount} participants</p>
+                      <h3 className="text-xl font-serif font-bold text-gray-900">Récapitulatif de votre demande</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Vérifiez les détails avant transmission au prestataire.</p>
                     </div>
-
-                    <div className="border-t border-[#e4d8c4] pt-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-gray-900 uppercase tracking-wider text-xs">Votre Demande</h4>
+                    <span className="text-xs font-bold px-3 py-1 bg-[#b8924a]/15 text-[#8f6f33] rounded-full border border-[#b8924a]/30">
+                      Étape 5 / 5
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {/* Carte Événement & Prestation */}
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-[#b8924a]/10 text-[#8f6f33] flex items-center justify-center font-bold text-xs">
+                            <Briefcase size={16} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Offre & Prestataire</span>
+                            <h4 className="font-bold text-sm text-gray-900">{service.nom_service} <span className="font-normal text-gray-500">chez {provider.name}</span></h4>
+                          </div>
+                        </div>
                         <button type="button" onClick={() => setStep(2)} className="text-xs font-bold text-[#b8924a] hover:underline">Modifier</button>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 mb-1">{service.nom_service}</p>
-                      <p className="text-sm text-gray-700 bg-white/50 p-3 rounded-lg whitespace-pre-wrap">{form.needs_description}</p>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                          <span className="text-gray-400 block font-medium">Événement</span>
+                          <span className="font-bold text-gray-800">{event?.name || event?.type || "Non spécifié"}</span>
+                        </div>
+                        <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                          <span className="text-gray-400 block font-medium">Date & Heure</span>
+                          <span className="font-bold text-gray-800">{event?.date || "Non définie"} {event?.time ? `(${event.time})` : ""}</span>
+                        </div>
+                        <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                          <span className="text-gray-400 block font-medium">Lieu</span>
+                          <span className="font-bold text-gray-800 truncate block">{event?.location || "Non défini"}</span>
+                        </div>
+                        <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                          <span className="text-gray-400 block font-medium">Participants</span>
+                          <span className="font-bold text-gray-800">{event?.guestsCount || "Non défini"} pers.</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="border-t border-[#e4d8c4] pt-4">
+                    {/* Carte Description du besoin */}
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-gray-900 uppercase tracking-wider text-xs">Détails & Préférences</h4>
+                        <h4 className="font-bold text-gray-900 uppercase tracking-wider text-xs flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#b8924a]" /> Description de votre besoin
+                        </h4>
+                        <button type="button" onClick={() => setStep(2)} className="text-xs font-bold text-[#b8924a] hover:underline">Modifier</button>
+                      </div>
+                      <p className="text-xs text-gray-700 bg-stone-50 p-3.5 rounded-xl border border-stone-100 whitespace-pre-wrap leading-relaxed">
+                        {form.needs_description || "Aucune description saisie."}
+                      </p>
+                    </div>
+
+                    {/* Carte Besoins & Éléments personnalisés */}
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+                      <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                        <h4 className="font-bold text-gray-900 uppercase tracking-wider text-xs flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-600" /> Détails & Inclusions
+                        </h4>
                         <button type="button" onClick={() => setStep(3)} className="text-xs font-bold text-[#b8924a] hover:underline">Modifier</button>
                       </div>
-                      <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
-                        <li>Niveau: <span className="font-semibold">{form.level}</span></li>
-                        {form.theme_style && <li>Thème: <span className="font-semibold">{form.theme_style}</span></li>}
-                        {Object.keys(form.specifics).length > 0 && (
-                           <li>Choix spécifiques enregistrés</li>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500 font-medium">Gamme attendue :</span>
+                          <span className="font-bold text-stone-900 px-2 py-0.5 rounded-md bg-stone-100">{form.level}</span>
+                        </div>
+
+                        {customItems.length > 0 && (
+                          <div>
+                            <span className="text-gray-500 font-medium block mb-1">Éléments spécifiques demandés :</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {customItems.map((c, i) => (
+                                <span key={i} className="inline-flex items-center gap-1 bg-[#f5eee1] text-[#78591f] font-semibold text-xs px-2.5 py-1 rounded-lg border border-[#e4d8c4]">
+                                  ✓ {c}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
-                        {form.constraints && <li>Contraintes: <span className="font-semibold">{form.constraints}</span></li>}
-                      </ul>
+
+                        {form.constraints && (
+                          <div className="pt-1">
+                            <span className="text-gray-500 font-medium block mb-0.5">Contraintes particulières :</span>
+                            <p className="text-gray-700 italic">{form.constraints}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="border-t border-[#e4d8c4] pt-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-gray-900 uppercase tracking-wider text-xs">Budget</h4>
-                        <button type="button" onClick={() => setStep(4)} className="text-xs font-bold text-[#b8924a] hover:underline">Modifier</button>
+                    {/* Carte Budget & Coordonnées */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Budget indicatif</span>
+                          <button type="button" onClick={() => setStep(4)} className="text-xs font-bold text-[#b8924a] hover:underline">Modifier</button>
+                        </div>
+                        <p className="font-serif font-bold text-lg text-stone-900">
+                          {form.budget_indicatif ? `${Number(form.budget_indicatif).toLocaleString()} FCFA` : "Non spécifié"}
+                          {form.budget_flexible && <span className="text-xs font-sans text-[#8f6f33] font-semibold ml-2">(Flexible)</span>}
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-700 font-semibold">{form.budget_indicatif ? `${form.budget_indicatif} FCFA` : 'Non renseigné'} {form.budget_flexible && '(Flexible)'}</p>
+
+                      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Vos coordonnées</span>
+                          <button type="button" onClick={() => setStep(4)} className="text-xs font-bold text-[#b8924a] hover:underline">Modifier</button>
+                        </div>
+                        <p className="text-xs font-bold text-gray-900">{form.client_name}</p>
+                        <p className="text-xs text-gray-500">{form.client_phone} {form.client_whatsapp ? `• WA: ${form.client_whatsapp}` : ""}</p>
+                      </div>
                     </div>
                   </div>
 

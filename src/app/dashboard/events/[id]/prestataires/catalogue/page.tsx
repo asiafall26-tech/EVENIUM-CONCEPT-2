@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { Search, Star, MapPin, Phone, CheckCircle, Plus, ArrowLeft, Globe, Briefcase, Camera, Image as ImageIcon, X, Users, Clock, Share2, Heart, ChevronRight, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Search, Star, MapPin, Phone, CheckCircle, Plus, ArrowLeft, Globe, Briefcase, Camera, Image as ImageIcon, X, Users, Clock, Share2, Heart, ChevronRight, ChevronLeft, SlidersHorizontal, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { useEvents } from "@/store/EventsContext";
@@ -39,6 +39,21 @@ export default function CataloguePrestatairesPage({
   const [selectedServiceForDetails, setSelectedServiceForDetails] = useState<any | null>(null);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  useEffect(() => {
+    if (lightboxImages.length === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1));
+      } else if (e.key === "ArrowRight") {
+        setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0));
+      } else if (e.key === "Escape") {
+        setLightboxImages([]);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxImages.length]);
 
   const { events } = useEvents();
   const event = events.find(e => e.id === id);
@@ -730,15 +745,30 @@ export default function CataloguePrestatairesPage({
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {selectedProvider.services.map((service: any) => (
                           <div key={service.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
-                            <div className="h-44 bg-gray-100 relative">
+                            <div 
+                              className="h-44 bg-gray-100 relative cursor-pointer group/img overflow-hidden"
+                              onClick={() => {
+                                const imgs = [service.image_url, ...(service.gallery || [])].filter(Boolean);
+                                if (imgs.length > 0) {
+                                  setLightboxImages(imgs);
+                                  setLightboxIndex(0);
+                                }
+                              }}
+                              title="Cliquer pour afficher les photos en taille réelle"
+                            >
                               {service.image_url ? (
-                                <img src={service.image_url} alt={service.nom_service} className="w-full h-full object-cover" />
+                                <img src={service.image_url} alt={service.nom_service} className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon size={32}/></div>
                               )}
-                              <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate bg-[#f5eee1]/90 backdrop-blur-sm text-[#8f6f33] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded shadow-sm">
+                              <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate bg-[#f5eee1]/90 backdrop-blur-sm text-[#8f6f33] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded shadow-sm z-10">
                                 {offerTagLine(service)}
                               </span>
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="bg-white/95 text-stone-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                                  <ImageIcon size={14} /> Voir en grand
+                                </span>
+                              </div>
                             </div>
                             <div className="p-6 flex-1 flex flex-col">
                               <div className="flex justify-between items-start gap-4 mb-4">
@@ -890,9 +920,19 @@ export default function CataloguePrestatairesPage({
             </button>
             
             <div className="overflow-y-auto flex-1">
-              <div className="h-80 bg-gray-100 relative">
+              <div 
+                className="h-80 bg-gray-100 relative cursor-pointer group/hdr overflow-hidden"
+                onClick={() => {
+                  const imgs = [selectedServiceForDetails.image_url, ...(selectedServiceForDetails.gallery || [])].filter(Boolean);
+                  if (imgs.length > 0) {
+                    setLightboxImages(imgs);
+                    setLightboxIndex(0);
+                  }
+                }}
+                title="Cliquer pour afficher en plein écran et en taille réelle"
+              >
                 {selectedServiceForDetails.image_url ? (
-                  <img src={selectedServiceForDetails.image_url} alt={selectedServiceForDetails.nom_service} className="w-full h-full object-cover" />
+                  <img src={selectedServiceForDetails.image_url} alt={selectedServiceForDetails.nom_service} className="w-full h-full object-cover group-hover/hdr:scale-105 transition-transform duration-300" />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-3">
                     <ImageIcon size={64} />
@@ -1045,39 +1085,73 @@ export default function CataloguePrestatairesPage({
         </div>
       )}
 
-      {/* Lightbox */}
+      {/* Lightbox avec flèches visibles et taille réelle */}
       {lightboxImages.length > 0 && (
-        <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center animate-in fade-in duration-200" onClick={() => setLightboxImages([])}>
+        <div 
+          className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-200 select-none" 
+          onClick={() => setLightboxImages([])}
+        >
+          {/* Bouton Fermer */}
           <button 
+            type="button"
             onClick={() => setLightboxImages([])}
-            className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all z-10"
+            className="absolute top-6 right-6 text-white bg-black/60 hover:bg-[#b8924a] p-3 rounded-full border border-white/20 transition-all z-30 cursor-pointer shadow-lg hover:scale-105"
+            title="Fermer (Echap)"
+            aria-label="Fermer"
           >
             <X size={24} />
           </button>
           
-          <button 
-            onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1)); }}
-            className="absolute left-6 text-white/70 hover:text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all z-10"
-          >
-            <ArrowLeft size={24} />
-          </button>
+          {/* Flèche Gauche (visible et bien contrastée) */}
+          {lightboxImages.length > 1 && (
+            <button 
+              type="button"
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1)); 
+              }}
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white bg-black/80 hover:bg-[#b8924a] p-3.5 md:p-4 rounded-full shadow-2xl border border-white/25 transition-all z-30 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 group"
+              title="Photo précédente (←)"
+              aria-label="Photo précédente"
+            >
+              <ChevronLeft size={28} className="group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+          )}
 
-          <img 
-            src={lightboxImages[lightboxIndex]} 
-            alt="Fullscreen view" 
-            className="max-w-[90vw] max-h-[90vh] object-contain select-none shadow-2xl"
+          {/* Image en taille réelle / format d'origine sans rognage forcé */}
+          <div 
+            className="relative max-w-[92vw] max-h-[85vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
-          />
-
-          <button 
-            onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0)); }}
-            className="absolute right-6 text-white/70 hover:text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all z-10"
           >
-            <ArrowLeft size={24} className="rotate-180" />
-          </button>
+            <img 
+              src={lightboxImages[lightboxIndex]} 
+              alt={`Photo ${lightboxIndex + 1}`} 
+              className="max-w-[90vw] max-h-[85vh] w-auto h-auto object-contain select-none shadow-2xl rounded-xl border border-white/10"
+            />
+          </div>
+
+          {/* Flèche Droite (visible et bien contrastée) */}
+          {lightboxImages.length > 1 && (
+            <button 
+              type="button"
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0)); 
+              }}
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white bg-black/80 hover:bg-[#b8924a] p-3.5 md:p-4 rounded-full shadow-2xl border border-white/25 transition-all z-30 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 group"
+              title="Photo suivante (→)"
+              aria-label="Photo suivante"
+            >
+              <ChevronRight size={28} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          )}
           
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/50 text-sm font-medium tracking-widest bg-black/50 px-4 py-2 rounded-full backdrop-blur-md">
-            {lightboxIndex + 1} / {lightboxImages.length}
+          {/* Compteur de photos */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white text-xs font-bold tracking-widest bg-black/80 border border-white/20 px-5 py-2.5 rounded-full backdrop-blur-md shadow-lg flex items-center gap-2">
+            <span className="text-[#d9c08c]">{lightboxIndex + 1}</span>
+            <span className="text-white/40">/</span>
+            <span>{lightboxImages.length}</span>
+            <span className="text-white/40 text-[10px] ml-2 hidden sm:inline">• Taille réelle</span>
           </div>
         </div>
       )}
