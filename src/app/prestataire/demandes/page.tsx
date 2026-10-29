@@ -277,11 +277,16 @@ export default function PrestataireDemandesPage() {
 
       // 2. Notifier l'organisateur dans la messagerie
       if (targetClientId) {
+        let clientName = selectedDemande.client_name;
+        if (!clientName) {
+          const { data: clientProf } = await supabase.from('profiles').select('full_name').eq('id', targetClientId).maybeSingle();
+          clientName = clientProf?.full_name || selectedDemande.events?.name || "Organisateur";
+        }
         await supabase.from('messages').insert({
           sender_id: user.id,
           receiver_id: targetClientId,
           event_id: selectedDemande.event_id || null,
-          content: `Bonjour,\n\nConcernant votre demande de devis pour « ${selectedDemande.service_name} » (${eventName}) :\n\nJe vous propose un ajustement avec une offre tarifaire de ${priceNum.toLocaleString('fr-FR')} FCFA.` +
+          content: `Bonjour ${clientName},\n\nConcernant votre demande de devis pour « ${selectedDemande.service_name} » (${eventName}) :\n\nJe vous propose un ajustement avec une offre tarifaire de ${priceNum.toLocaleString('fr-FR')} FCFA.` +
             (adjustNotes ? `\n\nDétails de l'ajustement :\n${adjustNotes}` : "") +
             `\n\nN'hésitez pas à me faire part de vos retours ou à me poser des questions.`
         });

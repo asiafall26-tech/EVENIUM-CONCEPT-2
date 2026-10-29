@@ -285,49 +285,84 @@ export function personalizeMessage(
   const organizerProfile = myProfile?.role === "client" ? myProfile : (correspondentProfile?.role === "client" ? correspondentProfile : undefined);
   const providerProfile = myProfile?.role === "prestataire" ? myProfile : (correspondentProfile?.role === "prestataire" ? correspondentProfile : undefined);
 
-  const organizerFirstName = organizerProfile ? extractFirstName(organizerProfile.full_name, "L'organisateur") : "L'organisateur";
-  const providerFullName = providerProfile ? formatDisplayName(providerProfile.full_name, "Le prestataire") : "Le prestataire";
-  const providerFirstName = providerProfile ? extractFirstName(providerProfile.full_name, "Le prestataire") : "Le prestataire";
+  let providerName = providerProfile?.company_name || providerProfile?.full_name || "";
+  let organizerName = organizerProfile?.full_name || "";
+
+  if (!providerName) {
+    if (myProfile?.role === "client" && correspondentName && !["Utilisateur", "Client", "Prestataire"].includes(correspondentName)) {
+      providerName = correspondentName;
+    } else if (correspondentProfile?.role === "client" && myProfile?.full_name) {
+      providerName = myProfile.company_name || myProfile.full_name;
+    }
+  }
+
+  if (!organizerName) {
+    if (myProfile?.role === "prestataire" && correspondentName && !["Utilisateur", "Client", "Prestataire"].includes(correspondentName)) {
+      organizerName = correspondentName;
+    } else if (correspondentProfile?.role === "prestataire" && myProfile?.full_name) {
+      organizerName = myProfile.full_name;
+    }
+  }
+
+  // Ne JAMAIS tronquer le nom du prestataire (GALA LIGHT reste GALA LIGHT)
+  const providerFullName = providerName.trim() ? formatDisplayName(providerName.trim()) : "";
+  const organizerFullName = organizerName.trim() ? formatDisplayName(organizerName.trim()) : "";
+  const organizerFirstName = organizerFullName ? extractFirstName(organizerFullName, "L'organisateur") : "L'organisateur";
+
+  const toProviderGreeting = providerFullName ? `Bonjour ${providerFullName},` : "Bonjour,";
+  const toOrganizerGreeting = organizerFullName ? `Bonjour ${organizerFullName},` : "Bonjour,";
 
   let processed = rawContent;
 
   processed = processed
-    .replace(/\[Prénom de l'organisateur\]/gi, organizerFirstName)
-    .replace(/\[Nom de l'organisateur\]/gi, organizerProfile?.full_name || organizerFirstName)
-    .replace(/\[Prénom du prestataire\]/gi, providerFirstName)
-    .replace(/\[Nom du prestataire\]/gi, providerFullName)
-    .replace(/\[Prénom du client\]/gi, organizerFirstName)
-    .replace(/\[Nom du client\]/gi, organizerProfile?.full_name || organizerFirstName);
+    .replace(/\[Prénom de l'organisateur\]/gi, organizerFullName || organizerFirstName)
+    .replace(/\[Nom de l'organisateur\]/gi, organizerFullName || organizerFirstName)
+    .replace(/\[Prénom du prestataire\]/gi, providerFullName || "Le prestataire")
+    .replace(/\[Nom du prestataire\]/gi, providerFullName || "Le prestataire")
+    .replace(/\[Prénom du client\]/gi, organizerFullName || organizerFirstName)
+    .replace(/\[Nom du client\]/gi, organizerFullName || organizerFirstName);
 
-  if (organizerFirstName && organizerFirstName !== "ASTOU") {
-    processed = processed.replace(/\bASTOU\b/g, organizerFirstName);
+  if (organizerFullName && organizerFullName !== "ASTOU") {
+    processed = processed.replace(/\bASTOU\b/g, organizerFullName);
   }
   if (providerFullName && providerFullName !== "MISS") {
     processed = processed.replace(/\bMISS\b/g, providerFullName);
   }
 
+  // Harmoniser les messages de révision structurés
   if (
     processed.includes("🔄 Demande de révision de devis") ||
+    processed.includes("souhaite apporter des ajustements supplémentaires")
+  ) {
+    // Organisateur -> Prestataire : le destinataire est le Prestataire
+    if (providerFullName) {
+      processed = processed.replace(/Bonjour\s+Le prestataire,/g, toProviderGreeting);
+      processed = processed.replace(/^Bonjour\s+[^,\n]+,/m, toProviderGreeting);
+    }
+    return processed;
+  }
+
+  if (
     processed.includes("a pris en compte votre demande de révision") ||
     processed.includes("✨ Votre devis a été révisé !") ||
-    processed.includes("ne peut pas donner suite à votre demande de révision") ||
-    processed.includes("souhaite apporter des ajustements supplémentaires") ||
+    processed.includes("ne peut pas donner suite à votre demande de révision")
+  ) {
+    // Prestataire -> Organisateur : le destinataire est l'Organisateur
+    if (organizerFullName) {
+      processed = processed.replace(/Bonjour\s+L'organisateur,/g, toOrganizerGreeting);
+      processed = processed.replace(/^Bonjour\s+[^,\n]+,/m, toOrganizerGreeting);
+    }
+    return processed;
+  }
+
+  if (
     processed.includes("🎉 Votre devis a été accepté !") ||
     processed.includes("n'a pas retenu votre proposition révisée")
   ) {
     return processed;
   }
 
-  const targetName =
-    correspondentName &&
-    correspondentName !== "Utilisateur" &&
-    correspondentName !== "Prestataire" &&
-    correspondentName !== "Client"
-      ? extractFirstName(correspondentName, "")
-      : "";
-
-  const greeting = targetName ? `Bonjour ${targetName},` : "Bonjour,";
-
+  // 1. Acceptation de devis : Organisateur -> Prestataire (Destinataire = Prestataire)
   if (
     rawContent.includes("a été accepté par le client") ||
     rawContent.includes("a été automatiquement programmé dans votre planning") ||
@@ -343,9 +378,10 @@ export function personalizeMessage(
     const eventName = eventMatch?.[1] ? ` « ${eventMatch[1]} »` : "";
     const dateStr = dateMatch?.[1] ? ` prévu le ${dateMatch[1].trim()}` : "";
 
-    return `${greeting}\n\nJ'ai bien reçu votre proposition de devis n° ${devisRef}${montant} pour l'événement${eventName}${dateStr}.\n\nJ'ai le plaisir de vous informer que j'accepte votre proposition de devis ! La prestation est ainsi officiellement confirmée dans notre planning.\n\nAu plaisir de collaborer avec vous !`;
+    return `${toProviderGreeting}\n\nJ'ai bien reçu votre proposition de devis n° ${devisRef}${montant} pour l'événement${eventName}${dateStr}.\n\nJ'ai le plaisir de vous informer que j'accepte votre proposition de devis ! La prestation est ainsi officiellement confirmée dans notre planning.\n\nAu plaisir de collaborer avec vous !`;
   }
 
+  // 2. Proposition de devis : Prestataire -> Organisateur (Destinataire = Organisateur)
   if (
     rawContent.includes("transmettre ma proposition de devis") ||
     rawContent.includes("ma proposition de devis n°") ||
@@ -357,9 +393,10 @@ export function personalizeMessage(
     const montant = devisMatch?.[2] ? ` (${devisMatch[2].trim()})` : "";
     const eventName = eventMatch?.[1] ? ` « ${eventMatch[1]} »` : "";
 
-    return `${greeting}\n\nSuite à votre demande, j'ai le plaisir de vous transmettre ma proposition de devis n° ${devisRef}${montant} pour votre événement${eventName}.\n\nVous pouvez consulter le détail de ma proposition et la valider directement dans votre espace Devis.\n\nJe reste à votre entière disposition pour tout renseignement complémentaire !`;
+    return `${toOrganizerGreeting}\n\nSuite à votre demande, j'ai le plaisir de vous transmettre ma proposition de devis n° ${devisRef}${montant} pour votre événement${eventName}.\n\nVous pouvez consulter le détail de ma proposition et la valider directement dans votre espace Devis.\n\nJe reste à votre entière disposition pour tout renseignement complémentaire !`;
   }
 
+  // 3. Demande de devis : Organisateur -> Prestataire (Destinataire = Prestataire)
   if (
     rawContent.includes("demande de devis pour la prestation") ||
     rawContent.includes("solliciter une proposition de devis") ||
@@ -368,23 +405,37 @@ export function personalizeMessage(
     const prestMatch = rawContent.match(/prestation\s*["«]([^"»]+)["»]/i);
     const serviceName = prestMatch?.[1] ? ` « ${prestMatch[1]} »` : "votre prestation";
 
-    return `${greeting}\n\nJe prépare mon événement et je souhaiterais solliciter une proposition de devis de votre part pour la prestation ${serviceName}.\n\nPourriez-vous me préparer et me transmettre votre proposition tarifaire détaillée ?\n\nMerci d'avance pour votre proposition !`;
+    return `${toProviderGreeting}\n\nJe prépare mon événement et je souhaiterais solliciter une proposition de devis de votre part pour la prestation ${serviceName}.\n\nPourriez-vous me préparer et me transmettre votre proposition tarifaire détaillée ?\n\nMerci d'avance pour votre proposition !`;
   }
 
+  // 4. Demande d'ajustement / révision : Organisateur -> Prestataire (Destinataire = Prestataire)
   if (rawContent.startsWith("[Demande de révision sur devis") || rawContent.includes("souhaiterais solliciter un ajustement")) {
     const refMatch = rawContent.match(/(?:\[Demande de révision sur devis ref\s*([^\]]+)\]\s*:\s*([\s\S]*)|proposition de devis n°\s*([^\s,]+)[^«]*«\s*([\s\S]*?)\s*»)/i);
     const devisRef = refMatch?.[1] || refMatch?.[3] || "DEV";
     const userComment = refMatch?.[2] || refMatch?.[4] || "Ajustement demandé";
-    return `${greeting}\n\nConcernant votre proposition de devis n° ${devisRef.trim()}, je souhaiterais solliciter un ajustement :\n\n« ${userComment.trim()} »\n\nMerci d'avance pour votre prise en compte !`;
+    return `${toProviderGreeting}\n\nConcernant votre proposition de devis n° ${devisRef.trim()}, je souhaiterais solliciter un ajustement :\n\n« ${userComment.trim()} »\n\nMerci d'avance pour votre prise en compte !`;
   }
 
+  // 5. Contre-proposition du prestataire : Prestataire -> Organisateur (Destinataire = Organisateur)
+  if (rawContent.includes("Concernant votre demande de devis pour") && rawContent.includes("Je vous propose un ajustement")) {
+    return processed.replace(/^Bonjour\s*[^,\n]*,/m, toOrganizerGreeting);
+  }
+
+  // 6. Confirmation d'événement par le prestataire : Prestataire -> Organisateur (Destinataire = Organisateur)
+  if (rawContent.includes("J'ai le plaisir de vous confirmer la prise en charge de votre événement")) {
+    return processed.replace(/^Bonjour\s*[^,\n]*,/m, toOrganizerGreeting);
+  }
+
+  // 7. Support Evenium : Support -> Utilisateur
   if (rawContent.includes("Mise à jour Support :") && rawContent.includes("a été marquée comme résolue")) {
     const subjMatch = rawContent.match(/le sujet\s*"([^"]+)"/i);
     const subject = subjMatch?.[1] ? ` « ${subjMatch[1]} »` : "votre réclamation";
-    return `${greeting}\n\nNotre équipe Support Evenium vous informe que votre demande concernant ${subject} a bien été résolue par nos équipes.\n\nNous restons à votre entière disposition pour toute question !`;
+    const targetUser = (myProfile?.role === "admin" ? correspondentName : myProfile?.full_name) || "";
+    const userGreeting = targetUser && !["Utilisateur", "Client", "Prestataire"].includes(targetUser) ? `Bonjour ${formatDisplayName(targetUser)},` : "Bonjour,";
+    return `${userGreeting}\n\nNotre équipe Support Evenium vous informe que votre demande concernant ${subject} a bien été résolue par nos équipes.\n\nNous restons à votre entière disposition pour toute question !`;
   }
 
-  return rawContent;
+  return processed;
 }
 
 export function formatPreviewSummary(

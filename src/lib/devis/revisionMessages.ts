@@ -66,15 +66,15 @@ export function buildRevisionRequestMessage(params: {
   version?: number;
 }): string {
   const version = params.version || 1;
-  const provFirstName = extractFirstName(params.providerName, "Prestataire");
-  const cliFirstName = extractFirstName(params.clientName, "L'organisateur");
+  const provDisplayName = formatDisplayName(params.providerName, "Le prestataire");
+  const cliDisplayName = formatDisplayName(params.clientName, "L'organisateur");
   const devisRef = params.devisReference || "DEV";
   const servName = params.serviceName || "la prestation";
   const evName = params.eventName || "votre événement";
 
   if (version > 1) {
     // 5. NOUVELLE DEMANDE DE RÉVISION (Sur version > 1)
-    let msg = `${cliFirstName} souhaite apporter des ajustements supplémentaires à votre devis n° ${devisRef}, version v${version}.\n\n`;
+    let msg = `${cliDisplayName} souhaite apporter des ajustements supplémentaires à votre devis n° ${devisRef}, version v${version}.\n\n`;
     msg += `Motif de la révision : ${params.subject}.\n\n`;
     msg += `Modifications demandées : ${params.description}.\n`;
     if (params.targetBudget) {
@@ -89,8 +89,8 @@ export function buildRevisionRequestMessage(params: {
 
   // Version 1 standard
   let msg = `🔄 Demande de révision de devis\n\n`;
-  msg += `Bonjour ${provFirstName},\n\n`;
-  msg += `${cliFirstName} souhaite apporter des modifications à votre devis n° ${devisRef}, concernant la prestation ${servName} pour l'événement « ${evName} ».\n\n`;
+  msg += `Bonjour ${provDisplayName},\n\n`;
+  msg += `${cliDisplayName} souhaite apporter des modifications à votre devis n° ${devisRef}, concernant la prestation ${servName} pour l'événement « ${evName} ».\n\n`;
   msg += `Motif de la révision : ${params.subject}.\n\n`;
   msg += `Précisions : ${params.description}.\n`;
   if (params.targetBudget) {
@@ -111,11 +111,11 @@ export function buildRevisionAcknowledgedMessage(params: {
   providerName: string;
   devisReference: string;
 }): string {
-  const cliFirstName = extractFirstName(params.clientName, "L'organisateur");
+  const cliDisplayName = formatDisplayName(params.clientName, "L'organisateur");
   const provName = formatDisplayName(params.providerName, "Le prestataire");
   const devisRef = params.devisReference || "DEV";
 
-  return `Bonjour ${cliFirstName},\n\n${provName} a pris en compte votre demande de révision du devis n° ${devisRef}.\n\nVotre demande est en cours de traitement. Vous recevrez une notification dès qu'une nouvelle proposition sera disponible.\n\nMerci de votre confiance et à bientôt sur Evenium !`;
+  return `Bonjour ${cliDisplayName},\n\n${provName} a pris en compte votre demande de révision du devis n° ${devisRef}.\n\nVotre demande est en cours de traitement. Vous recevrez une notification dès qu'une nouvelle proposition sera disponible.\n\nMerci de votre confiance et à bientôt sur Evenium !`;
 }
 
 /**
@@ -133,14 +133,14 @@ export function buildNewVersionMessage(params: {
   newTotal: number;
   devisId?: string;
 }): string {
-  const cliFirstName = extractFirstName(params.clientName, "L'organisateur");
+  const cliDisplayName = formatDisplayName(params.clientName, "L'organisateur");
   const provName = formatDisplayName(params.prestataireName || params.providerName, "Le prestataire");
   const evName = params.eventName || "votre événement";
   const devisRef = params.devisReference || "DEV";
   const ver = params.versionNumber || params.version || 2;
 
   let msg = `✨ Votre devis a été révisé !\n\n`;
-  msg += `Bonjour ${cliFirstName},\n\n`;
+  msg += `Bonjour ${cliDisplayName},\n\n`;
   msg += `Suite à votre demande de révision, ${provName} vous a transmis une nouvelle version du devis pour l'événement « ${evName} ».\n\n`;
   msg += `Numéro du devis : ${devisRef}.\n`;
   msg += `Version : v${ver}.\n`;
@@ -160,11 +160,11 @@ export function buildRevisionRefusedMessage(params: {
   devisReference: string;
   refusalReason: string;
 }): string {
-  const cliFirstName = extractFirstName(params.clientName, "L'organisateur");
+  const cliDisplayName = formatDisplayName(params.clientName, "L'organisateur");
   const provName = formatDisplayName(params.prestataireName || params.providerName, "Le prestataire");
   const devisRef = params.devisReference || "DEV";
 
-  let msg = `Bonjour ${cliFirstName},\n\n`;
+  let msg = `Bonjour ${cliDisplayName},\n\n`;
   msg += `${provName} ne peut pas donner suite à votre demande de révision du devis n° ${devisRef}.\n\n`;
   msg += `Motif : ${params.refusalReason}.\n\n`;
   msg += `Vous pouvez poursuivre la discussion avec le prestataire pour envisager une autre solution.\n\n`;
@@ -186,7 +186,7 @@ export function buildRevisionAcceptedMessage(params: {
   eventName: string;
   eventDate?: string;
 }): string {
-  const cliFirstName = extractFirstName(params.organizerName || params.clientName, "L'organisateur");
+  const cliDisplayName = formatDisplayName(params.organizerName || params.clientName, "L'organisateur");
   const devisRef = params.devisReference || "DEV";
   const evName = params.eventName || "Prestation";
   const evDate = params.eventDate || "la date convenue";
@@ -194,7 +194,7 @@ export function buildRevisionAcceptedMessage(params: {
   const total = params.finalAmount !== undefined ? params.finalAmount : (params.finalTotal || 0);
 
   let msg = `🎉 Votre devis a été accepté !\n\n`;
-  msg += `${cliFirstName} vient d'accepter votre devis n° ${devisRef}, version v${ver}, pour un montant de ${total.toLocaleString('fr-FR')} FCFA.\n\n`;
+  msg += `${cliDisplayName} vient d'accepter votre devis n° ${devisRef}, version v${ver}, pour un montant de ${total.toLocaleString('fr-FR')} FCFA.\n\n`;
   msg += `Événement : « ${evName} ».\n`;
   msg += `Date : ${evDate}.\n\n`;
   msg += `Retrouvez les détails de la prestation dans votre espace Evenium.`;
@@ -211,11 +211,11 @@ export function buildRevisedQuoteRefusedMessage(params: {
   motif?: string;
   reason?: string;
 }): string {
-  const cliFirstName = extractFirstName(params.organizerName || params.clientName, "L'organisateur");
+  const cliDisplayName = formatDisplayName(params.organizerName || params.clientName, "L'organisateur");
   const devisRef = params.devisReference || "DEV";
   const motifText = params.reason || params.motif;
 
-  let msg = `${cliFirstName} n'a pas retenu votre proposition révisée pour le devis n° ${devisRef}.\n\n`;
+  let msg = `${cliDisplayName} n'a pas retenu votre proposition révisée pour le devis n° ${devisRef}.\n\n`;
   if (motifText && motifText.trim() !== '') {
     msg += `Motif éventuel : ${motifText.trim()}.\n\n`;
   }

@@ -227,32 +227,32 @@ export function ContactSupportButton({ className = "" }: { className?: string })
         Support & Réclamations
       </button>
 
-      {/* GRAND PLAN - Modal Plein Écran Luxueux */}
+      {/* GRAND PLAN - Modal Plein Écran Luxueux et Élargi */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-[80] flex items-center justify-center p-0 sm:p-4 lg:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)}
         >
           <div 
-            className="bg-[#faf8f5] w-full max-w-4xl h-[92vh] sm:h-[88vh] rounded-3xl shadow-2xl border border-stone-200 flex flex-col overflow-hidden relative"
+            className="bg-[#faf8f5] w-full sm:max-w-5xl lg:max-w-6xl h-dvh sm:h-[90vh] rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-stone-200 flex flex-col overflow-hidden relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Conciergerie */}
-            <div className="shrink-0 bg-stone-900 text-white px-6 sm:px-8 py-5 flex items-center justify-between border-b border-stone-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-stone-950 flex items-center justify-center shadow-md">
+            <div className="shrink-0 bg-stone-900 text-white px-4 sm:px-8 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:py-5 flex items-center justify-between border-b border-stone-800">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#d9c08c] to-[#b8924a] text-stone-950 flex items-center justify-center shadow-md shrink-0">
                   <LifeBuoy size={22} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h2 className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#fdfaf5]">
+                    <h2 className="font-serif text-base sm:text-xl font-bold tracking-tight text-[#fdfaf5] truncate">
                       Support & Réclamations Evenium
                     </h2>
                     <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#b8924a]/20 text-[#d9c08c] border border-[#b8924a]/30">
                       <Sparkles size={10} /> Conciergerie Pro
                     </span>
                   </div>
-                  <p className="text-xs text-stone-400">
+                  <p className="text-xs text-stone-400 line-clamp-1 sm:line-clamp-none">
                     Assistance dédiée, traitement prioritaire avec messages vocaux et pièces jointes.
                   </p>
                 </div>
@@ -261,7 +261,7 @@ export function ContactSupportButton({ className = "" }: { className?: string })
               <button 
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-9 h-9 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-9 h-9 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-2"
                 title="Fermer"
               >
                 <X size={18} />
@@ -269,7 +269,7 @@ export function ContactSupportButton({ className = "" }: { className?: string })
             </div>
 
             {/* Navigation Tabs */}
-            <div className="shrink-0 bg-white border-b border-stone-200/80 px-6 sm:px-8 flex gap-6">
+            <div className="shrink-0 bg-white border-b border-stone-200/80 px-4 sm:px-8 flex gap-4 sm:gap-6">
               <button 
                 type="button"
                 onClick={() => { setActiveTab("new"); setSelectedTicket(null); }}
@@ -295,9 +295,9 @@ export function ContactSupportButton({ className = "" }: { className?: string })
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
               {activeTab === "new" ? (
-                <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
+                <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto space-y-6">
                   {/* Sujet */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
@@ -313,13 +313,13 @@ export function ContactSupportButton({ className = "" }: { className?: string })
                     />
 
                     {/* Chips de suggestions */}
-                    <div className="flex flex-wrap gap-1.5 mt-2.5">
+                    <div className="flex flex-wrap gap-2 mt-2.5">
                       {SUBJECT_SUGGESTIONS.map((sug) => (
                         <button
                           key={sug}
                           type="button"
                           onClick={() => setSubject(sug)}
-                          className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white border border-stone-200 text-stone-600 hover:border-[#b8924a] hover:text-[#b8924a] transition-colors cursor-pointer"
+                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700 hover:border-[#b8924a] hover:text-[#b8924a] hover:bg-[#faf6ee] transition-all cursor-pointer shadow-2xs"
                         >
                           {sug}
                         </button>
@@ -448,7 +448,7 @@ export function ContactSupportButton({ className = "" }: { className?: string })
                   </div>
 
                   {/* Actions bas de formulaire */}
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-200">
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-200 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-0">
                     <button
                       type="button"
                       onClick={() => setIsOpen(false)}
@@ -471,7 +471,7 @@ export function ContactSupportButton({ className = "" }: { className?: string })
                 </form>
               ) : selectedTicket ? (
                 /* VUE DÉTAILLÉE D'UNE RÉCLAMATION */
-                <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-200">
+                <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-200 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-0">
                   <button 
                     type="button"
                     onClick={() => setSelectedTicket(null)}
@@ -562,7 +562,7 @@ export function ContactSupportButton({ className = "" }: { className?: string })
                 </div>
               ) : (
                 /* LISTE DE L'HISTORIQUE */
-                <div className="max-w-3xl mx-auto space-y-4">
+                <div className="w-full max-w-4xl mx-auto space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-0">
                   {loading ? (
                     <div className="py-16 text-center text-stone-500 font-medium">
                       <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#b8924a]" />
