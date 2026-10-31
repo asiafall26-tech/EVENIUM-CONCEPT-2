@@ -1,67 +1,67 @@
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Star } from "lucide-react";
+import { Fleuron, DiamondRule, LuxFrame } from "@/components/landing/LuxOrnaments";
 
 export default function EspacePrestataireLanding() {
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center py-20 px-4 bg-gray-50">
+    <div className="bg-silk min-h-[80vh] flex flex-col items-center justify-center py-20 px-4">
       <div className="max-w-4xl w-full">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-6">
-            Espace Prestataire Evenium
+        <div className="text-center mb-14">
+          <Fleuron className="mx-auto w-48 h-auto mb-3" />
+          <p className="pl-[0.35em] text-[11px] md:text-xs font-medium tracking-[0.35em] uppercase text-[#8f6f33] mb-4">
+            Le réseau d&apos;excellence
+          </p>
+          <h1 className="font-serif not-italic text-4xl md:text-6xl text-[#1d120a]">
+            Espace <span className="italic text-gold-foil">Prestataire</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Rejoignez l'écosystème Evenium et proposez vos services d'excellence à des milliers de clients organisant leurs événements.
+          <DiamondRule className="mt-6" />
+          <p className="mt-6 text-lg text-[#3d3126] max-w-2xl mx-auto leading-relaxed">
+            Rejoignez l&apos;écosystème Evenium et proposez vos services d&apos;excellence à des milliers de clients organisant leurs événements.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* OPTION 1 : PRESTATAIRE EVENIUM (Déjà sélectionné) */}
-          <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
+          <div className="card-lux p-6 sm:p-8 lg:p-10 flex flex-col h-full relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
               <ShieldCheck size={100} className="text-[#b8924a]" />
             </div>
-            
-            <div className="w-16 h-16 bg-[#f5eee1] text-[#8f6f33] rounded-2xl flex items-center justify-center mb-8 shadow-sm">
-              <ShieldCheck size={32} />
+
+            <div className="w-16 h-16 rounded-full bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e]/70 shadow-[0_0_20px_-6px_rgba(233,196,120,0.7)] flex items-center justify-center mb-8">
+              <ShieldCheck size={28} />
             </div>
-            
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Je suis déjà prestataire Evenium</h2>
-            <p className="text-gray-600 mb-8 flex-1">
+
+            <h2 className="font-serif not-italic text-2xl text-[#1d120a] mb-4">Je suis déjà prestataire Evenium</h2>
+            <p className="text-[#3d3126] mb-8 flex-1 leading-relaxed">
               Vous avez été sélectionné par Evenium et avez reçu vos identifiants exclusifs (ex: EVN-0001) ? Connectez-vous à votre espace sécurisé.
             </p>
-            
-            <Link 
-              href="/login?role=prestataire"
-              className="w-full flex items-center justify-center gap-2 bg-black hover:bg-gray-900 text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-black/10 transition-colors"
-            >
-              SE CONNECTER <ArrowRight size={18} />
+
+            <Link href="/login?role=prestataire" className="btn-lux w-full py-4 text-xs">
+              Se connecter <ArrowRight size={18} strokeWidth={1.5} className="text-[#f0d999]" />
             </Link>
           </div>
 
           {/* OPTION 2 : PRESTATAIRE EXTERNE (Nouvelle adhésion) */}
-          <div className="bg-gradient-to-br from-[#2b2118] to-black rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-800 shadow-xl hover:shadow-2xl transition-all flex flex-col h-full relative overflow-hidden group">
+          <div className="bg-gradient-to-b from-[#2a1b0f] to-[#120b06] rounded-3xl p-6 sm:p-8 lg:p-10 border border-[#c9a45e]/50 shadow-[0_24px_50px_-24px_rgba(20,12,6,0.8)] flex flex-col h-full relative overflow-hidden group">
+            <LuxFrame className="inset-2.5 opacity-50" />
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Star size={100} className="text-[#b8924a]" />
+              <Star size={100} className="text-[#c9a45e]" />
             </div>
 
-            <div className="w-16 h-16 bg-white/10 text-[#b8924a] rounded-2xl flex items-center justify-center mb-8 shadow-sm backdrop-blur-sm">
-              <Star size={32} />
+            <div className="w-16 h-16 rounded-full bg-white/5 text-[#f0d999] border border-[#c9a45e]/70 shadow-[0_0_20px_-6px_rgba(233,196,120,0.7)] flex items-center justify-center mb-8">
+              <Star size={28} />
             </div>
-            
-            <h2 className="text-2xl font-bold text-white mb-4">Je souhaite devenir prestataire</h2>
-            <p className="text-gray-400 mb-8 flex-1">
+
+            <h2 className="font-serif not-italic text-2xl text-[#fbf3e4] mb-4">Je souhaite devenir prestataire</h2>
+            <p className="text-[#e9dcc6]/75 mb-8 flex-1 leading-relaxed">
               Vous souhaitez rejoindre notre réseau de prestataires ? Créez votre profil, adhérez à Evenium et recevez le badge EXTERNE.
             </p>
-            
-            <Link 
-              href="/espace-prestataire/inscription"
-              className="w-full flex items-center justify-center gap-2 bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-[#8f6f33]/20 transition-colors"
-            >
-              REJOINDRE EVENIUM <ArrowRight size={18} />
+
+            <Link href="/espace-prestataire/inscription" className="btn-lux-light relative w-full py-4 text-xs">
+              Rejoindre Evenium <ArrowRight size={18} strokeWidth={1.5} className="text-[#8f6f33]" />
             </Link>
           </div>
         </div>
-
       </div>
     </div>
   );

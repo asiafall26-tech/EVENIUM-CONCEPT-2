@@ -6,9 +6,8 @@ import Image from 'next/image';
 import { 
   Sparkles, 
   Heart, 
-  Calendar, 
-  MapPin, 
-  Clock, 
+  Calendar,
+  Clock,
   ArrowRight, 
   ArrowLeft, 
   Check, 
@@ -23,7 +22,6 @@ import {
   Eye,
   Gift,
   PartyPopper,
-  Music,
   Share2,
   X,
   Layers,
@@ -34,6 +32,8 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import EventQRCode from '@/components/ui/EventQRCode';
+import ModelCard from '@/components/landing/ModelCard';
+import { Fleuron, DiamondRule, LuxFrame } from '@/components/landing/LuxOrnaments';
 import { EVENT_TYPES, EVENT_TYPE_ICONS as EVENT_ICONS } from '@/lib/eventTypes';
 import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
@@ -73,6 +73,16 @@ import {
   type CustomValues,
 } from '@/lib/customModels';
 import { classificationOf, fetchModelDefaults, hiddenModelIds, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
+import {
+  PRESTATAIRES_TIERS,
+  PRESTATAIRES_TIERS_MAP,
+  isPrestatairesPlan,
+  computeEventPrice,
+  getPrestatairesQuotaLabel,
+  type PrestatairesTier,
+} from '@/lib/formules';
+
+export type PlanChoice = 'Standard' | 'Premium' | 'Gold' | 'Prestataires (5)' | 'Prestataires (10)' | 'Prestataires (Sur devis)';
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -165,7 +175,15 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const modelParam = searchParams.get('model');
+  const modeParam = searchParams.get('mode');
+  const tierParam = searchParams.get('tier');
+  const isPrestatairesUrl = modeParam === 'prestataires';
   const supabase = createClient();
+
+  const [prestatairesTier, setPrestatairesTier] = useState<"5" | "10" | "devis">(
+    (tierParam === '5' || tierParam === '10' || tierParam === 'devis') ? tierParam : '10'
+  );
+  const [customEventName, setCustomEventName] = useState('');
 
   // Modale de prévisualisation plein écran du résultat avec modifications
   const [isPreviewFullScreenOpen, setIsPreviewFullScreenOpen] = useState(false);
@@ -436,6 +454,16 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   // Modale de finalisation & paiement
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
+  // Ouverture automatique de la modale si arrivée directe en mode prestataires
+  useEffect(() => {
+    if (isPrestatairesUrl) {
+      const tier = (tierParam === '5' || tierParam === '10' || tierParam === 'devis') ? tierParam : '10';
+      setPrestatairesTier(tier);
+      setSelectedPlan(tier === '5' ? 'Prestataires (5)' : tier === 'devis' ? 'Prestataires (Sur devis)' : 'Prestataires (10)');
+      setIsCheckoutModalOpen(true);
+    }
+  }, [isPrestatairesUrl, tierParam]);
+
   // Écouteurs globaux pour la communication avec les boutons de l'invitation
   useEffect(() => {
     // Les boutons de l'aperçu d'un modèle de la galerie sont gérés par cet aperçu
@@ -465,7 +493,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   }, []);
 
   // Formule & Paiement
-  const [selectedPlan, setSelectedPlan] = useState<'Standard' | 'Premium' | 'Gold'>('Standard');
+  const initialPlan: PlanChoice = isPrestatairesUrl
+    ? (prestatairesTier === '5' ? 'Prestataires (5)' : prestatairesTier === 'devis' ? 'Prestataires (Sur devis)' : 'Prestataires (10)')
+    : 'Standard';
+  const [selectedPlan, setSelectedPlan] = useState<PlanChoice>(initialPlan);
   // Formules Premium et Gold : détails de l'événement obligatoires, repris dans le dashboard
   const [eventDetails, setEventDetails] = useState<EventDetails>(EMPTY_EVENT_DETAILS);
   const [showDetailsErrors, setShowDetailsErrors] = useState(false);
@@ -590,9 +621,9 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent, customModels, customContents]);
 
   // Montant selon la formule
-  const planPrice = selectedPlan === "Gold" ? 20000 : selectedPlan === "Premium" ? 10000 : 5000;
+  const planPrice = computeEventPrice(selectedPlan, isStaticCard ? 'Carte' : 'Animée');
 
-  const choosePlan = (plan: 'Standard' | 'Premium' | 'Gold') => setSelectedPlan(plan);
+  const choosePlan = (plan: PlanChoice) => setSelectedPlan(plan);
 
   // Date, heure et lieu de l'invitation reportés dans les détails tant que l'organisateur ne les modifie pas
   const detailsWithInvitation: EventDetails = {
@@ -668,29 +699,34 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
           }, { onConflict: 'id' });
       }
 
-      // 2. Insérer le nouvel événement dérivé des informations de l'invitation
+      const isPrestataire = isPrestatairesPlan(selectedPlan);
+      const finalName = (isPrestataire && customEventName.trim()) 
+        ? customEventName.trim() 
+        : eventMetadata.name;
+
+      // 2. Insérer le nouvel événement dérivé des informations de l'invitation ou du pack prestataires
       const eventPayload: any = {
         client_id: user.id,
-        name: eventMetadata.name,
+        name: finalName,
         // Depuis « Tous les modèles », le type suit le modèle choisi
-        type: selectedEventCategory === "Tous" ? currentModel.category : selectedEventCategory,
-        date: eventMetadata.date,
-        time: eventMetadata.time,
-        location: eventMetadata.location,
+        type: selectedEventCategory === "Tous" ? (isPrestataire ? "Mariage" : currentModel.category) : selectedEventCategory,
+        date: isPrestataire ? (detailsWithInvitation.date || eventMetadata.date) : eventMetadata.date,
+        time: isPrestataire ? (detailsWithInvitation.time || eventMetadata.time) : eventMetadata.time,
+        location: isPrestataire ? (detailsWithInvitation.location || eventMetadata.location) : eventMetadata.location,
         plan: selectedPlan,
-        format: isStaticCard ? 'Carte' : 'Animée',
+        format: isPrestataire ? 'Sans invitation' : isStaticCard ? 'Carte' : 'Animée',
         status: 'active',
-        invitation_model_id: selectedModelId,
-        invitation_title: eventMetadata.welcomeTitle,
-        invitation_message: eventMetadata.welcomeText,
-        invitation_content: (() => {
+        invitation_model_id: isPrestataire ? 'none' : selectedModelId,
+        invitation_title: isPrestataire ? finalName : eventMetadata.welcomeTitle,
+        invitation_message: isPrestataire ? "Organisation d'événement avec prestataires Evenium" : eventMetadata.welcomeText,
+        invitation_content: isPrestataire ? null : (() => {
           const c = eventMetadata.contentJson;
           if (!c) return c;
           const m = customOf(selectedModelId);
           if (m) return { values: isStaticCard ? withoutMusicValues(m.fields, c.values) : c.values };
           return forInvitationKind(c, isStaticCard);
         })(),
-        // Détails saisis à l'achat (Premium / Gold) : nombre d'invités, date, lieu, budget…
+        // Détails saisis à l'achat (Premium / Gold / Prestataires) : nombre d'invités, date, lieu, budget…
         ...(requiresEventDetails(selectedPlan) ? eventDetailsToRow(detailsWithInvitation) : {})
       };
 
@@ -728,7 +764,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       try {
         await supabase.from('transactions').insert([{
           event_id: newEvent.id,
-          libelle: `Achat Formule ${selectedPlan} (${currentModel.name})`,
+          libelle: `Achat Formule ${selectedPlan}${isPrestatairesPlan(selectedPlan) ? '' : ` (${currentModel.name})`}`,
           montant: planPrice,
           type: 'revenu',
           date: new Date().toISOString()
@@ -755,16 +791,45 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         <div className="w-full flex flex-col gap-8 animate-in fade-in duration-300">
           {/* En-tête de prestige */}
           <div className="text-center max-w-3xl mx-auto pt-4 sm:pt-6">
-            <div className="inline-flex items-center gap-2 bg-[#fbf7f0] border border-[#b8924a]/40 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-[#8f6f33] mb-3 shadow-xs">
-              <Sparkles size={13} className="text-[#b8924a]" />
+            <Fleuron className="mx-auto w-40 sm:w-48 h-auto mb-3" />
+            <p className="pl-[0.3em] text-[10.5px] sm:text-xs font-medium uppercase tracking-[0.3em] text-[#8f6f33] mb-3">
               Étape 1 · Choisissez votre modèle
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-gray-950 tracking-tight">
-              Sélectionnez votre faire-part digital de prestige
+            </p>
+            <h1 className="text-3xl sm:text-5xl font-serif not-italic text-[#1d120a] leading-tight">
+              Votre faire-part <span className="italic text-gold-foil">de prestige</span>
             </h1>
-            <p className="text-xs sm:text-sm text-gray-600 mt-2.5 max-w-2xl mx-auto leading-relaxed">
+            <DiamondRule className="mt-4" />
+            <p className="text-xs sm:text-sm text-[#3d3126] mt-4 max-w-2xl mx-auto leading-relaxed">
               Chaque création Evenium propose une scénographie interactive unique (sceau de cire animé, velours précieux, rubans satinés, musique immersive et gestion des RSVP). Choisissez votre univers pour ouvrir son studio de personnalisation exclusif.
             </p>
+
+            {/* Raccourci Formule Prestataires Seuls */}
+            <div className="mt-6 max-w-2xl mx-auto w-full bg-gradient-to-r from-[#24170d] via-[#332214] to-[#24170d] border border-[#c9a45e]/50 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-center gap-3 min-w-0 text-left">
+                <div className="w-10 h-10 rounded-xl bg-[#b8924a]/20 border border-[#b8924a]/40 flex items-center justify-center shrink-0 text-[#f3e5ab]">
+                  <Crown size={18} />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-gold-foil">
+                    Besoin uniquement de prestataires ?
+                  </h4>
+                  <p className="text-[11px] text-white/70">
+                    Formule Prestataires : 5 ou 10 prestataires à 0% commission, budget &amp; checklist sans faire-part.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  choosePlan('Prestataires (10)');
+                  setIsCheckoutModalOpen(true);
+                }}
+                className="btn-lux shrink-0 px-4 py-2 text-xs font-bold whitespace-nowrap"
+              >
+                Choisir Prestataires
+                <ArrowRight size={13} />
+              </button>
+            </div>
 
             {/* Filtres de catégorie d'événement */}
             <div className="flex items-center justify-center gap-2 flex-wrap mt-6">
@@ -775,8 +840,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   onClick={() => setSelectedEventCategory(cat.id)}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                     selectedEventCategory === cat.id
-                      ? "bg-[#111] text-[#b8924a] border border-[#b8924a]/50 shadow-md scale-105"
-                      : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
+                      ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
+                      : "bg-[#fffbf5] text-gray-700 border border-[#e4d8c4] hover:border-[#c9a45e]"
                   }`}
                 >
                   <span>{cat.icon}</span>
@@ -792,14 +857,15 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
           </div>
 
           {filteredModels.length === 0 && (
-            <div className="max-w-xl mx-auto w-full text-center rounded-3xl border border-dashed border-[#b8924a]/40 bg-white/60 px-6 py-12">
+            <div className="card-lux relative max-w-xl mx-auto w-full text-center px-6 py-12">
+              <LuxFrame className="inset-2.5" />
               <p className="text-3xl mb-3">{eventCategories.find(c => c.id === selectedEventCategory)?.icon}</p>
-              <h3 className="font-serif text-2xl text-gray-900">Les modèles « {selectedEventCategory} » arrivent bientôt</h3>
-              <p className="text-sm text-gray-600 mt-2">En attendant, nos modèles actuels peuvent être personnalisés pour votre événement.</p>
+              <h3 className="font-serif not-italic text-2xl text-[#1d120a]">Les modèles « {selectedEventCategory} » arrivent bientôt</h3>
+              <p className="text-sm text-[#3d3126] mt-2">En attendant, nos modèles actuels peuvent être personnalisés pour votre événement.</p>
               <button
                 type="button"
                 onClick={() => setSelectedEventCategory("Tous")}
-                className="mt-6 px-6 py-3 rounded-full bg-black text-[#f5eee1] text-xs uppercase tracking-[0.2em]"
+                className="btn-lux relative mt-7 px-7 py-3.5 text-[11px]"
               >
                 Voir tous les modèles
               </button>
@@ -807,91 +873,44 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
           )}
 
           {/* Grille des modèles disponibles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto w-full">
             {filteredModels.map((model) => (
-              <div
+              <ModelCard
                 key={model.id}
-                className="group bg-white rounded-3xl border border-gray-200/90 hover:border-[#b8924a]/60 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
-              >
-                {/* Image & Badges */}
-                <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-gray-900">
-                  <Image
-                    src={model.image}
-                    alt={model.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                  
-                  {/* Badge supérieur */}
-                  <div className="absolute top-4 left-4 flex items-center gap-2">
-                    <span className="bg-black/80 backdrop-blur-md border border-[#b8924a]/40 text-[#F3E5AB] text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">
-                      {model.badge}
-                    </span>
-                    <span className="bg-white/90 text-gray-800 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">
-                      {model.kind === 'carte' ? 'Carte' : 'Animée'}
-                    </span>
-                  </div>
-
-                  {/* Titre & sous-titre sur l'image */}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-xl sm:text-2xl font-serif font-bold text-white mb-1 drop-shadow-md">
-                      {model.name}
-                    </h3>
-                    <p className="text-xs text-gray-200 line-clamp-1 drop-shadow-xs">
-                      {model.subtitle}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Caractéristiques du modèle */}
-                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between gap-5 bg-white">
-                  <div className="space-y-2.5 text-xs text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Sparkles size={14} className="text-[#b8924a] shrink-0" />
-                      <span>Animation visuelle unique &amp; rideaux/sceaux interactifs</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Music size={14} className="text-[#b8924a] shrink-0" />
-                      <span>Lecteur audio avec musique de fond immersive</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-[#b8924a] shrink-0" />
-                      <span>Formulaire RSVP temps réel avec gestion des invités &amp; QR Code</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-[#b8924a] shrink-0" />
-                      <span>Programme de la journée &amp; itinéraire GPS Google Maps</span>
-                    </div>
-                  </div>
-
-                  {/* Deux boutons d'action : Voir la démo + Choisir ce modèle */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                name={model.name}
+                image={model.image}
+                kind={model.kind}
+                badge={model.badge}
+                eyebrow={model.category}
+                description={model.subtitle}
+                onPreview={() => setDemoModelId(model.id)}
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                actions={
+                  <div className="grid grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => setDemoModelId(model.id)}
-                      className="px-4 py-3 rounded-2xl border border-gray-200 hover:border-black text-gray-800 font-bold text-xs flex items-center justify-center gap-2 transition-all bg-gray-50/60 hover:bg-gray-100"
+                      className="btn-lux-light !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
                     >
-                      <Eye size={15} className="text-[#b8924a]" />
-                      <span>Voir le modèle en entier</span>
+                      <Eye size={14} className="text-[#8f6f33] shrink-0" />
+                      Voir
                     </button>
-
                     <button
                       type="button"
                       onClick={() => handleChooseModel(model.id)}
-                      className="px-4 py-3 rounded-2xl bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] font-bold text-xs flex items-center justify-center gap-2 transition-all border border-[#b8924a]/40 shadow-md hover:shadow-lg active:scale-95"
+                      className="btn-lux !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
                     >
-                      <span>Choisir ce modèle</span>
-                      <ArrowRight size={14} />
+                      Choisir
+                      <ArrowRight size={14} className="text-[#f0d999] shrink-0" />
                     </button>
                   </div>
-                </div>
-              </div>
+                }
+              />
             ))}
           </div>
 
           {/* Rassurance */}
-          <div className="max-w-3xl mx-auto w-full pt-4 pb-8 flex items-center justify-center gap-6 flex-wrap text-xs text-gray-500 border-t border-gray-200/70">
+          <div className="max-w-3xl mx-auto w-full pt-4 pb-8 flex items-center justify-center gap-6 flex-wrap text-xs text-gray-500 border-t border-[#c9a45e]/30">
             <span className="flex items-center gap-1.5">
               <Sparkles size={13} className="text-[#b8924a]" /> Personnalisation 100% en direct
             </span>
@@ -1240,6 +1259,72 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 </div>
 
                 {/* Carte d'accès & Lien direct */}
+                {isPrestatairesPlan(standardSuccessEvent.plan) ? (
+                  <div className="bg-[#fbf7f0] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#b8924a]/30 space-y-4 max-w-xl mx-auto">
+                    <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#24170d] to-[#120b06] border border-[#b8924a]/40 flex items-center justify-center shrink-0 text-[#f3e5ab] shadow-sm">
+                        <Crown size={26} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
+                          Formule Prestataires Activée · 0% Commission
+                        </span>
+                        <h4 className="font-serif font-bold text-gray-900 text-base truncate">
+                          {standardSuccessEvent.name}
+                        </h4>
+                        <p className="text-[11px] text-gray-500">
+                          {getPrestatairesQuotaLabel(standardSuccessEvent.plan)} · Dashboard Débloqué
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 bg-white rounded-2xl border border-gray-200 text-xs text-gray-700 space-y-1.5">
+                      <p className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                        <Sparkles size={14} className="text-[#b8924a]" /> Votre pack prestataires est opérationnel !
+                      </p>
+                      <p className="text-[11px] text-gray-600 leading-relaxed">
+                        Vous pouvez dès à présent explorer l&apos;annuaire de nos prestataires certifiés, envoyer vos demandes de devis et piloter votre budget et votre checklist en toute liberté.
+                      </p>
+                    </div>
+
+                    {/* Rappel des éléments d'authentification */}
+                    <div className="p-3.5 bg-white/90 rounded-2xl border border-gray-200/90 text-[11px] text-gray-700 space-y-1.5">
+                      <p className="font-bold text-gray-900 flex items-center gap-1.5">
+                        <Lock size={12} className="text-[#b8924a]" /> Éléments d&apos;authentification de l&apos;organisateur :
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <span className="text-gray-400">Nom de l&apos;organisateur :</span>{" "}
+                          <strong className="text-gray-900">{fullName || "Non spécifié"}</strong>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Identifiant Email :</span>{" "}
+                          <strong className="text-gray-900">{email || currentUser?.email}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Boutons d'action prestataires */}
+                    <div className="flex flex-col gap-2.5 pt-1">
+                      <a
+                        href={`/dashboard/events/${standardSuccessEvent.id}/prestataires/catalogue`}
+                        className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#b8924a]/20 hover:brightness-105 transition-all cursor-pointer"
+                      >
+                        <Crown size={16} />
+                        <span>Explorer l&apos;Annuaire des Prestataires</span>
+                        <ArrowRight size={14} />
+                      </a>
+
+                      <a
+                        href={`/dashboard/events/${standardSuccessEvent.id}`}
+                        className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+                      >
+                        <LayoutDashboard size={15} className="text-[#b8924a]" />
+                        <span>Accéder à mon Dashboard Organisateur</span>
+                      </a>
+                    </div>
+                  </div>
+                ) : (
                 <div className="bg-[#fbf7f0] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[#b8924a]/30 space-y-4 max-w-xl mx-auto">
                   <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
                     <div className="w-12 h-16 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
@@ -1371,6 +1456,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     </p>
                   </div>
                 </div>
+              )}
 
                 {/* Boutons de navigation post-activation */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -1550,9 +1636,90 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           </div>
                         </div>
                       </div>
+
+                      {/* 4ème Option : Formule Prestataires Seuls (Sans Faire-Part) */}
+                      <div className="mt-3">
+                        <div
+                          onClick={() => choosePlan(prestatairesTier === '5' ? 'Prestataires (5)' : prestatairesTier === 'devis' ? 'Prestataires (Sur devis)' : 'Prestataires (10)')}
+                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                            isPrestatairesPlan(selectedPlan)
+                              ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-serif font-bold text-sm text-gray-900 flex items-center gap-1.5">
+                                <Crown size={15} className="text-[#b8924a]" /> Formule Prestataires Seuls
+                              </span>
+                              <span className="text-[10px] bg-[#b8924a]/15 text-[#8f6f33] font-bold px-2 py-0.5 rounded-full">
+                                Sans faire-part
+                              </span>
+                              {isPrestatairesPlan(selectedPlan) && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
+                            </div>
+                            <p className="text-[11px] text-gray-500 leading-relaxed">
+                              Accès complet au catalogue certifié Evenium (0% commission), budget &amp; checklist.
+                            </p>
+
+                            {/* Sous-sélecteur de Pack */}
+                            <div className="flex items-center gap-2 mt-2.5 flex-wrap" onClick={e => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPrestatairesTier('5');
+                                  choosePlan('Prestataires (5)');
+                                }}
+                                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all border ${
+                                  selectedPlan === 'Prestataires (5)'
+                                    ? "bg-[#1c140d] text-[#f3e5ab] border-[#b8924a]"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                                }`}
+                              >
+                                Pack 5 (10 000 FCFA)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPrestatairesTier('10');
+                                  choosePlan('Prestataires (10)');
+                                }}
+                                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all border ${
+                                  selectedPlan === 'Prestataires (10)'
+                                    ? "bg-[#1c140d] text-[#f3e5ab] border-[#b8924a]"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                                }`}
+                              >
+                                Pack 10 (15 000 FCFA)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPrestatairesTier('devis');
+                                  choosePlan('Prestataires (Sur devis)');
+                                }}
+                                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all border ${
+                                  selectedPlan === 'Prestataires (Sur devis)'
+                                    ? "bg-[#1c140d] text-[#f3e5ab] border-[#b8924a]"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                                }`}
+                              >
+                                Au-delà (Sur devis)
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="text-left sm:text-right sm:border-l sm:border-gray-200 sm:pl-4 shrink-0">
+                            <span className="text-[10px] text-gray-400 block font-normal">Paiement unique</span>
+                            <span className="text-lg font-bold font-serif text-gray-950">
+                              {selectedPlan === 'Prestataires (5)' ? '10 000' : selectedPlan === 'Prestataires (Sur devis)' ? 'Sur devis' : '15 000'}
+                            </span>
+                            {selectedPlan !== 'Prestataires (Sur devis)' && <span className="text-[10px] text-gray-500 block">FCFA</span>}
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Détails de l'événement : obligatoires pour Premium et Gold */}
+                    {/* Détails de l'événement : obligatoires pour Premium, Gold et Prestataires */}
                     {requiresEventDetails(selectedPlan) && (
                       <div className="pt-2 border-t border-gray-100">
                         <div className="mb-3">
@@ -1563,6 +1730,24 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                             Inclus dans la formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} : ces informations sont reportées automatiquement dans votre dashboard, où vous pourrez les modifier.
                           </p>
                         </div>
+
+                        {/* Champ Nom de l'événement pour la Formule Prestataires */}
+                        {isPrestatairesPlan(selectedPlan) && (
+                          <div className="mb-3 bg-[#fbf7f0] p-3.5 rounded-2xl border border-[#b8924a]/30">
+                            <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                              Nom de votre événement <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={customEventName}
+                              onChange={(e) => setCustomEventName(e.target.value)}
+                              placeholder="Ex: Mariage de Fatou & Moussa, Baptême d'Awa..."
+                              className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
+                            />
+                          </div>
+                        )}
+
                         <div className="bg-[#fbf7f0] p-3 sm:p-4 rounded-2xl border border-[#b8924a]/30 overflow-hidden">
                           <EventDetailsFields value={detailsWithInvitation} onChange={setEventDetails} showErrors={showDetailsErrors} compact />
                         </div>
@@ -1745,28 +1930,47 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   {/* Colonne Droite : Récapitulatif Direct de l'Événement (5 cols) */}
                   <div className="lg:col-span-5 bg-[#fbf7f0] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-200 space-y-3.5 sm:space-y-4 min-w-0">
                     
-                    <div className="flex items-center gap-3 pb-3 border-b border-gray-200 min-w-0">
-                      <div className="w-14 h-20 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
-                        <Image
-                          key={currentModel.id}
-                          src={currentModel.image}
-                          alt={currentModel.name}
-                          fill
-                          className="object-cover"
-                        />
+                    {isPrestatairesPlan(selectedPlan) ? (
+                      <div className="flex items-center gap-3 pb-3 border-b border-gray-200 min-w-0">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#24170d] to-[#120b06] border border-[#b8924a]/50 flex items-center justify-center shrink-0 text-[#f3e5ab] shadow-sm">
+                          <Crown size={24} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
+                            Formule Prestataires Seuls
+                          </span>
+                          <h4 className="font-serif font-bold text-gray-900 text-sm truncate">
+                            {selectedPlan}
+                          </h4>
+                          <p className="text-[11px] text-gray-500 truncate">
+                            {getPrestatairesQuotaLabel(selectedPlan)} · 0% commission
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
-                          {currentModel.badge}
-                        </span>
-                        <h4 className="font-serif font-bold text-gray-900 text-sm truncate">
-                          {currentModel.name}
-                        </h4>
-                        <p className="text-[11px] text-gray-500 truncate">
-                          {selectedEventCategory}
-                        </p>
+                    ) : (
+                      <div className="flex items-center gap-3 pb-3 border-b border-gray-200 min-w-0">
+                        <div className="w-14 h-20 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
+                          <Image
+                            key={currentModel.id}
+                            src={currentModel.image}
+                            alt={currentModel.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
+                            {currentModel.badge}
+                          </span>
+                          <h4 className="font-serif font-bold text-gray-900 text-sm truncate">
+                            {currentModel.name}
+                          </h4>
+                          <p className="text-[11px] text-gray-500 truncate">
+                            {selectedEventCategory}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Informations reprises automatiquement de l'invitation */}
                     <div className="space-y-2 text-xs">
@@ -1777,7 +1981,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                       <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1 min-w-0">
                         <p className="text-gray-500 text-[11px]">Nom officiel de l&apos;événement :</p>
                         <p className="font-serif font-bold text-gray-900 text-sm break-words">
-                          {eventMetadata.name}
+                          {isPrestatairesPlan(selectedPlan) ? (customEventName || "Mon Événement") : eventMetadata.name}
                         </p>
                       </div>
 
@@ -1785,14 +1989,14 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
                           <p className="text-gray-400 text-[10px]">Date &amp; Heure :</p>
                           <p className="font-semibold text-gray-800 text-[11px] truncate">
-                            {eventMetadata.date} à {eventMetadata.time}
+                            {detailsWithInvitation.date || eventMetadata.date} {detailsWithInvitation.time ? `à ${detailsWithInvitation.time}` : ''}
                           </p>
                         </div>
 
                         <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
                           <p className="text-gray-400 text-[10px]">Lieu :</p>
                           <p className="font-semibold text-gray-800 text-[11px] truncate">
-                            {eventMetadata.location || "Non spécifié"}
+                            {detailsWithInvitation.location || eventMetadata.location || "Non spécifié"}
                           </p>
                         </div>
                       </div>
@@ -1802,11 +2006,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     <div className="pt-3 border-t border-gray-200">
                       <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
                         <span>Formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} :</span>
-                        <span>{planPrice.toLocaleString('fr-FR')} FCFA</span>
+                        <span>{selectedPlan === 'Prestataires (Sur devis)' ? 'Sur devis' : `${planPrice.toLocaleString('fr-FR')} FCFA`}</span>
                       </div>
                       <div className="flex items-center justify-between text-base font-bold text-black">
                         <span>Total à régler :</span>
-                        <span className="text-[#b8924a] font-serif text-lg">{planPrice.toLocaleString('fr-FR')} FCFA</span>
+                        <span className="text-[#b8924a] font-serif text-lg">
+                          {selectedPlan === 'Prestataires (Sur devis)' ? 'Sur devis' : `${planPrice.toLocaleString('fr-FR')} FCFA`}
+                        </span>
                       </div>
                     </div>
 

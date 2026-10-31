@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { DiamondRule } from "@/components/landing/LuxOrnaments";
 import { usePathname } from "next/navigation";
 import { User } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
@@ -49,34 +51,41 @@ export function PublicFooter() {
 
   return (
     <footer
-      className="bg-gray-50 border-t border-gray-200 py-10 sm:py-12 mt-auto"
+      className="relative bg-gradient-to-b from-[#1f140b] to-[#120b06] text-[#e9dcc6] pt-14 pb-10 mt-auto"
       style={{
         paddingBottom: "max(2.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem))",
         paddingLeft: "env(safe-area-inset-left, 0px)",
         paddingRight: "env(safe-area-inset-right, 0px)",
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-        <p className="text-gray-500">© 2026 Evenium. Tous droits réservés.</p>
-        <div className="flex flex-wrap items-center gap-6">
+      <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c9a45e] to-transparent" />
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center text-center gap-6">
+        <Image src="/logo-horizontal-light.png" alt="Evenium" width={150} height={38} className="w-[130px] h-auto object-contain" />
+        <p className="font-serif italic text-lg text-[#e7c97f]">L’élite de l’événementiel</p>
+        <DiamondRule />
+        <nav className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] uppercase tracking-[0.2em]">
           {user ? (
-            <Link href={dashboardHref} className="text-gray-600 font-medium hover:text-black transition-colors flex items-center gap-2">
-              <User size={16} />
+            <Link href={dashboardHref} className="hover:text-[#f0d999] transition-colors flex items-center gap-2">
+              <User size={14} className="text-[#c9a45e]" />
               Tableau de bord
             </Link>
           ) : (
-            <Link href="/login" className="text-gray-600 font-medium hover:text-black transition-colors flex items-center gap-2">
-              <User size={16} />
+            <Link href="/login" className="hover:text-[#f0d999] transition-colors flex items-center gap-2">
+              <User size={14} className="text-[#c9a45e]" />
               Se connecter
             </Link>
           )}
-          <Link href="/espace-prestataire" className="text-gray-600 font-medium hover:text-black transition-colors">
+          <Link href="/invitations" className="hover:text-[#f0d999] transition-colors">
+            Modèles
+          </Link>
+          <Link href="/espace-prestataire" className="hover:text-[#f0d999] transition-colors">
             Espace Prestataire
           </Link>
-          <Link href="/admin" className="text-gray-500 font-medium hover:text-black transition-colors">
+          <Link href="/admin" className="text-[#e9dcc6]/60 hover:text-[#f0d999] transition-colors">
             Administration
           </Link>
-        </div>
+        </nav>
+        <p className="text-xs text-[#e9dcc6]/50">© 2026 Evenium. Tous droits réservés.</p>
       </div>
     </footer>
   );

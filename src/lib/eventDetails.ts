@@ -32,8 +32,12 @@ export const EMPTY_EVENT_DETAILS: EventDetails = {
   notes: "",
 };
 
-/** Les formules Premium et Gold exigent ces détails à l'inscription. */
-export const requiresEventDetails = (plan?: string | null) => plan === "Premium" || plan === "Gold";
+/** Les formules Premium, Gold et Prestataires exigent ces détails à l'inscription. */
+export const requiresEventDetails = (plan?: string | null) => {
+  if (!plan) return false;
+  const p = plan.toLowerCase();
+  return p === "premium" || p === "gold" || p.includes("prestataire");
+};
 
 export function missingEventDetails(d: EventDetails): string[] {
   const missing: string[] = [];

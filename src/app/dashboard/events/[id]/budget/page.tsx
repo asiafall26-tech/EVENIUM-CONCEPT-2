@@ -6,6 +6,7 @@ import Link from "next/link";
 import { use, useState, useEffect, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
+import { hasPrestatairesAccess } from "@/lib/formules";
 
 export default function BudgetDashboardPage({
   params,
@@ -99,20 +100,17 @@ export default function BudgetDashboardPage({
     return <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto flex items-center justify-center h-[80vh]">Événement introuvable.</div>;
   }
 
-  if (event.plan !== "Gold") {
+  if (!hasPrestatairesAccess(event.plan)) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
         <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
           <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
-          <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
+          <h2 className="font-serif text-2xl font-bold text-black mb-3">Accès Budget Réservé</h2>
           <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-            La gestion budgétaire avancée est exclusivement réservée aux événements utilisant la formule Gold. Gérez vos dépenses et maîtrisez vos coûts en toute simplicité.
+            La gestion budgétaire est réservée aux événements utilisant la formule Gold VIP ou la formule Prestataires.
           </p>
-          <button className="w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors">
-            Passer à la formule Gold
-          </button>
           <div className="mt-4">
              <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
                Retour à l'aperçu

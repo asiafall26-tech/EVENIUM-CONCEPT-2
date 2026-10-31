@@ -2,14 +2,27 @@
 
 import { mockInvitationModels, defaultClassification } from "@/data/mock/invitations";
 import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
-import { Sparkles, PlayCircle, Eye, ArrowRight } from "lucide-react";
-import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import ModelCard from "@/components/landing/ModelCard";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { classificationOf, fetchModelDefaults, modelCoverOf, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
 import { customModelId, customModelUrl, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
 import { previewHref } from "@/lib/modelPreview";
+import { Fleuron, DiamondRule, LuxFrame } from "@/components/landing/LuxOrnaments";
+
+/** Titre de rubrique de la galerie : sur-titre doré, titre Playfair, filet. */
+function GallerySectionTitle({ eyebrow, title, lead }: { eyebrow: string; title: React.ReactNode; lead: string }) {
+  return (
+    <div className="text-center max-w-2xl mx-auto mb-10">
+      <p className="pl-[0.3em] text-[10.5px] font-medium uppercase tracking-[0.3em] text-[#8f6f33]">{eyebrow}</p>
+      <h2 className="mt-2 font-serif not-italic text-3xl sm:text-4xl text-[#1d120a]">{title}</h2>
+      <DiamondRule className="mt-4" />
+      <p className="mt-4 text-sm text-[#3d3126] leading-relaxed">{lead}</p>
+    </div>
+  );
+}
 
 export default function InvitationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Mariage");
@@ -96,10 +109,16 @@ export default function InvitationsPage() {
       : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8";
 
   return (
-    <main className="py-24 px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
+    <div className="bg-silk">
+    <main className="py-20 sm:py-24 px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
       <div className="text-center mb-12">
-        <h1 className="font-serif text-4xl md:text-5xl mb-4 text-primary">Modèles d&apos;Invitations</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto font-sans">
+        <Fleuron className="mx-auto w-44 md:w-52 h-auto mb-3" />
+        <p className="pl-[0.35em] text-[11px] md:text-xs font-medium tracking-[0.35em] uppercase text-[#8f6f33] mb-4">La collection</p>
+        <h1 className="font-serif not-italic text-4xl md:text-6xl mb-2 text-[#1d120a]">
+          Modèles d&apos;<span className="italic text-gold-foil">Invitations</span>
+        </h1>
+        <DiamondRule className="mt-5 mb-6" />
+        <p className="text-[#3d3126] max-w-2xl mx-auto font-sans leading-relaxed">
           Faites forte impression avec nos invitations digitales haute couture.
           Touchez n&apos;importe quel modèle pour explorer directement son univers interactif.
         </p>
@@ -107,7 +126,7 @@ export default function InvitationsPage() {
 
       {/* Barre de sélection de catégorie d'événement */}
       <div className="max-w-4xl mx-auto mb-14">
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-white/70 backdrop-blur-md p-2 rounded-2xl border border-gray-200/80 shadow-sm">
+        <div className="card-lux flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-2">
           {[
             { id: "Tous", label: "Tous les modèles", icon: "✨", count: siteModels.length, soon: false },
             // Tous les types d'événements de l'application ; « Bientôt » tant qu'aucun modèle n'existe
@@ -124,8 +143,8 @@ export default function InvitationsPage() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
                   isActive
-                    ? "bg-black text-[#b8924a] shadow-lg shadow-black/15 scale-105 border border-[#b8924a]/50"
-                    : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-transparent"
+                    ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-[0_0_20px_-6px_rgba(233,196,120,0.7)] border border-[#c9a45e]"
+                    : "bg-transparent hover:bg-[#f2e4cf]/70 text-gray-700 border border-transparent"
                 }`}
               >
                 <span>{cat.icon}</span>
@@ -147,92 +166,39 @@ export default function InvitationsPage() {
 
       {/* Invitations Animées (Mises en avant pour la catégorie) */}
       <div className="max-w-6xl mx-auto mb-20">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="text-xs bg-[#b8924a]/20 text-[#7a5e2b] border border-[#b8924a]/60 px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                {selectedCategory === "Tous" ? "✨ Tous les modèles" : `${EVENT_TYPE_ICONS[selectedCategory as keyof typeof EVENT_TYPE_ICONS] ?? "✨"} ${selectedCategory}`}
-              </span>
-              <span className="text-xs bg-[#6b1f2a] text-pink-200 px-3 py-1 rounded-full font-semibold tracking-wider uppercase">
-                {animatedModels.length} {animatedModels.length > 1 ? "Modèles Animés" : "Modèle Animé"}
-              </span>
-            </div>
-            <h2 className="font-serif text-3xl sm:text-4xl text-gray-900">
-              Invitations Animées &amp; Interactives
-            </h2>
-            <p className="text-sm text-gray-500 mt-1.5 max-w-2xl leading-relaxed">
-              Expériences immersives haute couture pour célébrer votre mariage : ouverture d&apos;enveloppe au sceau de cire, vidéos cinématiques, mélodies romantiques et confirmation de présence instantanée.
-            </p>
-          </div>
-          <div className="hidden lg:block h-px bg-gray-200 flex-1 max-w-xs mb-3"></div>
-        </div>
+        <GallerySectionTitle
+          eyebrow={`${selectedCategory === "Tous" ? "Tous les modèles" : selectedCategory} · ${animatedModels.length} ${animatedModels.length > 1 ? "modèles animés" : "modèle animé"}`}
+          title={<>Invitations <span className="italic text-gold-foil">Animées</span> &amp; Interactives</>}
+          lead="Expériences immersives haute couture : ouverture d'enveloppe au sceau de cire, vidéos cinématiques, mélodies et confirmation de présence instantanée."
+        />
 
         {animatedModels.length > 0 ? (
           <div className={gridClass(animatedModels.length)}>
             {animatedModels.map((model) => (
-              <Link
+              <ModelCard
                 key={model.id}
                 href={previewHref(model)}
-                className="group relative flex flex-col items-center block w-full focus:outline-none"
-              >
-                <div className="w-full aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all relative cursor-pointer border border-gray-200 group-hover:border-[#b8924a]/60 group-hover:-translate-y-1">
-                  <Image
-                    src={model.thumbnail}
-                    alt={model.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-
-                  {/* Bouton d'accès direct sur hover */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center z-20 gap-3">
-                    <span className="bg-white text-primary px-6 py-2.5 rounded-full font-bold text-sm shadow-xl flex items-center gap-2 group-hover:scale-105 transition-transform">
-                      <Eye size={16} className="text-[#b8924a]" /> Voir le modèle
-                    </span>
-                  </div>
-
-                  {/* Badges sur l'image */}
-                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
-                    <span className="bg-white/95 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 shadow-sm text-gray-900 border border-gray-100">
-                      <PlayCircle size={13} className="text-[#6b1f2a]" /> Animée
-                    </span>
-                    {model.isPremium && (
-                      <span className="bg-gradient-to-r from-[#b8924a] to-[#F3E5AB] text-black px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-sm flex items-center gap-1 border border-[#b8924a]/50">
-                        <Sparkles size={11} /> Signature
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Présentation texte aérée avec lien explicite */}
-                <div className="mt-4 text-center px-1">
-                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#7a5e2b] bg-[#b8924a]/15 px-2.5 py-0.5 rounded-full mb-1.5 border border-[#b8924a]/30">
-                    💍 Modèle {model.category}
-                  </span>
-                  <h3 className="font-serif text-xl font-bold text-gray-900 leading-snug group-hover:text-[#8f6f33] transition-colors">
-                    {model.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 line-clamp-2 max-w-sm mt-1.5 leading-relaxed">
-                    {model.description}
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8f6f33] group-hover:text-black transition-colors mt-2.5">
-                    Découvrir l&apos;invitation <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </div>
-              </Link>
+                name={model.name}
+                image={model.thumbnail}
+                kind="animée"
+                eyebrow={`Modèle ${model.category}`}
+                description={model.description}
+                badge={model.isPremium ? "Signature" : undefined}
+              />
             ))}
           </div>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-3xl p-6 sm:p-10 lg:p-12 text-center max-w-lg mx-auto">
-            <p className="text-4xl mb-3">🎨</p>
-            <h3 className="font-serif text-xl font-bold text-gray-900 mb-2">Bientôt disponible</h3>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className="card-lux relative p-8 sm:p-12 text-center max-w-lg mx-auto">
+            <LuxFrame className="inset-2.5" />
+            <Fleuron className="mx-auto w-36 h-auto mb-4" />
+            <h3 className="font-serif not-italic text-2xl text-[#1d120a] mb-2">Bientôt disponible</h3>
+            <p className="text-sm text-[#3d3126] mb-7">
               Les modèles pour la catégorie <strong>{selectedCategory}</strong> sont en cours de création.
             </p>
             <button
               type="button"
               onClick={() => setSelectedCategory("Mariage")}
-              className="px-6 py-2.5 bg-black text-[#b8924a] rounded-full text-xs font-bold shadow-md hover:scale-105 transition-all"
+              className="btn-lux relative px-7 py-3.5 text-[11px]"
             >
               Voir la collection Mariage
             </button>
@@ -242,85 +208,52 @@ export default function InvitationsPage() {
 
       {/* Cartes Classiques */}
       {cardModels.length > 0 && (
-        <div className="max-w-5xl mx-auto mb-20">
-          <div className="flex items-center gap-4 mb-8">
-            <h2 className="font-serif text-3xl text-gray-900">Cartes Classiques</h2>
-            <div className="h-px bg-gray-200 flex-1"></div>
-          </div>
+        <div className="max-w-6xl mx-auto mb-20">
+          <GallerySectionTitle
+            eyebrow={`${cardModels.length} ${cardModels.length > 1 ? "cartes" : "carte"}`}
+            title={<>Cartes <span className="italic text-gold-foil">Classiques</span></>}
+            lead="L'élégance intemporelle d'un faire-part épuré, prêt à partager en un instant."
+          />
           <div className={gridClass(cardModels.length)}>
             {cardModels.map((model) => (
-              <Link
+              <ModelCard
                 key={model.id}
                 href={previewHref(model)}
-                className="group relative flex flex-col items-center block w-full focus:outline-none"
-              >
-                <div className="w-full aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all relative cursor-pointer border border-gray-200 group-hover:border-[#b8924a]/60 group-hover:-translate-y-1">
-                  <Image
-                    src={model.thumbnail}
-                    alt={model.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center z-20 gap-3">
-                    <span className="bg-white text-primary px-6 py-2.5 rounded-full font-bold text-sm shadow-xl flex items-center gap-2 group-hover:scale-105 transition-transform">
-                      <Eye size={16} className="text-[#b8924a]" /> Voir le modèle
-                    </span>
-                  </div>
-
-                  {model.isPremium && (
-                    <div className="absolute top-4 right-4 z-10 bg-[#b8924a] text-black px-2.5 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1">
-                      <Sparkles size={12} /> Signature
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 text-center">
-                  <h3 className="font-serif text-xl font-semibold text-gray-900 group-hover:text-[#8f6f33] transition-colors">
-                    {model.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 line-clamp-2 max-w-sm mt-1">
-                    {model.description}
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8f6f33] group-hover:text-black transition-colors mt-2">
-                    Voir l&apos;invitation <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </div>
-              </Link>
+                name={model.name}
+                image={model.thumbnail}
+                kind="carte"
+                eyebrow={`Modèle ${model.category}`}
+                description={model.description}
+                badge={model.isPremium ? "Signature" : undefined}
+              />
             ))}
           </div>
         </div>
       )}
 
       {/* CTA final en bas de la page Galerie */}
-      <div className="max-w-4xl mx-auto mt-16 p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-black via-gray-900 to-black text-white text-center border border-[#b8924a]/30 shadow-2xl relative overflow-hidden">
+      <div className="card-lux max-w-4xl mx-auto mt-16 px-6 py-12 sm:p-14 text-center relative overflow-hidden">
+        <LuxFrame className="inset-3" />
         <div className="relative z-10">
-          <div className="w-12 h-12 rounded-full bg-[#b8924a]/20 border border-[#b8924a]/40 text-[#b8924a] mx-auto flex items-center justify-center mb-4">
-            <Sparkles size={22} />
-          </div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold mb-3">
-            Vous avez trouvé l&apos;inspiration ?
+          <Fleuron className="mx-auto w-40 h-auto mb-4" />
+          <h2 className="font-serif not-italic text-3xl sm:text-4xl text-[#1d120a] mb-3">
+            Vous avez trouvé l&apos;<span className="italic text-gold-foil">inspiration</span> ?
           </h2>
-          <p className="text-xs sm:text-sm text-gray-300 max-w-xl mx-auto mb-6 leading-relaxed">
+          <p className="text-sm text-[#3d3126] max-w-xl mx-auto mb-8 leading-relaxed">
             Créez votre événement en quelques minutes, configurez votre invitation d&apos;exception et commencez à inviter vos proches sans attendre.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/create"
-              className="px-4 sm:px-6 lg:px-8 py-3.5 rounded-full bg-gradient-to-r from-[#b8924a] to-[#F3E5AB] text-black font-extrabold text-sm shadow-xl shadow-[#b8924a]/20 hover:scale-105 transition-all flex items-center gap-2"
-            >
-              <Sparkles size={16} /> Créer mon événement
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-8">
+            <Link href="/create" className="btn-lux group px-8 py-4 text-xs sm:text-[13px]">
+              Créer mon événement
+              <ArrowRight size={16} strokeWidth={1.5} className="text-[#f0d999] transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link
-              href="/"
-              className="px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-sm transition-all border border-white/20"
-            >
+            <Link href="/" className="link-lux text-xs">
               Retour à l&apos;accueil
             </Link>
           </div>
         </div>
       </div>
     </main>
+    </div>
   );
 }

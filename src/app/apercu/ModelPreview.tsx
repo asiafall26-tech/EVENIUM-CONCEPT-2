@@ -50,9 +50,9 @@ export default function ModelPreview({ src, name, cover, showBack }: Props) {
             <Link
               href="/invitations"
               aria-label="Retour aux modèles"
-              className="absolute left-5 top-5 z-20 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/35 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-black/55"
+              className="btn-lux absolute left-5 top-5 z-20 !gap-2 px-5 py-2.5 text-[11px]"
             >
-              <ArrowLeft size={16} /> Retour aux modèles
+              <ArrowLeft size={15} className="text-[#f0d999]" /> Retour aux modèles
             </Link>
           )}
 
@@ -61,7 +61,7 @@ export default function ModelPreview({ src, name, cover, showBack }: Props) {
             des bandes vides sur les côtés), jamais moins de 430 px pour ne pas comprimer l'invitation sur un petit écran.
           */}
           <div
-            className="relative z-10 mx-auto h-dvh max-w-full overflow-hidden bg-white shadow-[0_0_80px_rgba(0,0,0,0.55)]"
+            className="relative z-10 mx-auto h-dvh max-w-full overflow-hidden bg-white shadow-[0_0_80px_rgba(0,0,0,0.55)] border-x border-[#c9a45e]/60"
             style={{ width: "clamp(430px, 46dvh, 480px)" }}
           >
             <iframe src={demoSrc(src)} title={name} allow="autoplay; fullscreen" className="block h-full w-full border-0" />

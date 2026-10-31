@@ -497,11 +497,14 @@ export default function InvitationsDashboardPage({
       {/* 1. MON INVITATION + ACTIONS */}
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
         <div className="flex gap-4 sm:gap-6 items-start">
-          <div className="w-24 sm:w-36 aspect-[3/4] shrink-0 rounded-2xl overflow-hidden relative bg-gray-100 border border-gray-200">
-            <div className="absolute inset-0 flex items-center justify-center text-[#b8924a] opacity-20">
-              <Sparkles size={40} />
+          <div className="card-lux w-24 sm:w-36 shrink-0 p-1.5 !rounded-2xl">
+            <div className="aspect-[3/4] rounded-xl overflow-hidden relative bg-[#1d120a]">
+              <div className="absolute inset-0 flex items-center justify-center text-[#c9a45e] opacity-30">
+                <Sparkles size={40} />
+              </div>
+              {cover && <Image src={cover} alt={getModelName()} fill sizes="144px" className="object-cover" />}
+              <div aria-hidden className="absolute inset-1.5 rounded-lg border border-[#e7c97f]/55 pointer-events-none" />
             </div>
-            {cover && <Image src={cover} alt={getModelName()} fill sizes="144px" className="object-cover" />}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">

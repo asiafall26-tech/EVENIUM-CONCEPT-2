@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getInvitationModelName, getInvitationModelThumbnail } from "@/data/mock/invitations";
 import { computeEventDates } from "@/utils/date-helpers";
+import { computeEventPrice } from "@/lib/formules";
 import AdminPurchasesDashboard, {
   ClientPurchase,
   PrestatairePurchase,
@@ -62,17 +63,7 @@ export default async function AdminDashboardPage() {
     // Gold + Animée: 20 000 FCFA | Gold + Carte: 15 000 FCFA
     // Premium + Animée: 10 000 FCFA | Premium + Carte: 7 500 FCFA
     // Standard + Animée: 5 000 FCFA | Standard + Carte: 3 500 FCFA
-    const amount = isGold
-      ? isAnim
-        ? 20000
-        : 15000
-      : isStandard
-      ? isAnim
-        ? 5000
-        : 3500
-      : isAnim
-      ? 10000
-      : 7500;
+    const amount = computeEventPrice(e.plan, e.format);
 
     // Real payment lookup (from transactions table if present, otherwise validated online payment)
     const eventTx = (realTransactions || []).find((t: any) => t.event_id === e.id);
@@ -93,7 +84,7 @@ export default async function AdminDashboardPage() {
       eventEndDate: datesInfo.endDateFormatted,
       autoClosingDate: datesInfo.closingDateFormatted,
       closingDateShort: datesInfo.closingDateShort,
-      plan: isGold ? "Gold" : "Premium",
+      plan: e.plan || (isGold ? "Gold" : isStandard ? "Standard" : "Premium"),
       format: isAnim ? "Animée" : "Carte",
       invitationModelId: modelId,
       invitationModelName: modelName,

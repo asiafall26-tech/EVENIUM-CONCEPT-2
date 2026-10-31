@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Jost, Parisienne } from "next/font/google";
+import { Cormorant_Garamond, Jost, Parisienne, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -19,6 +19,13 @@ const parisienne = Parisienne({
   variable: "--font-parisienne",
   subsets: ["latin"],
   weight: "400",
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 export const viewport: Viewport = {
@@ -45,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="fr"
-      className={`${cormorant.variable} ${jost.variable} ${parisienne.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${jost.variable} ${parisienne.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <Providers>

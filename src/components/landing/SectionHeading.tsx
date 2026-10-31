@@ -1,6 +1,7 @@
 import Reveal from "./Reveal";
+import { Fleuron, DiamondRule } from "./LuxOrnaments";
 
-/** Shared section header: gold eyebrow between rules, serif title, optional lead. */
+/** Shared section header: gold fleuron, eyebrow, Playfair title, diamond rule, optional lead. */
 export default function SectionHeading({
   eyebrow,
   title,
@@ -16,12 +17,13 @@ export default function SectionHeading({
 }) {
   return (
     <Reveal className={`text-center max-w-3xl mx-auto ${className}`}>
-      <p className="inline-flex items-center gap-3 text-accent text-xs md:text-sm font-semibold tracking-[0.25em] uppercase mb-5">
-        <span className="w-8 h-px bg-accent" /> {eyebrow} <span className="w-8 h-px bg-accent" />
+      <Fleuron className="mx-auto w-40 md:w-48 h-auto mb-3" />
+      <p className={`pl-[0.35em] text-[11px] md:text-xs font-medium tracking-[0.35em] uppercase mb-5 ${dark ? "text-[#e7c97f]" : "text-[#8f6f33]"}`}>
+        {eyebrow}
       </p>
-      <h2 className={`font-serif text-3xl md:text-5xl leading-tight ${dark ? "text-white" : "text-primary"}`}>{title}</h2>
-      <div className="ornament mt-6" aria-hidden="true">✦</div>
-      {lead && <p className={`mt-5 text-lg leading-relaxed ${dark ? "text-white/65" : "text-gray-600"}`}>{lead}</p>}
+      <h2 className={`font-serif not-italic text-3xl md:text-5xl leading-tight ${dark ? "text-[#fbf3e4]" : "text-[#1d120a]"}`}>{title}</h2>
+      <DiamondRule className="mt-6" />
+      {lead && <p className={`mt-5 text-lg leading-relaxed ${dark ? "text-white/70" : "text-[#3d3126]"}`}>{lead}</p>}
     </Reveal>
   );
 }

@@ -8,6 +8,7 @@ import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import { eventDetailsFromRow, hasExtraDetails, requiresEventDetails } from "@/lib/eventDetails";
+import { hasPrestatairesAccess, isPrestatairesPlan, computeEventPrice, getPrestatairesQuotaLabel } from "@/lib/formules";
 
 const formatFrenchDate = (d?: string) => {
   if (!d || d === "À définir") return d || "Date à définir";
@@ -263,7 +264,7 @@ export default function EventDashboardPage({
         );
       })()}
 
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${event.plan === "Gold" ? "lg:grid-cols-4" : "lg:grid-cols-2 max-w-2xl"} gap-6 mb-8`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${hasPrestatairesAccess(event.plan) ? "lg:grid-cols-4" : "lg:grid-cols-2 max-w-2xl"} gap-6 mb-8`}>
         {/* Formule Card */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col relative overflow-hidden">
           <div className="absolute top-0 right-0 p-3 opacity-[0.03]">
@@ -274,23 +275,32 @@ export default function EventDashboardPage({
               <Sparkles size={18} className="text-accent" /> Formule {event.plan}
             </div>
             <span className="bg-accent/10 text-accent px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-              {event.format === "Animée" ? "Animée · Musique" : "Statique · Sans son"}
+              {isPrestatairesPlan(event.plan)
+                ? "Sans faire-part · Prestataires"
+                : event.format === "Animée"
+                  ? "Animée · Musique"
+                  : "Statique · Sans son"}
             </span>
           </div>
           <div className="mb-2 relative z-10">
             <span className="text-3xl font-semibold">
-              {event.plan === "Standard"
-                ? (event.format === "Animée" ? "5 000" : "3 500")
-                : event.plan === "Premium"
-                  ? (event.format === "Animée" ? "10 000" : "7 500")
-                  : (event.format === "Animée" ? "20 000" : "15 000")}
+              {event.plan?.includes("devis")
+                ? "Sur devis"
+                : computeEventPrice(event.plan, event.format).toLocaleString('fr-FR')}
             </span>
-            <span className="text-gray-500 text-sm ml-1">FCFA</span>
+            {!event.plan?.includes("devis") && <span className="text-gray-500 text-sm ml-1">FCFA</span>}
           </div>
           <p className="text-sm text-gray-500 mb-4">Paiement unique réglé</p>
           
           <ul className="text-xs text-gray-500 space-y-1.5 mt-auto relative z-10">
-            {event.plan === "Gold" ? (
+            {isPrestatairesPlan(event.plan) ? (
+              <>
+                <li>• Accès prestataires certifiés (0% commission)</li>
+                <li>• {getPrestatairesQuotaLabel(event.plan)}</li>
+                <li>• Suivi du budget global &amp; dépenses</li>
+                <li>• To-do list &amp; Planning Jour J</li>
+              </>
+            ) : event.plan === "Gold" ? (
               <>
                 <li>• Accès prestataires certifiés (0% commission)</li>
                 <li>• Suivi du budget global &amp; dépenses</li>
@@ -316,7 +326,7 @@ export default function EventDashboardPage({
         </div>
 
         {/* Budget Card */}
-        {event.plan === "Gold" && (
+        {hasPrestatairesAccess(event.plan) && (
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col">
             <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
               <Wallet size={18} /> Budget
@@ -336,24 +346,26 @@ export default function EventDashboardPage({
         )}
 
         {/* Guests Card */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
-            <Users size={18} /> Invités ({guests.total})
-          </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center text-sm">
-              <span className="flex items-center gap-2 text-green-600"><CheckCircle size={16} /> Confirmés</span>
-              <span className="font-semibold text-green-700">{guests.confirmed}</span>
+        {!isPrestatairesPlan(event.plan) && (
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
+              <Users size={18} /> Invités ({guests.total})
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="flex items-center gap-2 text-amber-500"><Clock size={16} /> En attente</span>
-              <span className="font-semibold text-amber-600">{guests.pending}</span>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center text-sm">
+                <span className="flex items-center gap-2 text-green-600"><CheckCircle size={16} /> Confirmés</span>
+                <span className="font-semibold text-green-700">{guests.confirmed}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="flex items-center gap-2 text-amber-500"><Clock size={16} /> En attente</span>
+                <span className="font-semibold text-amber-600">{guests.pending}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Tasks Card */}
-        {event.plan === "Gold" && (
+        {hasPrestatairesAccess(event.plan) && (
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
               <CheckSquare size={18} /> To-do List
