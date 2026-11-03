@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { CheckCircle, ArrowRight, ArrowLeft, X, Calendar, MapPin, Users, Info, Plus, Music, Camera, Utensils, Home, Briefcase, Paperclip } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { sendQuoteRequestPushAction } from "@/app/actions/notify";
-import { isPrestatairesPlan, getPrestatairesQuota } from "@/lib/formules";
 
 interface QuoteRequestModalProps {
   isOpen: boolean;
@@ -817,26 +816,6 @@ export function QuoteRequestModal({ isOpen, onClose, event, provider, service, o
       budget_indicatif: form.budget_indicatif ? Number(form.budget_indicatif) : null,
       budget_propose: form.budget_indicatif ? Number(form.budget_indicatif) : 0,
     };
-
-    // Vérification du quota pour les formules Prestataires
-    if (isPrestatairesPlan(event?.plan)) {
-      const quota = getPrestatairesQuota(event?.plan);
-      if (quota < Infinity) {
-        const { data: existingDemandes } = await supabase
-          .from('demandes_devis')
-          .select('prestataire_id')
-          .eq('event_id', event.id);
-
-        const contactedProviderIds = new Set((existingDemandes || []).map((d: any) => d.prestataire_id));
-        const isAlreadyContacted = contactedProviderIds.has(provider.id);
-
-        if (!isAlreadyContacted && contactedProviderIds.size >= quota) {
-          alert(`Votre formule (${event.plan}) est limitée à ${quota} prestataires sollicités maximum. Vous avez déjà sollicité ${contactedProviderIds.size} prestataires.`);
-          setLoading(false);
-          return;
-        }
-      }
-    }
 
     const { error } = await supabase.from('demandes_devis').insert(insertData);
 

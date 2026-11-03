@@ -4,7 +4,6 @@ import Link from "next/link";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import EventClosureBlock from "@/components/admin/EventClosureBlock";
 import { computeEventDates } from "@/utils/date-helpers";
-import { computeEventPrice, isPrestatairesPlan } from "@/lib/formules";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -67,7 +66,7 @@ export default async function AdminEvenementsPage() {
                   const modelName = getInvitationModelName(e.invitation_model_id || e.invitationModelId);
                   const isGold = (e.plan || '').toLowerCase() === 'gold';
                   const isAnim = e.format?.toLowerCase().includes('carte') ? false : true;
-                  const purchaseAmount = computeEventPrice(e.plan, e.format);
+                  const purchaseAmount = isGold ? (isAnim ? 20000 : 15000) : (isAnim ? 10000 : 7500);
                   const totalBudget = Number(e.budget_total || e.budget?.total || 0);
                   const datesInfo = computeEventDates(e.date, e.end_date);
                   
@@ -89,22 +88,22 @@ export default async function AdminEvenementsPage() {
                         <div>
                           <p className="font-semibold text-gray-900 text-base">{e.name}</p>
                           <p className="text-xs text-gray-500 mt-0.5">
-                            Modèle : <span className="text-[#7a5e2b] font-semibold">{isPrestatairesPlan(e.plan) ? "Formule Prestataires" : modelName}</span>
+                            Modèle : <span className="text-[#7a5e2b] font-semibold">{modelName}</span>
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase w-max ${
-                            isGold || isPrestatairesPlan(e.plan)
+                            isGold
                               ? "bg-[#b8924a]/20 text-[#7a5e2b] border border-[#b8924a]/40"
                               : "bg-gray-100 text-gray-800 border border-gray-200"
                           }`}>
-                            <Sparkles size={11} className={isGold || isPrestatairesPlan(e.plan) ? "text-[#8f6f33]" : "text-gray-500"} />
-                            Formule {e.plan || (isGold ? "Gold" : "Premium")}
+                            <Sparkles size={11} className={isGold ? "text-[#8f6f33]" : "text-gray-500"} />
+                            Formule {isGold ? "Gold" : "Premium"}
                           </span>
                           <span className="text-[11px] text-gray-500 font-medium">
-                            {isPrestatairesPlan(e.plan) ? "Sans faire-part" : isAnim ? "Modèle Animé" : "Modèle Carte"} • <strong className="text-emerald-700">{e.plan?.includes('devis') ? 'Sur devis' : `${purchaseAmount.toLocaleString()} FCFA`}</strong>
+                            {isAnim ? "Modèle Animé" : "Modèle Carte"} • <strong className="text-emerald-700">{purchaseAmount.toLocaleString()} FCFA</strong>
                           </span>
                         </div>
                       </td>

@@ -17,7 +17,6 @@ import { offerTagLine } from "@/lib/offres";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { sendQuoteAcceptedPushAction } from "@/app/actions/notify";
 import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
-import { hasPrestatairesAccess, isPrestatairesPlan, getPrestatairesQuota, getPrestatairesQuotaLabel } from "@/lib/formules";
 
 export default function PrestatairesDashboardPage({
   params,
@@ -250,7 +249,7 @@ export default function PrestatairesDashboardPage({
   };
 
   useEffect(() => {
-    if (hasPrestatairesAccess(event?.plan)) {
+    if (event?.plan === "Gold") {
       fetchDemandes();
 
       const channel = supabase.channel('client_demandes_sync')
@@ -370,17 +369,20 @@ export default function PrestatairesDashboardPage({
     notFound();
   }
 
-  if (!hasPrestatairesAccess(event.plan)) {
+  if (event.plan !== "Gold") {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
         <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
           <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
-          <h2 className="font-serif text-2xl font-bold text-black mb-3">Accès Prestataires Réservé</h2>
+          <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
           <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-            La gestion des prestataires est réservée aux événements utilisant la formule Gold VIP ou la formule Prestataires.
+            La gestion des prestataires est exclusivement réservée aux événements utilisant la formule Gold. Retrouvez tous vos contacts professionnels au même endroit.
           </p>
+          <button className="w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors">
+            Passer à la formule Gold
+          </button>
           <div className="mt-4">
              <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
                Retour à l'aperçu
@@ -390,10 +392,6 @@ export default function PrestatairesDashboardPage({
       </div>
     );
   }
-
-  const contactedEveniumCount = myPrestataires.filter(p => p.isPlatformProvider).length;
-  const quota = getPrestatairesQuota(event.plan);
-  const isPrestataire = isPrestatairesPlan(event.plan);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
@@ -407,35 +405,6 @@ export default function PrestatairesDashboardPage({
         </h1>
         <p className="text-gray-500 text-sm">Gérez l'équipe de professionnels qui fera le succès de votre événement.</p>
       </div>
-
-      {/* Tracker Quota pour la Formule Prestataires */}
-      {isPrestataire && (
-        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#24170d] via-[#332214] to-[#24170d] border border-[#c9a45e]/50 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] bg-[#b8924a]/20 px-2.5 py-0.5 rounded-full border border-[#b8924a]/40">
-              Formule Prestataires · {getPrestatairesQuotaLabel(event.plan)}
-            </span>
-            <h3 className="font-serif font-bold text-lg text-white">
-              {quota === Infinity
-                ? "Sollicitations illimitées"
-                : `${contactedEveniumCount} sur ${quota} prestataires sollicités`}
-            </h3>
-            <p className="text-xs text-white/70">
-              0% de commission sur tous vos contrats. Négociez en direct avec les meilleurs professionnels certifiés.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href={`/dashboard/events/${event.id}/prestataires/catalogue`}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-bold text-xs flex items-center gap-1.5 shadow-sm hover:brightness-105 transition-all"
-            >
-              <Search size={14} />
-              <span>Rechercher un prestataire</span>
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* 3 Onglets sur la même ligne : 1er Annuaire Evenium, 2ème Prestataires Evenium, 3ème Prestataires Externes */}
       <div className="flex items-center gap-2 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto no-scrollbar py-1">

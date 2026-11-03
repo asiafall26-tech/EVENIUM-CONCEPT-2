@@ -22,7 +22,6 @@ import { useEvents } from "@/store/EventsContext";
 import { ContactSupportButton } from "../ContactSupportButton";
 import { SidebarHeading, sidebarIconClass, sidebarLinkClass } from "./DashboardFrame";
 import { badgeLabel, trackRsvpEvents, useBadgeStore } from "@/store/BadgeStore";
-import { hasPrestatairesAccess, isPrestatairesPlan } from "@/lib/formules";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -83,15 +82,7 @@ export function DashboardSidebar() {
                   
                   {isEventActive && (
                     <div className="pl-3 space-y-0.5 mt-1.5 border-l border-[#b8924a]/30 ml-6 pb-2">
-                      {isPrestatairesPlan(event.plan) ? (
-                        <>
-                          <SubLink href={`/dashboard/events/${event.id}`} label="Accueil / Aperçu" currentPath={pathname} exact />
-                          <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} />
-                          <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} />
-                          <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} />
-                          <SubLink href={`/dashboard/events/${event.id}/statistiques`} label="Statistiques" currentPath={pathname} />
-                        </>
-                      ) : event.plan === "Standard" ? (
+                      {event.plan === "Standard" ? (
                         <>
                           <SubLink href={`/dashboard/events/${event.id}`} label="Lien & QR Code Actif" currentPath={pathname} exact />
                           <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Mon Invitation" currentPath={pathname} />
@@ -104,10 +95,10 @@ export function DashboardSidebar() {
                           <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitations" currentPath={pathname} />
                           <SubLink href={`/dashboard/events/${event.id}/participants`} label="Invités & RSVP" currentPath={pathname} badge={badgeLabel(newRsvps[event.id] ?? 0)} />
                           
-                          {/* GOLD Features - Locked if not Gold or Prestataires */}
-                          <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={!hasPrestatairesAccess(event.plan)} />
-                          <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} locked={!hasPrestatairesAccess(event.plan)} />
-                          <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} locked={!hasPrestatairesAccess(event.plan)} />
+                          {/* GOLD Features - Locked if Premium */}
+                          <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={event.plan !== "Gold"} />
+                          <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} locked={event.plan !== "Gold"} />
+                          <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} locked={event.plan !== "Gold"} />
                           
                           <SubLink href={`/dashboard/events/${event.id}/statistiques`} label="Statistiques" currentPath={pathname} />
                         </>

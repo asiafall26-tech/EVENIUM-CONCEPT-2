@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Crown, Users, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronRight, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { Fleuron, DiamondRule } from "@/components/landing/LuxOrnaments";
-import { PRESTATAIRES_TIERS_MAP } from "@/lib/formules";
 
 interface FeatureItem {
   title: string;
@@ -406,153 +405,6 @@ export default function PricingSection() {
             </Link>
           </motion.div>
 
-        </div>
-
-        {/* Section Dédiée : FORMULE PRESTATAIRES SEULS (SANS FAIRE-PART) */}
-        <div className="mt-20 pt-16 border-t border-[#b8924a]/20">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#b8924a]/10 border border-[#b8924a]/30 text-[#8f6f33] text-[11px] font-semibold uppercase tracking-[0.25em] mb-3">
-              <Users size={13} className="text-[#8f6f33]" /> Formule Prestataires Seuls
-            </span>
-            <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-[#1d120a] leading-tight mb-3">
-              Besoin uniquement de prestataires d&apos;exception ?
-            </h3>
-            <p className="text-xs sm:text-sm text-[#5d4c3d] leading-relaxed">
-              Vous avez déjà vos cartons ou n&apos;avez pas besoin d&apos;invitation digitale ? Sollicitez directement nos prestataires certifiés à <strong>0% de commission</strong> et pilotez votre événement en toute sérénité.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* TIER 5 */}
-            <motion.div
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="card-lux flex flex-col p-6 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.4)] transition-shadow justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <h4 className="font-serif text-xl font-bold text-gray-900">
-                    {PRESTATAIRES_TIERS_MAP["5"].name}
-                  </h4>
-                </div>
-                <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-                  Idéal pour les événements intimes nécessitant quelques prestataires clés.
-                </p>
-
-                <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-gray-100">
-                  <span className="text-3xl sm:text-4xl font-serif font-bold text-gray-950 tracking-tight">
-                    {PRESTATAIRES_TIERS_MAP["5"].priceFormatted}
-                  </span>
-                  <span className="text-xs font-medium text-gray-400">FCFA / événement</span>
-                </div>
-
-                <ul className="space-y-3 mb-6">
-                  {PRESTATAIRES_TIERS_MAP["5"].features.map((feat, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
-                      <span className="text-xs sm:text-sm text-gray-800 leading-snug">{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <Link
-                href="/create?mode=prestataires&tier=5"
-                className="btn-lux-light w-full py-3 text-center text-xs font-bold"
-              >
-                Choisir Pack 5 Prestataires
-              </Link>
-            </motion.div>
-
-            {/* TIER 10 (Recommandé) */}
-            <motion.div
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="card-lux flex flex-col p-6 !border-2 !border-[#b8924a] shadow-[0_16px_36px_-15px_rgba(184,134,11,0.35)] transition-shadow justify-between relative bg-gradient-to-b from-[#fffefc] to-[#fbf7f0]"
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] text-[#1c140d] text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1">
-                <Sparkles size={11} /> Recommandé
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5 pt-1">
-                  <h4 className="font-serif text-xl font-bold text-gray-900">
-                    {PRESTATAIRES_TIERS_MAP["10"].name}
-                  </h4>
-                </div>
-                <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-                  Pour les mariages et grandes réceptions nécessitant une équipe complète.
-                </p>
-
-                <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-[#b8924a]/20">
-                  <span className="text-3xl sm:text-4xl font-serif font-bold text-gray-950 tracking-tight">
-                    {PRESTATAIRES_TIERS_MAP["10"].priceFormatted}
-                  </span>
-                  <span className="text-xs font-medium text-gray-400">FCFA / événement</span>
-                </div>
-
-                <ul className="space-y-3 mb-6">
-                  {PRESTATAIRES_TIERS_MAP["10"].features.map((feat, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
-                      <span className="text-xs sm:text-sm text-gray-800 leading-snug">{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <Link
-                href="/create?mode=prestataires&tier=10"
-                className="btn-lux w-full py-3 text-center text-xs font-bold"
-              >
-                Choisir Pack 10 Prestataires
-              </Link>
-            </motion.div>
-
-            {/* TIER DEVIS */}
-            <motion.div
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="flex flex-col p-6 rounded-3xl bg-gradient-to-b from-[#24170d] to-[#140c06] border border-[#c9a45e]/70 text-white shadow-[0_24px_50px_-20px_rgba(20,12,6,0.8)] justify-between relative overflow-hidden"
-            >
-              <div aria-hidden className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-[#b8924a]/20 blur-[60px] pointer-events-none" />
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <h4 className="font-serif text-xl font-bold text-gold-foil">
-                    {PRESTATAIRES_TIERS_MAP["devis"].name}
-                  </h4>
-                </div>
-                <p className="text-xs text-white/60 mb-5 leading-relaxed">
-                  Pour les réceptions d&apos;envergure et galas exigeant un accompagnement sur-mesure.
-                </p>
-
-                <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-white/10">
-                  <span className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight">
-                    {PRESTATAIRES_TIERS_MAP["devis"].priceFormatted}
-                  </span>
-                  <span className="text-xs font-medium text-white/50">Sur-mesure</span>
-                </div>
-
-                <ul className="space-y-3 mb-6">
-                  {PRESTATAIRES_TIERS_MAP["devis"].features.map((feat, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
-                      <span className="text-xs sm:text-sm text-white/90 leading-snug">{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <Link
-                href="/create?mode=prestataires&tier=devis"
-                className="relative w-full py-3 text-center rounded-xl font-bold text-xs sm:text-sm text-black bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] hover:brightness-110 shadow-md shadow-[#b8924a]/20 transition-all flex items-center justify-center gap-2 group"
-              >
-                <span>Demander un devis</span>
-                <ChevronRight size={15} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-            </motion.div>
-          </div>
         </div>
       </div>
     </section>
