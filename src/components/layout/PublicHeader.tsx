@@ -66,6 +66,16 @@ export function PublicHeader() {
           </Link>
           <span aria-hidden className="h-7 sm:h-9 w-px bg-gradient-to-b from-transparent via-[#b8924a] to-transparent" />
           <Link
+            href="/voeux"
+            className="py-2 text-[10px] sm:text-xs font-medium uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#2b1d12] hover:text-[#8f6f33] transition-colors whitespace-nowrap flex items-center gap-1"
+          >
+            <span>Vœux</span>
+            <span className="hidden sm:inline-block px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#b8924a]/20 text-[#8f6f33] border border-[#b8924a]/30">
+              Nouveau
+            </span>
+          </Link>
+          <span aria-hidden className="hidden sm:block h-6 sm:h-7 w-px bg-[#b8924a]/30" />
+          <Link
             href="/espace-prestataire"
             className="py-2 text-[10px] sm:text-xs font-medium uppercase tracking-[0.1em] sm:tracking-[0.22em] text-[#2b1d12] hover:text-[#8f6f33] transition-colors whitespace-nowrap"
           >

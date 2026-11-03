@@ -78,6 +78,10 @@ export function PublicFooter() {
           <Link href="/invitations" className="hover:text-[#f0d999] transition-colors">
             Modèles
           </Link>
+          <Link href="/voeux" className="hover:text-[#f0d999] transition-colors flex items-center gap-1.5">
+            <span>Vœux</span>
+            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#c9a45e]/25 text-[#f0d999] border border-[#c9a45e]/40">Nouveau</span>
+          </Link>
           <Link href="/espace-prestataire" className="hover:text-[#f0d999] transition-colors">
             Espace Prestataire
           </Link>

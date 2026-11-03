@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles, Users, Wallet, Star, LayoutList } from "lucide-react";
+import { ArrowRight, Sparkles, Users, Wallet, Star, LayoutList, Gift } from "lucide-react";
 import PricingSection from "@/components/ui/PricingSection";
 import HeroEvents from "@/components/landing/HeroEvents";
 import Reveal from "@/components/landing/Reveal";
@@ -31,6 +31,13 @@ const SERVICES = [
   {
     icon: Sparkles,
     title: "Invitations sur-mesure",
+    href: "/invitations",
+  },
+  {
+    icon: Gift,
+    title: "Vœux & Cartes d'exception",
+    badge: "Nouveau",
+    href: "/voeux",
   },
   {
     icon: Users,
@@ -108,26 +115,54 @@ export default async function Home() {
             className="mb-10 md:mb-14"
           />
 
-          <Reveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-5">
-            {SERVICES.map((s, i) => (
-              <article
-                key={s.title}
-                className="card-lux group relative flex flex-col overflow-hidden p-6 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.45)] hover:-translate-y-1 transition-all duration-500 min-h-[160px]"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <span className="w-12 h-12 rounded-full bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e]/70 shadow-[0_0_18px_-6px_rgba(233,196,120,0.7)] flex items-center justify-center">
-                    <s.icon size={22} />
-                  </span>
-                  <span className="font-serif text-3xl font-bold text-[#b8924a]/25 group-hover:text-[#b8924a]/50 transition-colors">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                </div>
-                <h3 className="relative font-serif text-lg sm:text-xl font-bold text-gray-900 group-hover:text-black leading-snug min-h-[2.75em]">
-                  {s.title}
-                </h3>
-                <span className="absolute left-6 right-6 bottom-0 h-[2px] bg-gradient-to-r from-[#b8924a] to-transparent scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
-              </article>
-            ))}
+          <Reveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {SERVICES.map((s, i) => {
+              const CardContent = (
+                <>
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="w-12 h-12 rounded-full bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e]/70 shadow-[0_0_18px_-6px_rgba(233,196,120,0.7)] flex items-center justify-center">
+                      <s.icon size={22} />
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {"badge" in s && s.badge && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#b8924a]/25 text-[#8f6f33] border border-[#b8924a]/40">
+                          {s.badge}
+                        </span>
+                      )}
+                      <span className="font-serif text-3xl font-bold text-[#b8924a]/25 group-hover:text-[#b8924a]/50 transition-colors">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="relative font-serif text-lg sm:text-xl font-bold text-gray-900 group-hover:text-black leading-snug">
+                    {s.title}
+                  </h3>
+                  {"href" in s && s.href && (
+                    <span className="mt-3 text-xs font-semibold text-[#8f6f33] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      Découvrir <ArrowRight size={13} />
+                    </span>
+                  )}
+                  <span className="absolute left-6 right-6 bottom-0 h-[2px] bg-gradient-to-r from-[#b8924a] to-transparent scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
+                </>
+              );
+
+              return "href" in s && s.href ? (
+                <Link
+                  key={s.title}
+                  href={s.href}
+                  className="card-lux group relative flex flex-col justify-between overflow-hidden p-6 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.45)] hover:-translate-y-1 transition-all duration-500 min-h-[160px]"
+                >
+                  {CardContent}
+                </Link>
+              ) : (
+                <article
+                  key={s.title}
+                  className="card-lux group relative flex flex-col justify-between overflow-hidden p-6 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.45)] hover:-translate-y-1 transition-all duration-500 min-h-[160px]"
+                >
+                  {CardContent}
+                </article>
+              );
+            })}
           </Reveal>
         </div>
       </section>

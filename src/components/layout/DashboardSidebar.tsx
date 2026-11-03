@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Plus,
   Lock,
-  FileText
+  FileText,
+  Gift
 } from "lucide-react";
 import { useEvents } from "@/store/EventsContext";
 import { ContactSupportButton } from "../ContactSupportButton";
@@ -49,6 +50,7 @@ export function DashboardSidebar() {
             <SidebarLink href="/dashboard" icon={Home} label="Mon Espace" currentPath={pathname} exact />
             <SidebarLink href="/dashboard/devis" icon={FileText} label="Mes Devis" currentPath={pathname} badge={badgeLabel(pendingDevis)} />
             <SidebarLink href="/dashboard/messages" icon={Send} label="Messagerie Globale" currentPath={pathname} badge={badgeLabel(unreadMessages)} />
+            <SidebarLink href="/voeux" icon={Gift} label="Cartes de Vœux" currentPath={pathname} badge="Nouveau" />
           </nav>
         </div>
 
