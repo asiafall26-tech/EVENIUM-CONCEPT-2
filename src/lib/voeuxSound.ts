@@ -39,3 +39,4 @@ export function playWaxSealChime() {
     // Fallback silencieux en cas de blocage navigateur
   }
 }
+
