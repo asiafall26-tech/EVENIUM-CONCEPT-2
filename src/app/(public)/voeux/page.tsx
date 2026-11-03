@@ -56,8 +56,9 @@ export default function VoeuxPage() {
           </h1>
 
           {/* Sous-titre Exact Utilisateur */}
-          <p className="font-serif italic text-base sm:text-xl text-[#8f6f33] max-w-2xl mx-auto leading-relaxed pt-1">
-            « Il y a les vœux qu'on lit, puis qu'on oublie. Et il y a ceux qui touchent l'âme, que l'on chérit et relit encore et encore. Ici, vos vœux deviennent inoubliables. »
+          <p className="font-serif text-base sm:text-xl text-[#8f6f33] max-w-2xl mx-auto leading-relaxed pt-1">
+            <span className="italic">Il y a les vœux qu'on lit, puis qu'on oublie. Et il y a ceux qui touchent l'âme, que l'on chérit et relit encore et encore.</span>{" "}
+            <span className="font-semibold text-[#1a0f07] not-italic block sm:inline mt-1 sm:mt-0">Ici, vos vœux deviennent inoubliables.</span>
           </p>
 
           <DiamondRule className="my-3 opacity-90" />
@@ -182,7 +183,7 @@ export default function VoeuxPage() {
                   </h3>
                   
                   <p className="text-xs text-[#665140] italic mt-1.5 line-clamp-2 leading-relaxed font-light">
-                    « {template.quotePreview} »
+                    {template.quotePreview}
                   </p>
                 </div>
 
@@ -202,7 +203,7 @@ export default function VoeuxPage() {
                     className="btn-shimmer px-4 py-2 rounded-full bg-gradient-to-r from-[#b8924a] to-[#d4af37] text-stone-950 text-xs font-bold shadow-xs hover:brightness-105 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
                     <Gift size={13} />
-                    <span>Offrir ({template.price})</span>
+                    <span>Offrir • {template.price}</span>
                   </button>
                 </div>
               </div>

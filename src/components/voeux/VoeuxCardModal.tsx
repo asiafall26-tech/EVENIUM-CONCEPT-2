@@ -321,7 +321,7 @@ export default function VoeuxCardModal({
                     {/* Bas de l'enveloppe */}
                     <div className="space-y-1 pb-1">
                       <p className="text-xs font-serif italic text-white drop-shadow-md line-clamp-1">
-                        « {template.quotePreview.slice(0, 50)}... »
+                        {template.quotePreview}
                       </p>
                       <DiamondRule className="my-1.5 opacity-80" />
                       <p className="text-[11px] text-[#f0d999] font-medium tracking-wider drop-shadow-md">
@@ -349,7 +349,7 @@ export default function VoeuxCardModal({
                     {/* Corps du message dynamique */}
                     <div className="my-auto py-2 px-1 sm:px-2 overflow-y-auto max-h-[190px]">
                       <p className="font-serif italic text-sm sm:text-base leading-relaxed text-[#fbf3e4] whitespace-pre-line drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                        « {customText || "Vos pensées les plus tendres et chaleureuses..."} »
+                        {customText || "Vos pensées les plus tendres et chaleureuses..."}
                       </p>
                     </div>
 
