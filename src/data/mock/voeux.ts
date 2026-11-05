@@ -1,211 +1,237 @@
-export interface VoeuxCategory {
+export interface VoeuxOccasion {
   id: string;
   name: string;
   icon: string;
   tagline: string;
   hook: string;
-  subcategories: string[];
   description: string;
   accentColor: string;
-  themeStyle: {
-    bgGradient: string;
-    badgeColor: string;
-    sealColor: string;
-    borderColor: string;
-    lightBg: string;
-  };
+  sealColor: string;
 }
 
 export interface VoeuxTemplate {
   id: string;
   title: string;
-  categoryId: string;
-  categoryName: string;
-  subCategory: string;
+  occasionId: string;
+  occasionName: string;
   badge?: "Signature" | "Coup de cœur" | "Bestseller" | "Prestige" | "Édition Limitée";
-  coverImage: string;
-  theme: "gold" | "rose" | "velvet" | "emerald" | "midnight" | "pearl";
-  quotePreview: string;
-  description: string;
+  theme: "gold" | "velvet" | "rose" | "midnight" | "emerald" | "pearl";
+  paperTexture: "velin-ivoire" | "coton-creme" | "parchemin-or" | "soie-noire";
+  waxSealColor: "gold" | "bronze" | "rose-gold" | "emerald" | "burgundy";
+  waxSealEmblem: "fleuron" | "coeur" | "etoile" | "couronne" | "diplome";
+  defaultKicker: string;
+  defaultTitle: string;
+  defaultMessage: string;
   suggestedMusic: string;
-  paperTexture: string;
-  waxSealColor: string;
-  price: string;
+  priceFcfa: number;
+  priceEur: string;
 }
 
 export interface VoeuxInspiration {
-  categoryId: string;
-  occasion: string;
+  occasionId: string;
   title: string;
   text: string;
 }
 
-export const VOEUX_CATEGORIES: VoeuxCategory[] = [
+// 5 OCCASIONS OFFICIELLES DEMANDÉES
+export const VOEUX_OCCASIONS: VoeuxOccasion[] = [
   {
-    id: "anniversaires",
-    name: "Anniversaires",
+    id: "anniversaire",
+    name: "Anniversaire",
     icon: "🎂",
     tagline: "Naissance, adulte, enfant & jubilés",
     hook: "Faites briller les yeux de ceux qui célèbrent un an de plus.",
-    subcategories: ["Anniversaire Adulte", "Anniversaire Enfant", "Jubilé 50 ans+", "Première Bougie"],
-    description: "Bien plus qu'un simple texto : une lettre d'art aux reflets dorés qui célèbre une vie précieuse et laisse un souvenir impérissable.",
-    accentColor: "from-[#d4af37] via-[#f3e5ab] to-[#b8924a]",
-    themeStyle: {
-      bgGradient: "from-[#2e1d0f] via-[#1a1008] to-[#120a05]",
-      badgeColor: "bg-[#d4af37]/20 text-[#8f6f33] border-[#d4af37]/50",
-      sealColor: "#c98f24",
-      borderColor: "border-[#d4af37]/40",
-      lightBg: "bg-[#fdf9f2]"
-    }
+    description: "Des lettres numériques scellées au cachet d'or pour marquer une nouvelle bougie avec émotion.",
+    accentColor: "#b8924a",
+    sealColor: "#c9a45e"
+  },
+  {
+    id: "anniversaire-mariage",
+    name: "Anniversaire de mariage",
+    icon: "🥂",
+    tagline: "Noces de coton, d'étain, d'or et jubilés",
+    hook: "Honorez chaque année d'un amour qui traverse le temps.",
+    description: "Une célébration poétique pour féliciter les couples qui écrivent leur histoire main dans la main.",
+    accentColor: "#d4af37",
+    sealColor: "#b8924a"
   },
   {
     id: "mariage",
-    name: "Mariage & Amour",
+    name: "Mariage",
     icon: "💍",
-    tagline: "Mariage, fiançailles, noces d'or & déclarations",
-    hook: "L'élégance suprême pour saluer l'union de deux âmes.",
-    subcategories: ["Félicitations Mariage", "Fiançailles", "Noces d'Or & d'Argent", "Vœux d'Amour"],
-    description: "Le raffinement du velours grenat et du sceau de cire pour adresser vos bénédictions les plus sincères aux mariés.",
-    accentColor: "from-[#8a1c14] via-[#b8332a] to-[#4a0d08]",
-    themeStyle: {
-      bgGradient: "from-[#330f14] via-[#1e070a] to-[#140406]",
-      badgeColor: "bg-[#8a1c14]/20 text-[#a8231a] border-[#8a1c14]/40",
-      sealColor: "#8a1c14",
-      borderColor: "border-[#b8332a]/40",
-      lightBg: "bg-[#fff5f5]"
-    }
+    tagline: "Félicitations, vœux de bonheur & bénédictions",
+    hook: "Offrez vos plus beaux vœux de vie aux nouveaux mariés.",
+    description: "Un message empreint de noblesse et de tendresse pour accompagner le plus beau jour de leur vie.",
+    accentColor: "#c9a45e",
+    sealColor: "#d4af37"
   },
   {
-    id: "naissance-famille",
-    name: "Naissance & Famille",
+    id: "bapteme",
+    name: "Baptême & Naissance",
     icon: "👶",
-    tagline: "Baptême, naissance, baby shower & petits anges",
-    hook: "Accueillez un nouveau miracle avec une infinie douceur.",
-    subcategories: ["Bienvenue au Bébé", "Baptême", "Baby Shower & Révélation", "Fête des Mères & Pères"],
-    description: "Une envolée poétique de pastel et de nacre pour féliciter les jeunes parents et déposer une caresse d'amour sur le berceau.",
-    accentColor: "from-[#e8a598] via-[#fce4ec] to-[#d88d80]",
-    themeStyle: {
-      bgGradient: "from-[#2f181c] via-[#1c0f12] to-[#12090b]",
-      badgeColor: "bg-[#e8a598]/20 text-[#b55848] border-[#e8a598]/40",
-      sealColor: "#d88d80",
-      borderColor: "border-[#e8a598]/40",
-      lightBg: "bg-[#fdf4f2]"
-    }
+    tagline: "Bienvenue au monde, baptême & baby shower",
+    hook: "Bénissez les premiers pas d'une vie précieuse.",
+    description: "Des créations douces aux nuances ivoire et perle pour féliciter les parents et combler l'enfant.",
+    accentColor: "#e6c387",
+    sealColor: "#e2b866"
   },
   {
-    id: "reussite",
-    name: "Réussite & Victoires",
+    id: "graduation",
+    name: "Graduation & Réussite",
     icon: "🎓",
-    tagline: "Diplôme, concours, promotion & consécration",
-    hook: "Couronnez le labeur et l'excellence avec panache.",
-    subcategories: ["Diplôme & Thèse", "Grands Concours", "Promotion & Nouveau Poste", "Succès d'Entreprise"],
-    description: "Félicitez une étape charnière avec la solennité des grands parchemins et l'énergie des lauriers dorés triomphants.",
-    accentColor: "from-[#1e3c72] via-[#2a5298] to-[#0f2042]",
-    themeStyle: {
-      bgGradient: "from-[#0e1e38] via-[#091324] to-[#040812]",
-      badgeColor: "bg-[#1e3c72]/20 text-[#1e3c72] border-[#2a5298]/40",
-      sealColor: "#1e3c72",
-      borderColor: "border-[#2a5298]/40",
-      lightBg: "bg-[#f0f5fc]"
-    }
-  },
-  {
-    id: "celebrations",
-    name: "Célébrations & Fêtes",
-    icon: "🎉",
-    tagline: "Fêtes de fin d'année, Nouvel An, Eid & inaugurations",
-    hook: "Semez l'étincelle et la joie dans les grands moments de l'année.",
-    subcategories: ["Nouvel An & Meilleurs Vœux", "Fêtes Religieuses & Eid", "Inauguration & Vernissage", "Gala & Triomphe"],
-    description: "Des gerbes d'or, des bulles de champagne et une aura festive pour adresser des vœux de prospérité inoubliables.",
-    accentColor: "from-[#0f382c] via-[#1b5e20] to-[#082019]",
-    themeStyle: {
-      bgGradient: "from-[#0e2b21] via-[#081b14] to-[#040d0a]",
-      badgeColor: "bg-[#1b5e20]/20 text-[#165e26] border-[#10b981]/40",
-      sealColor: "#1b5e20",
-      borderColor: "border-[#1b5e20]/40",
-      lightBg: "bg-[#f0f9f4]"
-    }
-  },
-  {
-    id: "messages-personnels",
-    name: "Messages du Cœur",
-    icon: "❤️",
-    tagline: "Remerciements, déclarations, tendresse & pardon",
-    hook: "Dites les mots que l'on n'ose jamais assez prononcer.",
-    subcategories: ["Remerciements sincères", "Déclaration secrète", "Amitié éternelle", "Pensées & Réconfort"],
-    description: "Pour dire merci, pardon, ou simplement 'je t'aime' : une enveloppe intime qui va droit au cœur et se garde pour toujours.",
-    accentColor: "from-[#9c27b0] via-[#ba68c8] to-[#4a148c]",
-    themeStyle: {
-      bgGradient: "from-[#290e33] via-[#18081f] to-[#0d0411]",
-      badgeColor: "bg-[#9c27b0]/20 text-[#7b1fa2] border-[#c084fc]/40",
-      sealColor: "#8e24aa",
-      borderColor: "border-[#9c27b0]/40",
-      lightBg: "bg-[#faf0ff]"
-    }
+    tagline: "Diplôme, concours, promotion & nouveaux horizons",
+    hook: "Célébrez le mérite, l'effort et la gloire du succès.",
+    description: "Une lettre solennelle et prestigieuse pour saluer une étape majeure vers l'excellence.",
+    accentColor: "#2b4c7e",
+    sealColor: "#c9a45e"
   }
 ];
 
-export const VOEUX_TEMPLATES: VoeuxTemplate[] = [];
+// MODÈLES DE VŒUX D'EXCEPTION
+export const VOEUX_TEMPLATES: VoeuxTemplate[] = [
+  // 1. Anniversaire
+  {
+    id: "voeu-anniv-or",
+    title: "L'Étoile du Jubilé",
+    occasionId: "anniversaire",
+    occasionName: "Anniversaire",
+    badge: "Bestseller",
+    theme: "gold",
+    paperTexture: "velin-ivoire",
+    waxSealColor: "gold",
+    waxSealEmblem: "couronne",
+    defaultKicker: "Joyeux Anniversaire",
+    defaultTitle: "Que cette nouvelle année fasse éclore tous tes rêves",
+    defaultMessage: "En ce jour béni où le monde a eu la chance de t'accueillir, je te souhaite une année lumineuse, baignée de succès, de rires et d'une santé de fer. Que chaque pas te rapproche de tes plus grandes aspirations.",
+    suggestedMusic: "Clair de Lune - Debussy",
+    priceFcfa: 3900,
+    priceEur: "3,90 €"
+  },
+  {
+    id: "voeu-anniv-minuit",
+    title: "Aura Nocturne & Poussière d'Or",
+    occasionId: "anniversaire",
+    occasionName: "Anniversaire",
+    badge: "Signature",
+    theme: "midnight",
+    paperTexture: "soie-noire",
+    waxSealColor: "gold",
+    waxSealEmblem: "etoile",
+    defaultKicker: "Une Nouvelle Bougie",
+    defaultTitle: "À toi, l'âme rare et lumineuse",
+    defaultMessage: "Le temps n'a pas de prise sur les êtres extraordinaires : il ne fait que révéler leur éclat. Joyeux anniversaire du fond du cœur. Continue de faire rayonner ta bonté autour de toi.",
+    suggestedMusic: "Nocturne Op. 9 No. 2 - Chopin",
+    priceFcfa: 3900,
+    priceEur: "3,90 €"
+  },
 
+  // 2. Anniversaire de mariage
+  {
+    id: "voeu-anniv-mariage-noces",
+    title: "Le Sceau des Années Heureuses",
+    occasionId: "anniversaire-mariage",
+    occasionName: "Anniversaire de mariage",
+    badge: "Signature",
+    theme: "gold",
+    paperTexture: "coton-creme",
+    waxSealColor: "bronze",
+    waxSealEmblem: "coeur",
+    defaultKicker: "Joyeux Anniversaire de Mariage",
+    defaultTitle: "Un amour qui traverse le temps avec grâce",
+    defaultMessage: "Félicitations pour cette nouvelle année d'union, de complicité et de soutien mutuel. Vous êtes un exemple d'harmonie et d'amour sincère pour nous tous. Que votre chemin continue d'être pavé de tendresse et de paix.",
+    suggestedMusic: "Canon in D - Pachelbel",
+    priceFcfa: 3900,
+    priceEur: "3,90 €"
+  },
+
+  // 3. Mariage
+  {
+    id: "voeu-mariage-eternel",
+    title: "L'Alliance Céleste",
+    occasionId: "mariage",
+    occasionName: "Mariage",
+    badge: "Bestseller",
+    theme: "pearl",
+    paperTexture: "velin-ivoire",
+    waxSealColor: "rose-gold",
+    waxSealEmblem: "coeur",
+    defaultKicker: "Félicitations pour votre Mariage",
+    defaultTitle: "Deux cœurs réunis pour une destinée commune",
+    defaultMessage: "Que votre foyer soit un havre de paix, de patience et de bonheur infini. Que chaque aube renouvelle la force de votre promesse et que vos lendemains soient plus doux encore que vos plus beaux souvenirs.",
+    suggestedMusic: "River Flows in You - Yiruma",
+    priceFcfa: 3900,
+    priceEur: "3,90 €"
+  },
+
+  // 4. Baptême & Naissance
+  {
+    id: "voeu-bapteme-purete",
+    title: "L'Aube Précieuse",
+    occasionId: "bapteme",
+    occasionName: "Baptême & Naissance",
+    badge: "Coup de cœur",
+    theme: "pearl",
+    paperTexture: "coton-creme",
+    waxSealColor: "gold",
+    waxSealEmblem: "fleuron",
+    defaultKicker: "Bienvenue au Monde & Bénédictions",
+    defaultTitle: "Une nouvelle lumière éclaire votre famille",
+    defaultMessage: "Félicitations pour ce merveilleux trésor qui vient d'enrichir votre foyer. Que ce petit ange grandisse entouré d'amour, de sagesse et de bienveillance divine. Tous nos vœux de santé et de bonheur infini.",
+    suggestedMusic: "Gymnopédie No. 1 - Satie",
+    priceFcfa: 3900,
+    priceEur: "3,90 €"
+  },
+
+  // 5. Graduation & Réussite
+  {
+    id: "voeu-graduation-triomphe",
+    title: "Les Lauriers de l'Excellence",
+    occasionId: "graduation",
+    occasionName: "Graduation & Réussite",
+    badge: "Prestige",
+    theme: "emerald",
+    paperTexture: "parchemin-or",
+    waxSealColor: "gold",
+    waxSealEmblem: "diplome",
+    defaultKicker: "Félicitations pour votre Réussite",
+    defaultTitle: "Le couronnement du travail et de la persévérance",
+    defaultMessage: "Cette graduation n'est pas seulement l'aboutissement de longues années d'efforts : c'est la porte grande ouverte sur un avenir brillant. Nous sommes immensément fiers de votre parcours remarquable. Visez haut, le monde vous appartient.",
+    suggestedMusic: "Arrival of the Queen of Sheba - Haendel",
+    priceFcfa: 3900,
+    priceEur: "3,90 €"
+  }
+];
+
+// TEXTES D'INSPIRATION POUR AIDER LE CLIENT S'IL MANQUE DE MOTS
 export const VOEUX_INSPIRATIONS: VoeuxInspiration[] = [
   {
-    categoryId: "anniversaires",
-    occasion: "Anniversaire d'une personne chère",
-    title: "Éloge de ta lumière",
-    text: "En ce jour unique où tu es venu(e) illuminer le monde, je voulais te rappeler combien ta présence est un cadeau précieux. Que cette nouvelle année t'apporte la santé, l'audace de réaliser tes rêves les plus fous et une montagne de bonheurs quotidiens. Très bel anniversaire !"
+    occasionId: "anniversaire",
+    title: "Vœu Émouvant & Profond",
+    text: "En ce jour si spécial, je voulais prendre un instant pour te remercier d'être la personne exceptionnelle que tu es. Que cette année nouvelle t'apporte la paix du cœur, la concrétisation de tes projets et une abondance de joies quotidiennes. Très bel anniversaire !"
   },
   {
-    categoryId: "anniversaires",
-    occasion: "Jubilé ou Cap des 50 / 60 ans",
-    title: "Hommage à un parcours admirable",
-    text: "Chaque ride d'expression est le témoin d'un rire partagé, chaque année passée une leçon de générosité offerte à ceux qui t'entourent. Tu traverses les âges avec une élégance et une force qui forcent l'admiration. Magnifique jubilé à une personne exceptionnelle !"
+    occasionId: "anniversaire",
+    title: "Vœu Court & Chaleureux",
+    text: "Une bougie de plus, mais surtout une infinité de souvenirs précieux en plus à tes côtés. Que cette journée soit à ton image : généreuse, joyeuse et inoubliable !"
   },
   {
-    categoryId: "anniversaires",
-    occasion: "Anniversaire d'enfant",
-    title: "Pour notre petit aventurier",
-    text: "Un merveilleux anniversaire au plus intrépide et souriant des petits champions ! Que ta journée soit remplie de surprises éclatantes, de jeux avec tes amis et de gâteaux gourmands. Continue de rêver grand et de faire briller tes petits yeux d'étoiles !"
+    occasionId: "anniversaire-mariage",
+    title: "Hommage au Couple",
+    text: "Année après année, vous prouvez que le véritable amour se bonifie avec le temps. Votre complicité fait plaisir à voir et inspire tous ceux qui vous entourent. Heureux anniversaire de mariage !"
   },
   {
-    categoryId: "mariage",
-    occasion: "Félicitations de Mariage",
-    title: "Pour une union éternelle",
-    text: "Quand deux êtres s'aiment avec une telle évidence, le mariage n'est pas un commencement mais l'accomplissement d'un destin. Que votre foyer soit un havre de paix, de tendresse inaltérable et de rires complices. Toutes nos félicitations et longue vie à votre amour !"
+    occasionId: "mariage",
+    title: "Bénédiction Solennelle",
+    text: "Que votre union soit bénie de prospérité, de respect et d'une tendresse inaltérable. Main dans la main, bâtissez une vie extraordinaire à la hauteur de vos plus beaux rêves. Toutes nos félicitations !"
   },
   {
-    categoryId: "mariage",
-    occasion: "Fiançailles ou Déclaration",
-    title: "La promesse de deux cœurs",
-    text: "Deux mains qui se serrent, deux destins qui ne font plus qu'un. Que chaque pas franchi vers le jour J soit baigné de magie, de préparatifs joyeux et d'un bonheur infini. Félicitations pour ce merveilleux engagement !"
+    occasionId: "bapteme",
+    title: "Douceur pour l'Enfant",
+    text: "Que la vie t'offre ses plus douces mélodies, ses plus éclatantes couleurs et tout l'amour dont un cœur d'enfant a besoin. Félicitations aux heureux parents pour cette bénédiction."
   },
   {
-    categoryId: "naissance-famille",
-    occasion: "Bienvenue au Nouveau-né",
-    title: "Un miracle parmi nous",
-    text: "Un tout petit être vient de pousser son premier cri, et c'est le cœur de toute une famille qui chavire d'amour. Bienvenue dans ce monde petit trésor ! Nous souhaitons aux nouveaux parents des nuits paisibles et des journées comblées d'émerveillement."
-  },
-  {
-    categoryId: "reussite",
-    occasion: "Diplôme ou Concours",
-    title: "Couronnement d'un travail d'élite",
-    text: "Pendant que d'autres dormaient ou doutaient, toi tu as persévéré avec méthode, courage et brio. Aujourd'hui, cette consécration éclatante porte ton nom. Nous sommes immensément fiers de toi ! Ce n'est que la première victoire d'un avenir radieux."
-  },
-  {
-    categoryId: "reussite",
-    occasion: "Promotion ou Nouveau Poste",
-    title: "L'ascension d'un grand talent",
-    text: "Toutes mes plus vives félicitations pour cette promotion amplement méritée ! Ton professionnalisme, ton calme et ton leadership naturel t'amènent là où tu dois être. Plein succès dans ces nouveaux défis qui t'attendent !"
-  },
-  {
-    categoryId: "celebrations",
-    occasion: "Vœux du Nouvel An",
-    title: "365 jours de grâce et d'abondance",
-    text: "Que cette nouvelle année balaie les doutes passés et t'ouvre grand les bras vers la réussite, la prospérité et une santé de fer. Qu'elle dépose dans ton cœur la paix et dans ton foyer des éclats de rire incessants. Excellente et glorieuse année !"
-  },
-  {
-    categoryId: "messages-personnels",
-    occasion: "Gratitude & Remerciements profonds",
-    title: "Du fond de l'âme, merci",
-    text: "Il existe des personnes dont la simple présence réchauffe l'existence. Tu as été là au moment précis où j'en avais le plus besoin, avec une délicatesse et une générosité sans égale. Je ne l'oublierai jamais. Mille mercis d'être qui tu es."
+    occasionId: "graduation",
+    title: "Fierté & Encouragements",
+    text: "Bravo pour cette magnifique consécration ! Ton assiduité, ton intelligence et ta ténacité forcent l'admiration. Que cette réussite soit le premier tremplin d'une carrière florissante."
   }
 ];
