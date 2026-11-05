@@ -1,5 +1,16 @@
-export type InvitationType = "carte" | "animée";
-export type EventCategory = "Mariage" | "Anniversaire" | "Anniversaire de mariage" | "Gala" | "Baptême" | "Corporate";
+export type InvitationType = "carte" | "animée" | "voeu" | "mot_doux" | "couple";
+export type EventCategory =
+  | "Mariage"
+  | "Anniversaire"
+  | "Anniversaire de mariage"
+  | "Gala"
+  | "Baptême"
+  | "Corporate"
+  | "Vœux"
+  | "Mots Doux"
+  | "Couple"
+  | "Graduation"
+  | string;
 
 export interface InvitationModel {
   id: string;
@@ -64,13 +75,46 @@ export const mockInvitationModels: InvitationModel[] = [
     description: "Une invitation sur deux pages qui se tourne comme un faire-part : votre photo en couverture « Happy Birthday », puis une carte crème aux roses bordeaux et dorures avec date, lieu, programme et confirmation de présence.",
     liveUrl: "/invitation-anniversaire",
   },
+  {
+    id: "voeu-exception",
+    name: "Vœu d'Exception",
+    type: "voeu" as any,
+    category: "Anniversaire",
+    thumbnail: "/invit-sceau-dor-cover.jpg",
+    isPremium: true,
+    description: "Une enveloppe scellée d'or ou de rubis, douce mélodie au piano et lettre dépliée avec message d'émotion personnalisable.",
+    liveUrl: "/voeux",
+  },
+  {
+    id: "mot-doux",
+    name: "Les Mots Doux",
+    type: "mot_doux" as any,
+    category: "Mariage",
+    thumbnail: "/invit-rose-or-cover.jpg",
+    isPremium: true,
+    description: "Une lettre d'amour confidentielle scellée au cachet de cire rubis, accompagnée d'un air de piano romantique.",
+    liveUrl: "/mots-doux",
+  },
+  {
+    id: "invitation-couple",
+    name: "Invitations Couple",
+    type: "couple" as any,
+    category: "Mariage",
+    thumbnail: "/invit-velours-cover.jpg",
+    isPremium: true,
+    description: "Un carton d'invitation secret en tête-à-tête avec détails du rendez-vous et bouton interactif d'acceptation « J'accepte avec amour ».",
+    liveUrl: "/mots-doux",
+  },
 ];
 
 /** Models shown in the homepage showcase (up to 4), in display order */
 export const showcaseModelIds: string[] = ["invit-7", "invit-8", "invit-9", "invit-10"];
 
 /** Classement d'origine d'un modèle (type d'invitation et événement), remplaçable dans le studio des modèles */
-export function defaultClassification(id: string): { type: InvitationType; events: string[] } {
+export function defaultClassification(id: string): { type: any; events: string[] } {
+  if (id === "voeu-exception") return { type: "voeu", events: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Graduation", "Baptême"] };
+  if (id === "mot-doux") return { type: "mot_doux", events: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage"] };
+  if (id === "invitation-couple") return { type: "couple", events: ["Couple", "Invitations Couple", "Dîner", "Soirée"] };
   const m = mockInvitationModels.find((x) => x.id === id);
   if (id === "invit-7" || id === "invit-8" || id === "invit-9" || id === "invit-10") {
     return { type: m?.type ?? "animée", events: [m?.category ?? "Mariage", "Anniversaire de mariage"] };

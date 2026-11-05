@@ -6,10 +6,12 @@ import { Modal } from "@/components/ui/Modal";
 import { createClient } from "@/utils/supabase/client";
 import { detectFields, modelAssetUrl, readModelFiles, uploadModelFiles } from "@/lib/customModelImport";
 import { insertCustomModel, makeSlug } from "@/lib/customModels";
+import type { InvitationKind } from "@/lib/modelDefaults";
 
 /** Importer un modèle (ZIP avec index.html et ses fichiers, ou une page HTML seule). */
 export default function ImportModelModal({ onClose, onImported }: { onClose: () => void; onImported: (slug: string) => void }) {
   const [name, setName] = useState("");
+  const [invitationType, setInvitationType] = useState<InvitationKind>("animée");
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,15 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
       setStep(`Envoi des fichiers… 0 / ${files.length}`);
       await uploadModelFiles(slug, files, (done, total) => setStep(`Envoi des fichiers… ${done} / ${total}`));
 
+      const eventTypes =
+        invitationType === "voeu"
+          ? ["Vœux", "Anniversaire"]
+          : invitationType === "mot_doux"
+          ? ["Couple", "Mots Doux"]
+          : invitationType === "couple"
+          ? ["Couple", "Invitations Couple"]
+          : ["Mariage"];
+
       setStep("Enregistrement du modèle…");
       await insertCustomModel(createClient(), {
         slug,
@@ -40,8 +51,8 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
         fields,
         content: {},
         cover_url: cover ? modelAssetUrl(slug, entry, cover) : null,
-        invitation_type: "animée",
-        event_types: ["Mariage"],
+        invitation_type: invitationType,
+        event_types: eventTypes,
         status: "draft",
       });
       onImported(slug);
@@ -67,6 +78,33 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#b8924a]/30"
           />
         </label>
+
+        <div>
+          <span className="block text-xs font-semibold text-gray-700 mb-1.5">Usage & Type du modèle</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {[
+              { id: "animée" as const, label: "🎬 Faire-part Animé", desc: "Mariage, événement" },
+              { id: "carte" as const, label: "📜 Carte Statique", desc: "Faire-part classique" },
+              { id: "voeu" as const, label: "🌟 Vœu d'Exception", desc: "Anniversaire, graduation" },
+              { id: "mot_doux" as const, label: "💌 Mots Doux", desc: "Lettre d'amour scellée" },
+              { id: "couple" as const, label: "🕯️ Invitation Couple", desc: "Tête-à-tête & RSVP" },
+            ].map((k) => (
+              <button
+                key={k.id}
+                type="button"
+                onClick={() => setInvitationType(k.id)}
+                className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                  invitationType === k.id
+                    ? "bg-[#faf0dc] border-[#b8924a] shadow-xs text-[#1a0f07]"
+                    : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                <p className="text-xs font-bold truncate">{k.label}</p>
+                <p className="text-[10px] text-gray-400 truncate">{k.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
         <input
           ref={inputRef}
           type="file"

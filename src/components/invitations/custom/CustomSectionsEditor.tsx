@@ -135,18 +135,62 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
   const patchField = (id: string, patch: Partial<CustomField>) => onFieldsChange?.(fields.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   const asset = (src: string) => (src ? modelAssetUrl(model.slug, model.entry, src) : src);
 
-  const renderField = (f: CustomField) => (
-    <div key={f.id} className={`space-y-1.5 ${(f.type !== "text" && f.type !== "link" && f.type !== "color") || f.multiline ? "md:col-span-2" : "col-span-1"}`}>
-      {admin ? (
-        <input
-          value={f.label}
-          onChange={(e) => patchField(f.id, { label: e.target.value })}
-          aria-label="Nom de l'élément"
-          className="w-full bg-transparent text-xs sm:text-sm font-semibold text-gray-800 border-b border-dashed border-gray-300 focus:border-[#b8924a] outline-none py-1 mb-1"
-        />
-      ) : (
-        <span className="block text-xs sm:text-sm font-semibold text-gray-800 mb-1">{f.label}</span>
-      )}
+  const addCustomField = (fieldType: import("@/lib/customModels").CustomFieldType, defaultLabel: string) => {
+    const newId = `field_${Date.now()}`;
+    const newField: CustomField = {
+      id: newId,
+      type: fieldType,
+      label: defaultLabel,
+      original: "",
+      clientEditable: true,
+      multiline: fieldType === "text" && defaultLabel.toLowerCase().includes("message"),
+      section: 1,
+      sectionTitle: "Personnalisation",
+    };
+    onFieldsChange?.([...fields, newField]);
+    set(newId, "");
+  };
+
+  const renderField = (f: CustomField) => {
+    if (!admin && f.clientEditable === false) return null;
+    return (
+      <div key={f.id} className={`space-y-1.5 ${(f.type !== "text" && f.type !== "link" && f.type !== "color") || f.multiline ? "md:col-span-2" : "col-span-1"}`}>
+        {admin ? (
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <input
+              value={f.label}
+              onChange={(e) => patchField(f.id, { label: e.target.value })}
+              aria-label="Nom de l'élément"
+              className="flex-1 bg-transparent text-xs sm:text-sm font-semibold text-gray-800 border-b border-dashed border-gray-300 focus:border-[#b8924a] outline-none py-1"
+            />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => patchField(f.id, { clientEditable: f.clientEditable === false ? true : false })}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer ${
+                  f.clientEditable !== false
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                    : "bg-gray-100 text-gray-500 border-gray-200"
+                }`}
+                title="Cliquer pour autoriser ou verrouiller la modification par le client"
+              >
+                {f.clientEditable !== false ? "✓ Éditable client" : "🔒 Fixé admin"}
+              </button>
+              {f.type === "text" && (
+                <button
+                  type="button"
+                  onClick={() => patchField(f.id, { multiline: !f.multiline })}
+                  className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer"
+                  title="Bascule simple ligne / paragraphe multi-lignes"
+                >
+                  {f.multiline ? "¶ Paragraphe" : "— Ligne"}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <span className="block text-xs sm:text-sm font-semibold text-gray-800 mb-1">{f.label}</span>
+        )}
       {f.type === "text" &&
         (f.multiline ? (
           <textarea rows={5} className={`${inputCls} min-h-[130px] resize-y`} value={values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
@@ -185,6 +229,7 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
       )}
     </div>
   );
+};
 
   const header = (n: number, label: string, desc: string) => (
     <div className="border-b border-gray-100 pb-2.5 sm:pb-3">
@@ -214,6 +259,57 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
         onChange: (st) => onChange({ ...values, [HIDDEN_KEY]: JSON.stringify(st.hidden), [RUBRIQUES_KEY]: JSON.stringify(st.rubriques) }),
       }}
     >
+      {admin && (
+        <div className="p-3 sm:p-4 bg-amber-50/70 rounded-2xl border border-amber-200/80 mb-4 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <p className="text-xs font-bold text-[#8f6f33] uppercase tracking-wider flex items-center gap-1.5">
+                <span>⚙️ Configuration des Champs Éditables</span>
+              </p>
+              <p className="text-[11px] text-gray-600">
+                Activez ou verrouillez ce que le client pourra modifier, ou ajoutez un champ personnalisé :
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => addCustomField("text", "Destinataire")}
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white border border-amber-300 text-gray-800 hover:bg-amber-100/60 cursor-pointer"
+              >
+                + Destinataire
+              </button>
+              <button
+                type="button"
+                onClick={() => addCustomField("text", "Expéditeur")}
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white border border-amber-300 text-gray-800 hover:bg-amber-100/60 cursor-pointer"
+              >
+                + Expéditeur
+              </button>
+              <button
+                type="button"
+                onClick={() => addCustomField("text", "Message d'émotion")}
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white border border-amber-300 text-gray-800 hover:bg-amber-100/60 cursor-pointer"
+              >
+                + Message
+              </button>
+              <button
+                type="button"
+                onClick={() => addCustomField("text", "Rendez-vous secret")}
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white border border-amber-300 text-gray-800 hover:bg-amber-100/60 cursor-pointer"
+              >
+                + Rendez-vous
+              </button>
+              <button
+                type="button"
+                onClick={() => addCustomField("image", "Photo personnalisée")}
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white border border-amber-300 text-gray-800 hover:bg-amber-100/60 cursor-pointer"
+              >
+                + Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {sectionMenus.length === 0 && !showMusic && <p className="text-sm text-gray-500 text-center py-10">Aucun élément modifiable dans ce modèle.</p>}
       {sectionMenus.map((m, i) =>
         show(`s${m.section}`) ? (

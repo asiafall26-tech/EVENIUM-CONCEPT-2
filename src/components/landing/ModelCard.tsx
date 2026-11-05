@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, PlayCircle, FileImage } from "lucide-react";
+import { Eye, PlayCircle, FileImage, Sparkles, Heart } from "lucide-react";
 
-type Kind = "animée" | "carte";
+type Kind = "animée" | "carte" | "voeu" | "mot_doux" | "couple";
 
 interface ModelCardProps {
   name: string;
@@ -62,8 +62,27 @@ export default function ModelCard({
       {/* Pastilles */}
       <div className={`absolute flex items-start justify-between gap-2 z-10 pointer-events-none ${compact ? "top-2.5 left-2.5 right-2.5" : "top-4 left-4 right-4"}`}>
         <span className="inline-flex items-center gap-1 rounded-full border border-[#c9a45e]/60 bg-[#150d07]/75 backdrop-blur-md px-2.5 py-1 text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.18em] text-[#f0d999]">
-          {kind === "animée" ? <PlayCircle size={11} /> : <FileImage size={11} />}
-          {kind === "animée" ? "Animée" : "Carte"}
+          {kind === "voeu" ? (
+            <>
+              <Sparkles size={11} className="text-[#f5d77f]" /> Vœu
+            </>
+          ) : kind === "mot_doux" ? (
+            <>
+              <Heart size={11} className="text-[#f87171]" /> Mot Doux
+            </>
+          ) : kind === "couple" ? (
+            <>
+              <Heart size={11} className="text-[#e879f9]" /> Couple
+            </>
+          ) : kind === "animée" ? (
+            <>
+              <PlayCircle size={11} /> Animée
+            </>
+          ) : (
+            <>
+              <FileImage size={11} /> Carte
+            </>
+          )}
         </span>
         {badge && !compact && (
           <span className="rounded-full bg-gradient-to-r from-[#b8924a] via-[#f0d999] to-[#b8924a] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#241509] shadow-[0_4px_14px_-4px_rgba(233,196,120,0.8)] truncate max-w-[60%]">

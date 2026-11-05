@@ -23,7 +23,7 @@ export interface ModelDefaultRow {
   event_types: string[] | null;
 }
 
-export type InvitationKind = "animée" | "carte";
+export type InvitationKind = "animée" | "carte" | "voeu" | "mot_doux" | "couple";
 
 export interface ModelClassification {
   type: InvitationKind;
@@ -34,7 +34,7 @@ export interface ModelClassification {
 /** Classement d'un modèle : celui de l'admin s'il existe, sinon celui d'origine. */
 export function classificationOf(row: ModelDefaultRow | undefined, fallback: ModelClassification): ModelClassification {
   return {
-    type: row?.invitation_type === "carte" || row?.invitation_type === "animée" ? row.invitation_type : fallback.type,
+    type: row?.invitation_type ? row.invitation_type : fallback.type,
     events: row?.event_types?.length ? row.event_types : fallback.events,
   };
 }

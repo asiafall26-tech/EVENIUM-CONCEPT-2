@@ -8,7 +8,17 @@ import type { InvitationKind, ModelClassification } from "@/lib/modelDefaults";
 
 const KINDS: { id: InvitationKind; label: string; hint: string }[] = [
   { id: "animée", label: "Invitation animée", hint: "Ouverture animée, musique, défilement" },
-  { id: "carte", label: "Carte", hint: "Carte statique, sans musique" },
+  { id: "carte", label: "Carte statique", hint: "Faire-part ou carton sans musique" },
+  { id: "voeu", label: "🌟 Vœu d'Exception", hint: "Pour célébrer : anniversaire, mariage, baptême, graduation" },
+  { id: "mot_doux", label: "💌 Les Mots Doux", hint: "Lettre d'amour confidentielle scellée au cachet de cire" },
+  { id: "couple", label: "🕯️ Invitation Couple", hint: "Tête-à-tête secret avec scénographie & bouton d'amour RSVP" },
+];
+
+const EXTRA_EVENT_CATEGORIES: { name: string; icon: string }[] = [
+  { name: "Vœux", icon: "🌟" },
+  { name: "Mots Doux", icon: "💌" },
+  { name: "Couple", icon: "🕯️" },
+  { name: "Graduation", icon: "🎓" },
 ];
 
 /** Classer un modèle : type d'invitation et types d'événement pour lesquels il est proposé. */
@@ -71,6 +81,22 @@ export default function ClassifyModal({
           <p className="text-xs font-semibold text-gray-700 mb-1">Types d&apos;événement</p>
           <p className="text-xs text-gray-500 mb-2">Le modèle apparaît dans ces filtres, sur le site et à la création d&apos;événement. Le premier choisi est le type principal.</p>
           <div className="flex flex-wrap gap-2">
+            {EXTRA_EVENT_CATEGORIES.map((cat) => {
+              const on = events.includes(cat.name);
+              return (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => toggle(cat.name)}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-semibold ${
+                    on ? "bg-[#b8924a] text-white border-[#b8924a] shadow-xs" : "border-amber-200 bg-amber-50/50 text-[#8f6f33] hover:bg-amber-100/50"
+                  }`}
+                >
+                  <span>{cat.icon}</span> {cat.name}
+                  {on && events[0] === cat.name && <span className="ml-1 text-[9px] uppercase tracking-wider text-[#2b181c] font-bold bg-white/70 px-1.5 py-0.2 rounded-full">principal</span>}
+                </button>
+              );
+            })}
             {EVENT_TYPES.map((t) => {
               const on = events.includes(t);
               return (
