@@ -14,7 +14,7 @@ export interface RomanceTemplate {
   type: RomanceServiceType;
   title: string;
   tagline: string;
-  badge?: "Signature" | "Coup de cœur" | "Passion" | "Confidentiel" | "Édition Privée";
+  badge?: "Signature" | "Coup de cœur" | "Passion" | "Confidentiel" | "Édition Privée" | "Bestseller";
   theme: "ruby" | "velvet-black" | "rose-gold" | "champagne";
   paperTexture: "velours-grenat" | "soie-noire" | "coton-poudre" | "or-et-rose";
   waxSealColor: "ruby" | "gold" | "rose-gold" | "black";

@@ -14,9 +14,9 @@
   --ink-soft: #6f4a50;
   --blush: #f4e3e1;
   --gold: #e7c9a0;
-  --serif: var(--inv-serif), "Cormorant Garamond", Georgia, serif;
-  --script: var(--inv-script), "Parisienne", cursive;
-  --sans: var(--inv-sans), "Montserrat", system-ui, sans-serif;
+  --serif: var(--inv-serif, var(--font-cormorant)), "Cormorant Garamond", Georgia, serif;
+  --script: var(--inv-script, var(--font-parisienne)), "Parisienne", cursive;
+  --sans: var(--inv-sans, var(--font-jost)), "Montserrat", system-ui, sans-serif;
 }
 
 .root {

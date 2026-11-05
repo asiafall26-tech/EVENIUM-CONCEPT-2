@@ -33,6 +33,8 @@ export interface VoeuxInspiration {
   text: string;
 }
 
+export type VoeuxCategory = VoeuxOccasion;
+
 // 5 OCCASIONS OFFICIELLES DEMANDÉES
 export const VOEUX_OCCASIONS: VoeuxOccasion[] = [
   {
@@ -86,6 +88,8 @@ export const VOEUX_OCCASIONS: VoeuxOccasion[] = [
     sealColor: "#c9a45e"
   }
 ];
+
+export const VOEUX_CATEGORIES = VOEUX_OCCASIONS;
 
 // MODÈLES DE VŒUX D'EXCEPTION
 export const VOEUX_TEMPLATES: VoeuxTemplate[] = [

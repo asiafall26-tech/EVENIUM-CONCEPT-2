@@ -17,7 +17,6 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { getLocalVaultCards, type VirtualCard } from "@/lib/cartesService";
-import { DashboardFrame } from "@/components/layout/DashboardFrame";
 
 export default function DashboardCartesPage() {
   const [cards, setCards] = useState<VirtualCard[]>([]);
@@ -45,8 +44,7 @@ export default function DashboardCartesPage() {
   };
 
   return (
-    <DashboardFrame title="Mes Vœux & Mots Doux">
-      <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
         
         {/* BANDEAU D'EN-TÊTE */}
         <div className="p-6 rounded-3xl bg-gradient-to-r from-[#1a0f07] via-[#2c1a0e] to-[#1a0f07] text-[#fbf7ee] border border-[#b8924a]/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -206,7 +204,6 @@ export default function DashboardCartesPage() {
         )}
 
       </div>
-    </DashboardFrame>
   );
 }
 

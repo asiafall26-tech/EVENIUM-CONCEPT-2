@@ -13,10 +13,10 @@
   --line: #d6ccbf;
   --silver: #b9ae9f;
   --ivory-txt: #f4ecdf;
-  --script: var(--iv-script), "Parisienne", cursive;
-  --serif: var(--iv-serif), "Cormorant Garamond", Garamond, serif;
-  --display: var(--iv-display), "Playfair Display", Georgia, serif;
-  --sans: var(--iv-sans), "Jost", "Helvetica Neue", Arial, sans-serif;
+  --script: var(--iv-script, var(--font-parisienne)), "Parisienne", cursive;
+  --serif: var(--iv-serif, var(--font-cormorant)), "Cormorant Garamond", Garamond, serif;
+  --display: var(--iv-display, var(--font-playfair)), "Playfair Display", Georgia, serif;
+  --sans: var(--iv-sans, var(--font-jost)), "Jost", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
 }
 .theme *,
