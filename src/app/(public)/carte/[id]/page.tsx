@@ -90,9 +90,27 @@ export default function CardViewPage({ params }: { params: Promise<{ id: string 
     ? "bg-gradient-to-br from-[#3b0b14] via-[#24060c] to-[#120205]"
     : "bg-gradient-to-br from-[#26170d] via-[#1a0f07] to-[#0d0703]";
 
-  const sealBg = isCouple || isMotDoux
-    ? "bg-gradient-to-br from-[#d62828] via-[#9e1b23] to-[#590d12] shadow-red-950/60"
-    : "bg-gradient-to-br from-[#f3e099] via-[#c9a45e] to-[#805e26] shadow-amber-950/60";
+  // Couleur du sceau de cire
+  const getSealBg = () => {
+    if (card.sealColor === "ruby") return "bg-gradient-to-br from-[#d62828] via-[#9e1b23] to-[#590d12] shadow-red-950/60";
+    if (card.sealColor === "gold") return "bg-gradient-to-br from-[#f3e099] via-[#c9a45e] to-[#805e26] shadow-amber-950/60";
+    if (card.sealColor === "emerald") return "bg-gradient-to-br from-[#2d6a4f] via-[#1b4332] to-[#081c15] shadow-emerald-950/60";
+    if (card.sealColor === "pearl") return "bg-gradient-to-br from-[#ffffff] via-[#f1ede4] to-[#c9bfae] text-[#1a0f07] shadow-slate-900/40";
+    if (card.sealColor === "sapphire") return "bg-gradient-to-br from-[#2a6f97] via-[#013a63] to-[#012a4a] shadow-blue-950/60";
+    return isCouple || isMotDoux
+      ? "bg-gradient-to-br from-[#d62828] via-[#9e1b23] to-[#590d12] shadow-red-950/60"
+      : "bg-gradient-to-br from-[#f3e099] via-[#c9a45e] to-[#805e26] shadow-amber-950/60";
+  };
+  const sealBg = getSealBg();
+
+  // Thème du papier de la lettre
+  const getPaperClasses = () => {
+    if (card.paperTheme === "rose") return "bg-[#fff5f6] text-[#2d1217] border-[#eed1d7]";
+    if (card.paperTheme === "parchment") return "bg-[#f8f0de] text-[#28180c] border-[#d4af37]/60";
+    if (card.paperTheme === "dark_velvet") return "bg-[#160f0c] text-[#fbf7ee] border-[#b8924a]/50";
+    return "bg-[#fcf9f2] text-[#24170e] border-[#d9c08c]";
+  };
+  const paperClasses = getPaperClasses();
 
   return (
     <div className="min-h-screen bg-[#0d0603] text-[#2b1d12] relative overflow-hidden flex flex-col items-center justify-center p-3 sm:p-6 selection:bg-[#c9a45e]/30">
@@ -186,7 +204,7 @@ export default function CardViewPage({ params }: { params: Promise<{ id: string 
         <div className="relative z-10 w-full max-w-xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
           
           {/* CARTE / LETTRE HAUTE PAPETERIE */}
-          <div className="relative bg-[#fcf9f2] text-[#24170e] rounded-3xl p-7 sm:p-12 border border-[#d9c08c] shadow-2xl shadow-black/70 overflow-hidden">
+          <div className={`relative ${paperClasses} rounded-3xl p-7 sm:p-12 shadow-2xl shadow-black/70 overflow-hidden transition-all duration-500`}>
             
             {/* Cadre ornemental doré délicat */}
             <div className="absolute inset-3 sm:inset-4 border border-[#d4af37]/40 rounded-2xl pointer-events-none" />

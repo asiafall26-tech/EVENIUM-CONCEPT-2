@@ -73,6 +73,14 @@ import {
   type CustomValues,
 } from '@/lib/customModels';
 import { classificationOf, fetchModelDefaults, hiddenModelIds, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
+import { CartesStudio, type CartesStudioValue } from '@/components/cartes/CartesStudio';
+import { CardStudioModal } from '@/components/cartes/CardStudioModal';
+import { VOEUX_INSPIRATIONS } from '@/data/mock/voeux';
+import { ROMANCE_INSPIRATIONS } from '@/data/mock/romance';
+
+export const VOEU_EXCEPTION_MODEL_ID = "voeu-exception";
+export const MOT_DOUX_MODEL_ID = "mot-doux";
+export const INVI_COUPLE_MODEL_ID = "invitation-couple";
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -145,6 +153,39 @@ const CATALOG_MODELS: ModelItem[] = [
     category: "Anniversaire",
     compatibleEvents: ["Anniversaire"],
     liveUrl: "/invitation-anniversaire"
+  },
+  {
+    id: VOEU_EXCEPTION_MODEL_ID,
+    name: "Vœu d'Exception",
+    subtitle: "Papeterie haute couture, cachet de cire scellé & piano céleste",
+    image: "/invit-sceau-dor-cover.jpg",
+    color: "from-[#b8924a] to-[#805e26]",
+    badge: "Attention 3 900 FCFA",
+    category: "Vœux",
+    compatibleEvents: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Mariage", "Baptême", "Tous"],
+    liveUrl: "/voeux"
+  },
+  {
+    id: MOT_DOUX_MODEL_ID,
+    name: "Les Mots Doux",
+    subtitle: "Lettre d'amour confidentielle scellée au cachet de cire rubis",
+    image: "/invit-rose-or-cover.jpg",
+    color: "from-[#9e1b23] to-[#590d12]",
+    badge: "Romance 3 900 FCFA",
+    category: "Mots Doux",
+    compatibleEvents: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Tous"],
+    liveUrl: "/mots-doux"
+  },
+  {
+    id: INVI_COUPLE_MODEL_ID,
+    name: "Invitations Couple",
+    subtitle: "Tête-à-tête secret avec scénographie & bouton d'amour « J'accepte »",
+    image: "/invit-velours-cover.jpg",
+    color: "from-[#4a0e17] to-[#140306]",
+    badge: "Tête-à-tête 3 900 FCFA",
+    category: "Invitations Couple",
+    compatibleEvents: ["Couple", "Invitations Couple", "Soirée", "Dîner", "Tous"],
+    liveUrl: "/mots-doux"
   }
 ];
 
@@ -152,6 +193,8 @@ const CATALOG_MODELS: ModelItem[] = [
 // L'id est le type enregistré sur l'événement ; « Bientôt » tant qu'aucun modèle n'est compatible
 const buildEventCategories = (models: ModelItem[]): { id: string; label: string; icon: string; isSoon?: boolean }[] => [
   { id: "Tous", label: "Tous les modèles", icon: "✨" },
+  { id: "Vœux", label: "Vœux d'Exception", icon: "🌟" },
+  { id: "Couple", label: "Mots Doux & Couple", icon: "❤️" },
   ...EVENT_TYPES.map((t) => ({
     id: t,
     label: t,
@@ -179,6 +222,24 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   // Événement & Modèle sélectionné
   const [selectedEventCategory, setSelectedEventCategory] = useState("Mariage");
   const [selectedModelId, setSelectedModelId] = useState<string>(VELOURS_MODEL_ID);
+  
+  // État d'édition dédié aux Vœux, Mots Doux & Invitations Couple
+  const [cartesContent, setCartesContent] = useState<CartesStudioValue>({
+    recipient: "Mon Amour",
+    sender: "Moi",
+    kicker: "Attention Particulière",
+    title: "Pour que tu n'oublies jamais à quel point tu comptes",
+    message: "Au milieu du bruit du monde, il y a ton sourire qui apaise tout. Je voulais simplement te rappeler à quel point ma vie a pris une saveur unique depuis que tu en fais partie.",
+    music: "Experience - Ludovico Einaudi",
+    sealColor: "ruby",
+    paperTheme: "rose",
+    rendezVousDate: "Ce vendredi soir",
+    rendezVousTime: "20h30 précises",
+    rendezVousPlace: "Lieu secret... Je passe te chercher en bas",
+    dressCode: "Chic & Séduction",
+  });
+  const [isCartesModalOpen, setIsCartesModalOpen] = useState(false);
+  const isCardStudioModel = selectedModelId === VOEU_EXCEPTION_MODEL_ID || selectedModelId === MOT_DOUX_MODEL_ID || selectedModelId === INVI_COUPLE_MODEL_ID;
 
   // Modèles ajustés, classés ou retirés du site par l'admin (studio des modèles)
   const [publishedModels, setPublishedModels] = useState<Record<string, ModelDefaultRow>>({});
@@ -917,7 +978,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
               <button
                 type="button"
-                onClick={() => setIsCheckoutModalOpen(true)}
+                onClick={() => {
+                  if (isCardStudioModel) {
+                    setIsCartesModalOpen(true);
+                  } else {
+                    setIsCheckoutModalOpen(true);
+                  }
+                }}
                 className="px-3 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 border border-[#b8924a]/30 transition-all flex items-center justify-center gap-1.5 sm:gap-2 group active:scale-95"
               >
                 <Crown size={16} className="text-[#b8924a] shrink-0" />
@@ -980,6 +1047,31 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 />
               );
             })()}
+            {isCardStudioModel && (
+              <div className="p-4 sm:p-8 bg-[#faf6ee] overflow-y-auto flex-1">
+                <CartesStudio
+                  cardType={
+                    selectedModelId === VOEU_EXCEPTION_MODEL_ID
+                      ? "voeu"
+                      : selectedModelId === MOT_DOUX_MODEL_ID
+                      ? "mot_doux"
+                      : "invitation_couple"
+                  }
+                  occasionName={currentModel.name}
+                  templateTitle={currentModel.name}
+                  priceFcfa={3900}
+                  priceEur="3,90 €"
+                  value={cartesContent}
+                  onChange={(patch) => setCartesContent((prev) => ({ ...prev, ...patch }))}
+                  onProceedToCheckout={() => setIsCartesModalOpen(true)}
+                  inspirations={
+                    selectedModelId === VOEU_EXCEPTION_MODEL_ID
+                      ? VOEUX_INSPIRATIONS.map((i) => ({ title: i.title, text: i.text }))
+                      : ROMANCE_INSPIRATIONS.filter((i) => i.type === (selectedModelId === MOT_DOUX_MODEL_ID ? "mot_doux" : "invitation_couple")).map((i) => ({ title: i.title, text: i.text }))
+                  }
+                />
+              </div>
+            )}
             {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
               <AnniversaireStudio
                 value={anniversaireContent}
@@ -1077,6 +1169,62 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 </div>
               );
             })()}
+            {isCardStudioModel && (
+              <div className="min-h-screen bg-[#0d0603] text-[#fbf7ee] flex items-center justify-center p-4">
+                <div className="w-full max-w-xl mx-auto space-y-4 my-auto">
+                  <div className={`p-8 sm:p-12 rounded-3xl ${
+                    cartesContent.paperTheme === "rose"
+                      ? "bg-[#fff5f6] text-[#2d1217]"
+                      : cartesContent.paperTheme === "parchment"
+                      ? "bg-[#f8f0de] text-[#28180c]"
+                      : cartesContent.paperTheme === "dark_velvet"
+                      ? "bg-[#160f0c] text-[#fbf7ee]"
+                      : "bg-[#fcf9f2] text-[#24170e]"
+                  } border border-[#d9c08c] shadow-2xl text-center space-y-4 relative`}>
+                    <div className="absolute inset-2 border border-[#d4af37]/30 rounded-2xl pointer-events-none" />
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#8f6f33]">
+                      {cartesContent.kicker || "Attention Particulière"}
+                    </span>
+                    <h3 className="font-serif text-2xl sm:text-3xl font-bold">{cartesContent.title}</h3>
+                    <p className="font-serif text-base sm:text-lg italic leading-relaxed whitespace-pre-line">
+                      "{cartesContent.message}"
+                    </p>
+                    {selectedModelId === INVI_COUPLE_MODEL_ID && (cartesContent.rendezVousDate || cartesContent.rendezVousPlace) && (
+                      <div className="p-4 bg-black/5 rounded-2xl border border-[#b8924a]/30 text-xs text-left space-y-1.5">
+                        <p className="font-bold text-[#8f6f33]">🕯️ Rendez-vous en Amoureux</p>
+                        {cartesContent.rendezVousDate && <p><strong>Date :</strong> {cartesContent.rendezVousDate} {cartesContent.rendezVousTime && `à ${cartesContent.rendezVousTime}`}</p>}
+                        {cartesContent.rendezVousPlace && <p><strong>Lieu :</strong> {cartesContent.rendezVousPlace}</p>}
+                        {cartesContent.dressCode && <p><strong>Dress Code :</strong> {cartesContent.dressCode}</p>}
+                        <p className="pt-2 text-center text-[#d62828] font-bold">Bouton invité : « J'accepte avec amour ❤️ »</p>
+                      </div>
+                    )}
+                    <div className="pt-4 border-t border-black/10 text-right text-xs font-serif italic">
+                      Avec toute mon affection, <br />
+                      <strong className="not-italic font-bold">{cartesContent.sender || "L'Expéditeur"}</strong>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewFullScreenOpen(false)}
+                      className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer"
+                    >
+                      Revenir à l'édition
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPreviewFullScreenOpen(false);
+                        setIsCartesModalOpen(true);
+                      }}
+                      className="btn-lux px-6 py-2.5 text-xs font-bold cursor-pointer"
+                    >
+                      Valider &amp; Finaliser (3 900 FCFA)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
               <AnniversaireInvitation
                 content={forInvitationKind(anniversaireContent, isStaticCard)}
@@ -1146,6 +1294,39 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* MODALE DE FINALISATION, FORMULE & ACTIVATION DU COMPTE             */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* Modale d'achat direct pour Vœux, Mots Doux & Invitations Couple */}
+      {isCartesModalOpen && (
+        <CardStudioModal
+          isOpen={isCartesModalOpen}
+          onClose={() => setIsCartesModalOpen(false)}
+          cardConfig={{
+            type: selectedModelId === VOEU_EXCEPTION_MODEL_ID
+              ? "voeu"
+              : selectedModelId === MOT_DOUX_MODEL_ID
+              ? "mot_doux"
+              : "invitation_couple",
+            templateId: selectedModelId,
+            occasionId: selectedModelId === VOEU_EXCEPTION_MODEL_ID ? "anniversaire" : "diner_secret",
+            occasionName: currentModel.name,
+            templateTitle: currentModel.name,
+            theme: cartesContent.paperTheme,
+            waxSealColor: cartesContent.sealColor,
+            defaultSender: cartesContent.sender,
+            defaultRecipient: cartesContent.recipient,
+            defaultKicker: cartesContent.kicker,
+            defaultTitle: cartesContent.title,
+            defaultMessage: cartesContent.message,
+            suggestedMusic: cartesContent.music,
+            defaultDate: cartesContent.rendezVousDate,
+            defaultTime: cartesContent.rendezVousTime,
+            defaultPlace: cartesContent.rendezVousPlace,
+            defaultDressCode: cartesContent.dressCode,
+            priceFcfa: 3900,
+            priceEur: "3,90 €",
+          }}
+        />
+      )}
+
       {isCheckoutModalOpen && (
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
           <div className="w-full max-w-5xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-3 sm:my-auto animate-in zoom-in-95 duration-200">

@@ -14,6 +14,8 @@ export interface VirtualCard {
   title: string;
   message: string;
   music?: string;
+  sealColor?: "gold" | "ruby" | "emerald" | "pearl" | "sapphire";
+  paperTheme?: "ivory" | "parchment" | "rose" | "dark_velvet";
   photoUrl?: string;
   
   // Champs spécifiques aux Invitations Couple:

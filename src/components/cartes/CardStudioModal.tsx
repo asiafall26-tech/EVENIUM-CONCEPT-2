@@ -25,6 +25,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { registerPurchasedCard, type VirtualCard, type CardCategoryType } from "@/lib/cartesService";
+import { CartesStudio, type CartesStudioValue } from "./CartesStudio";
 
 interface CardStudioModalProps {
   isOpen: boolean;
@@ -66,6 +67,8 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [music, setMusic] = useState("");
+  const [sealColor, setSealColor] = useState<"gold" | "ruby" | "emerald" | "pearl" | "sapphire">("gold");
+  const [paperTheme, setPaperTheme] = useState<"ivory" | "parchment" | "rose" | "dark_velvet">("ivory");
   
   // Spécifique invitation couple
   const [rendezVousDate, setRendezVousDate] = useState("");
@@ -93,7 +96,14 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
       setKicker(cardConfig.defaultKicker || "");
       setTitle(cardConfig.defaultTitle || "");
       setMessage(cardConfig.defaultMessage || "");
-      setMusic(cardConfig.suggestedMusic || "Clair de Lune");
+      setMusic(cardConfig.suggestedMusic || "Clair de Lune - Debussy");
+      setSealColor(
+        (cardConfig.waxSealColor as any) ||
+        (cardConfig.type === "mot_doux" || cardConfig.type === "invitation_couple" ? "ruby" : "gold")
+      );
+      setPaperTheme(
+        cardConfig.type === "mot_doux" ? "rose" : cardConfig.type === "invitation_couple" ? "ivory" : "parchment"
+      );
       setRendezVousDate(cardConfig.defaultDate || "");
       setRendezVousTime(cardConfig.defaultTime || "");
       setRendezVousPlace(cardConfig.defaultPlace || "");
@@ -152,6 +162,8 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
         title: title.trim() || cardConfig.defaultTitle || "",
         message: message.trim(),
         music: music.trim(),
+        sealColor: sealColor,
+        paperTheme: paperTheme,
         rendezVousDate: cardConfig.type === "invitation_couple" ? rendezVousDate.trim() : undefined,
         rendezVousTime: cardConfig.type === "invitation_couple" ? rendezVousTime.trim() : undefined,
         rendezVousPlace: cardConfig.type === "invitation_couple" ? rendezVousPlace.trim() : undefined,
@@ -197,9 +209,9 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-300">
       
-      <div className="relative w-full max-w-2xl bg-[#faf6ee] text-[#2b1d12] rounded-3xl border border-[#d9c08c] shadow-2xl overflow-hidden my-auto">
+      <div className="relative w-full max-w-5xl bg-[#faf6ee] text-[#2b1d12] rounded-3xl border border-[#d9c08c] shadow-2xl overflow-hidden my-auto">
         
         {/* BANDEAU SUPÉRIEUR HAUTE PAPETERIE */}
         <div className="relative px-6 py-4 bg-gradient-to-r from-[#1a0f07] via-[#2c1a0e] to-[#1a0f07] text-[#fbf7ee] flex items-center justify-between border-b border-[#b8924a]/30">
@@ -253,174 +265,52 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
             </div>
           )}
 
-          {/* ───────────────── ÉTAPE 1 : PERSONNALISATION ───────────────── */}
+          {/* ───────────────── ÉTAPE 1 : STUDIO D'ÉDITION & APERÇU EN DIRECT ───────────────── */}
           {step === 1 && (
-            <form onSubmit={handleGoToPayment} className="space-y-5">
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#665140] mb-1.5">
-                    Pour qui ? (Destinataire) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
-                    placeholder="Ex: Sophie, Mon Cœur, Mamadou..."
-                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#d9c08c] text-sm text-[#1a0f07] focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#665140] mb-1.5">
-                    De la part de ? (Expéditeur) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={sender}
-                    onChange={(e) => setSender(e.target.value)}
-                    placeholder="Ex: Thomas, Ton admirateur, Aïcha..."
-                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#d9c08c] text-sm text-[#1a0f07] focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#665140] mb-1.5">
-                  Titre ou phrase d'accroche
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Que cette nouvelle année t'apporte bonheur et succès..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#d9c08c] text-sm text-[#1a0f07] focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
-                />
-              </div>
-
-              {/* MESSAGE & INSPIRATIONS */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#665140]">
-                    Votre Message d'Émotion *
-                  </label>
-                  <span className="text-[11px] text-[#8f6f33] italic">
-                    Écrit avec votre cœur
-                  </span>
-                </div>
-                <textarea
-                  rows={5}
-                  required
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Écrivez vos mots les plus sincères..."
-                  className="w-full p-4 rounded-xl bg-white border border-[#d9c08c] text-sm text-[#1a0f07] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
-                />
-
-                {/* Suggestions d'inspiration en 1 clic */}
-                {cardConfig.inspirations && cardConfig.inspirations.length > 0 && (
-                  <div className="mt-2.5">
-                    <p className="text-[11px] font-semibold text-[#8f6f33] flex items-center gap-1 mb-1.5">
-                      <Lightbulb size={12} />
-                      <span>Manque d'inspiration ? Cliquez pour utiliser un texte rédigé :</span>
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cardConfig.inspirations.map((insp, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplyInspiration(insp.text)}
-                          className="px-2.5 py-1 text-[11px] bg-white hover:bg-[#faf0dc] border border-[#d9c08c] rounded-full text-[#665140] hover:text-[#1a0f07] transition-all cursor-pointer text-left"
-                        >
-                          ✦ {insp.title}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* CHAMPS SPÉCIFIQUES POUR INVITATIONS COUPLE */}
-              {cardConfig.type === "invitation_couple" && (
-                <div className="p-4 rounded-2xl bg-[#faf0dc] border border-[#e6d7c3] space-y-3.5">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#8f6f33]">
-                    <Sparkles size={14} className="text-[#b8924a]" />
-                    <span>Détails du Rendez-vous en Amoureux</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#665140] mb-1 flex items-center gap-1">
-                        <Calendar size={12} /> Date
-                      </label>
-                      <input
-                        type="text"
-                        value={rendezVousDate}
-                        onChange={(e) => setRendezVousDate(e.target.value)}
-                        placeholder="Ex: Ce vendredi soir"
-                        className="w-full px-3 py-2 rounded-lg bg-white border border-[#d9c08c] text-xs text-[#1a0f07]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#665140] mb-1 flex items-center gap-1">
-                        <Clock size={12} /> Heure
-                      </label>
-                      <input
-                        type="text"
-                        value={rendezVousTime}
-                        onChange={(e) => setRendezVousTime(e.target.value)}
-                        placeholder="Ex: 20h30 précises"
-                        className="w-full px-3 py-2 rounded-lg bg-white border border-[#d9c08c] text-xs text-[#1a0f07]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#665140] mb-1 flex items-center gap-1">
-                      <MapPin size={12} /> Lieu / Destination
-                    </label>
-                    <input
-                      type="text"
-                      value={rendezVousPlace}
-                      onChange={(e) => setRendezVousPlace(e.target.value)}
-                      placeholder="Ex: Lieu secret... Je passe te chercher en bas"
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#d9c08c] text-xs text-[#1a0f07]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#665140] mb-1 flex items-center gap-1">
-                      <Shirt size={12} /> Dress Code suggéré
-                    </label>
-                    <input
-                      type="text"
-                      value={dressCode}
-                      onChange={(e) => setDressCode(e.target.value)}
-                      placeholder="Ex: Chic & Séduction, Pyjama en soie..."
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#d9c08c] text-xs text-[#1a0f07]"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* BOUTON SUIVANT */}
-              <div className="pt-2 flex items-center justify-between">
-                <span className="text-xs text-[#8f6f33]">
-                  Tarif unique : <strong className="text-[#1a0f07]">{cardConfig.priceFcfa.toLocaleString()} FCFA</strong> ({cardConfig.priceEur})
-                </span>
-                <button
-                  type="submit"
-                  className="btn-lux px-6 py-3 text-xs !tracking-[0.14em] cursor-pointer flex items-center gap-2"
-                >
-                  <span>Étape suivante : Paiement</span>
-                  <ArrowRight size={14} className="text-[#f0d999]" />
-                </button>
-              </div>
-
-            </form>
+            <CartesStudio
+              cardType={cardConfig.type}
+              occasionName={cardConfig.occasionName}
+              templateTitle={cardConfig.templateTitle}
+              priceFcfa={cardConfig.priceFcfa}
+              priceEur={cardConfig.priceEur}
+              value={{
+                recipient,
+                sender,
+                kicker,
+                title,
+                message,
+                music,
+                sealColor,
+                paperTheme,
+                rendezVousDate,
+                rendezVousTime,
+                rendezVousPlace,
+                dressCode,
+              }}
+              onChange={(patch) => {
+                if (patch.recipient !== undefined) setRecipient(patch.recipient);
+                if (patch.sender !== undefined) setSender(patch.sender);
+                if (patch.kicker !== undefined) setKicker(patch.kicker);
+                if (patch.title !== undefined) setTitle(patch.title);
+                if (patch.message !== undefined) setMessage(patch.message);
+                if (patch.music !== undefined) setMusic(patch.music);
+                if (patch.sealColor !== undefined) setSealColor(patch.sealColor);
+                if (patch.paperTheme !== undefined) setPaperTheme(patch.paperTheme);
+                if (patch.rendezVousDate !== undefined) setRendezVousDate(patch.rendezVousDate);
+                if (patch.rendezVousTime !== undefined) setRendezVousTime(patch.rendezVousTime);
+                if (patch.rendezVousPlace !== undefined) setRendezVousPlace(patch.rendezVousPlace);
+                if (patch.dressCode !== undefined) setDressCode(patch.dressCode);
+              }}
+              onProceedToCheckout={() => {
+                if (!recipient.trim() || !sender.trim() || !message.trim()) {
+                  setErrorMessage("Veuillez renseigner le destinataire, l'expéditeur et votre message.");
+                  return;
+                }
+                setErrorMessage("");
+                setStep(2);
+              }}
+              inspirations={cardConfig.inspirations}
+            />
           )}
 
           {/* ───────────────── ÉTAPE 2 : PAIEMENT & COORDONNÉES ───────────────── */}
