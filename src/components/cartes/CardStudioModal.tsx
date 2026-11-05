@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   X, 
@@ -86,7 +86,7 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
   const [copied, setCopied] = useState(false);
 
   // Initialisation à l'ouverture
-  useState(() => {
+  useEffect(() => {
     if (cardConfig) {
       setRecipient(cardConfig.defaultRecipient || "");
       setSender(cardConfig.defaultSender || "");
@@ -98,8 +98,11 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
       setRendezVousTime(cardConfig.defaultTime || "");
       setRendezVousPlace(cardConfig.defaultPlace || "");
       setDressCode(cardConfig.defaultDressCode || "");
+      setStep(1);
+      setErrorMessage("");
+      setGeneratedCard(null);
     }
-  });
+  }, [cardConfig]);
 
   if (!isOpen || !cardConfig) return null;
 
