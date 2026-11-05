@@ -70,15 +70,15 @@ export default function VoeuxPage() {
             <span className="font-semibold text-[#1a0f07] not-italic block sm:inline mt-1 sm:mt-0">Ici, vos vœux deviennent inoubliables.</span>
           </p>
 
-          {/* Bouton Créer Immédiat */}
+          {/* Bouton Voir les modèles */}
           <div className="pt-4">
-            <button
-              onClick={handleOpenGeneralStudio}
+            <Link
+              href="/create?category=Vœux"
               className="btn-lux px-8 py-3.5 text-xs sm:text-sm !tracking-[0.16em] cursor-pointer inline-flex items-center gap-2 shadow-xl hover:scale-105 transition-all"
             >
-              <span>Créer mon Vœu d'Exception</span>
+              <span>Voir les modèles</span>
               <ArrowRight size={15} className="text-[#f0d999]" />
-            </button>
+            </Link>
           </div>
 
         </div>
@@ -99,9 +99,9 @@ export default function VoeuxPage() {
         {/* GRILLE DES 5 OCCASIONS RÉELLES */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {VOEUX_OCCASIONS.map((occ) => (
-            <div
+            <Link
               key={occ.id}
-              onClick={() => handleOpenStudio(occ)}
+              href="/create?category=Vœux"
               className="group card-lux rounded-3xl p-6 sm:p-7 border border-[#e6d7c3] bg-white/95 shadow-sm hover:shadow-xl hover:border-[#b8924a] transition-all duration-300 cursor-pointer flex flex-col justify-between"
             >
               <div className="space-y-3">
@@ -128,11 +128,11 @@ export default function VoeuxPage() {
                   Sceau de cire doré
                 </span>
                 <span className="text-xs font-bold text-[#1a0f07] group-hover:text-[#8f6f33] flex items-center gap-1">
-                  <span>Créer</span>
+                  <span>Voir les modèles</span>
                   <ArrowRight size={13} />
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

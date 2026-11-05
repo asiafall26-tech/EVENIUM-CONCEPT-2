@@ -119,13 +119,13 @@ export default function RomancePage() {
             </div>
 
             <div className="pt-4 border-t border-[#f4dee2]">
-              <button
-                onClick={handleOpenMotDoux}
+              <Link
+                href="/create?category=Couple"
                 className="w-full py-4 rounded-full bg-gradient-to-r from-[#d62828] via-[#ba181b] to-[#800f2f] hover:brightness-105 text-white text-xs sm:text-sm font-bold tracking-wider shadow-lg shadow-rose-950/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Rédiger un Mot Doux</span>
+                <span>Voir les modèles</span>
                 <ArrowRight size={15} />
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -170,13 +170,13 @@ export default function RomancePage() {
             </div>
 
             <div className="pt-4 border-t border-[#f4dee2]">
-              <button
-                onClick={handleOpenInvitationCouple}
+              <Link
+                href="/create?category=Couple"
                 className="w-full py-4 rounded-full bg-gradient-to-r from-[#d62828] via-[#ba181b] to-[#800f2f] hover:brightness-105 text-white text-xs sm:text-sm font-bold tracking-wider shadow-lg shadow-rose-950/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Créer une Invitation Couple</span>
+                <span>Voir les modèles</span>
                 <ArrowRight size={15} />
-              </button>
+              </Link>
             </div>
           </div>
 

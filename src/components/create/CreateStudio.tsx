@@ -220,8 +220,27 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   });
 
   // Événement & Modèle sélectionné
-  const [selectedEventCategory, setSelectedEventCategory] = useState("Mariage");
+  const categoryParam = searchParams.get('category');
+  const [selectedEventCategory, setSelectedEventCategory] = useState<string>(() => {
+    if (categoryParam) {
+      const lower = categoryParam.toLowerCase();
+      if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") return "Couple";
+      if (lower === "voeux" || lower === "vœux" || lower === "voeu") return "Vœux";
+      return categoryParam;
+    }
+    return "Mariage";
+  });
   const [selectedModelId, setSelectedModelId] = useState<string>(VELOURS_MODEL_ID);
+
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat) {
+      const lower = cat.toLowerCase();
+      if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") setSelectedEventCategory("Couple");
+      else if (lower === "voeux" || lower === "vœux" || lower === "voeu") setSelectedEventCategory("Vœux");
+      else setSelectedEventCategory(cat);
+    }
+  }, [searchParams]);
   
   // État d'édition dédié aux Vœux, Mots Doux & Invitations Couple
   const [cartesContent, setCartesContent] = useState<CartesStudioValue>({
