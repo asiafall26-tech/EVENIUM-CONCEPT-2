@@ -656,3 +656,4 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
     </div>
   );
 }
+

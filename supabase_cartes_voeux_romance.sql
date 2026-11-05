@@ -65,3 +65,4 @@ CREATE POLICY "Mise à jour de la réponse partenaire"
   WITH CHECK (true);
 
 COMMENT ON TABLE public.cartes_virtuelles IS 'Cartes de vœux d''exception, mots doux et invitations intimes de couple';
+

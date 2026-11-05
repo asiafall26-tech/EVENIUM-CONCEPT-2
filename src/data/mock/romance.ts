@@ -217,3 +217,4 @@ export const ROMANCE_INSPIRATIONS: RomanceInspiration[] = [
     text: "Laisse toutes tes tensions à la porte. J'ai privatisé pour nous deux une parenthèse de pure détente : massages aux huiles chaudes, tisane et sérénité absolue."
   }
 ];
+

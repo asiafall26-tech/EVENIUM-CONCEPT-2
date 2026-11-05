@@ -306,3 +306,4 @@ export default function CardViewPage({ params }: { params: Promise<{ id: string 
     </div>
   );
 }
+
