@@ -34,34 +34,42 @@ export default function RomancePage() {
   };
 
   return (
-    <div className="bg-[#120508] text-[#fbf7ee] min-h-screen selection:bg-[#d62828]/40 selection:text-white pb-24 overflow-hidden">
+    <div className="bg-[#fcf8f7] text-[#2b181c] min-h-screen selection:bg-[#d62828]/20 selection:text-[#800f2f] pb-24 overflow-hidden">
       
-      {/* 1. EN-TÊTE ÉLÉGANT & ROMANTIQUE */}
-      <section className="relative pt-16 sm:pt-24 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8 text-center border-b border-[#3d121c] overflow-hidden">
+      {/* 1. EN-TÊTE ÉLÉGANT, LUMINEUX & ROMANTIQUE */}
+      <section className="relative pt-16 sm:pt-24 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8 text-center bg-gradient-to-b from-[#fff6f7] via-[#fdf8f6] to-[#faeff1] border-b border-[#f1d7dc] overflow-hidden">
         
-        {/* Halo rouge rubis & or rose */}
+        {/* Halo doux rose poudré & or champagne */}
         <div 
           aria-hidden 
-          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[850px] h-[500px] rounded-full bg-gradient-to-b from-[#d62828]/30 via-[#ba181b]/15 to-transparent blur-[130px] pointer-events-none" 
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[850px] h-[500px] rounded-full bg-gradient-to-b from-[#fecdd3]/50 via-[#fed7aa]/25 to-transparent blur-[120px] pointer-events-none" 
         />
+
+        {/* Étoiles & scintillements flottants discrets */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none overflow-hidden">
+          <span className="absolute top-10 left-[18%] text-[#e63946] text-xs animate-gold-float opacity-70">✦</span>
+          <span className="absolute top-16 right-[20%] text-[#b8924a] text-sm animate-gold-float-slow opacity-80">✧</span>
+          <span className="absolute bottom-8 left-[24%] text-[#b8924a] text-base animate-gold-float-slow opacity-60">✦</span>
+          <span className="absolute top-1/2 right-[14%] text-[#e63946] text-xs animate-gold-float opacity-75">✧</span>
+        </div>
 
         <div className="max-w-3xl mx-auto relative z-10 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
           
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-[#d4af37]/40 text-[#f0d999] text-[11px] font-bold uppercase tracking-[0.22em] shadow-lg">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/95 border border-[#f4c2c9] text-[#9e1b23] text-[11px] font-bold uppercase tracking-[0.22em] shadow-xs hover:scale-105 transition-transform duration-300">
             <Heart size={13} className="text-[#e63946] fill-[#e63946] animate-pulse" />
             <span>L'Écrin Privé des Amoureux • Evenium</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-white leading-[1.15] tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-[#1a0a0e] leading-[1.15] tracking-tight">
             Pour ceux qui s'aiment, <br className="hidden sm:inline" />
-            <span className="italic bg-gradient-to-r from-[#ffcad4] via-[#f4a261] to-[#e76f51] bg-clip-text text-transparent">
+            <span className="italic bg-gradient-to-r from-[#b91c1c] via-[#b8924a] to-[#991b1b] bg-clip-text text-transparent">
               chaque jour est une déclaration.
             </span>
           </h1>
 
-          <p className="font-serif text-base sm:text-xl text-[#e8c2ca] max-w-2xl mx-auto leading-relaxed pt-1">
+          <p className="font-serif text-base sm:text-xl text-[#6b3e47] max-w-2xl mx-auto leading-relaxed pt-1">
             <span className="italic">Des mots doux scellés au cachet de cire et des invitations secrètes en tête-à-tête.</span>{" "}
-            <span className="font-semibold text-white not-italic block sm:inline mt-1 sm:mt-0">
+            <span className="font-semibold text-[#1a0a0e] not-italic block sm:inline mt-1 sm:mt-0">
               Offrez l'inattendu à celui ou celle qui fait battre votre cœur.
             </span>
           </p>
@@ -69,105 +77,105 @@ export default function RomancePage() {
         </div>
       </section>
 
-      {/* 2. LES 2 SERVICES PRIVILÈGE (ÉPURÉS & SANS FAUX MODÈLES) */}
+      {/* 2. LES 2 SERVICES PRIVILÈGE (LUMINEUX, ÉPURÉS & SANS FAUX MODÈLES) */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           
           {/* SERVICE 1 : LES MOTS DOUX */}
-          <div className="rounded-3xl bg-gradient-to-b from-[#1f090e] to-[#140407] border border-[#4a1823] p-8 sm:p-10 shadow-2xl flex flex-col justify-between space-y-6 hover:border-[#b8924a]/50 transition-all duration-300">
+          <div className="rounded-3xl bg-white border border-[#eed7dc] p-8 sm:p-10 shadow-sm hover:shadow-xl hover:border-[#b91c1c]/40 transition-all duration-300 flex flex-col justify-between space-y-6 group">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="w-12 h-12 rounded-2xl bg-[#3b0b14] border border-[#d62828]/40 flex items-center justify-center text-2xl shadow-inner">
+                <span className="w-14 h-14 rounded-2xl bg-[#fff0f3] border border-[#f7c5ce] flex items-center justify-center text-3xl shadow-xs group-hover:scale-105 transition-transform">
                   💌
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-[#d62828]/20 text-[#ffcad4] border border-[#d62828]/40">
+                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-[#ffe5e9] text-[#9e1b23] border border-[#f8bcc5]">
                   Romance Privée
                 </span>
               </div>
 
-              <h2 className="font-serif text-2xl sm:text-3xl text-white font-medium">
+              <h2 className="font-serif text-2xl sm:text-3xl text-[#1a0a0e] font-medium">
                 Les Mots Doux
               </h2>
 
-              <p className="text-xs sm:text-sm text-[#d1a3ac] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#663e46] leading-relaxed">
                 Une lettre d'amour numérique confidentielle, scellée d'un cachet de cire rubis et accompagnée d'une douce mélodie au piano.
               </p>
 
-              <ul className="space-y-2 text-xs text-[#e8c2ca] pt-2">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-[#4d2830] pt-2">
                 <li className="flex items-center gap-2">
-                  <span className="text-[#e63946]">✦</span>
+                  <span className="text-[#d62828]">✦</span>
                   <span>Déclarations passionnées & poèmes intimes</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#e63946]">✦</span>
+                  <span className="text-[#d62828]">✦</span>
                   <span>Mots doux du réveil & tendres pensées</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#e63946]">✦</span>
+                  <span className="text-[#d62828]">✦</span>
                   <span>Mots de pardon, de paix & de réconciliation</span>
                 </li>
               </ul>
             </div>
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-[#f4dee2]">
               <button
                 onClick={handleOpenMotDoux}
-                className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#d62828] to-[#9e1b23] hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-red-950/40 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-4 rounded-full bg-gradient-to-r from-[#d62828] via-[#ba181b] to-[#800f2f] hover:brightness-105 text-white text-xs sm:text-sm font-bold tracking-wider shadow-lg shadow-rose-950/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Rédiger un Mot Doux</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={15} />
               </button>
             </div>
           </div>
 
           {/* SERVICE 2 : LES INVITATIONS COUPLE */}
-          <div className="rounded-3xl bg-gradient-to-b from-[#1f090e] to-[#140407] border border-[#4a1823] p-8 sm:p-10 shadow-2xl flex flex-col justify-between space-y-6 hover:border-[#b8924a]/50 transition-all duration-300">
+          <div className="rounded-3xl bg-white border border-[#eed7dc] p-8 sm:p-10 shadow-sm hover:shadow-xl hover:border-[#b91c1c]/40 transition-all duration-300 flex flex-col justify-between space-y-6 group">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="w-12 h-12 rounded-2xl bg-[#3b0b14] border border-[#d62828]/40 flex items-center justify-center text-2xl shadow-inner">
+                <span className="w-14 h-14 rounded-2xl bg-[#fff0f3] border border-[#f7c5ce] flex items-center justify-center text-3xl shadow-xs group-hover:scale-105 transition-transform">
                   🕯️
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-[#d62828]/20 text-[#ffcad4] border border-[#d62828]/40">
+                <span className="text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-[#ffe5e9] text-[#9e1b23] border border-[#f8bcc5]">
                   Tête-à-tête Secret
                 </span>
               </div>
 
-              <h2 className="font-serif text-2xl sm:text-3xl text-white font-medium">
+              <h2 className="font-serif text-2xl sm:text-3xl text-[#1a0a0e] font-medium">
                 Invitations Couple
               </h2>
 
-              <p className="text-xs sm:text-sm text-[#d1a3ac] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#663e46] leading-relaxed">
                 Un carton d'invitation privé haute couture pour surprendre votre partenaire avec une date, un lieu secret et un bouton d'acceptation complice.
               </p>
 
-              <ul className="space-y-2 text-xs text-[#e8c2ca] pt-2">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-[#4d2830] pt-2">
                 <li className="flex items-center gap-2">
-                  <span className="text-[#e63946]">✦</span>
+                  <span className="text-[#d62828]">✦</span>
                   <span>Dîners secrets aux chandelles & tables intimes</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#e63946]">✦</span>
+                  <span className="text-[#d62828]">✦</span>
                   <span>Escapades romantiques & week-ends surprise</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#e63946]">✦</span>
+                  <span className="text-[#d62828]">✦</span>
                   <span>Soirées cocooning, cinéma privé & massages en duo</span>
                 </li>
-                <li className="flex items-center gap-2 font-medium text-white">
-                  <span className="text-[#d4af37]">❤️</span>
-                  <span>Bouton interactif : <em>"J'accepte avec amour"</em></span>
+                <li className="flex items-center gap-2 font-medium text-[#9e1b23] bg-[#fff0f3] p-2.5 rounded-xl border border-[#fed4dc]">
+                  <span>❤️</span>
+                  <span>Bouton interactif exclusif : <em>« J'accepte avec amour »</em></span>
                 </li>
               </ul>
             </div>
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-[#f4dee2]">
               <button
                 onClick={handleOpenInvitationCouple}
-                className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#d62828] to-[#9e1b23] hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-red-950/40 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-4 rounded-full bg-gradient-to-r from-[#d62828] via-[#ba181b] to-[#800f2f] hover:brightness-105 text-white text-xs sm:text-sm font-bold tracking-wider shadow-lg shadow-rose-950/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Créer une Invitation Couple</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={15} />
               </button>
             </div>
           </div>
@@ -178,14 +186,14 @@ export default function RomancePage() {
 
       {/* 3. LIEN DE SECOURS DE RÉCUPÉRATION */}
       <section className="max-w-md mx-auto px-4 mt-16 text-center">
-        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1.5">
-          <p className="text-xs text-[#d1a3ac] flex items-center justify-center gap-1">
-            <ShieldCheck size={13} className="text-[#d4af37]" />
+        <div className="p-5 rounded-2xl bg-white border border-[#eed7dc] shadow-xs space-y-1.5">
+          <p className="text-xs text-[#663e46] flex items-center justify-center gap-1.5">
+            <ShieldCheck size={14} className="text-[#b8924a]" />
             <span>Vous avez déjà envoyé une attention ?</span>
           </p>
           <Link
             href="/cartes/retrouver"
-            className="inline-flex items-center gap-1 text-xs font-bold text-[#d4af37] hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#b91c1c] hover:underline"
           >
             <Search size={12} />
             <span>Retrouver mon lien avec mon email ou téléphone</span>
