@@ -275,31 +275,68 @@ export default function AdminModelEditor({
         </div>
       </div>
 
-      {/* Aperçu plein écran : le modèle entier, puis « Enregistrer la modification » ou « Retour » */}
+      {/* Aperçu plein écran : le modèle entier propre (sans bannière intrusive), dans un châssis smartphone sur grand écran avec barre d'actions supérieure */}
       {preview && (
-        <InvitationCtaContext.Provider value={{ force: true, variant: "save" }}>
-          <div className="fixed inset-0 w-screen h-screen z-[100] bg-black overflow-y-auto overscroll-contain">
+        <div className="fixed inset-0 w-screen h-screen z-[100] bg-[#0c0a09] flex flex-col overflow-hidden">
+          {/* Barre supérieure flottante haut de gamme */}
+          <div className="shrink-0 h-16 px-4 sm:px-6 bg-[#15110e]/95 border-b border-white/10 backdrop-blur-md flex items-center justify-between gap-3 z-30">
             <button
               type="button"
               onClick={() => setPreview(false)}
-              aria-label="Retour au studio"
-              className="fixed z-[120] left-3 top-[max(0.75rem,env(safe-area-inset-top))] w-10 h-10 rounded-full bg-black/45 backdrop-blur-md text-white border border-white/25 flex items-center justify-center shadow-lg"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition-colors"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={16} /> <span>Retour au studio</span>
             </button>
-            <div className="w-full relative min-h-dvh">
-              <Invitation
-                content={isStatic ? withoutMusic(draft) : draft}
-                preview
-                onBackToEdit={() => setPreview(false)}
-                onFinalize={async () => {
-                  setPreview(false);
+
+            <div className="text-center min-w-0 max-w-md hidden sm:block">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#d4af37] font-bold block">Aperçu du modèle</span>
+              <p className="font-serif text-sm text-white/90 truncate font-medium">{modelName}</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={async () => {
                   await run("save");
+                  setPreview(false);
                 }}
-              />
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#b8924a]/50 bg-[#fbf7f0] text-xs font-semibold text-[#6f5527] hover:bg-white disabled:opacity-60 transition-colors"
+              >
+                {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>Enregistrer</span>
+              </button>
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={async () => {
+                  await run("publish");
+                  setPreview(false);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#e2c77d] to-[#b8924a] text-black text-xs font-bold hover:brightness-105 disabled:opacity-60 transition-all shadow-sm"
+              >
+                {busy === "publish" ? <Loader2 size={14} className="animate-spin" /> : <Globe size={16} />}
+                <span>Publier</span>
+              </button>
             </div>
           </div>
-        </InvitationCtaContext.Provider>
+
+          {/* Corps de l'aperçu : centré dans un châssis smartphone sur grand écran, pleine page sur mobile */}
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden relative">
+            <div aria-hidden className="hidden sm:block absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full bg-[#b8924a]/10 blur-[140px] pointer-events-none" />
+            <div aria-hidden className="hidden sm:block absolute -bottom-40 right-1/4 w-[500px] h-[500px] rounded-full bg-[#6b1428]/20 blur-[140px] pointer-events-none" />
+
+            <div className="relative w-full h-full sm:w-[430px] sm:h-[min(90vh,880px)] sm:max-h-[880px] bg-white sm:rounded-[38px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_6px_#1c1714] overflow-hidden flex flex-col">
+              <div className="w-full h-full overflow-y-auto overscroll-contain">
+                <Invitation
+                  content={isStatic ? withoutMusic(draft) : draft}
+                  preview
+                  hideCta={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>,
     document.body,

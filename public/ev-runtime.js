@@ -204,58 +204,129 @@
   }
 
   /*
+   * Détection des modèles à étapes / stories / diaporamas (ex: slides d'anniversaire, étapes interactives).
+   * RÈGLE ABSOLUE : Les options (CTA) ne doivent JAMAIS pénétrer ou recouvrir le modèle pendant la présentation.
+   * Elles n'apparaissent qu'à la TOUTE FIN (dernier écran / fin de la story).
+   */
+  function getSlides() {
+    var selectors = [
+      ".slide",
+      ".story-slide",
+      "[data-slide]",
+      ".swiper-slide",
+      ".carousel-item",
+      "#stage > section",
+      "#stage > div.slide",
+      ".story-screen",
+      ".slide-item"
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+      var found = document.querySelectorAll(selectors[i]);
+      if (found && found.length > 1) {
+        return Array.prototype.slice.call(found);
+      }
+    }
+    return [];
+  }
+
+  function isStoryAtEnd() {
+    var slides = getSlides();
+    if (!slides.length) return true;
+
+    // Dernier slide actif ?
+    var last = slides[slides.length - 1];
+    if (
+      last.classList.contains("on") ||
+      last.classList.contains("active") ||
+      last.classList.contains("current") ||
+      last.classList.contains("visible") ||
+      last.classList.contains("swiper-slide-active")
+    ) {
+      return true;
+    }
+
+    // Éléments explicites de fin de story
+    var endEl = document.querySelector(".fin.on, .final.on, .slide-final.on, #stage .fin.on, .is-ended");
+    if (endEl) return true;
+
+    // Bouton de relecture ou de fin visible
+    var again = document.querySelector("#again, .btn-again, [data-action='again'], .restart-story");
+    if (again && again.offsetParent !== null && getComputedStyle(again).display !== "none") {
+      return true;
+    }
+
+    return false;
+  }
+
+  /*
    * Le bloc de fin doit toujours rester visible et en dernier : remis en place si le modèle
    * réécrit sa page, ajoute des éléments après lui, ou défile dans un conteneur intérieur.
    */
   var ctaBox = null;
-  function placeCta() {
+  function syncCtaVisibility() {
     if (!ctaBox) return;
-    var host = scrollHost();
-    if (ctaBox.parentNode !== host || host.lastElementChild !== ctaBox) {
-      // Les éléments ajoutés par le site (musique) peuvent rester après le bloc
-      var last = host.lastElementChild;
-      while (last && last !== ctaBox && (last.tagName === "SCRIPT" || /^ev-/.test(last.id || "") || last === bgBtn)) last = last.previousElementSibling;
-      if (last !== ctaBox) {
-        host.appendChild(ctaBox);
-        paintCta();
+    var slides = getSlides();
+    var isStory = slides.length > 1;
+
+    if (isStory) {
+      var atEnd = isStoryAtEnd();
+      if (!atEnd) {
+        // En cours de story (slides 0..N-1) : ABSOLUMENT INVISIBLE pour ne jamais recouvrir l'œuvre
+        ctaBox.style.display = "none";
+        ctaBox.style.opacity = "0";
+        ctaBox.style.pointerEvents = "none";
+        ctaBox.style.visibility = "hidden";
+        return;
       }
+
+      // À la fin de la story : affichage fluide et élégant
+      ctaBox.style.display = "block";
+      ctaBox.style.opacity = "1";
+      ctaBox.style.pointerEvents = "auto";
+      ctaBox.style.visibility = "visible";
+
+      var last = slides[slides.length - 1];
+      if (last && ctaBox.parentNode !== last) {
+        last.appendChild(ctaBox);
+      }
+      var s = ctaBox.style;
+      s.position = "relative";
+      s.margin = "20px auto 16px";
+      s.padding = "10px 14px 24px";
+      s.width = "100%";
+      s.maxWidth = "440px";
+      s.boxSizing = "border-box";
+      s.zIndex = "2147482000";
+    } else {
+      // Modèle avec défilement vertical ou carte statique
+      ctaBox.style.display = "block";
+      ctaBox.style.opacity = "1";
+      ctaBox.style.pointerEvents = "auto";
+      ctaBox.style.visibility = "visible";
+
+      var host = scrollHost();
+      if (ctaBox.parentNode !== host) {
+        host.appendChild(ctaBox);
+      }
+      var s2 = ctaBox.style;
+      s2.position = "relative";
+      s2.width = "100%";
+      s2.marginTop = "48px";
+      s2.marginBottom = "0px";
+      s2.padding = "32px 14px 50px";
+      s2.boxSizing = "border-box";
     }
-    bleedCta();
   }
 
-  /* Bloc de fin d'un bord à l'autre de l'écran et tout en bas, même si la page du modèle a des marges */
+  function placeCta() {
+    if (!ctaBox) return;
+    syncCtaVisibility();
+    paintCta();
+  }
+
   function bleedCta() {
-    if (!ctaBox || !ctaBox.parentNode) return;
-    var host = scrollHost();
-    var page = document.scrollingElement || document.documentElement;
-    var vh = window.innerHeight;
-    var pageScrolls = page.scrollHeight > vh + 1 && getComputedStyle(document.body).overflowY !== "hidden";
-    var s = ctaBox.style;
-    s.marginLeft = "0px";
-    s.marginBottom = "0px";
-    s.width = "100%";
-    var vw = document.documentElement.clientWidth;
-    var r = ctaBox.getBoundingClientRect();
-    if (r.left > 0.5 || r.right < vw - 0.5) {
-      s.marginLeft = -r.left + "px";
-      s.width = vw + "px";
-    }
-
-    if (!pageScrolls && host === document.body) {
-      // Modèle fixe/story sans défilement : le bloc se cale en bas sans casser le corps de page
-      s.position = "fixed";
-      s.bottom = "0px";
-      s.left = "0px";
-      s.right = "0px";
-      s.padding = "18px 16px 24px";
-      s.zIndex = "2147482000";
-      s.marginBottom = "0px";
-      return;
-    }
-
-    // Marge du bas de la page sous le bloc
-    var gap = page.scrollHeight - (ctaBox.getBoundingClientRect().bottom + page.scrollTop);
-    if (ctaBox.parentNode === document.body && gap > 0.5 && gap < vh * 0.8) s.marginBottom = -gap + "px";
+    if (!ctaBox) return;
+    syncCtaVisibility();
   }
 
   /* Couleurs « r, g, b, a » lues dans un style calculé (rgb(), rgba(), dégradés) */
@@ -336,39 +407,33 @@
     return f ? f + ", Georgia, serif" : "Georgia, serif";
   }
 
-  /* Le bloc de fin prend les couleurs et la police de l'invitation, dans son prolongement */
+  /* Haute Couture Evenium : style luxueux signature obsidienne et or impérial */
   function paintCta() {
     if (!ctaBox || !ctaBox.parentNode) return;
-    var base = bottomColor();
-    var light = lum(base) > 0.4;
-    var ink = light ? { r: 0, g: 0, b: 0 } : { r: 255, g: 255, b: 255 };
-    var accent = accentColor(light);
-    var s = ctaBox.style;
-    s.background = "linear-gradient(180deg," + mix(base, ink, 0) + " 0%," + mix(base, ink, light ? 0.05 : 0.07) + " 100%)";
-    s.color = light ? "#2a1f1a" : "#f5eee1";
-    s.borderTop = "1px solid " + accent;
-    var q = function (r) {
-      return ctaBox.querySelector('[data-r="' + r + '"]');
-    };
-    q("kicker").style.color = accent;
-    q("title").style.color = light ? "#1f1715" : "#ffffff";
-    q("title").style.fontFamily = titleFont();
-    q("desc").style.color = light ? "rgba(31,23,21,.72)" : "rgba(255,255,255,.75)";
-    var sec = q("secondary").style;
-    sec.color = light ? "#1f1715" : "#ffffff";
-    sec.border = "1px solid " + (light ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.28)");
-    sec.background = light ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.06)";
+    var f = titleFont();
+    var t = ctaBox.querySelector('[data-r="title"]');
+    if (t && f) t.style.fontFamily = f;
   }
   var placeTimer = null;
   var ctaObserver = new MutationObserver(function () {
     if (placeTimer) return;
     placeTimer = setTimeout(function () {
       placeTimer = null;
-      placeCta();
-    }, 300);
+      syncCtaVisibility();
+      paintCta();
+    }, 120);
   });
 
-  /* Bloc de fin (création d'événement, studio admin, démo) : boutons renvoyés au site */
+  // Détection immédiate du changement de slide au toucher/clic pour révéler le bloc dès la fin sans latence
+  var storyNavEvents = ["click", "touchend", "pointerup", "keyup"];
+  storyNavEvents.forEach(function (evt) {
+    window.addEventListener(evt, function () {
+      setTimeout(syncCtaVisibility, 80);
+      setTimeout(syncCtaVisibility, 350);
+    }, { passive: true });
+  });
+
+  /* Bloc de fin Haute Couture (création d'événement, studio admin, démo publique) */
   function cta(text) {
     var old = document.getElementById("ev-end-cta");
     if (old) old.remove();
@@ -378,30 +443,54 @@
     var box = document.createElement("section");
     box.id = "ev-end-cta";
     box.setAttribute("data-inv-cta", "");
-    // Au-dessus des décors du modèle (ballons, particules…), sous le bouton musique
     box.setAttribute(
       "style",
-      "all:initial;display:block;position:relative;z-index:2147482000;box-sizing:border-box;width:100%;padding:48px 16px 64px;background:#14100c;font-family:system-ui,-apple-system,sans-serif;text-align:center;color:#f5eee1;visibility:visible;opacity:1;transform:none"
+      "all:initial;display:block;position:relative;z-index:2147482000;box-sizing:border-box;width:100%;padding:28px 14px 44px;font-family:system-ui,-apple-system,sans-serif;text-align:center;visibility:visible;opacity:1;transform:none"
     );
-    // Couleurs posées par paintCta selon l'invitation
+
     box.innerHTML =
-      '<div style="max-width:420px;margin:0 auto">' +
-      '<p data-r="kicker" style="margin:0 0 8px;font-size:11px;letter-spacing:.25em;text-transform:uppercase"></p>' +
-      '<h3 data-r="title" style="margin:0 0 10px;font-size:26px;font-weight:600;line-height:1.2"></h3>' +
-      '<p data-r="desc" style="margin:0 0 24px;font-size:14px;line-height:1.5"></p>' +
-      '<button data-a="primary" style="display:block;width:100%;margin:0 0 10px;padding:14px;border:0;border-radius:999px;background:linear-gradient(90deg,#d4af37,#f3e5ab,#d4af37);color:#000;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 8px 24px rgba(212,175,55,.3)"></button>' +
-      '<button data-a="secondary" data-r="secondary" style="display:block;width:100%;padding:12px;border-radius:999px;font-weight:600;font-size:14px;cursor:pointer"></button>' +
-      "</div>";
-    var ps = box.querySelectorAll("p");
-    ps[0].textContent = text.kicker || "";
-    box.querySelector("h3").textContent = text.title || "";
-    ps[1].textContent = text.desc || "";
+      '<div style="max-width:440px;margin:0 auto;position:relative;background:linear-gradient(180deg,rgba(18,14,11,0.96) 0%,rgba(10,8,6,0.98) 100%);border:1px solid rgba(212,175,55,0.38);border-radius:26px;padding:26px 20px 22px;box-shadow:0 20px 50px rgba(0,0,0,0.65),0 0 35px rgba(212,175,55,0.16),inset 0 1px 0 rgba(255,240,200,0.25);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#fbf7ee;box-sizing:border-box;text-align:center;">' +
+      '<div style="position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,#d4af37,transparent);opacity:0.9;"></div>' +
+      '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,rgba(212,175,55,0.2),rgba(212,175,55,0.04));border:1px solid rgba(212,175,55,0.45);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 0 18px rgba(212,175,55,0.25);">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">' +
+      '<span style="width:16px;height:1px;background:linear-gradient(90deg,transparent,#d4af37);"></span>' +
+      '<p data-r="kicker" style="margin:0;font-size:10px;font-weight:800;letter-spacing:0.26em;text-transform:uppercase;color:#d4af37;font-family:system-ui,-apple-system,sans-serif;"></p>' +
+      '<span style="width:16px;height:1px;background:linear-gradient(90deg,#d4af37,transparent);"></span>' +
+      '</div>' +
+      '<h3 data-r="title" style="margin:0 0 8px;font-family:\'Playfair Display\',Didot,Georgia,serif;font-size:22px;font-weight:700;line-height:1.25;color:#ffffff;letter-spacing:-0.01em;"></h3>' +
+      '<p data-r="desc" style="margin:0 0 18px;font-size:12.5px;line-height:1.5;color:rgba(255,255,255,0.76);font-family:system-ui,-apple-system,sans-serif;max-width:340px;margin-left:auto;margin-right:auto;"></p>' +
+      '<div style="display:flex;flex-direction:column;gap:9px;width:100%;max-width:320px;margin:0 auto;">' +
+      '<button data-a="primary" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;border:1px solid rgba(255,255,255,0.35);border-radius:999px;background:linear-gradient(90deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%);color:#0d0804;font-weight:800;font-size:13.5px;letter-spacing:0.03em;cursor:pointer;box-shadow:0 8px 24px rgba(212,175,55,0.32);box-sizing:border-box;">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0d0804" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' +
+      '<span data-r="primary-text"></span>' +
+      '</button>' +
+      '<button data-a="secondary" data-r="secondary" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px 20px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.22);color:#fbf7ee;font-weight:600;font-size:12.5px;cursor:pointer;box-sizing:border-box;">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>' +
+      '<span data-r="secondary-text"></span>' +
+      '</button>' +
+      '</div>' +
+      '<div style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:5px 14px;border-radius:999px;background:rgba(212,175,55,0.09);border:1px solid rgba(212,175,55,0.25);color:#ebdcae;font-size:10.5px;font-family:system-ui,-apple-system,sans-serif;">' +
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
+      '<span>Personnalisation complète & aperçu immédiat</span>' +
+      '</div>' +
+      '</div>';
+
+    var kicker = box.querySelector('[data-r="kicker"]');
+    var title = box.querySelector('[data-r="title"]');
+    var desc = box.querySelector('[data-r="desc"]');
+    var primaryTxt = box.querySelector('[data-r="primary-text"]');
+    var secondaryTxt = box.querySelector('[data-r="secondary-text"]');
+
+    kicker.textContent = text.kicker || "Aperçu du modèle";
+    title.textContent = text.title || "Ce modèle vous plaît ?";
+    desc.textContent = text.desc || "Choisissez-le pour le personnaliser avec vos textes, photos et musique, puis validez votre événement.";
+    primaryTxt.textContent = text.primary || "Choisir ce modèle";
+    secondaryTxt.textContent = text.secondary || "Retour aux modèles";
+
     var primary = box.querySelector('[data-a="primary"]');
     var secondary = box.querySelector('[data-a="secondary"]');
-    primary.textContent = text.primary || "Valider";
-    secondary.textContent = text.secondary || "Retour";
-    // Dans le site (aperçu) : message à la page ; démo ouverte seule : liens vers la création et la galerie
-    // Liens : dans la page entière, même quand la démo est affichée dans le cadre téléphone (/apercu)
     primary.onclick = function () {
       if (text.primaryHref) window.top.location.href = text.primaryHref;
       else window.parent.postMessage({ type: "evenium:open-checkout" }, location.origin);
@@ -410,10 +499,11 @@
       if (text.secondaryHref) window.top.location.href = text.secondaryHref;
       else window.parent.postMessage({ type: "evenium:close-preview" }, location.origin);
     };
+
     ctaBox = box;
-    placeCta();
+    syncCtaVisibility();
     paintCta();
-    ctaObserver.observe(document.body, { childList: true, subtree: true });
+    ctaObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
   }
   window.addEventListener("load", function () {
     placeCta();

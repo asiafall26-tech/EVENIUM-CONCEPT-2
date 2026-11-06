@@ -99,18 +99,10 @@ export default function InvitationEndCta({
     /* Luxury End of Invitation CTA block */
     <section
         data-inv-cta=""
-        className={`w-full py-12 sm:py-16 px-3 sm:px-6 text-center transition-all relative z-10 ${
-          isDark
-            ? "bg-gradient-to-b from-transparent via-black/60 to-black/90 text-white border-t border-[#D4AF37]/25"
-            : "bg-gradient-to-b from-transparent via-[#fbf7f0]/80 to-[#f3ece2] text-[#2a050d] border-t border-[#D4AF37]/30"
-        }`}
+        className="w-full py-12 sm:py-16 px-3 sm:px-6 text-center transition-all relative z-10 bg-gradient-to-b from-transparent via-black/40 to-black/80 text-white border-t border-[#D4AF37]/25"
       >
         <div
-          className={`w-full max-w-[440px] mx-auto rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden backdrop-blur-md shadow-2xl transition-all border ${
-            isDark
-              ? "bg-gradient-to-b from-[#180309]/95 via-[#0e0205]/95 to-black/95 text-white border-[#D4AF37]/40 shadow-black/80"
-              : "bg-gradient-to-b from-white/95 via-[#fffdf9]/95 to-[#f9f4ec]/95 text-[#2a050d] border-[#D4AF37]/40 shadow-[#D4AF37]/15"
-          }`}
+          className="w-full max-w-[440px] mx-auto rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden backdrop-blur-md shadow-2xl transition-all border bg-gradient-to-b from-[#18120e]/95 via-[#100c09]/98 to-[#060403]/98 text-white border-[#D4AF37]/40 shadow-black/80"
         >
           {/* Radiant Top Gold Glow */}
           <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-90" />
@@ -119,11 +111,7 @@ export default function InvitationEndCta({
           {/* Emblem Icon with Dual Ring */}
           <div className="relative inline-flex items-center justify-center mb-4">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#D4AF37] via-[#F3E5AB] to-[#996515] p-[1.5px] shadow-lg shadow-[#D4AF37]/25 flex items-center justify-center">
-              <div
-                className={`w-full h-full rounded-full flex items-center justify-center ${
-                  isDark ? "bg-[#180309]" : "bg-white"
-                }`}
-              >
+              <div className="w-full h-full rounded-full flex items-center justify-center bg-[#150f0c]">
                 <Sparkles size={22} className="text-[#D4AF37]" />
               </div>
             </div>
@@ -139,20 +127,12 @@ export default function InvitationEndCta({
           </div>
 
           {/* Title */}
-          <h3
-            className={`font-serif text-2xl sm:text-3xl font-bold tracking-tight mb-3 ${
-              isDark ? "text-white" : "text-[#1f1715]"
-            }`}
-          >
+          <h3 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight mb-3 text-white">
             {isChoose ? custom!.title : isCreate ? "Votre invitation est prête !" : "Ce modèle vous inspire ?"}
           </h3>
 
           {/* Subtitle */}
-          <p
-            className={`text-xs sm:text-sm max-w-sm mx-auto mb-6 leading-relaxed font-sans ${
-              isDark ? "text-gray-300" : "text-gray-600"
-            }`}
-          >
+          <p className="text-xs sm:text-sm max-w-sm mx-auto mb-6 leading-relaxed font-sans text-gray-300">
             {isChoose
               ? custom!.desc
               : isCreate
@@ -178,11 +158,7 @@ export default function InvitationEndCta({
                 <button
                   type="button"
                   onClick={handleBackToCreation}
-                  className={`w-full py-3 px-6 rounded-full text-sm font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer whitespace-nowrap ${
-                    isDark
-                      ? "bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50"
-                      : "bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300/90 shadow-sm hover:border-[#D4AF37]/60"
-                  }`}
+                  className="w-full py-3 px-6 rounded-full text-sm font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer whitespace-nowrap bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50"
                 >
                   <ArrowLeft size={16} className="shrink-0" />
                   <span>{isChoose ? custom!.secondary : "Revenir à la création"}</span>
@@ -204,11 +180,7 @@ export default function InvitationEndCta({
                 <Link
                   href="/invitations"
                   target={isDemo ? "_top" : undefined}
-                  className={`w-full py-3 px-6 rounded-full text-sm font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer whitespace-nowrap ${
-                    isDark
-                      ? "bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50"
-                      : "bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300/90 shadow-sm hover:border-[#D4AF37]/60"
-                  }`}
+                  className="w-full py-3 px-6 rounded-full text-sm font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer whitespace-nowrap bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50"
                 >
                   <ArrowLeft size={16} className="shrink-0" />
                   <span>Retour aux modèles</span>
@@ -218,13 +190,7 @@ export default function InvitationEndCta({
           </div>
 
           {/* Reassurance pill */}
-          <div
-            className={`mt-6 py-2 px-4 rounded-full inline-flex items-center justify-center gap-2 text-[11px] font-medium border ${
-              isDark
-                ? "bg-white/5 text-gray-300 border-white/10"
-                : "bg-[#f5ede0] text-gray-700 border-[#D4AF37]/25"
-            }`}
-          >
+          <div className="mt-6 py-2 px-4 rounded-full inline-flex items-center justify-center gap-2 text-[11px] font-medium border bg-white/5 text-[#e5d4a4] border-[#D4AF37]/30">
             {isChoose ? (
               <>
                 <CheckCircle2 size={13} className="text-[#D4AF37] shrink-0" />

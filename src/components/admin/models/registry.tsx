@@ -153,7 +153,7 @@ export interface SiteModel {
   original: ModelContent;
   fill: (partial: any) => ModelContent;
   Studio: ComponentType<{ value: any; onChange: (v: any) => void; onViewFullScreen?: () => void; isStatic?: boolean }>;
-  Invitation: ComponentType<{ content: any; preview?: boolean; onBackToEdit?: () => void; onFinalize?: () => void }>;
+  Invitation: ComponentType<{ content: any; preview?: boolean; onBackToEdit?: () => void; onFinalize?: () => void; hideCta?: boolean }>;
   audio: AudioKeys;
 }
 

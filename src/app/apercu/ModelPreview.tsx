@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useSyncExternalStore } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { demoSrc } from "@/lib/modelPreview";
 
 const MOBILE = "(max-width: 767px)";
@@ -27,6 +27,17 @@ interface Props {
 export default function ModelPreview({ src, name, cover, showBack }: Props) {
   const desktop = useSyncExternalStore(subscribeMobile, () => !window.matchMedia(MOBILE).matches, () => false);
 
+  const chooseUrl = (() => {
+    const custom = src.match(/^\/m\/([a-z0-9-]+)/);
+    if (custom) return `/create?model=custom:${custom[1]}`;
+    if (src.includes("rose-or")) return "/create?model=invit-10";
+    if (src.includes("sceau-dor")) return "/create?model=invit-02";
+    if (src.includes("velours")) return "/create?model=invit-01";
+    if (src.includes("ivoire")) return "/create?model=invit-03";
+    if (src.includes("anniversaire")) return "/create?model=invit-11";
+    return "/create";
+  })();
+
   // Écran étroit : la page en plein écran (demo=1, pour ne pas être re-cadrée par le proxy)
   useEffect(() => {
     if (window.matchMedia(MOBILE).matches) window.location.replace(demoSrc(src));
@@ -47,13 +58,21 @@ export default function ModelPreview({ src, name, cover, showBack }: Props) {
       {desktop && (
         <>
           {showBack && (
-            <Link
-              href="/invitations"
-              aria-label="Retour aux modèles"
-              className="btn-lux absolute left-5 top-5 z-20 !gap-2 px-5 py-2.5 text-[11px]"
-            >
-              <ArrowLeft size={15} className="text-[#f0d999]" /> Retour aux modèles
-            </Link>
+            <>
+              <Link
+                href="/invitations"
+                aria-label="Retour aux modèles"
+                className="btn-lux absolute left-5 top-5 z-20 !gap-2 px-5 py-2.5 text-[11px]"
+              >
+                <ArrowLeft size={15} className="text-[#f0d999]" /> Retour aux modèles
+              </Link>
+              <Link
+                href={chooseUrl}
+                className="btn-lux absolute right-5 top-5 z-20 !gap-2 px-6 py-2.5 text-[12px] !font-bold shadow-2xl hover:brightness-110 transition-all border border-[#d4af37]/60"
+              >
+                <Sparkles size={15} className="text-[#f0d999]" /> Choisir ce modèle
+              </Link>
+            </>
           )}
 
           {/*
