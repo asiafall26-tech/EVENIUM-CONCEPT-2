@@ -187,9 +187,8 @@ export default function AdminModelEditor({
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-sm font-semibold border-b-2 ${
-                  tab === t.id ? "border-[#b8924a] text-gray-900" : "border-transparent text-gray-500"
-                }`}
+                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-sm font-semibold border-b-2 ${tab === t.id ? "border-[#b8924a] text-gray-900" : "border-transparent text-gray-500"
+                  }`}
               >
                 <t.icon size={15} /> {t.label}
               </button>
@@ -332,6 +331,11 @@ export default function AdminModelEditor({
                   content={isStatic ? withoutMusic(draft) : draft}
                   preview
                   hideCta={true}
+                  onBackToEdit={() => setPreview(false)}
+                  onFinalize={async () => {
+                    setPreview(false);
+                    await run("save");
+                  }}
                 />
               </div>
             </div>
