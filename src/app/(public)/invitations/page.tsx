@@ -7,8 +7,8 @@ import Link from "next/link";
 import ModelCard from "@/components/landing/ModelCard";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { classificationOf, fetchModelDefaults, modelCoverOf, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
-import { customModelId, customModelUrl, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
+import { classificationOf, fetchModelDefaults, invalidateModelDefaultsCache, modelCoverOf, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
+import { customModelId, customModelUrl, fetchCustomModels, invalidateCustomModelsCache, type CustomModelRow } from "@/lib/customModels";
 import { previewHref } from "@/lib/modelPreview";
 import { Fleuron, DiamondRule, LuxFrame } from "@/components/landing/LuxOrnaments";
 
@@ -33,9 +33,13 @@ export default function InvitationsPage() {
   const [customs, setCustoms] = useState<CustomModelRow[]>([]);
   useEffect(() => {
     const supabase = createClient();
-    const reload = () => {
-      fetchModelDefaults(supabase).then(setRows);
-      fetchCustomModels(supabase, { publishedOnly: true }).then(setCustoms);
+    const reload = (force = false) => {
+      if (force) {
+        invalidateModelDefaultsCache();
+        invalidateCustomModelsCache();
+      }
+      fetchModelDefaults(supabase, force).then(setRows);
+      fetchCustomModels(supabase, { publishedOnly: true, force }).then(setCustoms);
     };
     reload();
 
@@ -44,13 +48,16 @@ export default function InvitationsPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "invitation_model_defaults" },
-        () => {
-          reload();
-        }
+        () => reload(true)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "custom_invitation_models" },
+        () => reload(true)
       )
       .subscribe();
 
-    const handleFocus = () => reload();
+    const handleFocus = () => reload(true);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleFocus);
 

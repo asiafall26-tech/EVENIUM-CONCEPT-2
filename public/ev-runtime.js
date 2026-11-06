@@ -193,9 +193,13 @@
     var best = null;
     document.body.querySelectorAll("*").forEach(function (el) {
       if (el.id === "ev-end-cta" || el.closest("#ev-end-cta")) return;
+      // Ne JAMAIS choisir une boîte de lettre, un papier, un modal ou un article interne
+      if (/^(ARTICLE|FORM|DIALOG|TEXTAREA)$/i.test(el.tagName)) return;
+      var ident = ((el.className || "") + " " + (el.id || "")).toLowerCase();
+      if (/paper|lettre|letter|envelope|modal|dialog|card-body|caption|toast/i.test(ident)) return;
       var oy = getComputedStyle(el).overflowY;
       if (oy !== "auto" && oy !== "scroll") return;
-      if (el.clientHeight < vh * 0.6 || el.scrollHeight <= el.clientHeight + 1) return;
+      if (el.clientHeight < vh * 0.7 || el.scrollHeight <= el.clientHeight + 1) return;
       if (!best || el.clientHeight > best.clientHeight) best = el;
     });
     var page = document.scrollingElement || document.documentElement;
@@ -210,13 +214,14 @@
    */
   function getSlides() {
     var selectors = [
+      "#stage > .slide",
+      "#stage > section",
+      "#stage > div",
       ".slide",
       ".story-slide",
       "[data-slide]",
       ".swiper-slide",
       ".carousel-item",
-      "#stage > section",
-      "#stage > div.slide",
       ".story-screen",
       ".slide-item",
       ".screen",
@@ -262,44 +267,69 @@
   }
 
   function isStoryAtEnd() {
-    // 1. Si une couverture avec bouton de démarrage/lecture est présente et visible, l'histoire n'a pas encore été lue
-    var startBtn = document.querySelector(".btn-watch, .btn-start, #start, [data-action='watch'], [data-action='start'], .cover.on, .cover.active, .splash.on, .splash.active");
-    if (startBtn && startBtn.offsetParent !== null && getComputedStyle(startBtn).display !== "none") {
-      return false;
+    // 1. Couverture ou écran d'accueil d'une story / carte interactive (avant démarrage)
+    var startScreen = document.querySelector("#start, .start, #cover, .cover, #teaser, .teaser, .splash, [data-screen='start'], [data-screen='cover']");
+    if (startScreen) {
+      var isGone = startScreen.classList.contains("gone") ||
+                     startScreen.classList.contains("hidden") ||
+                     startScreen.hasAttribute("hidden") ||
+                     startScreen.getAttribute("aria-hidden") === "true";
+      if (!isGone) {
+        var cs = getComputedStyle(startScreen);
+        if (cs.display !== "none" && cs.visibility !== "hidden" && parseFloat(cs.opacity || "1") > 0.1) {
+          return false;
+        }
+      }
     }
 
-    // 2. Détection par barres de progression de story (très fréquent sur les templates Insta-like)
-    var progressBars = document.querySelectorAll(".story-bars > *, .bars > *, .progress-bars > *, .story-progress > *, [class*=\"progress\"] > span, [class*=\"progress\"] > div");
+    // 2. Bouton explicite pour lancer la lecture / regarder
+    var startBtn = document.querySelector(".btn-watch, .btn-start, [data-action='watch'], [data-action='start'], #openBtn, #openBtn2, #heartBtn");
+    if (startBtn && startBtn.offsetParent !== null) {
+      var btnCs = getComputedStyle(startBtn);
+      if (btnCs.display !== "none" && btnCs.visibility !== "hidden" && parseFloat(btnCs.opacity || "1") > 0.1) {
+        return false;
+      }
+    }
+
+    // 3. Vidéo teaser / introduction en cours
+    var teaser = document.querySelector("#teaser, .teaser, .intro-video");
+    if (teaser && teaser.getAttribute("aria-hidden") !== "true") {
+      var tcs = getComputedStyle(teaser);
+      if (tcs.display !== "none" && tcs.visibility !== "hidden") {
+        return false;
+      }
+    }
+
+    // 4. Barres de progression de story (format Instagram / TikTok)
+    var progressBars = document.querySelectorAll(".story-bars > *, .bars > *, .progress-bars > *, .story-progress > *, [class*=\"progress\"] > span, [class*=\"progress\"] > div, #bars > span");
     if (progressBars && progressBars.length > 1) {
       var lastBar = progressBars[progressBars.length - 1];
-      var isLastActive = lastBar.classList.contains("active") ||
-                         lastBar.classList.contains("on") ||
-                         lastBar.classList.contains("done") ||
-                         lastBar.classList.contains("completed") ||
-                         (lastBar.style && (lastBar.style.width === "100%" || parseFloat(lastBar.style.width) >= 95));
-      if (!isLastActive) {
+      var lastChild = lastBar.querySelector("i") || lastBar.firstElementChild || lastBar;
+      var transform = (lastChild && lastChild.style && lastChild.style.transform) || "";
+      var width = (lastChild && lastChild.style && lastChild.style.width) || "";
+      var isScale1 = transform.indexOf("scaleX(1)") !== -1;
+      var isWidth100 = width === "100%" || parseFloat(width) >= 95;
+      var isClassActive = lastBar.classList.contains("active") ||
+                          lastBar.classList.contains("on") ||
+                          lastBar.classList.contains("done") ||
+                          lastBar.classList.contains("completed");
+      if (!isScale1 && !isWidth100 && !isClassActive) {
         return false;
       }
     }
 
     var slides = getSlides();
-    if (!slides.length) return true;
+    if (!slides.length) {
+      // S'il n'y a pas de diapositives identifiées, vérifier s'il s'agit d'un lecteur dynamique avec #stage
+      var stage = document.getElementById("stage");
+      if (stage && stage.children.length > 1) {
+        slides = Array.prototype.slice.call(stage.children);
+      } else {
+        return true;
+      }
+    }
 
-    // 3. Dernier slide actif ?
-    var last = slides[slides.length - 1];
-    var isLastActiveSlide = (
-      last.classList.contains("on") ||
-      last.classList.contains("active") ||
-      last.classList.contains("current") ||
-      last.classList.contains("visible") ||
-      last.classList.contains("show") ||
-      last.classList.contains("is-active") ||
-      last.classList.contains("swiper-slide-active")
-    );
-
-    if (isLastActiveSlide) return true;
-
-    // 4. Si d'autres slides (antérieurs) sont actifs/visibles, l'histoire est EN COURS
+    // 5. Si des slides antérieurs sont encore actifs/visibles, l'histoire n'est PAS finie
     for (var i = 0; i < slides.length - 1; i++) {
       var s = slides[i];
       if (
@@ -313,21 +343,36 @@
       ) {
         return false;
       }
-      // Visible via style direct
-      if (s.offsetParent !== null && getComputedStyle(s).display !== "none" && getComputedStyle(s).opacity !== "0" && getComputedStyle(s).visibility !== "hidden") {
-        // Si le dernier slide n'est pas celui-ci, l'histoire n'est pas finie
+      var scs = getComputedStyle(s);
+      if (s.offsetParent !== null && scs.display !== "none" && scs.visibility !== "hidden" && parseFloat(scs.opacity || "1") > 0.5) {
         return false;
       }
     }
 
-    // 5. Éléments explicites de fin de story
+    // 6. Dernier slide : doit être actif pour que le CTA apparaisse
+    var last = slides[slides.length - 1];
+    var isLastActiveSlide = (
+      last.classList.contains("on") ||
+      last.classList.contains("active") ||
+      last.classList.contains("current") ||
+      last.classList.contains("visible") ||
+      last.classList.contains("show") ||
+      last.classList.contains("is-active") ||
+      last.classList.contains("swiper-slide-active")
+    );
+    if (isLastActiveSlide) return true;
+
+    // 7. Éléments explicites de fin de story
     var endEl = document.querySelector(".fin.on, .final.on, .slide-final.on, #stage .fin.on, .is-ended, .story-end, .end-screen.active, .end-screen.on");
     if (endEl && endEl.offsetParent !== null) return true;
 
-    // 6. Bouton de relecture ou de fin visible
+    // 8. Bouton de relecture ou de fin visible UNIQUEMENT si son conteneur est réellement actif
     var again = document.querySelector("#again, .btn-again, [data-action='again'], .restart-story");
-    if (again && again.offsetParent !== null && getComputedStyle(again).display !== "none") {
-      return true;
+    if (again) {
+      var parentSlide = again.closest(".slide, section, .screen, [data-slide]");
+      if (parentSlide && (parentSlide.classList.contains("on") || parentSlide.classList.contains("active") || getComputedStyle(parentSlide).visibility === "visible")) {
+        return true;
+      }
     }
 
     return false;
@@ -380,8 +425,9 @@
       ctaBox.style.setProperty("pointer-events", "auto", "important");
       ctaBox.style.setProperty("visibility", "visible", "important");
 
-      if (ctaBox.parentNode !== document.body) {
-        document.body.appendChild(ctaBox);
+      var host = scrollHost() || document.body;
+      if (ctaBox.parentNode !== host) {
+        host.appendChild(ctaBox);
       }
       var s2 = ctaBox.style;
       s2.setProperty("position", "relative", "important");

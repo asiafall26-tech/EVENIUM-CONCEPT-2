@@ -8,8 +8,8 @@ import Reveal from "@/components/landing/Reveal";
 import SectionHeading from "@/components/landing/SectionHeading";
 import type { InvitationModel } from "@/data/mock/invitations";
 import { createClient } from "@/utils/supabase/client";
-import { fetchModelDefaults } from "@/lib/modelDefaults";
-import { fetchCustomModels } from "@/lib/customModels";
+import { fetchModelDefaults, invalidateModelDefaultsCache } from "@/lib/modelDefaults";
+import { fetchCustomModels, invalidateCustomModelsCache } from "@/lib/customModels";
 import { buildShowcase } from "@/lib/showcase";
 import { previewHref } from "@/lib/modelPreview";
 
@@ -23,10 +23,17 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
   useEffect(() => {
     const supabase = createClient();
 
-    const reload = async () => {
+    const reload = async (force = false) => {
       try {
+        if (force) {
+          invalidateModelDefaultsCache();
+          invalidateCustomModelsCache();
+        }
         // Modèles Evenium (nom, couverture, retrait) et modèles importés publiés
-        const [rows, customs] = await Promise.all([fetchModelDefaults(supabase), fetchCustomModels(supabase, { publishedOnly: true })]);
+        const [rows, customs] = await Promise.all([
+          fetchModelDefaults(supabase, force),
+          fetchCustomModels(supabase, { publishedOnly: true, force }),
+        ]);
         const ordered = buildShowcase(rows, customs);
         setShowcaseModels(ordered);
       } catch (err) {
@@ -37,19 +44,22 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
     // Chargement immédiat côté client pour avoir l'état le plus frais
     reload();
 
-    // Abonnement Supabase Realtime pour actualisation automatique instantanée
+    // Abonnement Supabase Realtime pour actualisation automatique instantanée (modèles built-in ET modèles importés du studio)
     const channel = supabase
-      .channel("home_showcase_model_defaults_realtime")
+      .channel("home_showcase_models_realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "invitation_model_defaults" },
-        () => {
-          reload();
-        }
+        () => reload(true)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "custom_invitation_models" },
+        () => reload(true)
       )
       .subscribe();
 
-    const handleFocus = () => reload();
+    const handleFocus = () => reload(true);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleFocus);
 

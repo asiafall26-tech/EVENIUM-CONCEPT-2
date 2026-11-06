@@ -74,16 +74,34 @@ export interface CustomEventContent {
 const isMissingTable = (e: { code?: string; message?: string }) =>
   e.code === "42P01" || e.code === "PGRST205" || /does not exist|schema cache/i.test(e.message ?? "");
 
-export async function fetchCustomModels(supabase: SupabaseClient, opts: { publishedOnly?: boolean } = {}): Promise<CustomModelRow[]> {
+let customModelsCache: { published: CustomModelRow[] | null; all: CustomModelRow[] | null; timestamp: number } = {
+  published: null,
+  all: null,
+  timestamp: 0,
+};
+
+export function invalidateCustomModelsCache() {
+  customModelsCache = { published: null, all: null, timestamp: 0 };
+}
+
+export async function fetchCustomModels(supabase: SupabaseClient, opts: { publishedOnly?: boolean; force?: boolean } = {}): Promise<CustomModelRow[]> {
+  const now = Date.now();
+  const cacheKey = opts.publishedOnly ? "published" : "all";
+  if (!opts.force && customModelsCache[cacheKey] && now - customModelsCache.timestamp < 20000) {
+    return customModelsCache[cacheKey]!;
+  }
   try {
     let q = supabase.from(CUSTOM_MODELS_TABLE).select("*").order("created_at", { ascending: false });
     if (opts.publishedOnly) q = q.eq("status", "published");
     const { data, error } = await q;
-    if (error || !data) return [];
-    return data as CustomModelRow[];
+    if (error || !data) return customModelsCache[cacheKey] ?? [];
+    const res = data as CustomModelRow[];
+    customModelsCache[cacheKey] = res;
+    customModelsCache.timestamp = now;
+    return res;
   } catch (err) {
     console.warn("fetchCustomModels error:", err);
-    return [];
+    return customModelsCache[cacheKey] ?? [];
   }
 }
 

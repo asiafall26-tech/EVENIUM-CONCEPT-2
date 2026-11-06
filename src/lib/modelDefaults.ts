@@ -94,8 +94,18 @@ function normalize(r: Partial<ModelDefaultRow> & { model_id: string }): ModelDef
   };
 }
 
+let defaultsCache: { data: Record<string, ModelDefaultRow>; timestamp: number } | null = null;
+
+export function invalidateModelDefaultsCache() {
+  defaultsCache = null;
+}
+
 /** Toutes les lignes, indexées par identifiant de modèle (vide si la table n'existe pas encore). */
-export async function fetchModelDefaults(supabase: SupabaseClient): Promise<Record<string, ModelDefaultRow>> {
+export async function fetchModelDefaults(supabase: SupabaseClient, force = false): Promise<Record<string, ModelDefaultRow>> {
+  const now = Date.now();
+  if (!force && defaultsCache && now - defaultsCache.timestamp < 20000) {
+    return defaultsCache.data;
+  }
   try {
     // Colonnes ajoutées au fil des versions du script : on se rabat sur les plus anciennes si besoin
     const selects = [
@@ -106,17 +116,18 @@ export async function fetchModelDefaults(supabase: SupabaseClient): Promise<Reco
     ];
     let res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[0]);
     for (let i = 1; i < selects.length && res.error && isMissingColumn(res.error); i++) res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[i]);
-    if (res.error || !res.data) return {};
+    if (res.error || !res.data) return defaultsCache?.data ?? {};
     const rows = Object.fromEntries((res.data as unknown as ModelDefaultRow[]).map((r) => [r.model_id, normalize(r)]));
     try {
       registerModelNames(modelNamesMap(rows));
     } catch {
       // ignore
     }
+    defaultsCache = { data: rows, timestamp: now };
     return rows;
   } catch (err) {
     console.warn("fetchModelDefaults error:", err);
-    return {};
+    return defaultsCache?.data ?? {};
   }
 }
 

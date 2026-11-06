@@ -102,12 +102,22 @@ export function NotificationProvider() {
   /** Time of the last message toast sent by realtime (it carries the sender name, so the generic one is skipped) */
   const lastRealtimeMessage = useRef(0);
 
+  const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/prestataire') || pathname.startsWith('/admin');
+  const wasPrivate = useRef(false);
+
   // Initial load, refresh on sign-in/out and when the tab comes back to the foreground
   useEffect(() => {
-    const isPrivate = pathname.startsWith('/dashboard') || pathname.startsWith('/prestataire') || pathname.startsWith('/admin');
-    if (!isPrivate) return;
+    if (!isPrivate) {
+      wasPrivate.current = false;
+      return;
+    }
 
-    refresh();
+    // Ne rafraîchir à l'entrée dans l'espace privé que lors de la première arrivée
+    if (!wasPrivate.current) {
+      wasPrivate.current = true;
+      refresh();
+    }
+
     const onFocus = () => refresh();
     window.addEventListener('focus', onFocus);
     const { data: auth } = supabase.auth.onAuthStateChange(() => refresh());
@@ -115,7 +125,7 @@ export function NotificationProvider() {
       window.removeEventListener('focus', onFocus);
       auth.subscription.unsubscribe();
     };
-  }, [supabase, refresh, pathname]);
+  }, [supabase, refresh, isPrivate]);
 
   useEffect(() => {
     if (!userId) return;

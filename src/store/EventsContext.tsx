@@ -26,7 +26,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const supabase = createClient();
 
-  const fetchEvents = async () => {
+  const lastFetchTime = React.useRef(0);
+  const isDashboardRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+
+  const fetchEvents = async (force = false) => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname;
       if (!p.startsWith('/dashboard') && !p.startsWith('/admin')) {
@@ -34,6 +37,13 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         return;
       }
     }
+
+    const now = Date.now();
+    // Cache de 15 secondes pour éviter le spam de requêtes simultanées lors des navigations rapides
+    if (!force && isLoaded && now - lastFetchTime.current < 15000) {
+      return;
+    }
+    lastFetchTime.current = now;
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -51,10 +61,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     if (data) {
       // Fetch guests for these events to calculate RSVP indicators
       const eventIds = data.map((e: any) => e.id);
-      const { data: guestsData } = await supabase
+      const { data: guestsData } = eventIds.length > 0 ? await supabase
         .from('guests')
         .select('event_id, statut_rsvp, nombre_accompagnants')
-        .in('event_id', eventIds);
+        .in('event_id', eventIds) : { data: [] };
 
       const formattedEvents: Event[] = data.map((dbEvent: any) => {
         const eventGuests = (guestsData || []).filter((g: any) => g.event_id === dbEvent.id);
@@ -72,7 +82,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
 
         // The total is the planned capacity, or the total responses if it exceeds capacity
         const totalCapacity = dbEvent.guests_count || 0;
-        const totalResponses = eventGuests.length + eventGuests.reduce((acc, g) => acc + (g.nombre_accompagnants || 0), 0);
+        const totalResponses = eventGuests.length + eventGuests.reduce((acc: number, g: any) => acc + (g.nombre_accompagnants || 0), 0);
         const pending = Math.max(0, totalCapacity - confirmed - declined);
 
         return {
@@ -108,10 +118,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+    if (isDashboardRoute && !isLoaded) {
       fetchEvents();
     }
-  }, [pathname]);
+  }, [isDashboardRoute, isLoaded]);
 
   const addEvent = async (event: Partial<Event>, extraRow?: Record<string, unknown>): Promise<string | null> => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -216,11 +226,11 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       console.error("Supabase delete error:", error);
       throw error;
     }
-    await fetchEvents();
+    await fetchEvents(true);
   };
 
   const refreshEvents = async () => {
-    await fetchEvents();
+    await fetchEvents(true);
   };
 
   return (

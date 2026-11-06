@@ -67,12 +67,13 @@ import {
   customModelUrl,
   customValues,
   fetchCustomModels,
+  invalidateCustomModelsCache,
   isCustomModelId,
   withoutMusicValues,
   type CustomModelRow,
   type CustomValues,
 } from '@/lib/customModels';
-import { classificationOf, fetchModelDefaults, hiddenModelIds, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
+import { classificationOf, fetchModelDefaults, hiddenModelIds, invalidateModelDefaultsCache, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
 import { CartesStudio, type CartesStudioValue } from '@/components/cartes/CartesStudio';
 import { CardStudioModal } from '@/components/cartes/CardStudioModal';
 import { VOEUX_INSPIRATIONS } from '@/data/mock/voeux';
@@ -284,20 +285,16 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   // Modèles importés par l'admin (ZIP / HTML), publiés
   const [customModels, setCustomModels] = useState<CustomModelRow[]>([]);
   const [customContents, setCustomContents] = useState<Record<string, CustomValues>>({});
-  useEffect(() => {
-    let cancelled = false;
-    // Rechargés au retour sur l'onglet : un modèle publié ou retiré par l'admin apparaît / disparaît
-    const reload = () =>
-      fetchCustomModels(createClient(), { publishedOnly: true }).then((rows) => {
-        if (!cancelled) setCustomModels(rows);
-      });
-    reload();
-    window.addEventListener("focus", reload);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", reload);
-    };
+  const reloadCustoms = React.useCallback((force = false) => {
+    if (force) invalidateCustomModelsCache();
+    return fetchCustomModels(createClient(), { publishedOnly: true, force }).then((rows) => {
+      setCustomModels(rows);
+    });
   }, []);
+
+  useEffect(() => {
+    reloadCustoms();
+  }, [reloadCustoms]);
   const customItems = useMemo(
     () =>
       customModels.map((m) => ({
@@ -398,8 +395,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     let cancelled = false;
     const supabase = createClient();
 
-    const reload = () => {
-      fetchModelDefaults(supabase).then((rows) => {
+    const reload = (force = false) => {
+      if (force) {
+        invalidateModelDefaultsCache();
+        invalidateCustomModelsCache();
+      }
+      reloadCustoms(force);
+      fetchModelDefaults(supabase, force).then((rows) => {
         if (cancelled) return;
         setPublishedModels(rows);
         if (rows[VELOURS_MODEL_ID]?.content) setVeloursContent(veloursDefaults(rows[VELOURS_MODEL_ID].content as any));
@@ -412,19 +414,22 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
     reload();
 
-    // Abonnement Supabase Realtime : actualisation automatique instantanée
+    // Abonnement Supabase Realtime : actualisation automatique instantanée sur les deux tables
     const channel = supabase
-      .channel("create_studio_model_defaults_realtime")
+      .channel("create_studio_models_realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "invitation_model_defaults" },
-        () => {
-          reload();
-        }
+        () => reload(true)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "custom_invitation_models" },
+        () => reload(true)
       )
       .subscribe();
 
-    const handleFocus = () => reload();
+    const handleFocus = () => reload(true);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleFocus);
 

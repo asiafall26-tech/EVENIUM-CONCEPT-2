@@ -70,9 +70,10 @@ export function markPrestatairesSeen() {
 }
 
 let inFlight: Promise<void> | null = null;
+let lastRefreshTime = 0;
 
 /** Badge counters shared by the sidebars, the bell, the toasts and the tab title. */
-export const useBadgeStore = create<BadgeStore>((set) => ({
+export const useBadgeStore = create<BadgeStore>((set, get) => ({
   userId: null,
   role: null,
   unreadMessages: 0,
@@ -84,10 +85,18 @@ export const useBadgeStore = create<BadgeStore>((set) => ({
   newRsvps: {},
   loaded: false,
   refresh: () => {
+    const now = Date.now();
+    // Cache de 10 secondes pour éviter de surcharger la base de données
+    if (get().loaded && now - lastRefreshTime < 10000) {
+      return Promise.resolve();
+    }
     // Several components may ask at once (realtime event + page action): share one request
     const inBrowser = typeof window !== "undefined";
     inFlight ??= getBadgeCounts(inBrowser ? readRsvpSeen() : {}, inBrowser ? readPrestatairesSeen() : undefined)
-      .then((counts) => set({ ...counts, loaded: true }))
+      .then((counts) => {
+        lastRefreshTime = Date.now();
+        set({ ...counts, loaded: true });
+      })
       .catch(() => {})
       .finally(() => {
         inFlight = null;

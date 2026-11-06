@@ -1,9 +1,23 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/utils/supabase/server";
-import { MODEL_DEFAULTS_TABLE, type ModelClassification, type ModelDefaultRow } from "@/lib/modelDefaults";
-import { CUSTOM_MODELS_TABLE, type CustomModelRow } from "@/lib/customModels";
+import { MODEL_DEFAULTS_TABLE, invalidateModelDefaultsCache, type ModelClassification, type ModelDefaultRow } from "@/lib/modelDefaults";
+import { CUSTOM_MODELS_TABLE, invalidateCustomModelsCache, type CustomModelRow } from "@/lib/customModels";
+
+function purgeModelCaches() {
+  invalidateModelDefaultsCache();
+  invalidateCustomModelsCache();
+  try {
+    revalidatePath("/", "layout");
+    revalidatePath("/invitations");
+    revalidatePath("/create");
+    revalidatePath("/admin/modeles");
+  } catch {
+    // ignore
+  }
+}
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -89,6 +103,7 @@ export async function publishModelAction(modelId: string, content: object, custo
     payload.name = cleanName.trim();
   }
   await writeModelDefault(payload);
+  purgeModelCaches();
 }
 
 /** Renomme un modèle */
@@ -109,6 +124,7 @@ export async function saveModelNameAction(modelId: string, name: string): Promis
     updated_by: userId,
   };
   await writeModelDefault(payload);
+  purgeModelCaches();
 }
 
 /** Change la classification d'un modèle */
@@ -122,6 +138,7 @@ export async function saveModelClassificationAction(modelId: string, classificat
     updated_by: userId,
   };
   await writeModelDefault(payload);
+  purgeModelCaches();
 }
 
 /** Change la couverture d'un modèle */
@@ -140,6 +157,7 @@ export async function saveModelCoverAction(modelId: string, coverUrl: string): P
     updated_by: userId,
   };
   await writeModelDefault(payload);
+  purgeModelCaches();
 }
 
 /** Masque ou affiche un modèle sur le site */
@@ -157,6 +175,7 @@ export async function setModelHiddenAction(modelId: string, hidden: boolean): Pr
   };
   if (existing.data?.name) payload.name = existing.data.name;
   await writeModelDefault(payload);
+  purgeModelCaches();
 }
 
 /** Marque un modèle comme supprimé ou restauré */
@@ -177,6 +196,7 @@ export async function setModelDeletedAction(modelId: string, deleted: boolean): 
   };
   if (existing.data?.name) payload.name = existing.data.name;
   await writeModelDefault(payload);
+  purgeModelCaches();
 }
 
 /** Rétablit la version d'origine d'un modèle */
@@ -194,6 +214,7 @@ export async function resetModelDefaultAction(modelId: string, resetName = false
       updated_at: new Date().toISOString(),
     }).eq("model_id", modelId);
   }
+  purgeModelCaches();
 }
 
 /** Met à jour un modèle importé (ZIP/HTML) */
@@ -207,6 +228,7 @@ export async function saveCustomModelAction(slug: string, patch: Partial<CustomM
   if (error) {
     throw new Error(error.message);
   }
+  purgeModelCaches();
 }
 
 /** Enregistre un nouveau modèle importé */
@@ -217,4 +239,5 @@ export async function insertCustomModelAction(row: Omit<CustomModelRow, "updated
   if (error) {
     throw new Error(error.message);
   }
+  purgeModelCaches();
 }
