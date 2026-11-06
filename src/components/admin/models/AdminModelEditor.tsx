@@ -48,6 +48,11 @@ export default function AdminModelEditor({
   const [busy, setBusy] = useState<"save" | "publish" | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const update = (next: ModelContent) => {
     setDraft(next);
@@ -104,10 +109,12 @@ export default function AdminModelEditor({
   const Studio = model.Studio;
   const Invitation = model.Invitation;
 
+  if (!mounted) return null;
+
   return createPortal(
-    <div className="fixed inset-0 z-[60] bg-[#faf7f5]">
+    <div className="fixed inset-0 w-screen h-screen z-[60] bg-[#faf7f5] overflow-hidden">
       {/* Plein écran : toute la place pour éditer */}
-      <div className="w-full h-dvh overflow-hidden flex flex-col">
+      <div className="w-full h-full flex flex-col">
         {/* En-tête */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-gray-100 bg-white shrink-0">
           <div className="min-w-0 flex-1 max-w-xl">
@@ -271,7 +278,7 @@ export default function AdminModelEditor({
       {/* Aperçu plein écran : le modèle entier, puis « Enregistrer la modification » ou « Retour » */}
       {preview && (
         <InvitationCtaContext.Provider value={{ force: true, variant: "save" }}>
-          <div className="fixed inset-0 z-[100] h-dvh bg-black overflow-y-auto overscroll-contain">
+          <div className="fixed inset-0 w-screen h-screen z-[100] bg-black overflow-y-auto overscroll-contain">
             <button
               type="button"
               onClick={() => setPreview(false)}

@@ -226,6 +226,10 @@
   /* Bloc de fin d'un bord à l'autre de l'écran et tout en bas, même si la page du modèle a des marges */
   function bleedCta() {
     if (!ctaBox || !ctaBox.parentNode) return;
+    var host = scrollHost();
+    var page = document.scrollingElement || document.documentElement;
+    var vh = window.innerHeight;
+    var pageScrolls = page.scrollHeight > vh + 1 && getComputedStyle(document.body).overflowY !== "hidden";
     var s = ctaBox.style;
     s.marginLeft = "0px";
     s.marginBottom = "0px";
@@ -236,10 +240,22 @@
       s.marginLeft = -r.left + "px";
       s.width = vw + "px";
     }
+
+    if (!pageScrolls && host === document.body) {
+      // Modèle fixe/story sans défilement : le bloc se cale en bas sans casser le corps de page
+      s.position = "fixed";
+      s.bottom = "0px";
+      s.left = "0px";
+      s.right = "0px";
+      s.padding = "18px 16px 24px";
+      s.zIndex = "2147482000";
+      s.marginBottom = "0px";
+      return;
+    }
+
     // Marge du bas de la page sous le bloc
-    var page = document.scrollingElement || document.documentElement;
     var gap = page.scrollHeight - (ctaBox.getBoundingClientRect().bottom + page.scrollTop);
-    if (ctaBox.parentNode === document.body && gap > 0.5) s.marginBottom = -gap + "px";
+    if (ctaBox.parentNode === document.body && gap > 0.5 && gap < vh * 0.8) s.marginBottom = -gap + "px";
   }
 
   /* Couleurs « r, g, b, a » lues dans un style calculé (rgb(), rgba(), dégradés) */

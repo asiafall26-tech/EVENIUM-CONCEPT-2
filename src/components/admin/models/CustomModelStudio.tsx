@@ -7,7 +7,6 @@ import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Music, Palet
 import CoverModal from "./CoverModal";
 import CustomSectionsEditor, { CustomMusicFields } from "@/components/invitations/custom/CustomSectionsEditor";
 import CustomInvitationFrame from "@/components/invitations/custom/CustomInvitationFrame";
-import { InvitationCtaContext } from "@/components/invitations/InvitationCtaContext";
 import StyleEditor from "./StyleEditor";
 import { STYLE_KEY, customValues, parseStyle, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
 
@@ -41,7 +40,12 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
   const [busy, setBusy] = useState<"save" | "publish" | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isStatic = model.invitation_type === "carte";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -87,9 +91,11 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
   ];
   const liveModel = { ...model, name };
 
+  if (!mounted) return null;
+
   return createPortal(
-    <div className="fixed inset-0 z-[60] bg-[#faf7f5]">
-      <div className="w-full h-dvh overflow-hidden flex flex-col">
+    <div className="fixed inset-0 w-screen h-screen z-[60] bg-[#faf7f5] overflow-hidden">
+      <div className="w-full h-full flex flex-col">
         {/* En-tête */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-gray-100 bg-white shrink-0">
           <div className="min-w-0 flex-1">
@@ -244,32 +250,68 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
         />
       )}
 
-      {/* Aperçu plein écran : le modèle entier en plein écran, avec « Enregistrer » ou « Retour » */}
+      {/* Aperçu plein écran : le modèle entier propre (sans bannière CTA intrusive), dans son châssis smartphone sur grand écran */}
       {preview && (
-        <InvitationCtaContext.Provider value={{ force: true, variant: "save" }}>
-          <div className="fixed inset-0 z-[100] bg-black">
-
+        <div className="fixed inset-0 w-screen h-screen z-[100] bg-[#0c0a09] flex flex-col overflow-hidden">
+          {/* Barre supérieure flottante haut de gamme */}
+          <div className="shrink-0 h-16 px-4 sm:px-6 bg-[#15110e]/95 border-b border-white/10 backdrop-blur-md flex items-center justify-between gap-3 z-30">
             <button
               type="button"
               onClick={() => setPreview(false)}
-              aria-label="Retour au studio"
-              className="fixed z-[120] left-3 top-[max(0.75rem,env(safe-area-inset-top))] sm:left-6 sm:top-6 w-10 h-10 rounded-full bg-black/60 hover:bg-black/85 backdrop-blur-md text-white border border-white/25 flex items-center justify-center shadow-lg transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition-colors"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={16} /> <span>Retour au studio</span>
             </button>
 
-            <CustomInvitationFrame
+            <div className="text-center min-w-0 max-w-md hidden sm:block">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#d4af37] font-bold block">Aperçu du modèle</span>
+              <p className="font-serif text-sm text-white/90 truncate font-medium">{name}</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={async () => {
+                  await run("save");
+                  setPreview(false);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#b8924a]/50 bg-[#fbf7f0] text-xs font-semibold text-[#6f5527] hover:bg-white disabled:opacity-60 transition-colors"
+              >
+                {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>Enregistrer</span>
+              </button>
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={async () => {
+                  await run("publish");
+                  setPreview(false);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#e2c77d] to-[#b8924a] text-black text-xs font-bold hover:brightness-105 disabled:opacity-60 transition-all shadow-sm"
+              >
+                {busy === "publish" ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
+                <span>Publier</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Corps de l'aperçu : centré dans un châssis smartphone sur grand écran, pleine page sur mobile */}
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden relative">
+            {/* Halo lumineux d'ambiance luxueuse */}
+            <div aria-hidden className="hidden sm:block absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full bg-[#b8924a]/10 blur-[140px] pointer-events-none" />
+            <div aria-hidden className="hidden sm:block absolute -bottom-40 right-1/4 w-[500px] h-[500px] rounded-full bg-[#6b1428]/20 blur-[140px] pointer-events-none" />
+
+            <div className="relative w-full h-full sm:w-[430px] sm:h-[min(90vh,880px)] sm:max-h-[880px] bg-white sm:rounded-[38px] sm:shadow-[0_25px_90px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.1),0_0_0_6px_#1c1714] overflow-hidden flex flex-col">
+              <CustomInvitationFrame
                 model={liveModel}
                 values={values}
-                className="w-full h-dvh border-0 block bg-white"
-                onBackToEdit={() => setPreview(false)}
-                onFinalize={async () => {
-                  setPreview(false);
-                  await run("save");
-                }}
+                hideCta
+                className="w-full h-full border-0 block bg-white"
               />
+            </div>
           </div>
-        </InvitationCtaContext.Provider>
+        </div>
       )}
     </div>,
     document.body
