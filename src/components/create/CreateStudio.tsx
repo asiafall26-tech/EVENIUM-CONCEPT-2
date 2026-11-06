@@ -107,7 +107,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#800020] to-[#4A0012]",
     badge: "Prestige Impérial",
     category: "Mariage",
-    compatibleEvents: ["Mariage", "Anniversaire de mariage"],
+    compatibleEvents: ["Mariage", "Anniversaire de mariage", "Noël", "Fêtes de fin d'année"],
     liveUrl: "/invitation-mariage"
   },
   {
@@ -118,7 +118,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#b8924a] to-[#8C6D1F]",
     badge: "Cérémonie Royale",
     category: "Mariage",
-    compatibleEvents: ["Mariage", "Anniversaire de mariage"],
+    compatibleEvents: ["Mariage", "Anniversaire de mariage", "Gala", "Soirée", "Noël", "Fêtes de fin d'année"],
     liveUrl: "/invitation-sceau-dor"
   },
   {
@@ -162,7 +162,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#b8924a] to-[#805e26]",
     badge: "Attention 3 900 FCFA",
     category: "Vœux",
-    compatibleEvents: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Mariage", "Baptême", "Tous"],
+    compatibleEvents: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Mariage", "Baptême", "Noël", "Fêtes de fin d'année", "Tous"],
     liveUrl: "/voeux"
   },
   {
@@ -173,7 +173,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#9e1b23] to-[#590d12]",
     badge: "Romance 3 900 FCFA",
     category: "Mots Doux",
-    compatibleEvents: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Tous"],
+    compatibleEvents: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Noël", "Fêtes de fin d'année", "Tous"],
     liveUrl: "/mots-doux"
   },
   {
@@ -184,7 +184,7 @@ const CATALOG_MODELS: ModelItem[] = [
     color: "from-[#4a0e17] to-[#140306]",
     badge: "Tête-à-tête 3 900 FCFA",
     category: "Invitations Couple",
-    compatibleEvents: ["Couple", "Invitations Couple", "Soirée", "Dîner", "Tous"],
+    compatibleEvents: ["Couple", "Invitations Couple", "Soirée", "Dîner", "Noël", "Fêtes de fin d'année", "Tous"],
     liveUrl: "/mots-doux"
   }
 ];
@@ -226,6 +226,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       const lower = categoryParam.toLowerCase();
       if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") return "Couple";
       if (lower === "voeux" || lower === "vœux" || lower === "voeu") return "Vœux";
+      if (lower === "noel" || lower === "noël") return "Noël";
+      if (lower === "fetes" || lower === "fêtes" || lower === "nouvel-an" || lower.includes("fin")) return "Fêtes de fin d'année";
       return categoryParam;
     }
     return "Mariage";
@@ -238,6 +240,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       const lower = cat.toLowerCase();
       if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") setSelectedEventCategory("Couple");
       else if (lower === "voeux" || lower === "vœux" || lower === "voeu") setSelectedEventCategory("Vœux");
+      else if (lower === "noel" || lower === "noël") setSelectedEventCategory("Noël");
+      else if (lower === "fetes" || lower === "fêtes" || lower === "nouvel-an" || lower.includes("fin")) setSelectedEventCategory("Fêtes de fin d'année");
       else setSelectedEventCategory(cat);
     }
   }, [searchParams]);
@@ -593,9 +597,17 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
           ? `Anniversaire de mariage de ${pA || "—"} & ${pB}`
           : `Anniversaire de mariage de ${pA || "Mon Événement"}`;
       }
-      const isSingle = ["Baptême", "Anniversaire"].includes(cat);
+      const isSingle = ["Baptême", "Anniversaire", "Noël", "Fêtes de fin d'année"].includes(cat);
       if (isSingle || !pB) {
-        const prefix = cat === "Anniversaire" ? "Anniversaire de" : cat === "Baptême" ? "Baptême de" : cat;
+        const prefix = cat === "Anniversaire"
+          ? "Anniversaire de"
+          : cat === "Baptême"
+          ? "Baptême de"
+          : cat === "Noël"
+          ? "Célébration de Noël de"
+          : cat === "Fêtes de fin d'année"
+          ? "Fêtes de fin d'année de"
+          : cat;
         return `${prefix} ${pA || "Mon Événement"}`;
       }
       return `Mariage de ${pA} & ${pB}`;

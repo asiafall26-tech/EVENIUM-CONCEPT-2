@@ -3,6 +3,8 @@ export type EventCategory =
   | "Mariage"
   | "Anniversaire"
   | "Anniversaire de mariage"
+  | "Noël"
+  | "Fêtes de fin d'année"
   | "Gala"
   | "Baptême"
   | "Corporate";
@@ -10,7 +12,7 @@ export type EventCategory =
 export interface PresetPhoto {
   id: string;
   title: string;
-  category: "Mariage" | "Anniversaire" | "Anniversaire de mariage" | "Gala" | "Baptême" | "Corporate";
+  category: "Mariage" | "Anniversaire" | "Anniversaire de mariage" | "Noël" | "Fêtes de fin d'année" | "Gala" | "Baptême" | "Corporate";
   url: string;
   alt: string;
 }

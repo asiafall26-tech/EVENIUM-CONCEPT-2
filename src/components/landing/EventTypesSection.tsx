@@ -37,6 +37,8 @@ function Marquee() {
     "Anniversaire de mariage",
     "Fiançailles",
     "Anniversaire",
+    "Noël",
+    "Fêtes de fin d'année",
     "Henné time",
     "Baptême",
     "Baby shower",

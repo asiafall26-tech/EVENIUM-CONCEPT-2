@@ -10,6 +10,8 @@ export type EventCategory =
   | "Mots Doux"
   | "Couple"
   | "Graduation"
+  | "Noël"
+  | "Fêtes de fin d'année"
   | string;
 
 export interface InvitationModel {
@@ -112,12 +114,12 @@ export const showcaseModelIds: string[] = ["invit-7", "invit-8", "invit-9", "inv
 
 /** Classement d'origine d'un modèle (type d'invitation et événement), remplaçable dans le studio des modèles */
 export function defaultClassification(id: string): { type: any; events: string[] } {
-  if (id === "voeu-exception") return { type: "voeu", events: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Graduation", "Baptême"] };
-  if (id === "mot-doux") return { type: "mot_doux", events: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage"] };
-  if (id === "invitation-couple") return { type: "couple", events: ["Couple", "Invitations Couple", "Dîner", "Soirée"] };
+  if (id === "voeu-exception") return { type: "voeu", events: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Graduation", "Baptême", "Noël", "Fêtes de fin d'année"] };
+  if (id === "mot-doux") return { type: "mot_doux", events: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Fêtes de fin d'année"] };
+  if (id === "invitation-couple") return { type: "couple", events: ["Couple", "Invitations Couple", "Dîner", "Soirée", "Fêtes de fin d'année"] };
   const m = mockInvitationModels.find((x) => x.id === id);
   if (id === "invit-7" || id === "invit-8" || id === "invit-9" || id === "invit-10") {
-    return { type: m?.type ?? "animée", events: [m?.category ?? "Mariage", "Anniversaire de mariage"] };
+    return { type: m?.type ?? "animée", events: [m?.category ?? "Mariage", "Anniversaire de mariage", "Gala", "Soirée", "Noël", "Fêtes de fin d'année"] };
   }
   return { type: m?.type ?? "animée", events: m ? [m.category] : [] };
 }

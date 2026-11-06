@@ -84,7 +84,7 @@ export default function VoeuxPage() {
         </div>
       </section>
 
-      {/* 2. LES 5 OCCASIONS OFFICIELLES (ÉPURÉES & SANS FAUX MODÈLES) */}
+      {/* 2. LES OCCASIONS OFFICIELLES & FÊTES */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
         
         <div className="text-center max-w-xl mx-auto mb-10 space-y-2">
@@ -96,7 +96,7 @@ export default function VoeuxPage() {
           </h2>
         </div>
 
-        {/* GRILLE DES 5 OCCASIONS RÉELLES */}
+        {/* GRILLE DES OCCASIONS RÉELLES */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {VOEUX_OCCASIONS.map((occ) => (
             <Link

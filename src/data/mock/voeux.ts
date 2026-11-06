@@ -86,6 +86,26 @@ export const VOEUX_OCCASIONS: VoeuxOccasion[] = [
     description: "Une lettre solennelle et prestigieuse pour saluer une étape majeure vers l'excellence.",
     accentColor: "#2b4c7e",
     sealColor: "#c9a45e"
+  },
+  {
+    id: "noel",
+    name: "Noël",
+    icon: "🎄",
+    tagline: "Magie de Noël, réveillon & féerie d'hiver",
+    hook: "Partagez la magie et la chaleur d'un Noël d'exception.",
+    description: "Des vœux étincelants scellés au cachet de cire carmin ou or sous une douce mélodie de piano pour émerveiller vos proches.",
+    accentColor: "#ba181b",
+    sealColor: "#d62828"
+  },
+  {
+    id: "fetes-fin-annee",
+    name: "Fêtes de fin d'année",
+    icon: "✨",
+    tagline: "Nouvel An, réveillon de la Saint-Sylvestre & vœux du renouveau",
+    hook: "Ouvrez le nouveau chapitre avec éclat, ambition et noblesse.",
+    description: "Une attention somptueuse pour transmettre vos plus beaux vœux de prospérité et d'accomplissement pour la nouvelle année.",
+    accentColor: "#d4af37",
+    sealColor: "#c9a45e"
   }
 ];
 
@@ -125,5 +145,25 @@ export const VOEUX_INSPIRATIONS: VoeuxInspiration[] = [
     occasionId: "graduation",
     title: "Fierté & Encouragements",
     text: "Bravo pour cette magnifique consécration ! Ton assiduité, ton intelligence et ta ténacité forcent l'admiration. Que cette réussite soit le premier tremplin d'une carrière florissante."
+  },
+  {
+    occasionId: "noel",
+    title: "Magie & Chaleur en Famille",
+    text: "Que la magie de Noël enveloppe ton foyer de douceur, de rires et de sérénité. Que cette fête soit l'occasion de chérir les instants partagés avec ceux qui comptent le plus. Joyeux et chaleureux Noël !"
+  },
+  {
+    occasionId: "noel",
+    title: "Pensée Scellée d'Émotion",
+    text: "Même séparés par les distances, le cœur n'oublie jamais ceux qui l'illuminent. En cette douce nuit de Noël, reçois toute mon affection et mes vœux les plus précieux."
+  },
+  {
+    occasionId: "fetes-fin-annee",
+    title: "Vœux de Prospérité & de Grandeur",
+    text: "À l'aube de cette nouvelle année, je te souhaite 365 jours d'audace, de santé inaltérable et d'accomplissements éclatants. Que chacun de tes projets trouve le succès qu'il mérite. Merveilleuses fêtes de fin d'année !"
+  },
+  {
+    occasionId: "fetes-fin-annee",
+    title: "Nouvel An Prestigieux",
+    text: "Tournons la page de l'année écoulée avec gratitude et ouvrons la suivante avec éclat et espérance. Que cette nouvelle année vous comble, vous et vos proches, de paix, de bonheur et de triomphes !"
   }
 ];

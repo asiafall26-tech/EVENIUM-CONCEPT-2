@@ -109,7 +109,9 @@ function offerByEventType(type: string): Seed[] {
     case "Dîner":
     case "Brunch":
     case "Soirée":
-      return [i(`Format ${type === "Brunch" ? "du brunch" : type === "Soirée" ? "de la soirée" : type === "Réception" ? "de la réception" : type === "Conférence" ? "de la conférence" : type === "Gala" ? "du gala" : "du dîner"}`, ["Nombre de participants", "Durée"])];
+    case "Noël":
+    case "Fêtes de fin d'année":
+      return [i(`Format ${type === "Brunch" ? "du brunch" : type === "Soirée" ? "de la soirée" : type === "Réception" ? "de la réception" : type === "Conférence" ? "de la conférence" : type === "Gala" ? "du gala" : type === "Noël" ? "de la célébration de Noël" : type === "Fêtes de fin d'année" ? "des festivités de fin d'année" : "du dîner"}`, ["Nombre de participants", "Durée"])];
     default:
       return [l(`Thèmes ${type === "Anniversaire" ? "d'anniversaire" : type === "Fiançailles" ? "de fiançailles" : type === "Baby shower" ? "de baby shower" : "proposés"}`)];
   }
