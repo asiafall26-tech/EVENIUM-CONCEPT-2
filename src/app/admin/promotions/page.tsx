@@ -209,8 +209,12 @@ export default function AdminPromotionsPage() {
       {loading ? (
         <div className="text-center py-16 text-gray-400">Chargement des campagnes...</div>
       ) : filteredCampaigns.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center text-gray-500">
-          Aucune campagne ne correspond à vos filtres.
+        <div className="bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center space-y-2">
+          <Sparkles className="mx-auto text-[#b8924a] mb-2" size={32} />
+          <h4 className="font-serif text-lg font-bold text-gray-800">Aucune annonce sponsorisée pour le moment</h4>
+          <p className="text-xs text-gray-500 max-w-md mx-auto">
+            Dès qu&apos;un prestataire enregistrera et boostera une offre depuis son tableau de bord, elle apparaîtra ici pour contrôle qualité et suivi des revenus.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -319,3 +323,4 @@ export default function AdminPromotionsPage() {
     </div>
   );
 }
+

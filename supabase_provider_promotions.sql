@@ -69,3 +69,4 @@ DROP POLICY IF EXISTS "Users can insert impressions" ON public.campaign_impressi
 CREATE POLICY "Users can insert impressions" ON public.campaign_impressions
   FOR INSERT
   WITH CHECK (true);
+

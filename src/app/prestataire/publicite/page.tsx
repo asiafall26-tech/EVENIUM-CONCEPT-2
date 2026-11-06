@@ -62,9 +62,9 @@ export default function PrestatairePublicitePage() {
   const [providerName, setProviderName] = useState<string>("Mon Entreprise");
   const [providerAvatar, setProviderAvatar] = useState<string | null>(null);
 
-  // Form states
-  const [title, setTitle] = useState("Offre Exceptionnelle pour vos Célébrations");
-  const [hook, setHook] = useState("Bénéficiez d'une prestation sur-mesure et d'avantages exclusifs pour toute réservation cette saison.");
+  // Form states (Vides au départ : aucune fausse donnée)
+  const [title, setTitle] = useState("");
+  const [hook, setHook] = useState("");
   const [badge, setBadge] = useState("Offre Spéciale");
   const [mediaUrl, setMediaUrl] = useState(PRESET_PHOTOS[0].url);
   const [ctaLabel, setCtaLabel] = useState("Demander un devis");
@@ -123,6 +123,10 @@ export default function PrestatairePublicitePage() {
   }, [supabase]);
 
   const handleSaveCampaign = async () => {
+    if (!title.trim() || !hook.trim()) {
+      alert("Veuillez renseigner un titre et une accroche promotionnelle avant d'enregistrer.");
+      return;
+    }
     setSaving(true);
     try {
       const updated = await saveProviderCampaignAction({
@@ -178,7 +182,14 @@ export default function PrestatairePublicitePage() {
   };
 
   const handleActivateBoost = async () => {
-    if (!campaign?.id) {
+    if (!title.trim() || !hook.trim()) {
+      alert("Veuillez d'abord rédiger un titre et une accroche promotionnelle dans le studio avant d'activer votre boost.");
+      setIsBoostModalOpen(false);
+      return;
+    }
+
+    let activeCampaignId = campaign?.id;
+    if (!activeCampaignId) {
       // First save if no campaign id
       const created = await saveProviderCampaignAction({
         provider_id: currentProviderId,
@@ -192,27 +203,30 @@ export default function PrestatairePublicitePage() {
         target_event_types: targetEventTypes,
         target_zones: targetZones,
         plan_type: selectedPlan,
+        status: "active",
       });
       setCampaign(created);
+      activeCampaignId = created.id;
     }
 
     setIsProcessingPayment(true);
     setTimeout(async () => {
       try {
-        const campaignId = campaign?.id || "camp-current";
-        const result = await activateCampaignAction(campaignId, selectedPlan);
+        const result = await activateCampaignAction(activeCampaignId!, selectedPlan);
         setIsProcessingPayment(false);
         setPaymentSuccessMessage(result.message);
         
         // Update local status
-        if (campaign) {
-          setCampaign({
-            ...campaign,
-            status: "active",
-            plan_type: selectedPlan,
-            ends_at: result.endsAt,
-          });
-        }
+        setCampaign((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: "active",
+                plan_type: selectedPlan,
+                ends_at: result.endsAt,
+              }
+            : null
+        );
       } catch {
         setIsProcessingPayment(false);
         alert("Une erreur est survenue lors de l'activation.");
@@ -289,7 +303,7 @@ export default function PrestatairePublicitePage() {
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#826f5d]">Vues Organisateur</p>
               <p className="font-serif text-xl font-bold text-[#1e150f]">
-                {campaign?.impressions_count ? campaign.impressions_count.toLocaleString("fr-FR") : "1 420"}
+                {campaign?.impressions_count !== undefined ? campaign.impressions_count.toLocaleString("fr-FR") : 0}
               </p>
             </div>
           </div>
@@ -301,7 +315,7 @@ export default function PrestatairePublicitePage() {
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#826f5d]">Clics Générés</p>
               <p className="font-serif text-xl font-bold text-[#1e150f]">
-                {campaign?.clicks_count ? campaign.clicks_count.toLocaleString("fr-FR") : "184"}
+                {campaign?.clicks_count !== undefined ? campaign.clicks_count.toLocaleString("fr-FR") : 0}
               </p>
             </div>
           </div>
@@ -313,7 +327,7 @@ export default function PrestatairePublicitePage() {
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#826f5d]">Demandes Directes</p>
               <p className="font-serif text-xl font-bold text-[#1e150f]">
-                {campaign?.contacts_count ? campaign.contacts_count.toLocaleString("fr-FR") : "36"}
+                {campaign?.contacts_count !== undefined ? campaign.contacts_count.toLocaleString("fr-FR") : 0}
               </p>
             </div>
           </div>
@@ -593,12 +607,24 @@ export default function PrestatairePublicitePage() {
 
               {/* Titre & Accroche */}
               <div>
-                <h4 className="font-serif text-sm font-semibold text-gray-900 line-clamp-1">
-                  {title || "Titre de votre annonce"}
-                </h4>
-                <p className="text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed">
-                  {hook || "Votre texte promotionnel..."}
-                </p>
+                {title ? (
+                  <h4 className="font-serif text-sm font-semibold text-gray-900 line-clamp-1">
+                    {title}
+                  </h4>
+                ) : (
+                  <h4 className="font-serif text-sm font-normal text-gray-400 italic">
+                    Titre de votre annonce...
+                  </h4>
+                )}
+                {hook ? (
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed">
+                    {hook}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 italic mt-1">
+                    Votre accroche et avantage client apparaîtront ici...
+                  </p>
+                )}
               </div>
 
               {/* Bouton d'action */}
@@ -814,3 +840,4 @@ export default function PrestatairePublicitePage() {
     </div>
   );
 }
+
