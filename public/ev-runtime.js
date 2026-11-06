@@ -204,9 +204,9 @@
   }
 
   /*
-   * Détection des modèles à étapes / stories / diaporamas (ex: slides d'anniversaire, étapes interactives).
-   * RÈGLE ABSOLUE : Les options (CTA) ne doivent JAMAIS pénétrer ou recouvrir le modèle pendant la présentation.
-   * Elles n'apparaissent qu'à la TOUTE FIN (dernier écran / fin de la story).
+   * Détection exhaustive des modèles à étapes / stories / diaporamas / écrans interactifs.
+   * RÈGLE ABSOLUE EVENIUM : Les options (CTA) ne doivent JAMAIS pénétrer ou recouvrir le modèle pendant la présentation.
+   * Elles n'apparaissent qu'à la TOUTE FIN (dernier écran / fin de la story / tout en bas du scroll).
    */
   function getSlides() {
     var selectors = [
@@ -218,7 +218,25 @@
       "#stage > section",
       "#stage > div.slide",
       ".story-screen",
-      ".slide-item"
+      ".slide-item",
+      ".screen",
+      ".story",
+      ".step",
+      "[data-step]",
+      "[data-screen]",
+      "[data-page]",
+      "[data-index]",
+      ".page",
+      ".scene",
+      ".story-page",
+      ".frame",
+      ".story-frame",
+      ".snap-child",
+      ".story-card",
+      "[class*=\"story-slide\"]",
+      "[class*=\"story-screen\"]",
+      "[class*=\"story-step\"]",
+      "[class*=\"story-card\"]"
     ];
     for (var i = 0; i < selectors.length; i++) {
       var found = document.querySelectorAll(selectors[i]);
@@ -226,30 +244,87 @@
         return Array.prototype.slice.call(found);
       }
     }
+
+    // Détection générique par conteneur de slides ou éléments de sections plein écran
+    var sections = document.querySelectorAll("section, [data-section]");
+    if (sections && sections.length > 1) {
+      var fullHeightSections = Array.prototype.slice.call(sections).filter(function (s) {
+        if (s.id === "ev-end-cta" || s.closest("#ev-end-cta")) return false;
+        var h = s.offsetHeight;
+        return h >= window.innerHeight * 0.7;
+      });
+      if (fullHeightSections.length > 1) {
+        return fullHeightSections;
+      }
+    }
+
     return [];
   }
 
   function isStoryAtEnd() {
+    // 1. Si une couverture avec bouton de démarrage/lecture est présente et visible, l'histoire n'a pas encore été lue
+    var startBtn = document.querySelector(".btn-watch, .btn-start, #start, [data-action='watch'], [data-action='start'], .cover.on, .cover.active, .splash.on, .splash.active");
+    if (startBtn && startBtn.offsetParent !== null && getComputedStyle(startBtn).display !== "none") {
+      return false;
+    }
+
+    // 2. Détection par barres de progression de story (très fréquent sur les templates Insta-like)
+    var progressBars = document.querySelectorAll(".story-bars > *, .bars > *, .progress-bars > *, .story-progress > *, [class*=\"progress\"] > span, [class*=\"progress\"] > div");
+    if (progressBars && progressBars.length > 1) {
+      var lastBar = progressBars[progressBars.length - 1];
+      var isLastActive = lastBar.classList.contains("active") ||
+                         lastBar.classList.contains("on") ||
+                         lastBar.classList.contains("done") ||
+                         lastBar.classList.contains("completed") ||
+                         (lastBar.style && (lastBar.style.width === "100%" || parseFloat(lastBar.style.width) >= 95));
+      if (!isLastActive) {
+        return false;
+      }
+    }
+
     var slides = getSlides();
     if (!slides.length) return true;
 
-    // Dernier slide actif ?
+    // 3. Dernier slide actif ?
     var last = slides[slides.length - 1];
-    if (
+    var isLastActiveSlide = (
       last.classList.contains("on") ||
       last.classList.contains("active") ||
       last.classList.contains("current") ||
       last.classList.contains("visible") ||
+      last.classList.contains("show") ||
+      last.classList.contains("is-active") ||
       last.classList.contains("swiper-slide-active")
-    ) {
-      return true;
+    );
+
+    if (isLastActiveSlide) return true;
+
+    // 4. Si d'autres slides (antérieurs) sont actifs/visibles, l'histoire est EN COURS
+    for (var i = 0; i < slides.length - 1; i++) {
+      var s = slides[i];
+      if (
+        s.classList.contains("on") ||
+        s.classList.contains("active") ||
+        s.classList.contains("current") ||
+        s.classList.contains("visible") ||
+        s.classList.contains("show") ||
+        s.classList.contains("is-active") ||
+        s.classList.contains("swiper-slide-active")
+      ) {
+        return false;
+      }
+      // Visible via style direct
+      if (s.offsetParent !== null && getComputedStyle(s).display !== "none" && getComputedStyle(s).opacity !== "0" && getComputedStyle(s).visibility !== "hidden") {
+        // Si le dernier slide n'est pas celui-ci, l'histoire n'est pas finie
+        return false;
+      }
     }
 
-    // Éléments explicites de fin de story
-    var endEl = document.querySelector(".fin.on, .final.on, .slide-final.on, #stage .fin.on, .is-ended");
-    if (endEl) return true;
+    // 5. Éléments explicites de fin de story
+    var endEl = document.querySelector(".fin.on, .final.on, .slide-final.on, #stage .fin.on, .is-ended, .story-end, .end-screen.active, .end-screen.on");
+    if (endEl && endEl.offsetParent !== null) return true;
 
-    // Bouton de relecture ou de fin visible
+    // 6. Bouton de relecture ou de fin visible
     var again = document.querySelector("#again, .btn-again, [data-action='again'], .restart-story");
     if (again && again.offsetParent !== null && getComputedStyle(again).display !== "none") {
       return true;
@@ -272,49 +347,50 @@
       var atEnd = isStoryAtEnd();
       if (!atEnd) {
         // En cours de story (slides 0..N-1) : ABSOLUMENT INVISIBLE pour ne jamais recouvrir l'œuvre
-        ctaBox.style.display = "none";
-        ctaBox.style.opacity = "0";
-        ctaBox.style.pointerEvents = "none";
-        ctaBox.style.visibility = "hidden";
+        ctaBox.style.setProperty("display", "none", "important");
+        ctaBox.style.setProperty("opacity", "0", "important");
+        ctaBox.style.setProperty("pointer-events", "none", "important");
+        ctaBox.style.setProperty("visibility", "hidden", "important");
         return;
       }
 
       // À la fin de la story : affichage fluide et élégant
-      ctaBox.style.display = "block";
-      ctaBox.style.opacity = "1";
-      ctaBox.style.pointerEvents = "auto";
-      ctaBox.style.visibility = "visible";
+      ctaBox.style.setProperty("display", "block", "important");
+      ctaBox.style.setProperty("opacity", "1", "important");
+      ctaBox.style.setProperty("pointer-events", "auto", "important");
+      ctaBox.style.setProperty("visibility", "visible", "important");
 
       var last = slides[slides.length - 1];
       if (last && ctaBox.parentNode !== last) {
         last.appendChild(ctaBox);
       }
       var s = ctaBox.style;
-      s.position = "relative";
-      s.margin = "20px auto 16px";
-      s.padding = "10px 14px 24px";
-      s.width = "100%";
-      s.maxWidth = "440px";
-      s.boxSizing = "border-box";
-      s.zIndex = "2147482000";
+      s.setProperty("position", "relative", "important");
+      s.setProperty("margin", "24px auto 20px", "important");
+      s.setProperty("padding", "10px 14px 28px", "important");
+      s.setProperty("width", "100%", "important");
+      s.setProperty("max-width", "440px", "important");
+      s.setProperty("box-sizing", "border-box", "important");
+      s.setProperty("z-index", "2147482000", "important");
     } else {
-      // Modèle avec défilement vertical ou carte statique
-      ctaBox.style.display = "block";
-      ctaBox.style.opacity = "1";
-      ctaBox.style.pointerEvents = "auto";
-      ctaBox.style.visibility = "visible";
+      // Modèle avec défilement vertical ou carte statique :
+      // RÈGLE : TOUJOURS appendé tout en bas du body (jamais à l'intérieur d'une boîte de texte ou lettre défilante)
+      ctaBox.style.setProperty("display", "block", "important");
+      ctaBox.style.setProperty("opacity", "1", "important");
+      ctaBox.style.setProperty("pointer-events", "auto", "important");
+      ctaBox.style.setProperty("visibility", "visible", "important");
 
-      var host = scrollHost();
-      if (ctaBox.parentNode !== host) {
-        host.appendChild(ctaBox);
+      if (ctaBox.parentNode !== document.body) {
+        document.body.appendChild(ctaBox);
       }
       var s2 = ctaBox.style;
-      s2.position = "relative";
-      s2.width = "100%";
-      s2.marginTop = "48px";
-      s2.marginBottom = "0px";
-      s2.padding = "32px 14px 50px";
-      s2.boxSizing = "border-box";
+      s2.setProperty("position", "relative", "important");
+      s2.setProperty("width", "100%", "important");
+      s2.setProperty("margin-top", "48px", "important");
+      s2.setProperty("margin-bottom", "0px", "important");
+      s2.setProperty("padding", "32px 14px 50px", "important");
+      s2.setProperty("box-sizing", "border-box", "important");
+      s2.setProperty("z-index", "2147482000", "important");
     }
   }
 
@@ -449,24 +525,33 @@
     );
 
     box.innerHTML =
-      '<div style="max-width:440px;margin:0 auto;position:relative;background:linear-gradient(180deg,rgba(18,14,11,0.96) 0%,rgba(10,8,6,0.98) 100%);border:1px solid rgba(212,175,55,0.38);border-radius:26px;padding:26px 20px 22px;box-shadow:0 20px 50px rgba(0,0,0,0.65),0 0 35px rgba(212,175,55,0.16),inset 0 1px 0 rgba(255,240,200,0.25);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#fbf7ee;box-sizing:border-box;text-align:center;">' +
+      '<style>' +
+      '#ev-end-cta { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; }' +
+      '#ev-end-cta .ev-card { max-width:440px !important; margin:0 auto !important; position:relative !important; background:linear-gradient(180deg,rgba(18,14,11,0.98) 0%,rgba(10,8,6,0.99) 100%) !important; border:1px solid rgba(212,175,55,0.42) !important; border-radius:26px !important; padding:28px 20px 24px !important; box-shadow:0 20px 50px rgba(0,0,0,0.85),0 0 35px rgba(212,175,55,0.2) !important; color:#fbf7ee !important; box-sizing:border-box !important; text-align:center !important; }' +
+      '#ev-end-cta [data-r="kicker"] { color:#d4af37 !important; font-size:10.5px !important; font-weight:800 !important; letter-spacing:0.25em !important; text-transform:uppercase !important; margin:0 !important; }' +
+      '#ev-end-cta [data-r="title"] { color:#ffffff !important; font-size:22px !important; font-weight:700 !important; line-height:1.25 !important; margin:0 0 8px !important; }' +
+      '#ev-end-cta [data-r="desc"] { color:rgba(255,255,255,0.78) !important; font-size:12.5px !important; line-height:1.55 !important; margin:0 0 18px !important; }' +
+      '#ev-end-cta button[data-a="primary"] { background:linear-gradient(90deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%) !important; color:#0d0804 !important; font-weight:800 !important; border-radius:999px !important; border:1px solid rgba(255,255,255,0.4) !important; box-shadow:0 8px 24px rgba(212,175,55,0.35) !important; }' +
+      '#ev-end-cta button[data-a="secondary"] { background:rgba(255,255,255,0.08) !important; color:#fbf7ee !important; border:1px solid rgba(255,255,255,0.25) !important; border-radius:999px !important; }' +
+      '</style>' +
+      '<div class="ev-card">' +
       '<div style="position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,#d4af37,transparent);opacity:0.9;"></div>' +
       '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,rgba(212,175,55,0.2),rgba(212,175,55,0.04));border:1px solid rgba(212,175,55,0.45);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 0 18px rgba(212,175,55,0.25);">' +
       '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>' +
       '</div>' +
       '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">' +
       '<span style="width:16px;height:1px;background:linear-gradient(90deg,transparent,#d4af37);"></span>' +
-      '<p data-r="kicker" style="margin:0;font-size:10px;font-weight:800;letter-spacing:0.26em;text-transform:uppercase;color:#d4af37;font-family:system-ui,-apple-system,sans-serif;"></p>' +
+      '<p data-r="kicker"></p>' +
       '<span style="width:16px;height:1px;background:linear-gradient(90deg,#d4af37,transparent);"></span>' +
       '</div>' +
-      '<h3 data-r="title" style="margin:0 0 8px;font-family:\'Playfair Display\',Didot,Georgia,serif;font-size:22px;font-weight:700;line-height:1.25;color:#ffffff;letter-spacing:-0.01em;"></h3>' +
-      '<p data-r="desc" style="margin:0 0 18px;font-size:12.5px;line-height:1.5;color:rgba(255,255,255,0.76);font-family:system-ui,-apple-system,sans-serif;max-width:340px;margin-left:auto;margin-right:auto;"></p>' +
+      '<h3 data-r="title"></h3>' +
+      '<p data-r="desc"></p>' +
       '<div style="display:flex;flex-direction:column;gap:9px;width:100%;max-width:320px;margin:0 auto;">' +
-      '<button data-a="primary" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;border:1px solid rgba(255,255,255,0.35);border-radius:999px;background:linear-gradient(90deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%);color:#0d0804;font-weight:800;font-size:13.5px;letter-spacing:0.03em;cursor:pointer;box-shadow:0 8px 24px rgba(212,175,55,0.32);box-sizing:border-box;">' +
+      '<button data-a="primary" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;letter-spacing:0.03em;cursor:pointer;box-sizing:border-box;">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0d0804" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' +
       '<span data-r="primary-text"></span>' +
       '</button>' +
-      '<button data-a="secondary" data-r="secondary" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px 20px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.22);color:#fbf7ee;font-weight:600;font-size:12.5px;cursor:pointer;box-sizing:border-box;">' +
+      '<button data-a="secondary" data-r="secondary" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px 20px;font-weight:600;font-size:12.5px;cursor:pointer;box-sizing:border-box;">' +
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>' +
       '<span data-r="secondary-text"></span>' +
       '</button>' +

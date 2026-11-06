@@ -10,10 +10,19 @@ export interface ProviderActivity {
   event_types: string[];
   services: string[];
   country: string;
+  region?: string;
+  quartiers?: string[];
   zones: string[];
 }
 
-export const EMPTY_ACTIVITY: ProviderActivity = { event_types: [], services: [], country: "", zones: [] };
+export const EMPTY_ACTIVITY: ProviderActivity = { 
+  event_types: [], 
+  services: [], 
+  country: "", 
+  region: "",
+  quartiers: [],
+  zones: [] 
+};
 
 const arr = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim() !== "") : []);
 
@@ -22,11 +31,18 @@ export const normalizePrestations = (list: string[]) => [...new Set(list.map(pre
 
 export function activityFromProfile(profile: any): ProviderActivity {
   const meta = profile?.user_metadata?.activity || {};
+  const country = profile?.country || meta.country || "";
+  const region = profile?.region || meta.region || "";
+  const quartiers = arr(profile?.quartiers).length ? arr(profile?.quartiers) : arr(meta.quartiers);
+  const zones = arr(profile?.zones).length ? arr(profile?.zones) : arr(meta.zones);
+
   return {
     event_types: arr(profile?.event_types).length ? arr(profile?.event_types) : arr(meta.event_types),
     services: normalizePrestations(arr(profile?.services_proposes).length ? arr(profile?.services_proposes) : arr(meta.services)),
-    country: profile?.country || meta.country || "",
-    zones: arr(profile?.zones).length ? arr(profile?.zones) : arr(meta.zones),
+    country,
+    region,
+    quartiers,
+    zones: zones.length ? zones : [region, ...quartiers].filter(Boolean),
   };
 }
 
@@ -36,7 +52,8 @@ export function missingActivity(a: ProviderActivity): string[] {
   if (!a.event_types.length) missing.push("au moins un type d'événement");
   if (!a.services.length) missing.push("au moins une prestation");
   if (!a.country.trim()) missing.push("votre pays");
-  if (!a.zones.length) missing.push("au moins une zone d'intervention");
+  if (a.region && !a.region.trim() && !a.zones.length) missing.push("votre région");
+  if (!a.zones.length && (!a.quartiers || !a.quartiers.length)) missing.push("au moins un quartier ou zone d'intervention");
   return missing;
 }
 
@@ -61,16 +78,36 @@ export function providerHeadline(profile: any, max = 2): string {
 /** Enregistre l'activité du prestataire (et les activités de devis qui en découlent). */
 export async function saveActivity(supabase: SupabaseClient, userId: string, a: ProviderActivity) {
   const categories = categoriesFromServices(a.services);
-  const row = {
+  const unifiedZones = Array.from(new Set([
+    ...(a.zones || []),
+    ...(a.region ? [a.region] : []),
+    ...(a.quartiers || []),
+  ])).filter(Boolean);
+
+  const row: Record<string, any> = {
     event_types: a.event_types,
     services_proposes: a.services,
     country: a.country.trim(),
-    zones: a.zones,
+    zones: unifiedZones,
     categories,
     // Ancienne colonne conservée pour l'affichage (messagerie, admin, PDF)
     category: getCategory(categories[0])?.label ?? a.services[0] ?? null,
   };
+
   const res = await supabase.from("profiles").update(row).eq("id", userId);
+  
+  // Met également à jour les métadonnées auth pour synchronisation immédiate côté client
+  try {
+    await supabase.auth.updateUser({
+      data: {
+        activity: {
+          ...a,
+          zones: unifiedZones,
+        }
+      }
+    });
+  } catch {}
+
   if (isMissingColumn(res.error)) {
     return { error: { message: "La base de données n'est pas à jour : exécutez le script « supabase_prestataires_activite.sql » dans Supabase." } };
   }
