@@ -8,6 +8,7 @@ import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import { eventDetailsFromRow, hasExtraDetails, requiresEventDetails } from "@/lib/eventDetails";
+import { PrivilegeOffersCarousel } from "@/components/dashboard/PrivilegeOffersCarousel";
 
 const formatFrenchDate = (d?: string) => {
   if (!d || d === "À définir") return d || "Date à définir";
@@ -371,6 +372,15 @@ export default function EventDashboardPage({
             </div>
           </div>
         )}
+      </div>
+
+      {/* SÉLECTION PRIVILÈGE & RECOMMANDATIONS POUR CET ÉVÉNEMENT */}
+      <div className="mt-8">
+        <PrivilegeOffersCarousel 
+          eventType={event.type}
+          zone={event.location}
+          title={`Sélection Privilège pour votre ${event.type || "événement"}`}
+        />
       </div>
     </div>
   );

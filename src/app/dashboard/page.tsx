@@ -5,6 +5,7 @@ import { useEvents } from "@/store/EventsContext";
 import Link from "next/link";
 import { Calendar, Plus, ChevronRight, Users, Send, Trash2, CalendarHeart, MapPin, Sparkles, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { PrivilegeOffersCarousel } from "@/components/dashboard/PrivilegeOffersCarousel";
 
 const parseDate = (d?: string) => {
   if (!d || d === "À définir") return null;
@@ -226,6 +227,12 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* SÉLECTION PRIVILÈGE & OFFRES PARTENAIRES (DISCRET, CIBLÉ & ANTI-SPAM) */}
+      <PrivilegeOffersCarousel 
+        eventType={nextEvent?.type}
+        zone={nextEvent?.location}
+      />
 
       {/* HISTORIQUE */}
       {completedEvents.length > 0 && (

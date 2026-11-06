@@ -13,6 +13,7 @@ import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
 import { MAIN_COUNTRIES, WHOLE_COUNTRY, locationLabel, regionsOf, quartiersOf, zonesOf, getAllRegionsWithCountry, findCountryOfRegion, findHierarchyOfQuartier } from "@/lib/zones";
 import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
+import { PrivilegeOffersCarousel } from "@/components/dashboard/PrivilegeOffersCarousel";
 
 const ALL_EVENTS = "Tous événements";
 
@@ -309,6 +310,15 @@ export default function CataloguePrestatairesPage({
         >
           <span>Prestataires Externes</span>
         </Link>
+      </div>
+
+      {/* SÉLECTION PRIVILÈGE & ANNONCES SPONSORISÉES EN VEDETTE */}
+      <div className="mb-6">
+        <PrivilegeOffersCarousel 
+          eventType={event?.type}
+          zone={event?.location}
+          title="Sélection Privilège & Partenaires en Vedette"
+        />
       </div>
 
       {/* SECTION RECHERCHE RAPIDE & FILTRES AÉRÉE */}

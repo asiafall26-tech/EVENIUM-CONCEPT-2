@@ -15,7 +15,8 @@ import {
   Settings,
   Bell,
   Music,
-  Brush
+  Brush,
+  Megaphone
 } from "lucide-react";
 import { SidebarHeading, sidebarIconClass, sidebarLinkClass } from "./layout/DashboardFrame";
 import { getAdminAlertsAndAutoTerminate } from "@/app/admin/admin-actions";
@@ -47,6 +48,7 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
     { name: "Événements", href: "/admin/evenements", icon: Calendar },
     { name: "Support & Tickets", href: "/admin/support", icon: FileText, badge: badgeLabel(pendingSupport), urgent: true },
     { name: "Prestataires", href: "/admin/prestataires", icon: Store, badge: badgeLabel(newPrestataires), urgent: true },
+    { name: "Publicité & Boosts", href: "/admin/promotions", icon: Megaphone },
     { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
     { name: "Finances & Revenus", href: "/admin/budget", icon: Wallet },
     { name: "Messages", href: "/admin/messages", icon: MessageSquare, badge: badgeLabel(unreadCount), urgent: true },

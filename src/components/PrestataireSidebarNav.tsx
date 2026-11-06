@@ -13,7 +13,8 @@ import {
   Star, 
   Settings,
   LayoutList,
-  Wallet
+  Wallet,
+  Sparkles
 } from "lucide-react";
 import { ContactSupportButton } from "./ContactSupportButton";
 import { SidebarHeading, sidebarIconClass, sidebarLinkClass } from "./layout/DashboardFrame";
@@ -32,6 +33,7 @@ export function PrestataireSidebarNav() {
     { name: "Mes événements", href: "/prestataire/evenements", icon: Calendar },
     { name: "Planning", href: "/prestataire/planning", icon: CalendarDays },
     { name: "Catalogue d'offres", href: "/prestataire/catalogue", icon: LayoutList },
+    { name: "Publicité & Boosts", href: "/prestataire/publicite", icon: Sparkles },
     { name: "Messages", href: "/prestataire/messages", icon: MessageSquare, badge: badgeLabel(unreadMessages) },
     { name: "Finance", href: "/prestataire/finances", icon: Wallet },
     { name: "Mon profil", href: "/prestataire/profil", icon: User },
