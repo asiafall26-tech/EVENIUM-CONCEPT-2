@@ -175,18 +175,15 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
 #sealA,#sealB{transition:opacity .4s}
 .rsvp-err{display:none;margin-top:12px;color:#a9452b;font-size:15px;text-align:center}
 .rsvp-err.show{display:block}
-/* ========== EVENIUM END CTA ========== */
-.evenium-end-cta{padding:54px 20px 64px;text-align:center;background:linear-gradient(180deg,rgba(239,226,220,0) 0%,rgba(239,226,220,0.55) 30%,rgba(230,214,206,0.92) 100%);border-top:1px solid rgba(195,154,82,0.35);margin-top:20px}
-.evenium-emblem{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ecd6a0,#c39a52);display:inline-flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 8px 20px rgba(195,154,82,.28);margin-bottom:12px}
-.evenium-kicker{font-family:var(--caps);font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#8c6827;margin-bottom:8px}
-.evenium-title{font-family:var(--fancy);font-size:28px;font-weight:600;color:#2b1f1d;margin:0 0 10px}
-.evenium-desc{font-family:var(--serif);font-size:15px;color:#6b5c58;max-width:380px;margin:0 auto 24px;line-height:1.5}
-.evenium-actions{display:flex;flex-direction:column;gap:12px;align-items:stretch;justify-content:center;width:100%;max-width:320px;margin:0 auto}
-.evenium-btn-create{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:9999px;background:linear-gradient(135deg,#d4af37,#f3e5ab,#d4af37);color:#1a1514;font-family:var(--caps);font-size:12px;font-weight:800;letter-spacing:.03em;text-decoration:none;box-shadow:0 8px 22px rgba(184,146,74,.35);border:1px solid rgba(195,154,82,.6);transition:transform .2s,filter .2s;white-space:nowrap;width:100%;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-.evenium-btn-create:hover{filter:brightness(1.06);transform:scale(1.02)}
-.evenium-btn-home{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 22px;border-radius:9999px;background:rgba(255,255,255,.9);color:#2b1f1d;font-family:var(--caps);font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(100,80,75,.2);box-shadow:0 4px 12px rgba(0,0,0,.04);transition:transform .2s,background .2s;white-space:nowrap;width:100%;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-.evenium-btn-home:hover{background:#fff;transform:scale(1.02)}
-.evenium-subtext{margin-top:20px;font-family:var(--caps);font-size:11px;color:#8c7a75}
+/* ========== EVENIUM TOP HEADER (HAUTE COUTURE SUR UNE LIGNE) ========== */
+.evenium-end-cta{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;height:calc(48px + env(safe-area-inset-top,0px))!important;padding-top:env(safe-area-inset-top,0px)!important;padding-left:12px!important;padding-right:12px!important;box-sizing:border-box!important;z-index:99999!important;background:rgba(14,10,8,0.94)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;border-bottom:1px solid rgba(212,175,55,0.35)!important;box-shadow:0 4px 20px rgba(0,0,0,0.5)!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin:0!important}
+.evenium-emblem,.evenium-desc,.evenium-subtext,.evenium-title{display:none!important}
+.evenium-kicker{font-family:var(--caps);font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#d4af37;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.evenium-actions{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;width:100%!important;max-width:100%!important;margin:0!important;gap:8px!important}
+.evenium-btn-home{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:6px 13px!important;border-radius:9999px!important;background:rgba(255,255,255,.12)!important;color:#fff!important;font-family:var(--caps)!important;font-size:12px!important;font-weight:600!important;text-decoration:none!important;border:1px solid rgba(255,255,255,.22)!important;width:auto!important;box-sizing:border-box!important}
+.evenium-btn-home:hover{background:rgba(255,255,255,.2)!important}
+.evenium-btn-create{display:inline-flex!important;align-items:center!important;gap:6px!important;padding:7px 16px!important;border-radius:9999px!important;background:linear-gradient(90deg,#d4af37,#f5e6b8,#d4af37)!important;color:#0d0804!important;font-family:var(--caps)!important;font-size:12px!important;font-weight:800!important;text-decoration:none!important;border:1px solid rgba(255,255,255,.4)!important;width:auto!important;box-shadow:0 2px 10px rgba(212,175,55,.35)!important;box-sizing:border-box!important}
+.evenium-btn-create:hover{filter:brightness(1.06)!important}
 </style>
 </head>
 <body class="locked">
@@ -413,24 +410,22 @@ body.awaiting #sealA,body.awaiting #sealB{opacity:0}
     </div>
   </footer>
 
-  <!-- ========== EVENIUM END CTA ========== -->
-  <section class="evenium-end-cta reveal" id="eveniumCta" data-inv-cta="">
-    <div class="evenium-emblem">✨</div>
-    <div class="evenium-kicker">EVENIUM · HAUTE COUTURE DIGITALE</div>
-    <h3 class="evenium-title">Ce modèle vous inspire ?</h3>
-    <p class="evenium-desc">Créez votre événement dès aujourd'hui et personnalisez votre invitation avec vos photos, musiques, programme et suivi des confirmations en direct.</p>
+  <!-- ========== EVENIUM TOP BAR (HAUTE COUTURE SUR UNE LIGNE) ========== -->
+  <header class="evenium-end-cta" id="eveniumCta" data-inv-cta="">
     <div class="evenium-actions">
-      <a href="/create?model=invit-10" target="_top" class="evenium-btn-create">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-        <span>Choisir ce modèle</span>
-      </a>
       <a href="/invitations" target="_top" class="evenium-btn-home">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         <span>Retour aux modèles</span>
       </a>
+      <div style="flex:1;min-width:0;text-align:center;padding:0 6px;">
+        <span class="evenium-kicker">Aperçu du modèle</span>
+      </div>
+      <a href="/create?model=invit-10" target="_top" class="evenium-btn-create">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d0804" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        <span>Choisir ce modèle</span>
+      </a>
     </div>
-    <div class="evenium-subtext">✓ Formules avec ou sans abonnement · Sans engagement</div>
-  </section>
+  </header>
 </div>
 
 <button class="sound" id="sound" aria-label="Activer ou couper le son"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path id="waves" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/><path id="mute" d="M22 9l-6 6M16 9l6 6" style="display:none"/></svg></button>
@@ -721,10 +716,9 @@ window.addEventListener('message',e=>{
       const L = m.ctaLabels, box = $('eveniumCta');
       if (L) {
         const set = (sel, txt) => { const n = box.querySelector(sel); if (n) n.textContent = txt; };
-        set('.evenium-title', L.title);
-        set('.evenium-desc', L.desc);
-        set('.evenium-btn-create span', L.primary);
-        set('.evenium-btn-home span', L.secondary);
+        set('.evenium-kicker', L.kicker || L.title || 'Aperçu');
+        set('.evenium-btn-create span', L.primary || 'Choisir ce modèle');
+        set('.evenium-btn-home span', L.secondary || 'Retour aux modèles');
       }
     }
     applyStyle(m.style);

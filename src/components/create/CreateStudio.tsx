@@ -1128,25 +1128,45 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       {isPreviewFullScreenOpen && (
         <InvitationCtaContext.Provider value={{ force: inDashboard }}>
         <div
-          className="fixed inset-0 z-[100] h-dvh bg-black overflow-y-auto overscroll-contain select-none"
+          className="fixed inset-0 z-[100] h-dvh bg-black overflow-y-auto overscroll-contain select-none flex flex-col"
           onContextMenu={(e) => e.preventDefault()}
         >
-          {/* Seul contrôle visible : retour discret. « Valider » et « Revenir » sont à la fin de l'invitation */}
-          <button
-            type="button"
-            onClick={() => setIsPreviewFullScreenOpen(false)}
-            aria-label="Revenir à la création"
-            className="fixed z-[120] left-3 top-[max(0.75rem,env(safe-area-inset-top))] w-10 h-10 rounded-full bg-black/45 hover:bg-black/65 backdrop-blur-md text-white border border-white/25 flex items-center justify-center shadow-lg"
-          >
-            <ArrowLeft size={18} />
-          </button>
+          {/* En-tête sur une ligne format très simple au clic */}
+          <header className="fixed top-0 left-0 right-0 z-[120] h-[52px] pt-[env(safe-area-inset-top,0px)] px-3 sm:px-6 bg-[#0e0a08]/94 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
+            <button
+              type="button"
+              onClick={() => setIsPreviewFullScreenOpen(false)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
+            >
+              <ArrowLeft size={14} className="shrink-0" />
+              <span>Revenir à la création</span>
+            </button>
+
+            <div className="text-center min-w-0 max-w-md hidden sm:block">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] font-extrabold block">Aperçu de votre invitation</span>
+              <p className="font-serif text-sm text-white/90 truncate font-medium">Votre création Evenium</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsPreviewFullScreenOpen(false);
+                setIsCheckoutModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
+            >
+              <Sparkles size={14} className="text-black shrink-0" />
+              <span>Valider l&apos;achat</span>
+            </button>
+          </header>
 
           {/* Corps de l'invitation en plein écran avec modifications */}
-          <div className="w-full relative min-h-dvh">
+          <div className="w-full relative min-h-dvh pt-[52px]">
             {selectedModelId === VELOURS_MODEL_ID && (
               <VeloursInvitation
                 content={forInvitationKind(veloursContent, isStaticCard)}
                 preview={true}
+                hideCta={true}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
                   setIsPreviewFullScreenOpen(false);
@@ -1158,6 +1178,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
               <SceauInvitation
                 content={forInvitationKind(sceauContent, isStaticCard)}
                 preview={true}
+                hideCta={true}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
                   setIsPreviewFullScreenOpen(false);
@@ -1169,6 +1190,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
               <IvoireInvitation
                 content={forInvitationKind(ivoireContent, isStaticCard)}
                 preview={true}
+                hideCta={true}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
                   setIsPreviewFullScreenOpen(false);
@@ -1179,6 +1201,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
             {selectedModelId === ROSE_OR_MODEL_ID && (
               <RoseOrInvitation
                 content={forInvitationKind(roseOrContent, isStaticCard)}
+                hideCta={true}
                 onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                 onFinalize={() => {
                   setIsPreviewFullScreenOpen(false);
@@ -1195,6 +1218,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   <CustomInvitationFrame
                       model={m}
                       values={isStaticCard ? withoutMusicValues(m.fields, values) : values}
+                      hideCta={true}
                       className="w-full h-dvh border-0 block bg-white"
                       onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
                       onFinalize={() => {
@@ -1329,10 +1353,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                       setDemoModelId(null);
                       window.scrollTo({ top: 0 });
                     };
-                    if (demoModelId === VELOURS_MODEL_ID) return <VeloursInvitation content={forInvitationKind(veloursDefaults(publishedContent(VELOURS_MODEL_ID) ?? DEFAULT_VELOURS), classifiedModels.find((m) => m.id === VELOURS_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
-                    if (demoModelId === SCEAU_MODEL_ID) return <SceauInvitation content={forInvitationKind(sceauDefaults(publishedContent(SCEAU_MODEL_ID) ?? DEFAULT_SCEAU), classifiedModels.find((m) => m.id === SCEAU_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
-                    if (demoModelId === IVOIRE_MODEL_ID) return <IvoireInvitation content={forInvitationKind(ivoireDefaults(publishedContent(IVOIRE_MODEL_ID) ?? DEFAULT_IVOIRE), classifiedModels.find((m) => m.id === IVOIRE_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
-                    if (demoModelId === ROSE_OR_MODEL_ID) return <RoseOrInvitation content={forInvitationKind(roseOrDefaults(publishedContent(ROSE_OR_MODEL_ID) ?? DEFAULT_ROSE_OR), classifiedModels.find((m) => m.id === ROSE_OR_MODEL_ID)?.kind === 'carte')} onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === VELOURS_MODEL_ID) return <VeloursInvitation content={forInvitationKind(veloursDefaults(publishedContent(VELOURS_MODEL_ID) ?? DEFAULT_VELOURS), classifiedModels.find((m) => m.id === VELOURS_MODEL_ID)?.kind === 'carte')} preview hideCta={true} onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === SCEAU_MODEL_ID) return <SceauInvitation content={forInvitationKind(sceauDefaults(publishedContent(SCEAU_MODEL_ID) ?? DEFAULT_SCEAU), classifiedModels.find((m) => m.id === SCEAU_MODEL_ID)?.kind === 'carte')} preview hideCta={true} onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === IVOIRE_MODEL_ID) return <IvoireInvitation content={forInvitationKind(ivoireDefaults(publishedContent(IVOIRE_MODEL_ID) ?? DEFAULT_IVOIRE), classifiedModels.find((m) => m.id === IVOIRE_MODEL_ID)?.kind === 'carte')} preview hideCta={true} onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === ROSE_OR_MODEL_ID) return <RoseOrInvitation content={forInvitationKind(roseOrDefaults(publishedContent(ROSE_OR_MODEL_ID) ?? DEFAULT_ROSE_OR), classifiedModels.find((m) => m.id === ROSE_OR_MODEL_ID)?.kind === 'carte')} hideCta={true} onBackToEdit={back} onFinalize={choose} />;
                     const custom = customOf(demoModelId);
                     if (custom) {
                       const values = customValues(custom.fields, custom.content);
@@ -1341,6 +1365,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           <CustomInvitationFrame
                               model={custom}
                               values={custom.invitation_type === 'carte' ? withoutMusicValues(custom.fields, values) : values}
+                              hideCta={true}
                               className="w-full h-full border-0 block bg-white"
                               onBackToEdit={back}
                               onFinalize={choose}
@@ -1348,7 +1373,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         </div>
                       );
                     }
-                    if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={forInvitationKind(anniversaireDefaults(publishedContent(ANNIVERSAIRE_MODEL_ID) ?? DEFAULT_ANNIVERSAIRE), classifiedModels.find((m) => m.id === ANNIVERSAIRE_MODEL_ID)?.kind === 'carte')} preview onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={forInvitationKind(anniversaireDefaults(publishedContent(ANNIVERSAIRE_MODEL_ID) ?? DEFAULT_ANNIVERSAIRE), classifiedModels.find((m) => m.id === ANNIVERSAIRE_MODEL_ID)?.kind === 'carte')} preview hideCta={true} onBackToEdit={back} onFinalize={choose} />;
                     return null;
                   })()}
                 </div>

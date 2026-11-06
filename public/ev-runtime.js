@@ -379,71 +379,27 @@
   }
 
   /*
-   * Le bloc de fin doit toujours rester visible et en dernier : remis en place si le modèle
-   * réécrit sa page, ajoute des éléments après lui, ou défile dans un conteneur intérieur.
+   * En-tête Haute Couture sur une ligne (démo publique, choix du modèle, studio admin).
+   * L'en-tête reste toujours fixé tout en haut du viewport sur une seule ligne compacte,
+   * sans JAMAIS recouvrir l'œuvre, les lettres, les photos ou les histoires de story.
    */
   var ctaBox = null;
   function syncCtaVisibility() {
     if (!ctaBox) return;
-    var slides = getSlides();
-    var isStory = slides.length > 1;
-
-    if (isStory) {
-      var atEnd = isStoryAtEnd();
-      if (!atEnd) {
-        // En cours de story (slides 0..N-1) : ABSOLUMENT INVISIBLE pour ne jamais recouvrir l'œuvre
-        ctaBox.style.setProperty("display", "none", "important");
-        ctaBox.style.setProperty("opacity", "0", "important");
-        ctaBox.style.setProperty("pointer-events", "none", "important");
-        ctaBox.style.setProperty("visibility", "hidden", "important");
-        return;
-      }
-
-      // À la fin de la story : affichage fluide et élégant
-      ctaBox.style.setProperty("display", "block", "important");
-      ctaBox.style.setProperty("opacity", "1", "important");
-      ctaBox.style.setProperty("pointer-events", "auto", "important");
-      ctaBox.style.setProperty("visibility", "visible", "important");
-
-      var last = slides[slides.length - 1];
-      if (last && ctaBox.parentNode !== last) {
-        last.appendChild(ctaBox);
-      }
-      var s = ctaBox.style;
-      s.setProperty("position", "relative", "important");
-      s.setProperty("margin", "24px auto 20px", "important");
-      s.setProperty("padding", "10px 14px 28px", "important");
-      s.setProperty("width", "100%", "important");
-      s.setProperty("max-width", "440px", "important");
-      s.setProperty("box-sizing", "border-box", "important");
-      s.setProperty("z-index", "2147482000", "important");
-    } else {
-      // Modèle avec défilement vertical ou carte statique :
-      // RÈGLE : TOUJOURS appendé tout en bas du body (jamais à l'intérieur d'une boîte de texte ou lettre défilante)
-      ctaBox.style.setProperty("display", "block", "important");
-      ctaBox.style.setProperty("opacity", "1", "important");
-      ctaBox.style.setProperty("pointer-events", "auto", "important");
-      ctaBox.style.setProperty("visibility", "visible", "important");
-
-      var host = scrollHost() || document.body;
-      if (ctaBox.parentNode !== host) {
-        host.appendChild(ctaBox);
-      }
-      var s2 = ctaBox.style;
-      s2.setProperty("position", "relative", "important");
-      s2.setProperty("width", "100%", "important");
-      s2.setProperty("margin-top", "48px", "important");
-      s2.setProperty("margin-bottom", "0px", "important");
-      s2.setProperty("padding", "32px 14px 50px", "important");
-      s2.setProperty("box-sizing", "border-box", "important");
-      s2.setProperty("z-index", "2147482000", "important");
+    if (ctaBox.parentNode !== document.body) {
+      document.body.appendChild(ctaBox);
     }
+    ctaBox.style.setProperty("display", "flex", "important");
+    ctaBox.style.setProperty("position", "fixed", "important");
+    ctaBox.style.setProperty("top", "0", "important");
+    ctaBox.style.setProperty("left", "0", "important");
+    ctaBox.style.setProperty("right", "0", "important");
+    ctaBox.style.setProperty("z-index", "2147483647", "important");
   }
 
   function placeCta() {
     if (!ctaBox) return;
     syncCtaVisibility();
-    paintCta();
   }
 
   function bleedCta() {
@@ -555,86 +511,67 @@
     }, { passive: true });
   });
 
-  /* Bloc de fin Haute Couture (création d'événement, studio admin, démo publique) */
+  /* En-tête Haute Couture sur une ligne (démo publique, choix du modèle, studio admin) */
   function cta(text) {
-    var old = document.getElementById("ev-end-cta");
+    var old = document.getElementById("ev-top-bar") || document.getElementById("ev-end-cta");
     if (old) old.remove();
     ctaBox = null;
     ctaObserver.disconnect();
+    document.body.classList.remove("ev-has-top-bar");
     if (!text) return;
-    var box = document.createElement("section");
-    box.id = "ev-end-cta";
-    box.setAttribute("data-inv-cta", "");
-    box.setAttribute(
+
+    var header = document.createElement("header");
+    header.id = "ev-top-bar";
+    header.setAttribute("data-inv-cta", "");
+    header.setAttribute(
       "style",
-      "all:initial;display:block;position:relative;z-index:2147482000;box-sizing:border-box;width:100%;padding:28px 14px 44px;font-family:system-ui,-apple-system,sans-serif;text-align:center;visibility:visible;opacity:1;transform:none"
+      "position:fixed !important;top:0 !important;left:0 !important;right:0 !important;width:100% !important;height:calc(48px + env(safe-area-inset-top, 0px)) !important;padding-top:env(safe-area-inset-top, 0px) !important;box-sizing:border-box !important;z-index:2147483647 !important;background:rgba(14,10,8,0.94) !important;backdrop-filter:blur(14px) !important;-webkit-backdrop-filter:blur(14px) !important;border-bottom:1px solid rgba(212,175,55,0.35) !important;box-shadow:0 4px 20px rgba(0,0,0,0.5) !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:8px !important;padding-left:12px !important;padding-right:12px !important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important;pointer-events:auto !important;transform:none !important;"
     );
 
-    box.innerHTML =
+    header.innerHTML =
       '<style>' +
-      '#ev-end-cta { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; }' +
-      '#ev-end-cta .ev-card { max-width:440px !important; margin:0 auto !important; position:relative !important; background:linear-gradient(180deg,rgba(18,14,11,0.98) 0%,rgba(10,8,6,0.99) 100%) !important; border:1px solid rgba(212,175,55,0.42) !important; border-radius:26px !important; padding:28px 20px 24px !important; box-shadow:0 20px 50px rgba(0,0,0,0.85),0 0 35px rgba(212,175,55,0.2) !important; color:#fbf7ee !important; box-sizing:border-box !important; text-align:center !important; }' +
-      '#ev-end-cta [data-r="kicker"] { color:#d4af37 !important; font-size:10.5px !important; font-weight:800 !important; letter-spacing:0.25em !important; text-transform:uppercase !important; margin:0 !important; }' +
-      '#ev-end-cta [data-r="title"] { color:#ffffff !important; font-size:22px !important; font-weight:700 !important; line-height:1.25 !important; margin:0 0 8px !important; }' +
-      '#ev-end-cta [data-r="desc"] { color:rgba(255,255,255,0.78) !important; font-size:12.5px !important; line-height:1.55 !important; margin:0 0 18px !important; }' +
-      '#ev-end-cta button[data-a="primary"] { background:linear-gradient(90deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%) !important; color:#0d0804 !important; font-weight:800 !important; border-radius:999px !important; border:1px solid rgba(255,255,255,0.4) !important; box-shadow:0 8px 24px rgba(212,175,55,0.35) !important; }' +
-      '#ev-end-cta button[data-a="secondary"] { background:rgba(255,255,255,0.08) !important; color:#fbf7ee !important; border:1px solid rgba(255,255,255,0.25) !important; border-radius:999px !important; }' +
+      'body.ev-has-top-bar { padding-top: calc(48px + env(safe-area-inset-top, 0px)) !important; box-sizing: border-box !important; }' +
+      'body.ev-has-top-bar .story-container, body.ev-has-top-bar .stories, body.ev-has-top-bar #stage, body.ev-has-top-bar .app, body.ev-has-top-bar #app, body.ev-has-top-bar .slide { top: calc(48px + env(safe-area-inset-top, 0px)) !important; height: calc(100% - 48px - env(safe-area-inset-top, 0px)) !important; }' +
+      '#ev-top-bar button { -webkit-tap-highlight-color: transparent; }' +
+      '#ev-top-bar button:active { transform: scale(0.97); }' +
       '</style>' +
-      '<div class="ev-card">' +
-      '<div style="position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,#d4af37,transparent);opacity:0.9;"></div>' +
-      '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,rgba(212,175,55,0.2),rgba(212,175,55,0.04));border:1px solid rgba(212,175,55,0.45);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 0 18px rgba(212,175,55,0.25);">' +
-      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">' +
-      '<span style="width:16px;height:1px;background:linear-gradient(90deg,transparent,#d4af37);"></span>' +
-      '<p data-r="kicker"></p>' +
-      '<span style="width:16px;height:1px;background:linear-gradient(90deg,#d4af37,transparent);"></span>' +
-      '</div>' +
-      '<h3 data-r="title"></h3>' +
-      '<p data-r="desc"></p>' +
-      '<div style="display:flex;flex-direction:column;gap:9px;width:100%;max-width:320px;margin:0 auto;">' +
-      '<button data-a="primary" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;letter-spacing:0.03em;cursor:pointer;box-sizing:border-box;">' +
-      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0d0804" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' +
-      '<span data-r="primary-text"></span>' +
+      '<button data-a="secondary" type="button" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,0.12);color:#ffffff;border:1px solid rgba(255,255,255,0.22);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;box-sizing:border-box;transition:all 0.15s ease;">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
+      '<span data-r="secondary-text">Retour</span>' +
       '</button>' +
-      '<button data-a="secondary" data-r="secondary" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px 20px;font-weight:600;font-size:12.5px;cursor:pointer;box-sizing:border-box;">' +
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>' +
-      '<span data-r="secondary-text"></span>' +
-      '</button>' +
+      '<div style="flex:1;min-width:0;text-align:center;padding:0 6px;">' +
+      '<span data-r="kicker" style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#d4af37;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">Aperçu</span>' +
       '</div>' +
-      '<div style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:5px 14px;border-radius:999px;background:rgba(212,175,55,0.09);border:1px solid rgba(212,175,55,0.25);color:#ebdcae;font-size:10.5px;font-family:system-ui,-apple-system,sans-serif;">' +
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
-      '<span>Personnalisation complète & aperçu immédiat</span>' +
-      '</div>' +
-      '</div>';
+      '<button data-a="primary" type="button" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%);color:#0d0804;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,0.4);cursor:pointer;white-space:nowrap;box-sizing:border-box;box-shadow:0 2px 10px rgba(212,175,55,0.35);transition:all 0.15s ease;">' +
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d0804" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' +
+      '<span data-r="primary-text">Choisir ce modèle</span>' +
+      '</button>';
 
-    var kicker = box.querySelector('[data-r="kicker"]');
-    var title = box.querySelector('[data-r="title"]');
-    var desc = box.querySelector('[data-r="desc"]');
-    var primaryTxt = box.querySelector('[data-r="primary-text"]');
-    var secondaryTxt = box.querySelector('[data-r="secondary-text"]');
+    var kicker = header.querySelector('[data-r="kicker"]');
+    var primaryTxt = header.querySelector('[data-r="primary-text"]');
+    var secondaryTxt = header.querySelector('[data-r="secondary-text"]');
 
-    kicker.textContent = text.kicker || "Aperçu du modèle";
-    title.textContent = text.title || "Ce modèle vous plaît ?";
-    desc.textContent = text.desc || "Choisissez-le pour le personnaliser avec vos textes, photos et musique, puis validez votre événement.";
+    kicker.textContent = text.kicker || text.title || "Aperçu du modèle";
     primaryTxt.textContent = text.primary || "Choisir ce modèle";
-    secondaryTxt.textContent = text.secondary || "Retour aux modèles";
+    secondaryTxt.textContent = text.secondary || "Retour";
 
-    var primary = box.querySelector('[data-a="primary"]');
-    var secondary = box.querySelector('[data-a="secondary"]');
-    primary.onclick = function () {
+    var primary = header.querySelector('[data-a="primary"]');
+    var secondary = header.querySelector('[data-a="secondary"]');
+    primary.onclick = function (e) {
+      e.stopPropagation();
       if (text.primaryHref) window.top.location.href = text.primaryHref;
       else window.parent.postMessage({ type: "evenium:open-checkout" }, location.origin);
     };
-    secondary.onclick = function () {
+    secondary.onclick = function (e) {
+      e.stopPropagation();
       if (text.secondaryHref) window.top.location.href = text.secondaryHref;
       else window.parent.postMessage({ type: "evenium:close-preview" }, location.origin);
     };
 
-    ctaBox = box;
-    syncCtaVisibility();
-    paintCta();
-    ctaObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
+    ctaBox = header;
+    document.body.appendChild(header);
+    document.body.classList.add("ev-has-top-bar");
+    ctaObserver.observe(document.body, { childList: true, subtree: true, attributes: false });
   }
   window.addEventListener("load", function () {
     placeCta();
@@ -820,8 +757,6 @@
       // Affiché d'emblée, même si les valeurs publiées ne se chargent pas : le client n'est jamais sans issue.
       cta({
         kicker: "Aperçu du modèle",
-        title: "Ce modèle vous plaît ?",
-        desc: "Choisissez-le pour le personnaliser avec vos textes, photos et musique, puis validez votre événement.",
         primary: "Choisir ce modèle",
         secondary: "Retour aux modèles",
         primaryHref: "/create?model=custom:" + slug,
@@ -838,8 +773,11 @@
             apply(d.values);
             structure(d.values);
             music(d.values);
+            if (d.name && ctaBox) {
+              var k = ctaBox.querySelector('[data-r="kicker"]');
+              if (k) k.textContent = d.name;
+            }
             placeCta();
-            paintCta();
             scheduleFit();
           }
         })

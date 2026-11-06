@@ -34,3 +34,4 @@ export async function GET() {
     return NextResponse.json({ models: [], error: String(err) }, { status: 500 });
   }
 }
+
