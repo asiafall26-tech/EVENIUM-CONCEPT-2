@@ -96,23 +96,28 @@ function normalize(r: Partial<ModelDefaultRow> & { model_id: string }): ModelDef
 
 /** Toutes les lignes, indexées par identifiant de modèle (vide si la table n'existe pas encore). */
 export async function fetchModelDefaults(supabase: SupabaseClient): Promise<Record<string, ModelDefaultRow>> {
-  // Colonnes ajoutées au fil des versions du script : on se rabat sur les plus anciennes si besoin
-  const selects = [
-    "model_id, name, content, draft_content, is_hidden, updated_at, published_at, invitation_type, event_types",
-    "model_id, content, draft_content, is_hidden, updated_at, published_at, invitation_type, event_types",
-    "model_id, content, draft_content, is_hidden, updated_at, published_at",
-    "model_id, content, updated_at",
-  ];
-  let res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[0]);
-  for (let i = 1; i < selects.length && res.error && isMissingColumn(res.error); i++) res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[i]);
-  if (res.error || !res.data) return {};
-  const rows = Object.fromEntries((res.data as unknown as ModelDefaultRow[]).map((r) => [r.model_id, normalize(r)]));
   try {
-    registerModelNames(modelNamesMap(rows));
-  } catch {
-    // ignore
+    // Colonnes ajoutées au fil des versions du script : on se rabat sur les plus anciennes si besoin
+    const selects = [
+      "model_id, name, content, draft_content, is_hidden, updated_at, published_at, invitation_type, event_types",
+      "model_id, content, draft_content, is_hidden, updated_at, published_at, invitation_type, event_types",
+      "model_id, content, draft_content, is_hidden, updated_at, published_at",
+      "model_id, content, updated_at",
+    ];
+    let res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[0]);
+    for (let i = 1; i < selects.length && res.error && isMissingColumn(res.error); i++) res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[i]);
+    if (res.error || !res.data) return {};
+    const rows = Object.fromEntries((res.data as unknown as ModelDefaultRow[]).map((r) => [r.model_id, normalize(r)]));
+    try {
+      registerModelNames(modelNamesMap(rows));
+    } catch {
+      // ignore
+    }
+    return rows;
+  } catch (err) {
+    console.warn("fetchModelDefaults error:", err);
+    return {};
   }
-  return rows;
 }
 
 /** Identifiants des modèles retirés du site. */

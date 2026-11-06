@@ -75,11 +75,16 @@ const isMissingTable = (e: { code?: string; message?: string }) =>
   e.code === "42P01" || e.code === "PGRST205" || /does not exist|schema cache/i.test(e.message ?? "");
 
 export async function fetchCustomModels(supabase: SupabaseClient, opts: { publishedOnly?: boolean } = {}): Promise<CustomModelRow[]> {
-  let q = supabase.from(CUSTOM_MODELS_TABLE).select("*").order("created_at", { ascending: false });
-  if (opts.publishedOnly) q = q.eq("status", "published");
-  const { data, error } = await q;
-  if (error || !data) return [];
-  return data as CustomModelRow[];
+  try {
+    let q = supabase.from(CUSTOM_MODELS_TABLE).select("*").order("created_at", { ascending: false });
+    if (opts.publishedOnly) q = q.eq("status", "published");
+    const { data, error } = await q;
+    if (error || !data) return [];
+    return data as CustomModelRow[];
+  } catch (err) {
+    console.warn("fetchCustomModels error:", err);
+    return [];
+  }
 }
 
 export async function fetchCustomModel(supabase: SupabaseClient, slug: string): Promise<CustomModelRow | null> {

@@ -9,18 +9,20 @@ import {
   fetchModelDefaults,
   modelCoverOf,
   modelNameOf,
-  saveModelClassification,
-  saveModelCover,
-  saveModelName,
   type InvitationKind,
-  publishModel,
-  resetModelDefault,
-  saveModelDraft,
-  setModelHidden,
-  setModelDeleted,
   isModelDeleted,
   type ModelDefaultRow,
 } from "@/lib/modelDefaults";
+import {
+  saveModelDraftAction,
+  publishModelAction,
+  saveModelNameAction,
+  saveModelClassificationAction,
+  saveModelCoverAction,
+  setModelHiddenAction,
+  setModelDeletedAction,
+  resetModelDefaultAction,
+} from "@/app/actions/adminModelActions";
 import ModelCard from "@/components/admin/models/ModelCard";
 import { SITE_MODELS, type ModelContent, type SiteModel } from "@/components/admin/models/registry";
 import AdminModelEditor from "@/components/admin/models/AdminModelEditor";
@@ -238,15 +240,15 @@ export default function AdminModelsStudioPage() {
                 onRename={() => setRenamingModel(model)}
                 onClassify={() => setClassifyingId(model.id)}
                 onCover={() => setCoverModel(model)}
-                onPublish={async () => act(model, async () => publishModel(supabase, model.id, classOf(model).type === "carte" ? withoutMusic(workingContent(model)) : workingContent(model), await userId(), name), `« ${name} » est publié sur le site.`)}
-                onShow={async () => act(model, async () => setModelHidden(supabase, model.id, false, await userId()), `« ${name} » est de retour sur le site.`)}
+                onPublish={async () => act(model, async () => { await publishModelAction(model.id, classOf(model).type === "carte" ? withoutMusic(workingContent(model)) : workingContent(model), name); }, `« ${name} » est publié sur le site.`)}
+                onShow={async () => act(model, async () => { await setModelHiddenAction(model.id, false); }, `« ${name} » est de retour sur le site.`)}
                 onHide={async () => {
                   if (!confirm(`Retirer « ${name} » du site ? Il n'apparaîtra plus dans les galeries ni à la création d'événement. Les invitations déjà achetées restent intactes.`)) return;
-                  await act(model, async () => setModelHidden(supabase, model.id, true, await userId()), `« ${name} » est retiré du site.`);
+                  await act(model, async () => { await setModelHiddenAction(model.id, true); }, `« ${name} » est retiré du site.`);
                 }}
                 onDelete={async () => {
                   if (!confirm(`Supprimer « ${name} » ? Il disparaît du studio et du site. Les invitations déjà achetées restent intactes, et vous pourrez le restaurer depuis « Modèles supprimés ».`)) return;
-                  await act(model, async () => setModelDeleted(supabase, model.id, true, await userId()), `« ${name} » est supprimé.`);
+                  await act(model, async () => { await setModelDeletedAction(model.id, true); }, `« ${name} » est supprimé.`);
                 }}
                 extra={[
                   {
@@ -255,7 +257,7 @@ export default function AdminModelsStudioPage() {
                     disabled: !(row?.content || row?.draft_content || row?.name),
                     onClick: async () => {
                       if (!confirm(`Rétablir la version d'origine de « ${name} » ? Vos ajustements (nom, textes, photos) seront effacés.`)) return;
-                      await act(model, () => resetModelDefault(supabase, model.id, true), `« ${model.name} » a retrouvé son contenu et nom d'origine.`);
+                      await act(model, () => resetModelDefaultAction(model.id, true), `« ${model.name} » a retrouvé son contenu et nom d'origine.`);
                     },
                   },
                 ]}
@@ -275,7 +277,7 @@ export default function AdminModelsStudioPage() {
                   <button
                     type="button"
                     disabled={busyId === model.id}
-                    onClick={async () => act(model, async () => setModelDeleted(supabase, model.id, false, await userId()), `« ${currentName(model)} » est restauré (retiré du site jusqu'à sa remise en ligne).`)}
+                    onClick={async () => act(model, async () => { await setModelDeletedAction(model.id, false); }, `« ${currentName(model)} » est restauré (retiré du site jusqu'à sa remise en ligne).`)}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                   >
                     <RotateCcw size={13} /> Restaurer
@@ -295,7 +297,7 @@ export default function AdminModelsStudioPage() {
           original={coverModel.image}
           onClose={() => setCoverModel(null)}
           onSave={async (url) => {
-            await saveModelCover(supabase, coverModel.id, url, await userId());
+            await saveModelCoverAction(coverModel.id, url);
             setCoverModel(null);
             setNotice({ ok: true, text: `La photo de couverture de « ${currentName(coverModel)} » est à jour sur le site.` });
             await load();
@@ -310,7 +312,7 @@ export default function AdminModelsStudioPage() {
           modelImage={renamingModel.image}
           onClose={() => setRenamingModel(null)}
           onSave={async (newName) => {
-            await saveModelName(supabase, renamingModel.id, newName, await userId());
+            await saveModelNameAction(renamingModel.id, newName);
             setRenamingModel(null);
             setNotice({
               ok: true,
@@ -327,7 +329,7 @@ export default function AdminModelsStudioPage() {
           initial={classOf(classifying)}
           onClose={() => setClassifyingId(null)}
           onSave={async (c) => {
-            await saveModelClassification(supabase, classifying.id, c, await userId());
+            await saveModelClassificationAction(classifying.id, c);
             setClassifyingId(null);
             setNotice({ ok: true, text: `« ${currentName(classifying)} » est classé : ${c.type === "carte" ? "carte" : "animée"} · ${c.events.join(", ")}.` });
             await load();
@@ -343,11 +345,11 @@ export default function AdminModelsStudioPage() {
           initial={workingContent(editing)}
           onClose={() => setEditingId(null)}
           onSave={async (content: ModelContent, newName?: string) => {
-            await saveModelDraft(supabase, editing.id, content, await userId(), newName);
+            await saveModelDraftAction(editing.id, content, newName);
             await load();
           }}
           onPublish={async (content: ModelContent, newName?: string) => {
-            await publishModel(supabase, editing.id, classOf(editing).type === "carte" ? withoutMusic(content) : content, await userId(), newName);
+            await publishModelAction(editing.id, classOf(editing).type === "carte" ? withoutMusic(content) : content, newName);
             await load();
           }}
         />

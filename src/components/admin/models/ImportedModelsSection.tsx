@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { FileArchive, Loader2, UploadCloud } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { customModelUrl, fetchCustomModels, saveCustomModel, type CustomModelRow } from "@/lib/customModels";
+import { customModelUrl, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
+import { saveCustomModelAction } from "@/app/actions/adminModelActions";
 import type { InvitationKind } from "@/lib/modelDefaults";
 import ImportModelModal from "./ImportModelModal";
 import CustomModelStudio from "./CustomModelStudio";
@@ -64,7 +65,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
   };
 
   const publish = (m: CustomModelRow, patch: Partial<CustomModelRow> = {}) =>
-    saveCustomModel(supabase, m.slug, {
+    saveCustomModelAction(m.slug, {
       ...patch,
       content: patch.content ?? m.draft_content ?? m.content,
       status: "published",
@@ -140,10 +141,10 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
               onClassify={() => setClassifyingSlug(m.slug)}
               onCover={() => setCoverSlug(m.slug)}
               onPublish={() => act(m, () => publish(m), `« ${m.name} » est publié sur le site.`)}
-              onShow={() => act(m, () => saveCustomModel(supabase, m.slug, { status: "published" }), `« ${m.name} » est de retour sur le site.`)}
+              onShow={() => act(m, () => saveCustomModelAction(m.slug, { status: "published" }), `« ${m.name} » est de retour sur le site.`)}
               onHide={() => {
                 if (!confirm(`Retirer « ${m.name} » du site ? Les invitations déjà achetées restent intactes.`)) return;
-                act(m, () => saveCustomModel(supabase, m.slug, { status: "hidden" }), `« ${m.name} » est retiré du site.`);
+                act(m, () => saveCustomModelAction(m.slug, { status: "hidden" }), `« ${m.name} » est retiré du site.`);
               }}
               onDelete={() => remove(m)}
             />
@@ -168,7 +169,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
           model={editing}
           onClose={() => setEditingSlug(null)}
           onSave={async (patch) => {
-            await saveCustomModel(supabase, editing.slug, patch);
+            await saveCustomModelAction(editing.slug, patch);
             await load();
           }}
           onPublish={async (patch) => {
@@ -187,7 +188,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
             current={m.cover_url ?? ""}
             onClose={() => setCoverSlug(null)}
             onSave={async (url) => {
-              await saveCustomModel(supabase, m.slug, { cover_url: url || null });
+              await saveCustomModelAction(m.slug, { cover_url: url || null });
               setCoverSlug(null);
               onNotice({ ok: true, text: `La photo de couverture de « ${m.name} » est à jour sur le site.` });
               await load();
@@ -202,7 +203,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
           modelImage={renaming.cover_url}
           onClose={() => setRenamingSlug(null)}
           onSave={async (newName) => {
-            await saveCustomModel(supabase, renaming.slug, { name: newName });
+            await saveCustomModelAction(renaming.slug, { name: newName });
             setRenamingSlug(null);
             onNotice({ ok: true, text: `Le modèle s'appelle désormais « ${newName} » sur l'ensemble du site.` });
             await load();
@@ -216,7 +217,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
           initial={{ type: classifying.invitation_type, events: classifying.event_types }}
           onClose={() => setClassifyingSlug(null)}
           onSave={async (c) => {
-            await saveCustomModel(supabase, classifying.slug, { invitation_type: c.type, event_types: c.events });
+            await saveCustomModelAction(classifying.slug, { invitation_type: c.type, event_types: c.events });
             setClassifyingSlug(null);
             onNotice({ ok: true, text: `« ${classifying.name} » est classé.` });
             await load();

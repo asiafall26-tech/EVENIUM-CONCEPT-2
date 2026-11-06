@@ -5,7 +5,8 @@ import { FileArchive, Loader2, UploadCloud } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { createClient } from "@/utils/supabase/client";
 import { detectFields, modelAssetUrl, readModelFiles, uploadModelFiles } from "@/lib/customModelImport";
-import { insertCustomModel, makeSlug } from "@/lib/customModels";
+import { makeSlug } from "@/lib/customModels";
+import { insertCustomModelAction } from "@/app/actions/adminModelActions";
 import type { InvitationKind } from "@/lib/modelDefaults";
 
 /** Importer un modèle (ZIP avec index.html et ses fichiers, ou une page HTML seule). */
@@ -44,7 +45,7 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
           : ["Mariage"];
 
       setStep("Enregistrement du modèle…");
-      await insertCustomModel(createClient(), {
+      await insertCustomModelAction({
         slug,
         name: modelName,
         entry,
