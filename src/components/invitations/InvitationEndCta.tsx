@@ -103,56 +103,56 @@ export default function InvitationEndCta({
   const content = (
     <header
       data-inv-cta=""
-      className="fixed top-0 left-0 right-0 z-[2147483647] w-full h-[50px] pt-[env(safe-area-inset-top,0px)] px-3 sm:px-5 bg-[#0e0a08]/94 backdrop-blur-md border-b border-[#D4AF37]/35 shadow-lg flex items-center justify-between gap-2 select-none"
+      className="fixed top-0 left-0 right-0 z-[2147483647] w-full pt-[max(0.65rem,env(safe-area-inset-top,0.65rem))] px-3 sm:px-5 pointer-events-none flex items-center justify-between gap-3 select-none"
     >
       {/* 1. Left Action: Retour */}
-      {isCreate ? (
-        <button
-          type="button"
-          onClick={handleBackToCreation}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
-        >
-          <ArrowLeft size={13} className="shrink-0" />
-          <span>{isChoose ? custom!.secondary : "Revenir"}</span>
-        </button>
-      ) : (
-        <Link
-          href="/invitations"
-          target={isDemo ? "_top" : undefined}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
-        >
-          <ArrowLeft size={13} className="shrink-0" />
-          <span>Retour aux modèles</span>
-        </Link>
-      )}
-
-      {/* 2. Center: Model name / Kicker */}
-      <div className="flex-1 min-w-0 text-center px-2">
-        <span className="text-[11px] font-extrabold tracking-[0.15em] uppercase text-[#D4AF37] truncate block">
-          {isChoose ? custom!.kicker : isCreate ? "Aperçu de votre invitation" : "Evenium · Modèle"}
-        </span>
+      <div className="pointer-events-auto">
+        {isCreate ? (
+          <button
+            type="button"
+            onClick={handleBackToCreation}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0e0a08]/70 hover:bg-[#0e0a08]/90 text-white backdrop-blur-md border border-white/20 hover:border-[#D4AF37]/60 shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer"
+          >
+            <ArrowLeft size={13} className="shrink-0 text-[#f0d999]" />
+            <span>{isChoose ? custom!.secondary : "Revenir"}</span>
+          </button>
+        ) : (
+          <Link
+            href="/invitations"
+            target={isDemo ? "_top" : undefined}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0e0a08]/70 hover:bg-[#0e0a08]/90 text-white backdrop-blur-md border border-white/20 hover:border-[#D4AF37]/60 shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer"
+          >
+            <ArrowLeft size={13} className="shrink-0 text-[#f0d999]" />
+            <span>Retour</span>
+          </Link>
+        )}
       </div>
 
+      {/* 2. Center: Transparent open view (zéro obstruction, les anneaux et créations restent 100% visibles) */}
+      <div className="flex-1 min-w-0 pointer-events-none" />
+
       {/* 3. Right Action: Primary CTA */}
-      {isCreate ? (
-        <button
-          type="button"
-          onClick={handleValiderAchat}
-          className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
-        >
-          <Sparkles size={13} className="text-black shrink-0" />
-          <span>{isChoose ? custom!.primary : "Valider l'achat"}</span>
-        </button>
-      ) : (
-        <Link
-          href={createUrl}
-          target={isDemo ? "_top" : undefined}
-          className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
-        >
-          <Sparkles size={13} className="text-black shrink-0" />
-          <span>Choisir ce modèle</span>
-        </Link>
-      )}
+      <div className="pointer-events-auto">
+        {isCreate ? (
+          <button
+            type="button"
+            onClick={handleValiderAchat}
+            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-lg shadow-[#D4AF37]/30 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/70 whitespace-nowrap cursor-pointer"
+          >
+            <Sparkles size={13} className="text-black shrink-0" />
+            <span>{isChoose ? custom!.primary : "Valider l'achat"}</span>
+          </button>
+        ) : (
+          <Link
+            href={createUrl}
+            target={isDemo ? "_top" : undefined}
+            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-lg shadow-[#D4AF37]/30 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/70 whitespace-nowrap cursor-pointer"
+          >
+            <Sparkles size={13} className="text-black shrink-0" />
+            <span>Choisir ce modèle</span>
+          </Link>
+        )}
+      </div>
     </header>
   );
 

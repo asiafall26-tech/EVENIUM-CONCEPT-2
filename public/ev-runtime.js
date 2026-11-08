@@ -8,6 +8,70 @@
   window.__evRuntime = true;
 
   /*
+   * RÈGLE ABSOLUE EVENIUM : Suppression définitive du petit crayon et de tout bouton d'édition interne
+   * aux modèles importés (fabEdit, editBtn, boutons de personnalisation locaux).
+   * Le client dispose de son propre studio d'édition complet après achat ; aucun bouton parasite ne doit
+   * s'afficher ni gâter la vue du modèle.
+   */
+  var HIDE_PENCIL_CSS =
+    "#fabEdit, #editFab, #editBtn, #edit-toggle, #editRsvp, .edit-fab, .fab-edit, .btn-edit, .edit-btn, " +
+    "[aria-label*='Personnaliser'], [aria-label*='Modifier'], [aria-label*='Éditer'], " +
+    "[title*='Personnaliser'], [title*='Modifier'], [title*='Éditer'], " +
+    "#panel, #pf, #editor, .editor[role='dialog'], [id*='edit-modal'] { " +
+    "display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; " +
+    "width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }";
+
+  try {
+    var editSt = document.createElement("style");
+    editSt.id = "ev-hide-pencils";
+    editSt.textContent = HIDE_PENCIL_CSS;
+    (document.head || document.documentElement).appendChild(editSt);
+  } catch (e) { }
+
+  function purgeInternalEditButtons() {
+    var selectors = [
+      "#fabEdit", "#editFab", "#editBtn", "#edit-toggle", "#editRsvp",
+      ".edit-fab", ".fab-edit", ".btn-edit", ".edit-btn",
+      "[aria-label*='Personnaliser']", "[aria-label*='Modifier']", "[aria-label*='Éditer']",
+      "[title*='Personnaliser']", "[title*='Modifier']",
+      "#panel", "#pf", "#editor"
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+      try {
+        var found = document.querySelectorAll(selectors[i]);
+        for (var j = 0; j < found.length; j++) {
+          found[j].remove();
+        }
+      } catch (e) { }
+    }
+    // Détection des boutons flottants contenant une icône crayon SVG
+    try {
+      var fabs = document.querySelectorAll("button, .fab, a");
+      for (var k = 0; k < fabs.length; k++) {
+        var b = fabs[k];
+        if (b.id === "ev-top-bar" || b.closest("#ev-top-bar")) continue;
+        var p = b.querySelector("path");
+        if (p) {
+          var d = p.getAttribute("d") || "";
+          if (d.indexOf("M4 20h4L19") !== -1 || d.indexOf("M17 3a2.828") !== -1 || d.indexOf("18.37 5.63") !== -1) {
+            b.remove();
+          }
+        }
+      }
+    } catch (e) { }
+  }
+
+  purgeInternalEditButtons();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", purgeInternalEditButtons);
+  }
+  window.addEventListener("load", purgeInternalEditButtons);
+  var pencilObserver = new MutationObserver(purgeInternalEditButtons);
+  try {
+    pencilObserver.observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) { }
+
+  /*
    * Fondus sonores des modèles : un volume calculé hors de 0 – 1 (ex. -0.0002 en fin de fondu) fait planter
    * leur script ; il est ramené dans les limites au lieu de lever une erreur.
    */
@@ -511,7 +575,14 @@
     }, { passive: true });
   });
 
-  /* En-tête Haute Couture sur une ligne (démo publique, choix du modèle, studio admin) */
+  /*
+   * En-tête Haute Couture épuré : deux capsules flottantes discrètes dans les coins supérieurs
+   * (Retour à gauche, Choisir ce modèle à droite).
+   * RÈGLE ABSOLUE : Le conteneur est 100% transparent, ne pousse pas la page (padding-top: 0),
+   * n'altère ni la taille ni la position du modèle (#stage, .app, .slide restent 100% intacts),
+   * et laisse le centre totalement dégagé pour que les anneaux, couronnes, lettres et textes s'affichent
+   * dans toute leur splendeur sans jamais gâter la vue.
+   */
   function cta(text) {
     var old = document.getElementById("ev-top-bar") || document.getElementById("ev-end-cta");
     if (old) old.remove();
@@ -525,33 +596,27 @@
     header.setAttribute("data-inv-cta", "");
     header.setAttribute(
       "style",
-      "position:fixed !important;top:0 !important;left:0 !important;right:0 !important;width:100% !important;height:calc(48px + env(safe-area-inset-top, 0px)) !important;padding-top:env(safe-area-inset-top, 0px) !important;box-sizing:border-box !important;z-index:2147483647 !important;background:rgba(14,10,8,0.94) !important;backdrop-filter:blur(14px) !important;-webkit-backdrop-filter:blur(14px) !important;border-bottom:1px solid rgba(212,175,55,0.35) !important;box-shadow:0 4px 20px rgba(0,0,0,0.5) !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:8px !important;padding-left:12px !important;padding-right:12px !important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important;pointer-events:auto !important;transform:none !important;"
+      "position:fixed !important;top:0 !important;left:0 !important;right:0 !important;width:100% !important;padding-top:max(10px, env(safe-area-inset-top, 10px)) !important;padding-left:12px !important;padding-right:12px !important;box-sizing:border-box !important;z-index:2147483647 !important;background:transparent !important;border:none !important;box-shadow:none !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:12px !important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important;pointer-events:none !important;transform:none !important;"
     );
 
     header.innerHTML =
       '<style>' +
-      'body.ev-has-top-bar { padding-top: calc(48px + env(safe-area-inset-top, 0px)) !important; box-sizing: border-box !important; }' +
-      'body.ev-has-top-bar .story-container, body.ev-has-top-bar .stories, body.ev-has-top-bar #stage, body.ev-has-top-bar .app, body.ev-has-top-bar #app, body.ev-has-top-bar .slide { top: calc(48px + env(safe-area-inset-top, 0px)) !important; height: calc(100% - 48px - env(safe-area-inset-top, 0px)) !important; }' +
       '#ev-top-bar button { -webkit-tap-highlight-color: transparent; }' +
-      '#ev-top-bar button:active { transform: scale(0.97); }' +
+      '#ev-top-bar button:active { transform: scale(0.96); }' +
       '</style>' +
-      '<button data-a="secondary" type="button" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,0.12);color:#ffffff;border:1px solid rgba(255,255,255,0.22);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;box-sizing:border-box;transition:all 0.15s ease;">' +
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
+      '<button data-a="secondary" type="button" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;background:rgba(14,10,8,0.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#ffffff;border:1px solid rgba(255,255,255,0.24);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,0.4);pointer-events:auto;transition:all 0.15s ease;">' +
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
       '<span data-r="secondary-text">Retour</span>' +
       '</button>' +
-      '<div style="flex:1;min-width:0;text-align:center;padding:0 6px;">' +
-      '<span data-r="kicker" style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#d4af37;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">Aperçu</span>' +
-      '</div>' +
-      '<button data-a="primary" type="button" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%);color:#0d0804;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,0.4);cursor:pointer;white-space:nowrap;box-sizing:border-box;box-shadow:0 2px 10px rgba(212,175,55,0.35);transition:all 0.15s ease;">' +
+      '<div style="flex:1;min-width:0;pointer-events:none;"></div>' +
+      '<button data-a="primary" type="button" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;background:linear-gradient(135deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%);color:#0d0804;font-size:11.5px;font-weight:800;border:1px solid rgba(255,255,255,0.45);cursor:pointer;white-space:nowrap;box-sizing:border-box;box-shadow:0 4px 18px rgba(212,175,55,0.4);pointer-events:auto;transition:all 0.15s ease;">' +
       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d0804" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' +
       '<span data-r="primary-text">Choisir ce modèle</span>' +
       '</button>';
 
-    var kicker = header.querySelector('[data-r="kicker"]');
     var primaryTxt = header.querySelector('[data-r="primary-text"]');
     var secondaryTxt = header.querySelector('[data-r="secondary-text"]');
 
-    kicker.textContent = text.kicker || text.title || "Aperçu du modèle";
     primaryTxt.textContent = text.primary || "Choisir ce modèle";
     secondaryTxt.textContent = text.secondary || "Retour";
 
@@ -570,7 +635,6 @@
 
     ctaBox = header;
     document.body.appendChild(header);
-    document.body.classList.add("ev-has-top-bar");
     ctaObserver.observe(document.body, { childList: true, subtree: true, attributes: false });
   }
   window.addEventListener("load", function () {

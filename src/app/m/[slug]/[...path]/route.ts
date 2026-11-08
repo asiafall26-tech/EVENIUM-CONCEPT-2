@@ -31,8 +31,11 @@ const TYPES: Record<string, string> = {
   txt: "text/plain; charset=utf-8",
 };
 
+/** Style préventif masquant immédiatement les boutons d'édition internes (crayons, fab, modals locaux) */
+const HIDE_INTERNAL_EDITS = `<style id="ev-hide-pencils">#fabEdit,#editFab,#editBtn,#edit-toggle,#editRsvp,.edit-fab,.fab-edit,.btn-edit,.edit-btn,[aria-label*="Personnaliser"],[aria-label*="Modifier"],[aria-label*="Éditer"],[title*="Personnaliser"],[title*="Modifier"],#panel,#pf,#editor,.editor[role="dialog"]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;width:0!important;height:0!important;position:absolute!important;left:-9999px!important;}</style>`;
+
 /** Script qui rend la page éditable (valeurs reçues du studio, de la création ou de l'invitation) */
-const RUNTIME = '<script src="/ev-runtime.js" defer></script>';
+const RUNTIME = `${HIDE_INTERNAL_EDITS}<script src="/ev-runtime.js" defer></script>`;
 
 /**
  * Fichiers d'un modèle importé, servis depuis le stockage sur le même domaine que le site
