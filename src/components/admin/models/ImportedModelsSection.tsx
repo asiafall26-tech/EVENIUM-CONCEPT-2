@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FileArchive, Loader2, UploadCloud } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { customModelUrl, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
+import { customModelUrl, fetchCustomModel, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
 import { saveCustomModelAction } from "@/app/actions/adminModelActions";
 import type { InvitationKind } from "@/lib/modelDefaults";
 import ImportModelModal from "./ImportModelModal";
@@ -26,15 +26,17 @@ interface Props {
   kindFilter: "Tous" | InvitationKind;
   eventFilter: string;
   onNotice: (n: { ok: boolean; text: string } | null) => void;
+  onReload?: () => Promise<void> | void;
 }
 
 /** Modèles importés (ZIP / HTML) : import, studio, publication, retrait, classement, suppression. */
-export default function ImportedModelsSection({ kindFilter, eventFilter, onNotice }: Props) {
+export default function ImportedModelsSection({ kindFilter, eventFilter, onNotice, onReload }: Props) {
   const [supabase] = useState(() => createClient());
   const [models, setModels] = useState<CustomModelRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [editingModel, setEditingModel] = useState<CustomModelRow | null>(null);
   const [classifyingSlug, setClassifyingSlug] = useState<string | null>(null);
   const [coverSlug, setCoverSlug] = useState<string | null>(null);
   const [renamingSlug, setRenamingSlug] = useState<string | null>(null);
@@ -57,6 +59,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
       await action();
       onNotice({ ok: true, text: done });
       await load();
+      await onReload?.();
     } catch (e) {
       onNotice({ ok: false, text: e instanceof Error ? e.message : "Une erreur est survenue." });
     } finally {
@@ -130,12 +133,18 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
               presence={m.status === "published" ? "online" : m.status === "hidden" ? "hidden" : "draft"}
               kind={m.invitation_type}
               events={m.event_types}
-              info={`${m.fields.length} élément(s) modifiable(s) par vous et par le client`}
+              info={`${m.fields.length || "Tous"} élément(s) modifiable(s)`}
               busy={busy === m.slug}
               viewUrl={customModelUrl(m)}
-              onOpen={() => {
+              onOpen={async () => {
                 onNotice(null);
-                setEditingSlug(m.slug);
+                setBusy(m.slug);
+                try {
+                  const full = await fetchCustomModel(supabase, m.slug);
+                  setEditingModel(full || m);
+                } finally {
+                  setBusy(null);
+                }
               }}
               onRename={() => setRenamingSlug(m.slug)}
               onClassify={() => setClassifyingSlug(m.slug)}
@@ -158,23 +167,32 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
           onImported={async (slug) => {
             setImporting(false);
             await load();
+            await onReload?.();
             onNotice({ ok: true, text: "Modèle importé. Ajustez-le dans le studio, puis publiez-le." });
-            setEditingSlug(slug);
+            setBusy(slug);
+            try {
+              const full = await fetchCustomModel(supabase, slug);
+              setEditingModel(full);
+            } finally {
+              setBusy(null);
+            }
           }}
         />
       )}
 
-      {editing && (
+      {editingModel && (
         <CustomModelStudio
-          model={editing}
-          onClose={() => setEditingSlug(null)}
+          model={editingModel}
+          onClose={() => setEditingModel(null)}
           onSave={async (patch) => {
-            await saveCustomModelAction(editing.slug, patch);
+            await saveCustomModelAction(editingModel.slug, patch);
             await load();
+            await onReload?.();
           }}
           onPublish={async (patch) => {
-            await publish(editing, patch);
+            await publish(editingModel, patch);
             await load();
+            await onReload?.();
           }}
         />
       )}
@@ -192,6 +210,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
               setCoverSlug(null);
               onNotice({ ok: true, text: `La photo de couverture de « ${m.name} » est à jour sur le site.` });
               await load();
+              await onReload?.();
             }}
           />
         );
@@ -207,6 +226,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
             setRenamingSlug(null);
             onNotice({ ok: true, text: `Le modèle s'appelle désormais « ${newName} » sur l'ensemble du site.` });
             await load();
+            await onReload?.();
           }}
         />
       )}
@@ -221,6 +241,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
             setClassifyingSlug(null);
             onNotice({ ok: true, text: `« ${classifying.name} » est classé.` });
             await load();
+            await onReload?.();
           }}
         />
       )}

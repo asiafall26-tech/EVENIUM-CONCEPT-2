@@ -7,12 +7,18 @@ import { createClient } from "@/utils/supabase/client";
 import {
   classificationOf,
   fetchModelDefaults,
+  invalidateModelDefaultsCache,
   modelCoverOf,
   modelNameOf,
   type InvitationKind,
   isModelDeleted,
   type ModelDefaultRow,
 } from "@/lib/modelDefaults";
+import {
+  fetchCustomModels,
+  invalidateCustomModelsCache,
+  type CustomModelRow,
+} from "@/lib/customModels";
 import {
   saveModelDraftAction,
   publishModelAction,
@@ -65,6 +71,7 @@ function status(row?: ModelDefaultRow) {
 export default function AdminModelsStudioPage() {
   const [supabase] = useState(() => createClient());
   const [rows, setRows] = useState<Record<string, ModelDefaultRow>>({});
+  const [customModels, setCustomModels] = useState<CustomModelRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
@@ -75,15 +82,33 @@ export default function AdminModelsStudioPage() {
   const [kindFilter, setKindFilter] = useState<"Tous" | InvitationKind>("Tous");
   const [eventFilter, setEventFilter] = useState<string>("Tous");
 
-  const load = useCallback(async () => {
-    setRows(await fetchModelDefaults(supabase));
+  const load = useCallback(async (force = false) => {
+    if (force) {
+      invalidateModelDefaultsCache();
+      invalidateCustomModelsCache();
+    }
+    const [modelRows, customs] = await Promise.all([
+      fetchModelDefaults(supabase, force),
+      fetchCustomModels(supabase, { force }),
+    ]);
+    setRows(modelRows);
+    setCustomModels(customs);
     setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-  }, [load]);
+
+    const channel = supabase
+      .channel("admin_models_studio_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "invitation_model_defaults" }, () => load(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "custom_invitation_models" }, () => load(true))
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [load, supabase]);
 
   const userId = async () => (await supabase.auth.getUser()).data.user?.id;
   const workingContent = (m: SiteModel) => m.fill(rows[m.id]?.draft_content ?? rows[m.id]?.content ?? m.original);
@@ -94,7 +119,7 @@ export default function AdminModelsStudioPage() {
     try {
       await action();
       setNotice({ ok: true, text: done });
-      await load();
+      await load(true);
     } catch (e) {
       setNotice({ ok: false, text: e instanceof Error ? e.message : "Une erreur est survenue." });
     } finally {
@@ -118,7 +143,38 @@ export default function AdminModelsStudioPage() {
       }),
     }))
     .filter((g) => g.models.length || kindFilter !== "Tous");
-  const eventCount = (t: string) => activeModels.filter((m) => classOf(m).events.includes(t)).length;
+
+  const eventCount = (t: string) => {
+    const builtin = activeModels.filter((m) => {
+      const c = classOf(m);
+      if (t === "Vœux") return c.type === "voeu" || c.events.includes("Vœux");
+      if (t === "Mots Doux") return c.type === "mot_doux" || c.events.includes("Mots Doux");
+      if (t === "Couple") return c.type === "couple" || c.events.includes("Couple") || c.events.includes("Invitations Couple");
+      return c.events.includes(t);
+    }).length;
+
+    const custom = customModels.filter((m) => {
+      if (m.status === "hidden") return false;
+      const evs = m.event_types || [];
+      if (t === "Vœux") return m.invitation_type === "voeu" || evs.includes("Vœux");
+      if (t === "Mots Doux") return m.invitation_type === "mot_doux" || evs.includes("Mots Doux");
+      if (t === "Couple") return m.invitation_type === "couple" || evs.includes("Couple") || evs.includes("Invitations Couple");
+      return evs.includes(t);
+    }).length;
+
+    return builtin + custom;
+  };
+
+  const kindCount = (k: "Tous" | InvitationKind) => {
+    if (k === "Tous") {
+      const builtin = activeModels.filter((m) => !rows[m.id]?.is_hidden).length;
+      const custom = customModels.filter((m) => m.status !== "hidden").length;
+      return builtin + custom;
+    }
+    const builtin = activeModels.filter((m) => !rows[m.id]?.is_hidden && classOf(m).type === k).length;
+    const custom = customModels.filter((m) => m.status !== "hidden" && m.invitation_type === k).length;
+    return builtin + custom;
+  };
 
   return (
     <div className="max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
@@ -151,23 +207,30 @@ export default function AdminModelsStudioPage() {
               key={k}
               type="button"
               onClick={() => setKindFilter(k)}
-              className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-all ${
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                 kindFilter === k
                   ? "bg-[#2b2118] text-[#f5eee1] border-[#2b2118] shadow-xs"
                   : "border-gray-200 text-gray-600 hover:border-gray-300"
               }`}
             >
-              {k === "Tous"
-                ? "✨ Tous les types"
-                : k === "animée"
-                ? "🎬 Animées"
-                : k === "carte"
-                ? "📜 Cartes"
-                : k === "voeu"
-                ? "🌟 Vœux"
-                : k === "mot_doux"
-                ? "💌 Mots Doux"
-                : "🕯️ Couple"}
+              <span>
+                {k === "Tous"
+                  ? "✨ Tous les types"
+                  : k === "animée"
+                  ? "🎬 Animées"
+                  : k === "carte"
+                  ? "📜 Cartes"
+                  : k === "voeu"
+                  ? "🌟 Vœux"
+                  : k === "mot_doux"
+                  ? "💌 Mots Doux"
+                  : "🕯️ Couple"}
+              </span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                kindFilter === k ? "bg-white/20 text-[#f5eee1]" : "bg-gray-100 text-gray-600"
+              }`}>
+                {kindCount(k)}
+              </span>
             </button>
           ))}
         </div>
@@ -192,14 +255,14 @@ export default function AdminModelsStudioPage() {
                 : t === "Graduation"
                 ? "🎓 Graduation"
                 : <>{EVENT_TYPE_ICONS[t as keyof typeof EVENT_TYPE_ICONS]} {t}</>}
-              {t !== "Tous" && <span className="opacity-70">· {eventCount(t)}</span>}
+              {t !== "Tous" && <span className="opacity-80 font-bold">· {eventCount(t)}</span>}
             </button>
           ))}
         </div>
       </div>
 
       {/* Modèles importés (ZIP / HTML) */}
-      <ImportedModelsSection kindFilter={kindFilter} eventFilter={eventFilter} onNotice={setNotice} />
+      <ImportedModelsSection kindFilter={kindFilter} eventFilter={eventFilter} onNotice={setNotice} onReload={() => load(true)} />
 
       <h2 className="font-serif text-2xl text-gray-900 pt-2">Modèles Evenium</h2>
 

@@ -24,7 +24,7 @@
         },
       });
     }
-  } catch (e) {}
+  } catch (e) { }
 
   var slug = (location.pathname.match(/^\/m\/([a-z0-9-]+)\//) || [])[1];
   var inFrame = window.parent && window.parent !== window;
@@ -165,7 +165,7 @@
           el.setAttribute("src", v);
           var media = el.tagName === "SOURCE" ? el.parentElement : el;
           if (media && media.load) media.load();
-          if (media && media.autoplay && media.play) media.play().catch(function () {});
+          if (media && media.autoplay && media.play) media.play().catch(function () { });
         }
       }
     });
@@ -271,9 +271,9 @@
     var startScreen = document.querySelector("#start, .start, #cover, .cover, #teaser, .teaser, .splash, [data-screen='start'], [data-screen='cover']");
     if (startScreen) {
       var isGone = startScreen.classList.contains("gone") ||
-                     startScreen.classList.contains("hidden") ||
-                     startScreen.hasAttribute("hidden") ||
-                     startScreen.getAttribute("aria-hidden") === "true";
+        startScreen.classList.contains("hidden") ||
+        startScreen.hasAttribute("hidden") ||
+        startScreen.getAttribute("aria-hidden") === "true";
       if (!isGone) {
         var cs = getComputedStyle(startScreen);
         if (cs.display !== "none" && cs.visibility !== "hidden" && parseFloat(cs.opacity || "1") > 0.1) {
@@ -310,9 +310,9 @@
       var isScale1 = transform.indexOf("scaleX(1)") !== -1;
       var isWidth100 = width === "100%" || parseFloat(width) >= 95;
       var isClassActive = lastBar.classList.contains("active") ||
-                          lastBar.classList.contains("on") ||
-                          lastBar.classList.contains("done") ||
-                          lastBar.classList.contains("completed");
+        lastBar.classList.contains("on") ||
+        lastBar.classList.contains("done") ||
+        lastBar.classList.contains("completed");
       if (!isScale1 && !isWidth100 && !isClassActive) {
         return false;
       }
@@ -620,7 +620,7 @@
         if (bg.__end && bg.currentTime >= bg.__end) bg.currentTime = bg.__start || 0;
       });
       var startOnce = function () {
-        if (bg.src && bg.paused && !bg.__userPaused) bg.play().then(sync).catch(function () {});
+        if (bg.src && bg.paused && !bg.__userPaused) bg.play().then(sync).catch(function () { });
         document.removeEventListener("pointerdown", startOnce, true);
       };
       document.addEventListener("pointerdown", startOnce, true);
@@ -635,7 +635,7 @@
         e.stopPropagation();
         if (bg.paused) {
           bg.__userPaused = false;
-          bg.play().catch(function () {});
+          bg.play().catch(function () { });
         } else {
           bg.__userPaused = true;
           bg.pause();
@@ -749,9 +749,10 @@
   findSections();
   // ?demo=1 : démo publique affichée dans le cadre téléphone de la page d'aperçu (ordinateur)
   var demo = /[?&]demo=1(&|$)/.test(location.search);
+  var hideCtaParam = /[?&]hideCta=1(&|$)/.test(location.search) || /[?&]hide_cta=1(&|$)/.test(location.search);
   if (inFrame && !demo) {
     window.parent.postMessage({ type: "ev:ready" }, location.origin);
-  } else {
+  } else if (!hideCtaParam) {
     if (slug) {
       // Démo ouverte seule : choisir ce modèle (création d'événement) ou revenir aux autres modèles.
       // Affiché d'emblée, même si les valeurs publiées ne se chargent pas : le client n'est jamais sans issue.
@@ -781,7 +782,7 @@
             scheduleFit();
           }
         })
-        .catch(function () {});
+        .catch(function () { });
     }
   }
 })();

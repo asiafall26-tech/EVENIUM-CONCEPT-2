@@ -3,22 +3,22 @@
 import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { 
-  Sparkles, 
-  Heart, 
+import {
+  Sparkles,
+  Heart,
   Calendar,
   Clock,
-  ArrowRight, 
-  ArrowLeft, 
-  Check, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Smartphone, 
-  CreditCard, 
-  Lock, 
-  Mail, 
-  User, 
-  Crown, 
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  ShieldCheck,
+  Smartphone,
+  CreditCard,
+  Lock,
+  Mail,
+  User,
+  Crown,
   Eye,
   Gift,
   PartyPopper,
@@ -66,6 +66,7 @@ import {
   customModelId,
   customModelUrl,
   customValues,
+  fetchCustomModel,
   fetchCustomModels,
   invalidateCustomModelsCache,
   isCustomModelId,
@@ -76,6 +77,12 @@ import {
 import { classificationOf, fetchModelDefaults, hiddenModelIds, invalidateModelDefaultsCache, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
 import { CartesStudio, type CartesStudioValue } from '@/components/cartes/CartesStudio';
 import { CardStudioModal } from '@/components/cartes/CardStudioModal';
+import {
+  CartesInvitationPreview,
+  DEFAULT_VOEU_CONTENT,
+  DEFAULT_MOT_DOUX_CONTENT,
+  DEFAULT_COUPLE_CONTENT,
+} from '@/components/admin/models/registry';
 import { VOEUX_INSPIRATIONS } from '@/data/mock/voeux';
 import { ROMANCE_INSPIRATIONS } from '@/data/mock/romance';
 
@@ -97,6 +104,7 @@ interface ModelItem {
   category: string;
   compatibleEvents: string[];
   liveUrl: string;
+  kind?: InvitationKind;
 }
 
 const CATALOG_MODELS: ModelItem[] = [
@@ -192,17 +200,39 @@ const CATALOG_MODELS: ModelItem[] = [
 
 // Types d'événements
 // L'id est le type enregistré sur l'événement ; « Bientôt » tant qu'aucun modèle n'est compatible
-const buildEventCategories = (models: ModelItem[]): { id: string; label: string; icon: string; isSoon?: boolean }[] => [
-  { id: "Tous", label: "Tous les modèles", icon: "✨" },
-  { id: "Vœux", label: "Vœux d'Exception", icon: "🌟" },
-  { id: "Couple", label: "Mots Doux & Couple", icon: "❤️" },
-  ...EVENT_TYPES.map((t) => ({
-    id: t,
-    label: t,
-    icon: EVENT_ICONS[t],
-    isSoon: !models.some((m) => m.compatibleEvents.includes(t)),
-  })),
-];
+const buildEventCategories = (models: ModelItem[]): { id: string; label: string; icon: string; count: number; isSoon?: boolean }[] => {
+  const countFor = (catId: string) => {
+    if (catId === "Tous") return models.length;
+    if (catId === "Vœux") return models.filter((m) => m.kind === "voeu" || m.compatibleEvents.includes("Vœux")).length;
+    if (catId === "Couple") {
+      return models.filter(
+        (m) =>
+          m.kind === "couple" ||
+          m.kind === "mot_doux" ||
+          m.compatibleEvents.includes("Couple") ||
+          m.compatibleEvents.includes("Invitations Couple") ||
+          m.compatibleEvents.includes("Mots Doux")
+      ).length;
+    }
+    return models.filter((m) => m.compatibleEvents.includes(catId)).length;
+  };
+
+  return [
+    { id: "Tous", label: "Tous les modèles", icon: "✨", count: countFor("Tous"), isSoon: false },
+    { id: "Vœux", label: "Vœux d'Exception", icon: "🌟", count: countFor("Vœux"), isSoon: countFor("Vœux") === 0 },
+    { id: "Couple", label: "Mots Doux & Couple", icon: "❤️", count: countFor("Couple"), isSoon: countFor("Couple") === 0 },
+    ...EVENT_TYPES.map((t) => {
+      const c = countFor(t);
+      return {
+        id: t,
+        label: t,
+        icon: EVENT_ICONS[t] || "🎉",
+        count: c,
+        isSoon: c === 0,
+      };
+    }),
+  ];
+};
 
 function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   const inDashboard = mode === 'dashboard';
@@ -246,7 +276,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       else setSelectedEventCategory(cat);
     }
   }, [searchParams]);
-  
+
   // État d'édition dédié aux Vœux, Mots Doux & Invitations Couple
   const [cartesContent, setCartesContent] = useState<CartesStudioValue>({
     recipient: "Mon Amour",
@@ -429,15 +459,9 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       )
       .subscribe();
 
-    const handleFocus = () => reload(true);
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleFocus);
-
     return () => {
       cancelled = true;
       supabase.removeChannel(channel);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleFocus);
     };
   }, []);
 
@@ -487,8 +511,35 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   const filteredModels = useMemo(() => {
     // Modèles retirés du site par l'admin : absents de la galerie
     if (selectedEventCategory === "Tous") return siteModels;
+    if (selectedEventCategory === "Vœux") {
+      return siteModels.filter((m) => m.kind === "voeu" || m.compatibleEvents.includes("Vœux"));
+    }
+    if (selectedEventCategory === "Couple") {
+      return siteModels.filter(
+        (m) =>
+          m.kind === "couple" ||
+          m.kind === "mot_doux" ||
+          m.compatibleEvents.includes("Couple") ||
+          m.compatibleEvents.includes("Invitations Couple") ||
+          m.compatibleEvents.includes("Mots Doux")
+      );
+    }
     return siteModels.filter(m => m.compatibleEvents.includes(selectedEventCategory));
   }, [selectedEventCategory, siteModels]);
+
+  // Chargement à la demande des champs complets d'un modèle importé lorsqu'il est sélectionné
+  useEffect(() => {
+    if (!isCustomModelId(selectedModelId)) return;
+    const slug = selectedModelId.replace(/^custom:/, "");
+    const m = customModels.find((x) => x.slug === slug);
+    if (m && (!m.fields || m.fields.length === 0)) {
+      fetchCustomModel(supabase, slug).then((full) => {
+        if (full) {
+          setCustomModels((prev) => prev.map((x) => (x.slug === slug ? full : x)));
+        }
+      });
+    }
+  }, [selectedModelId, customModels, supabase]);
 
   // Modèle retiré du site alors qu'il était ouvert par un lien : retour à la galerie
   useEffect(() => {
@@ -607,12 +658,12 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         const prefix = cat === "Anniversaire"
           ? "Anniversaire de"
           : cat === "Baptême"
-          ? "Baptême de"
-          : cat === "Noël"
-          ? "Célébration de Noël de"
-          : cat === "Fêtes de fin d'année"
-          ? "Fêtes de fin d'année de"
-          : cat;
+            ? "Baptême de"
+            : cat === "Noël"
+              ? "Célébration de Noël de"
+              : cat === "Fêtes de fin d'année"
+                ? "Fêtes de fin d'année de"
+                : cat;
         return `${prefix} ${pA || "Mon Événement"}`;
       }
       return `Mariage de ${pA} & ${pB}`;
@@ -846,7 +897,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
   return (
     <div className="w-full max-w-[1680px] mx-auto px-2 sm:px-4 lg:px-6 flex flex-col gap-6 animate-in fade-in duration-300">
-      
+
       {!hasChosenModel ? (
         /* ─────────────── 1. GALERIE DES MODÈLES (POUR CEUX QUI CRÉENT SANS MODÈLE D'ABORD) ─────────────── */
         <div className="w-full flex flex-col gap-8 animate-in fade-in duration-300">
@@ -871,19 +922,24 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedEventCategory(cat.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                    selectedEventCategory === cat.id
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${selectedEventCategory === cat.id
                       ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
                       : "bg-[#fffbf5] text-gray-700 border border-[#e4d8c4] hover:border-[#c9a45e]"
-                  }`}
+                    }`}
                 >
                   <span>{cat.icon}</span>
                   <span>{cat.label}</span>
-                  {cat.isSoon && (
+                  {cat.count > 0 ? (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      selectedEventCategory === cat.id ? "bg-[#b8924a]/30 text-[#f0d999]" : "bg-gray-200/80 text-gray-700"
+                    }`}>
+                      {cat.count}
+                    </span>
+                  ) : cat.isSoon ? (
                     <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded-full">
                       Bientôt
                     </span>
-                  )}
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -1090,8 +1146,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     selectedModelId === VOEU_EXCEPTION_MODEL_ID
                       ? "voeu"
                       : selectedModelId === MOT_DOUX_MODEL_ID
-                      ? "mot_doux"
-                      : "invitation_couple"
+                        ? "mot_doux"
+                        : "invitation_couple"
                   }
                   occasionName={currentModel.name}
                   templateTitle={currentModel.name}
@@ -1127,95 +1183,95 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {isPreviewFullScreenOpen && (
         <InvitationCtaContext.Provider value={{ force: inDashboard }}>
-        <div
-          className="fixed inset-0 z-[100] h-dvh bg-black overflow-y-auto overscroll-contain select-none flex flex-col"
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          {/* En-tête sur une ligne format très simple au clic */}
-          <header className="fixed top-0 left-0 right-0 z-[120] h-[52px] pt-[env(safe-area-inset-top,0px)] px-3 sm:px-6 bg-[#0e0a08]/94 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
-            <button
-              type="button"
-              onClick={() => setIsPreviewFullScreenOpen(false)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
-            >
-              <ArrowLeft size={14} className="shrink-0" />
-              <span>Revenir à la création</span>
-            </button>
+          <div
+            className="fixed inset-0 z-[100] h-dvh bg-black overflow-y-auto overscroll-contain select-none flex flex-col"
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {/* En-tête sur une ligne format très simple au clic */}
+            <header className="fixed top-0 left-0 right-0 z-[120] h-[52px] pt-[env(safe-area-inset-top,0px)] px-3 sm:px-6 bg-[#0e0a08]/94 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
+              <button
+                type="button"
+                onClick={() => setIsPreviewFullScreenOpen(false)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
+              >
+                <ArrowLeft size={14} className="shrink-0" />
+                <span>Revenir à la création</span>
+              </button>
 
-            <div className="text-center min-w-0 max-w-md hidden sm:block">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] font-extrabold block">Aperçu de votre invitation</span>
-              <p className="font-serif text-sm text-white/90 truncate font-medium">Votre création Evenium</p>
-            </div>
+              <div className="text-center min-w-0 max-w-md hidden sm:block">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] font-extrabold block">Aperçu de votre invitation</span>
+                <p className="font-serif text-sm text-white/90 truncate font-medium">Votre création Evenium</p>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsPreviewFullScreenOpen(false);
-                setIsCheckoutModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
-            >
-              <Sparkles size={14} className="text-black shrink-0" />
-              <span>Valider l&apos;achat</span>
-            </button>
-          </header>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPreviewFullScreenOpen(false);
+                  setIsCheckoutModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
+              >
+                <Sparkles size={14} className="text-black shrink-0" />
+                <span>Valider l&apos;achat</span>
+              </button>
+            </header>
 
-          {/* Corps de l'invitation en plein écran avec modifications */}
-          <div className="w-full relative min-h-dvh pt-[52px]">
-            {selectedModelId === VELOURS_MODEL_ID && (
-              <VeloursInvitation
-                content={forInvitationKind(veloursContent, isStaticCard)}
-                preview={true}
-                hideCta={true}
-                onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
-                onFinalize={() => {
-                  setIsPreviewFullScreenOpen(false);
-                  setIsCheckoutModalOpen(true);
-                }}
-              />
-            )}
-            {selectedModelId === SCEAU_MODEL_ID && (
-              <SceauInvitation
-                content={forInvitationKind(sceauContent, isStaticCard)}
-                preview={true}
-                hideCta={true}
-                onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
-                onFinalize={() => {
-                  setIsPreviewFullScreenOpen(false);
-                  setIsCheckoutModalOpen(true);
-                }}
-              />
-            )}
-            {selectedModelId === IVOIRE_MODEL_ID && (
-              <IvoireInvitation
-                content={forInvitationKind(ivoireContent, isStaticCard)}
-                preview={true}
-                hideCta={true}
-                onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
-                onFinalize={() => {
-                  setIsPreviewFullScreenOpen(false);
-                  setIsCheckoutModalOpen(true);
-                }}
-              />
-            )}
-            {selectedModelId === ROSE_OR_MODEL_ID && (
-              <RoseOrInvitation
-                content={forInvitationKind(roseOrContent, isStaticCard)}
-                hideCta={true}
-                onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
-                onFinalize={() => {
-                  setIsPreviewFullScreenOpen(false);
-                  setIsCheckoutModalOpen(true);
-                }}
-              />
-            )}
-            {(() => {
-              const m = customOf(selectedModelId);
-              if (!m) return null;
-              const values = customContentOf(m);
-              return (
-                <div className="w-full h-dvh">
-                  <CustomInvitationFrame
+            {/* Corps de l'invitation en plein écran avec modifications */}
+            <div className="w-full relative min-h-dvh pt-[52px]">
+              {selectedModelId === VELOURS_MODEL_ID && (
+                <VeloursInvitation
+                  content={forInvitationKind(veloursContent, isStaticCard)}
+                  preview={true}
+                  hideCta={true}
+                  onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
+                  onFinalize={() => {
+                    setIsPreviewFullScreenOpen(false);
+                    setIsCheckoutModalOpen(true);
+                  }}
+                />
+              )}
+              {selectedModelId === SCEAU_MODEL_ID && (
+                <SceauInvitation
+                  content={forInvitationKind(sceauContent, isStaticCard)}
+                  preview={true}
+                  hideCta={true}
+                  onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
+                  onFinalize={() => {
+                    setIsPreviewFullScreenOpen(false);
+                    setIsCheckoutModalOpen(true);
+                  }}
+                />
+              )}
+              {selectedModelId === IVOIRE_MODEL_ID && (
+                <IvoireInvitation
+                  content={forInvitationKind(ivoireContent, isStaticCard)}
+                  preview={true}
+                  hideCta={true}
+                  onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
+                  onFinalize={() => {
+                    setIsPreviewFullScreenOpen(false);
+                    setIsCheckoutModalOpen(true);
+                  }}
+                />
+              )}
+              {selectedModelId === ROSE_OR_MODEL_ID && (
+                <RoseOrInvitation
+                  content={forInvitationKind(roseOrContent, isStaticCard)}
+                  hideCta={true}
+                  onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
+                  onFinalize={() => {
+                    setIsPreviewFullScreenOpen(false);
+                    setIsCheckoutModalOpen(true);
+                  }}
+                />
+              )}
+              {(() => {
+                const m = customOf(selectedModelId);
+                if (!m) return null;
+                const values = customContentOf(m);
+                return (
+                  <div className="w-full h-dvh">
+                    <CustomInvitationFrame
                       model={m}
                       values={isStaticCard ? withoutMusicValues(m.fields, values) : values}
                       hideCta={true}
@@ -1226,78 +1282,77 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         setIsCheckoutModalOpen(true);
                       }}
                     />
-                </div>
-              );
-            })()}
-            {isCardStudioModel && (
-              <div className="min-h-screen bg-[#0d0603] text-[#fbf7ee] flex items-center justify-center p-4">
-                <div className="w-full max-w-xl mx-auto space-y-4 my-auto">
-                  <div className={`p-8 sm:p-12 rounded-3xl ${
-                    cartesContent.paperTheme === "rose"
-                      ? "bg-[#fff5f6] text-[#2d1217]"
-                      : cartesContent.paperTheme === "parchment"
-                      ? "bg-[#f8f0de] text-[#28180c]"
-                      : cartesContent.paperTheme === "dark_velvet"
-                      ? "bg-[#160f0c] text-[#fbf7ee]"
-                      : "bg-[#fcf9f2] text-[#24170e]"
-                  } border border-[#d9c08c] shadow-2xl text-center space-y-4 relative`}>
-                    <div className="absolute inset-2 border border-[#d4af37]/30 rounded-2xl pointer-events-none" />
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#8f6f33]">
-                      {cartesContent.kicker || "Attention Particulière"}
-                    </span>
-                    <h3 className="font-serif text-2xl sm:text-3xl font-bold">{cartesContent.title}</h3>
-                    <p className="font-serif text-base sm:text-lg italic leading-relaxed whitespace-pre-line">
-                      "{cartesContent.message}"
-                    </p>
-                    {selectedModelId === INVI_COUPLE_MODEL_ID && (cartesContent.rendezVousDate || cartesContent.rendezVousPlace) && (
-                      <div className="p-4 bg-black/5 rounded-2xl border border-[#b8924a]/30 text-xs text-left space-y-1.5">
-                        <p className="font-bold text-[#8f6f33]">🕯️ Rendez-vous en Amoureux</p>
-                        {cartesContent.rendezVousDate && <p><strong>Date :</strong> {cartesContent.rendezVousDate} {cartesContent.rendezVousTime && `à ${cartesContent.rendezVousTime}`}</p>}
-                        {cartesContent.rendezVousPlace && <p><strong>Lieu :</strong> {cartesContent.rendezVousPlace}</p>}
-                        {cartesContent.dressCode && <p><strong>Dress Code :</strong> {cartesContent.dressCode}</p>}
-                        <p className="pt-2 text-center text-[#d62828] font-bold">Bouton invité : « J'accepte avec amour ❤️ »</p>
+                  </div>
+                );
+              })()}
+              {isCardStudioModel && (
+                <div className="min-h-screen bg-[#0d0603] text-[#fbf7ee] flex items-center justify-center p-4">
+                  <div className="w-full max-w-xl mx-auto space-y-4 my-auto">
+                    <div className={`p-8 sm:p-12 rounded-3xl ${cartesContent.paperTheme === "rose"
+                        ? "bg-[#fff5f6] text-[#2d1217]"
+                        : cartesContent.paperTheme === "parchment"
+                          ? "bg-[#f8f0de] text-[#28180c]"
+                          : cartesContent.paperTheme === "dark_velvet"
+                            ? "bg-[#160f0c] text-[#fbf7ee]"
+                            : "bg-[#fcf9f2] text-[#24170e]"
+                      } border border-[#d9c08c] shadow-2xl text-center space-y-4 relative`}>
+                      <div className="absolute inset-2 border border-[#d4af37]/30 rounded-2xl pointer-events-none" />
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-[#8f6f33]">
+                        {cartesContent.kicker || "Attention Particulière"}
+                      </span>
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold">{cartesContent.title}</h3>
+                      <p className="font-serif text-base sm:text-lg italic leading-relaxed whitespace-pre-line">
+                        "{cartesContent.message}"
+                      </p>
+                      {selectedModelId === INVI_COUPLE_MODEL_ID && (cartesContent.rendezVousDate || cartesContent.rendezVousPlace) && (
+                        <div className="p-4 bg-black/5 rounded-2xl border border-[#b8924a]/30 text-xs text-left space-y-1.5">
+                          <p className="font-bold text-[#8f6f33]">🕯️ Rendez-vous en Amoureux</p>
+                          {cartesContent.rendezVousDate && <p><strong>Date :</strong> {cartesContent.rendezVousDate} {cartesContent.rendezVousTime && `à ${cartesContent.rendezVousTime}`}</p>}
+                          {cartesContent.rendezVousPlace && <p><strong>Lieu :</strong> {cartesContent.rendezVousPlace}</p>}
+                          {cartesContent.dressCode && <p><strong>Dress Code :</strong> {cartesContent.dressCode}</p>}
+                          <p className="pt-2 text-center text-[#d62828] font-bold">Bouton invité : « J'accepte avec amour ❤️ »</p>
+                        </div>
+                      )}
+                      <div className="pt-4 border-t border-black/10 text-right text-xs font-serif italic">
+                        Avec toute mon affection, <br />
+                        <strong className="not-italic font-bold">{cartesContent.sender || "L'Expéditeur"}</strong>
                       </div>
-                    )}
-                    <div className="pt-4 border-t border-black/10 text-right text-xs font-serif italic">
-                      Avec toute mon affection, <br />
-                      <strong className="not-italic font-bold">{cartesContent.sender || "L'Expéditeur"}</strong>
+                    </div>
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsPreviewFullScreenOpen(false)}
+                        className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer"
+                      >
+                        Revenir à l'édition
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPreviewFullScreenOpen(false);
+                          setIsCartesModalOpen(true);
+                        }}
+                        className="btn-lux px-6 py-2.5 text-xs font-bold cursor-pointer"
+                      >
+                        Valider &amp; Finaliser (3 900 FCFA)
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-center gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsPreviewFullScreenOpen(false)}
-                      className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer"
-                    >
-                      Revenir à l'édition
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPreviewFullScreenOpen(false);
-                        setIsCartesModalOpen(true);
-                      }}
-                      className="btn-lux px-6 py-2.5 text-xs font-bold cursor-pointer"
-                    >
-                      Valider &amp; Finaliser (3 900 FCFA)
-                    </button>
-                  </div>
                 </div>
-              </div>
-            )}
-            {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
-              <AnniversaireInvitation
-                content={forInvitationKind(anniversaireContent, isStaticCard)}
-                preview
-                onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
-                onFinalize={() => {
-                  setIsPreviewFullScreenOpen(false);
-                  setIsCheckoutModalOpen(true);
-                }}
-              />
-            )}
+              )}
+              {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
+                <AnniversaireInvitation
+                  content={forInvitationKind(anniversaireContent, isStaticCard)}
+                  preview
+                  onBackToEdit={() => setIsPreviewFullScreenOpen(false)}
+                  onFinalize={() => {
+                    setIsPreviewFullScreenOpen(false);
+                    setIsCheckoutModalOpen(true);
+                  }}
+                />
+              )}
+            </div>
           </div>
-        </div>
         </InvitationCtaContext.Provider>
       )}
 
@@ -1363,17 +1418,20 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                       return (
                         <div className="w-full h-full">
                           <CustomInvitationFrame
-                              model={custom}
-                              values={custom.invitation_type === 'carte' ? withoutMusicValues(custom.fields, values) : values}
-                              hideCta={true}
-                              className="w-full h-full border-0 block bg-white"
-                              onBackToEdit={back}
-                              onFinalize={choose}
-                            />
+                            model={custom}
+                            values={custom.invitation_type === 'carte' ? withoutMusicValues(custom.fields, values) : values}
+                            hideCta={true}
+                            className="w-full h-full border-0 block bg-white"
+                            onBackToEdit={back}
+                            onFinalize={choose}
+                          />
                         </div>
                       );
                     }
                     if (demoModelId === ANNIVERSAIRE_MODEL_ID) return <AnniversaireInvitation content={forInvitationKind(anniversaireDefaults(publishedContent(ANNIVERSAIRE_MODEL_ID) ?? DEFAULT_ANNIVERSAIRE), classifiedModels.find((m) => m.id === ANNIVERSAIRE_MODEL_ID)?.kind === 'carte')} preview hideCta={true} onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === VOEU_EXCEPTION_MODEL_ID) return <CartesInvitationPreview content={{ ...DEFAULT_VOEU_CONTENT, ...(publishedContent(VOEU_EXCEPTION_MODEL_ID) as any) }} onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === MOT_DOUX_MODEL_ID) return <CartesInvitationPreview content={{ ...DEFAULT_MOT_DOUX_CONTENT, ...(publishedContent(MOT_DOUX_MODEL_ID) as any) }} onBackToEdit={back} onFinalize={choose} />;
+                    if (demoModelId === INVI_COUPLE_MODEL_ID) return <CartesInvitationPreview content={{ ...DEFAULT_COUPLE_CONTENT, ...(publishedContent(INVI_COUPLE_MODEL_ID) as any) }} onBackToEdit={back} onFinalize={choose} />;
                     return null;
                   })()}
                 </div>
@@ -1395,8 +1453,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
             type: selectedModelId === VOEU_EXCEPTION_MODEL_ID
               ? "voeu"
               : selectedModelId === MOT_DOUX_MODEL_ID
-              ? "mot_doux"
-              : "invitation_couple",
+                ? "mot_doux"
+                : "invitation_couple",
             templateId: selectedModelId,
             occasionId: selectedModelId === VOEU_EXCEPTION_MODEL_ID ? "anniversaire" : "diner_secret",
             occasionName: currentModel.name,
@@ -1422,7 +1480,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       {isCheckoutModalOpen && (
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
           <div className="w-full max-w-5xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-3 sm:my-auto animate-in zoom-in-95 duration-200">
-            
+
             {/* Header Modal */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-gray-100 bg-[#fbf7f0] gap-3">
               <div className="min-w-0">
@@ -1430,8 +1488,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   {standardSuccessEvent ? "Paiement Validé · Accès Dashboard Débloqué" : "Étape finale"}
                 </span>
                 <h3 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 mt-1 leading-snug">
-                  {standardSuccessEvent 
-                    ? "Votre Événement & Votre Dashboard sont Prêts !" 
+                  {standardSuccessEvent
+                    ? "Votre Événement & Votre Dashboard sont Prêts !"
                     : "Activez votre Événement & Partagez votre Invitation"}
                 </h3>
               </div>
@@ -1513,11 +1571,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           setCopiedLink(true);
                           setTimeout(() => setCopiedLink(false), 2500);
                         }}
-                        className={`px-3 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${
-                          copiedLink
+                        className={`px-3 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${copiedLink
                             ? "bg-emerald-600 text-white"
                             : "bg-black hover:bg-gray-800 text-[#b8924a] border border-[#b8924a]/30"
-                        }`}
+                          }`}
                       >
                         {copiedLink ? (
                           <>
@@ -1633,7 +1690,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
             ) : (
               /* Corps Modal Formulaire : Choix formule + Nom organisateur & Auth + Paiement */
               <form onSubmit={handleFinalActivation} className="p-3.5 sm:p-8 space-y-5 sm:space-y-6">
-                
+
                 {errorMessage && (
                   <div className="p-3.5 sm:p-4 bg-red-50 text-red-700 border border-red-200 rounded-2xl text-xs sm:text-sm font-medium">
                     {errorMessage}
@@ -1641,10 +1698,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
-                  
+
                   {/* Colonne Gauche : Formule, Compte & Paiement (7 cols) */}
                   <div className="lg:col-span-7 space-y-5 sm:space-y-6 min-w-0">
-                    
+
                     {/* 1. Choix Formule */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -1660,11 +1717,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         {/* Formule Standard */}
                         <div
                           onClick={() => choosePlan('Standard')}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                            selectedPlan === 'Standard'
+                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Standard'
                               ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
                               : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
+                            }`}
                         >
                           <div>
                             <div className="flex items-center justify-between mb-1">
@@ -1702,11 +1758,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         {/* Formule Premium */}
                         <div
                           onClick={() => choosePlan('Premium')}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                            selectedPlan === 'Premium'
+                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Premium'
                               ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
                               : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
+                            }`}
                         >
                           <div>
                             <div className="flex items-center justify-between mb-1">
@@ -1740,11 +1795,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         {/* Formule Gold */}
                         <div
                           onClick={() => choosePlan('Gold')}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${
-                            selectedPlan === 'Gold'
+                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${selectedPlan === 'Gold'
                               ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
                               : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
+                            }`}
                         >
                           <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
                             Recommandée
@@ -1841,7 +1895,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                             </div>
                             <span className="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">Authentification validée</span>
                           </div>
-                          
+
                           <p className="text-[10px] text-gray-500 italic">
                             💡 Vos modèles et votre lien de téléchargement direct seront rattachés à ce compte organisateur.
                           </p>
@@ -1915,11 +1969,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('wave')}
-                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${
-                            paymentMethod === 'wave'
+                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${paymentMethod === 'wave'
                               ? "border-[#1DA1F2] bg-[#E8F5FD] text-[#1DA1F2] font-bold"
                               : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
-                          }`}
+                            }`}
                         >
                           <span className="text-base sm:text-lg">🌊</span>
                           <span className="text-[10px] sm:text-[11px] font-bold truncate w-full">Wave</span>
@@ -1928,11 +1981,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('om')}
-                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${
-                            paymentMethod === 'om'
+                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${paymentMethod === 'om'
                               ? "border-[#FF6600] bg-[#FFF2E8] text-[#FF6600] font-bold"
                               : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
-                          }`}
+                            }`}
                         >
                           <span className="text-base sm:text-lg">🟠</span>
                           <span className="text-[10px] sm:text-[11px] font-bold leading-tight truncate w-full">Orange Money</span>
@@ -1941,11 +1993,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('card')}
-                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${
-                            paymentMethod === 'card'
+                          className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${paymentMethod === 'card'
                               ? "border-black bg-gray-50 text-black font-bold"
                               : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
-                          }`}
+                            }`}
                         >
                           <CreditCard size={16} className="sm:w-[18px] sm:h-[18px]" />
                           <span className="text-[10px] sm:text-[11px] font-bold leading-tight truncate w-full">Carte Bancaire</span>
@@ -1972,7 +2023,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
                   {/* Colonne Droite : Récapitulatif Direct de l'Événement (5 cols) */}
                   <div className="lg:col-span-5 bg-[#fbf7f0] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-200 space-y-3.5 sm:space-y-4 min-w-0">
-                    
+
                     <div className="flex items-center gap-3 pb-3 border-b border-gray-200 min-w-0">
                       <div className="w-14 h-20 rounded-xl overflow-hidden relative border border-gray-300 shrink-0">
                         <Image
@@ -2059,7 +2110,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     </button>
 
                     <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-1">
-                      <Lock size={11} className="shrink-0" /> 
+                      <Lock size={11} className="shrink-0" />
                       <span>Paiement sécurisé — Lien officiel, QR Code actif &amp; Dashboard</span>
                     </p>
 

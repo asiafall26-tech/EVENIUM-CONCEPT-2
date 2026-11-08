@@ -25,7 +25,7 @@ function GallerySectionTitle({ eyebrow, title, lead }: { eyebrow: string; title:
 }
 
 export default function InvitationsPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("Mariage");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Tous");
 
   // Classement et présence sur le site choisis par l'admin (studio des modèles)
   const [rows, setRows] = useState<Record<string, ModelDefaultRow>>({});
@@ -57,14 +57,8 @@ export default function InvitationsPage() {
       )
       .subscribe();
 
-    const handleFocus = () => reload(true);
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleFocus);
-
     return () => {
       supabase.removeChannel(channel);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleFocus);
     };
   }, []);
   const siteModels = mockInvitationModels
@@ -85,8 +79,8 @@ export default function InvitationsPage() {
         id: customModelId(m.slug),
         name: m.name,
         type: m.invitation_type,
-        category: (m.event_types[0] ?? "Mariage") as (typeof mockInvitationModels)[number]["category"],
-        events: m.event_types,
+        category: (m.event_types?.[0] ?? "Mariage") as (typeof mockInvitationModels)[number]["category"],
+        events: Array.isArray(m.event_types) ? m.event_types : [],
         thumbnail: m.cover_url || "/invit-velours-cover.jpg",
         isPremium: true,
         description: "Création exclusive Evenium, personnalisable de A à Z.",
@@ -94,15 +88,47 @@ export default function InvitationsPage() {
       }))
     );
 
-  const categoryFilter = (m: (typeof siteModels)[number]) =>
-    selectedCategory === "Tous" ? true : m.events.includes(selectedCategory);
+  const countFor = (catId: string) => {
+    if (catId === "Tous") return siteModels.length;
+    if (catId === "Vœux") {
+      return siteModels.filter((m) => m.type === "voeu" || m.events.includes("Vœux")).length;
+    }
+    if (catId === "Couple") {
+      return siteModels.filter(
+        (m) =>
+          m.type === "couple" ||
+          m.type === "mot_doux" ||
+          m.events.includes("Couple") ||
+          m.events.includes("Invitations Couple") ||
+          m.events.includes("Mots Doux")
+      ).length;
+    }
+    return siteModels.filter((m) => m.events.includes(catId)).length;
+  };
+
+  const categoryFilter = (m: (typeof siteModels)[number]) => {
+    if (selectedCategory === "Tous") return true;
+    if (selectedCategory === "Vœux") {
+      return m.type === "voeu" || m.events.includes("Vœux");
+    }
+    if (selectedCategory === "Couple") {
+      return (
+        m.type === "couple" ||
+        m.type === "mot_doux" ||
+        m.events.includes("Couple") ||
+        m.events.includes("Invitations Couple") ||
+        m.events.includes("Mots Doux")
+      );
+    }
+    return m.events.includes(selectedCategory);
+  };
 
   const animatedModels = siteModels
     .filter((m) => m.type === "animée")
     .filter(categoryFilter);
 
   const cardModels = siteModels
-    .filter((m) => m.type === "carte")
+    .filter((m) => m.type !== "animée")
     .filter(categoryFilter);
 
   // Responsive grid layout based on model count
@@ -114,6 +140,24 @@ export default function InvitationsPage() {
       : count === 3
       ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10"
       : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8";
+
+  const categories = [
+    { id: "Tous", label: "Tous les modèles", icon: "✨" },
+    { id: "Vœux", label: "Vœux d'Exception", icon: "🌟" },
+    { id: "Couple", label: "Mots Doux & Couple", icon: "❤️" },
+    ...EVENT_TYPES.map((t) => ({
+      id: t,
+      label: t,
+      icon: EVENT_TYPE_ICONS[t] || "🎉",
+    })),
+  ].map((cat) => {
+    const count = countFor(cat.id);
+    return {
+      ...cat,
+      count: count || undefined,
+      soon: count === 0,
+    };
+  });
 
   return (
     <div className="bg-silk">
@@ -134,14 +178,7 @@ export default function InvitationsPage() {
       {/* Barre de sélection de catégorie d'événement */}
       <div className="max-w-4xl mx-auto mb-14">
         <div className="card-lux flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-2">
-          {[
-            { id: "Tous", label: "Tous les modèles", icon: "✨", count: siteModels.length, soon: false },
-            // Tous les types d'événements de l'application ; « Bientôt » tant qu'aucun modèle n'existe
-            ...EVENT_TYPES.map((t) => {
-              const count = siteModels.filter(m => m.events.includes(t)).length;
-              return { id: t, label: t, icon: EVENT_TYPE_ICONS[t], count: count || undefined, soon: count === 0 };
-            }),
-          ].map((cat) => {
+          {categories.map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
               <button
@@ -213,13 +250,13 @@ export default function InvitationsPage() {
         )}
       </div>
 
-      {/* Cartes Classiques */}
+      {/* Cartes, Vœux & Attentions d'Exception */}
       {cardModels.length > 0 && (
         <div className="max-w-6xl mx-auto mb-20">
           <GallerySectionTitle
-            eyebrow={`${cardModels.length} ${cardModels.length > 1 ? "cartes" : "carte"}`}
-            title={<>Cartes <span className="italic text-gold-foil">Classiques</span></>}
-            lead="L'élégance intemporelle d'un faire-part épuré, prêt à partager en un instant."
+            eyebrow={`${cardModels.length} ${cardModels.length > 1 ? "créations & cartes" : "création"}`}
+            title={<>Cartes, Vœux &amp; <span className="italic text-gold-foil">Attentions</span> d&apos;Exception</>}
+            lead="L'élégance intemporelle de la papeterie haute couture, lettres cachetées à la cire, vœux secrets et invitations romantiques."
           />
           <div className={gridClass(cardModels.length)}>
             {cardModels.map((model) => (
@@ -228,7 +265,7 @@ export default function InvitationsPage() {
                 href={previewHref(model)}
                 name={model.name}
                 image={model.thumbnail}
-                kind="carte"
+                kind={model.type as any}
                 eyebrow={`Modèle ${model.category}`}
                 description={model.description}
                 badge={model.isPremium ? "Signature" : undefined}

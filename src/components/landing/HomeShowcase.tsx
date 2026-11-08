@@ -59,14 +59,8 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
       )
       .subscribe();
 
-    const handleFocus = () => reload(true);
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleFocus);
-
     return () => {
       supabase.removeChannel(channel);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleFocus);
     };
   }, []);
 

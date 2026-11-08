@@ -84,20 +84,42 @@ export function invalidateCustomModelsCache() {
   customModelsCache = { published: null, all: null, timestamp: 0 };
 }
 
-export async function fetchCustomModels(supabase: SupabaseClient, opts: { publishedOnly?: boolean; force?: boolean } = {}): Promise<CustomModelRow[]> {
+const LIGHT_CUSTOM_COLUMNS = "slug, name, entry, cover_url, invitation_type, event_types, status, created_at, published_at";
+
+export async function fetchCustomModels(
+  supabase: SupabaseClient,
+  opts: { publishedOnly?: boolean; force?: boolean; full?: boolean } = {}
+): Promise<CustomModelRow[]> {
   const now = Date.now();
   const cacheKey = opts.publishedOnly ? "published" : "all";
-  if (!opts.force && customModelsCache[cacheKey] && now - customModelsCache.timestamp < 20000) {
+  if (!opts.force && !opts.full && customModelsCache[cacheKey] && now - customModelsCache.timestamp < 30000) {
     return customModelsCache[cacheKey]!;
   }
   try {
-    let q = supabase.from(CUSTOM_MODELS_TABLE).select("*").order("created_at", { ascending: false });
+    const selectCols = opts.full ? "*" : LIGHT_CUSTOM_COLUMNS;
+    let q = supabase.from(CUSTOM_MODELS_TABLE).select(selectCols).order("created_at", { ascending: false });
     if (opts.publishedOnly) q = q.eq("status", "published");
     const { data, error } = await q;
     if (error || !data) return customModelsCache[cacheKey] ?? [];
-    const res = data as CustomModelRow[];
-    customModelsCache[cacheKey] = res;
-    customModelsCache.timestamp = now;
+    const res = (data as any[]).map((r) => ({
+      slug: r.slug,
+      name: r.name,
+      entry: r.entry,
+      cover_url: r.cover_url ?? null,
+      invitation_type: r.invitation_type ?? "animée",
+      event_types: Array.isArray(r.event_types) ? r.event_types : [],
+      status: r.status,
+      created_at: r.created_at,
+      published_at: r.published_at ?? null,
+      updated_at: r.updated_at ?? r.created_at,
+      fields: r.fields ?? [],
+      content: r.content ?? {},
+      draft_content: r.draft_content ?? null,
+    })) as CustomModelRow[];
+    if (!opts.full) {
+      customModelsCache[cacheKey] = res;
+      customModelsCache.timestamp = now;
+    }
     return res;
   } catch (err) {
     console.warn("fetchCustomModels error:", err);

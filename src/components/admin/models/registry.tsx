@@ -18,7 +18,7 @@ import AnniversaireInvitation from "@/components/invitations/anniversaire/Annive
 import { ANNIVERSAIRE_MODEL_ID, DEFAULT_ANNIVERSAIRE, withDefaults as anniversaireDefaults } from "@/components/invitations/anniversaire/content";
 import { CartesStudio, type CartesStudioValue } from "@/components/cartes/CartesStudio";
 
-const DEFAULT_VOEU_CONTENT: CartesStudioValue = {
+export const DEFAULT_VOEU_CONTENT: CartesStudioValue = {
   recipient: "Mon Ami(e)",
   sender: "Moi",
   kicker: "Joyeux Anniversaire & Vœux d'Exception",
@@ -29,7 +29,7 @@ const DEFAULT_VOEU_CONTENT: CartesStudioValue = {
   paperTheme: "parchment",
 };
 
-const DEFAULT_MOT_DOUX_CONTENT: CartesStudioValue = {
+export const DEFAULT_MOT_DOUX_CONTENT: CartesStudioValue = {
   recipient: "Mon Amour",
   sender: "Celui qui t'aime",
   kicker: "Confidentiel & Secret",
@@ -40,7 +40,7 @@ const DEFAULT_MOT_DOUX_CONTENT: CartesStudioValue = {
   paperTheme: "rose",
 };
 
-const DEFAULT_COUPLE_CONTENT: CartesStudioValue = {
+export const DEFAULT_COUPLE_CONTENT: CartesStudioValue = {
   recipient: "Mon Cœur",
   sender: "Ton Amoureux",
   kicker: "Rendez-vous Intime • Privé",
@@ -73,7 +73,7 @@ function createCartesStudio(cardType: "voeu" | "mot_doux" | "invitation_couple")
   };
 }
 
-function CartesInvitationPreview({ content, onBackToEdit, onFinalize }: { content: any; onBackToEdit?: () => void; onFinalize?: () => void }) {
+export function CartesInvitationPreview({ content, onBackToEdit, onFinalize }: { content: any; onBackToEdit?: () => void; onFinalize?: () => void }) {
   const c = content || DEFAULT_VOEU_CONTENT;
   return (
     <div className="min-h-screen bg-[#0d0603] text-[#fbf7ee] flex flex-col select-none">
@@ -108,15 +108,14 @@ function CartesInvitationPreview({ content, onBackToEdit, onFinalize }: { conten
 
       <div className={`flex-1 flex items-center justify-center p-4 ${(onBackToEdit || onFinalize) ? "pt-[64px]" : ""}`}>
         <div className="w-full max-w-xl mx-auto space-y-4 my-auto">
-          <div className={`p-8 sm:p-12 rounded-3xl ${
-            c.paperTheme === "rose"
+          <div className={`p-8 sm:p-12 rounded-3xl ${c.paperTheme === "rose"
               ? "bg-[#fff5f6] text-[#2d1217]"
               : c.paperTheme === "parchment"
-              ? "bg-[#f8f0de] text-[#28180c]"
-              : c.paperTheme === "dark_velvet"
-              ? "bg-[#160f0c] text-[#fbf7ee]"
-              : "bg-[#fcf9f2] text-[#24170e]"
-          } border border-[#d9c08c] shadow-2xl text-center space-y-4 relative`}>
+                ? "bg-[#f8f0de] text-[#28180c]"
+                : c.paperTheme === "dark_velvet"
+                  ? "bg-[#160f0c] text-[#fbf7ee]"
+                  : "bg-[#fcf9f2] text-[#24170e]"
+            } border border-[#d9c08c] shadow-2xl text-center space-y-4 relative`}>
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#8f6f33]">
               {c.kicker || "Attention Particulière"}
             </span>

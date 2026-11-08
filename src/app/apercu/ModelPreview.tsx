@@ -31,10 +31,12 @@ export default function ModelPreview({ src, name, cover, showBack }: Props) {
     const custom = src.match(/^\/m\/([a-z0-9-]+)/);
     if (custom) return `/create?model=custom:${custom[1]}`;
     if (src.includes("rose-or")) return "/create?model=invit-10";
-    if (src.includes("sceau-dor")) return "/create?model=invit-02";
-    if (src.includes("velours")) return "/create?model=invit-01";
-    if (src.includes("ivoire")) return "/create?model=invit-03";
+    if (src.includes("sceau-dor")) return "/create?model=invit-8";
+    if (src.includes("velours") || src.includes("mariage")) return "/create?model=invit-7";
+    if (src.includes("ivoire")) return "/create?model=invit-9";
     if (src.includes("anniversaire")) return "/create?model=invit-11";
+    if (src.includes("voeux")) return "/create?model=voeu-exception";
+    if (src.includes("mots-doux")) return "/create?model=mot-doux";
     return "/create";
   })();
 

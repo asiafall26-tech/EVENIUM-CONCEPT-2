@@ -5,7 +5,7 @@ import { ProviderCampaign, CampaignPlanType, CampaignStatus, CAMPAIGN_PLANS } fr
 import { getContextualCampaigns } from "@/data/mock/campaigns";
 
 // Mémoire d'exécution partagée pour garantir la persistance immédiate même si la table SQL n'est pas encore créée
-let RUNTIME_CAMPAIGNS: ProviderCampaign[] = [];
+const RUNTIME_CAMPAIGNS: ProviderCampaign[] = [];
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
