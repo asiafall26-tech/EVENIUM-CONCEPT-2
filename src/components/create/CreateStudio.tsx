@@ -755,7 +755,56 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent, customModels, customContents]);
 
-  // Montant selon la formule
+  // Identification précise des 3 grands univers de services Evenium
+  const isVoeu = useMemo(() => {
+    const cat = (currentModel?.category || selectedEventCategory || "").toLowerCase();
+    const kind = (currentModel?.kind || "").toLowerCase();
+    const name = (currentModel?.name || "").toLowerCase();
+    return cat.includes("vœu") || cat.includes("voeu") || kind === "voeu" || name.includes("vœu") || name.includes("voeu") || name.includes("birthday queen");
+  }, [currentModel, selectedEventCategory]);
+
+  const isMotDoux = useMemo(() => {
+    const cat = (currentModel?.category || selectedEventCategory || "").toLowerCase();
+    const kind = (currentModel?.kind || "").toLowerCase();
+    const name = (currentModel?.name || "").toLowerCase();
+    return cat.includes("mots doux") || cat.includes("mot doux") || kind === "mot_doux" || name.includes("mot doux") || name.includes("lettre");
+  }, [currentModel, selectedEventCategory]);
+
+  const isCouple = useMemo(() => {
+    const cat = (currentModel?.category || selectedEventCategory || "").toLowerCase();
+    const kind = (currentModel?.kind || "").toLowerCase();
+    const name = (currentModel?.name || "").toLowerCase();
+    return !isMotDoux && (cat.includes("couple") || kind === "couple" || name.includes("rendez-vous") || name.includes("princesse") || name.includes("amour") || name.includes("notre rendez-vous"));
+  }, [currentModel, selectedEventCategory, isMotDoux]);
+
+  const isMicroService = isVoeu || isMotDoux || isCouple;
+  // Tarifs exacts demandés par l'utilisateur : Vœux 2 000 F, Mots Doux 1 000 F, Invitations Couple 4 000 F
+  const microFixedPrice = isMotDoux ? 1000 : isVoeu ? 2000 : isCouple ? 4000 : 5000;
+  const currentActualPrice = isMicroService ? microFixedPrice : (selectedPlan === "Gold" ? 20000 : selectedPlan === "Premium" ? 10000 : 5000);
+
+  // Message d'accompagnement chic qui précède le lien lors des partages WhatsApp / SMS
+  const defaultAccompaniment = useMemo(() => {
+    if (isVoeu) {
+      return "✨ Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux d'exception personnalisés en cliquant sur le lien :";
+    }
+    if (isMotDoux) {
+      return "💌 Mon cœur, j'ai préparé quelque chose de doux et secret rien que pour toi... Ouvre ta lettre scellée en cliquant sur le lien :";
+    }
+    if (isCouple) {
+      return "🥂 Une soirée d'exception, rien que nous deux... Découvre notre invitation secrète en cliquant sur le lien :";
+    }
+    return `✨ Nous avons l'immense honneur de vous convier à notre événement d'exception "${eventMetadata.name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :`;
+  }, [isVoeu, isMotDoux, isCouple, eventMetadata.name]);
+
+  const [accompanimentMessage, setAccompanimentMessage] = useState<string>("");
+
+  useEffect(() => {
+    if (!accompanimentMessage) {
+      setAccompanimentMessage(defaultAccompaniment);
+    }
+  }, [defaultAccompaniment, accompanimentMessage]);
+
+  // Montant selon la formule pour grands événements
   const planPrice = selectedPlan === "Gold" ? 20000 : selectedPlan === "Premium" ? 10000 : 5000;
 
   const choosePlan = (plan: 'Standard' | 'Premium' | 'Gold') => setSelectedPlan(plan);
@@ -775,7 +824,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     setErrorMessage("");
 
     try {
-      if (requiresEventDetails(selectedPlan)) {
+      if (!isMicroService && requiresEventDetails(selectedPlan)) {
         const missing = missingEventDetails(detailsWithInvitation);
         if (missing.length) {
           setShowDetailsErrors(true);
@@ -787,13 +836,15 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
       // 1. Si pas connecté, créer le compte avec les éléments d'authentification ou connecter l'organisateur existant
       if (!user) {
-        if (!email || !password || !fullName) {
-          throw new Error("Veuillez renseigner le nom de l'organisateur, votre adresse mail et un mot de passe pour enregistrer vos accès.");
+        if (!email || !fullName) {
+          throw new Error("Veuillez renseigner votre nom et une adresse email pour recevoir votre lien.");
         }
+
+        const generatedPassword = password || `Evenium-${Date.now()}`;
 
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
-          password,
+          password: generatedPassword,
           options: {
             data: {
               full_name: fullName,
@@ -803,61 +854,61 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         });
 
         if (authError && (authError.message.toLowerCase().includes('already') || authError.status === 400 || authError.status === 422)) {
-          // Si déjà enregistré, tentative de connexion directe
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-          if (signInError) {
-            throw new Error("Cet email est déjà associé à un compte. Veuillez saisir le mot de passe correspondant pour vous connecter.");
+          if (password) {
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+            if (!signInError && signInData?.user) {
+              user = signInData.user;
+            }
           }
-          user = signInData.user;
-        } else if (authError) {
-          throw authError;
-        } else {
+        } else if (authData?.user) {
           user = authData.user;
         }
       }
 
-      if (!user?.id) {
-        throw new Error("Impossible d'authentifier la session. Veuillez réessayer.");
-      }
+      // Si pas d'utilisateur Supabase auth (mode invité), créer un ID local pour ne jamais bloquer le client
+      const effectiveUserId = user?.id || `guest-${Date.now()}`;
 
       if (user?.id && fullName?.trim()) {
-        await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            full_name: fullName.trim(),
-            email: email,
-            role: 'client'
-          }, { onConflict: 'id' });
+        try {
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: user.id,
+              full_name: fullName.trim(),
+              email: email,
+              role: 'client'
+            }, { onConflict: 'id' });
+        } catch {}
       }
 
       // 2. Insérer le nouvel événement dérivé des informations de l'invitation
       const eventPayload: any = {
-        client_id: user.id,
+        client_id: effectiveUserId,
         name: eventMetadata.name,
-        // Depuis « Tous les modèles », le type suit le modèle choisi
-        type: selectedEventCategory === "Tous" ? currentModel.category : selectedEventCategory,
+        // Les 3 services clairement typés
+        type: isMotDoux ? "Mots Doux" : isVoeu ? "Vœux" : isCouple ? "Couple" : (selectedEventCategory === "Tous" ? currentModel.category : selectedEventCategory),
         date: eventMetadata.date,
         time: eventMetadata.time,
         location: eventMetadata.location,
-        plan: selectedPlan,
+        plan: isMotDoux ? "Mots Doux" : isVoeu ? "Vœux" : isCouple ? "Couple" : selectedPlan,
         format: isStaticCard ? 'Carte' : 'Animée',
         status: 'active',
         invitation_model_id: selectedModelId,
         invitation_title: eventMetadata.welcomeTitle,
-        invitation_message: eventMetadata.welcomeText,
+        invitation_message: accompanimentMessage || eventMetadata.welcomeText,
         invitation_content: (() => {
-          const c = eventMetadata.contentJson;
-          if (!c) return c;
+          const c = eventMetadata.contentJson || {};
           const m = customOf(selectedModelId);
-          if (m) return { values: isStaticCard ? withoutMusicValues(m.fields, c.values) : c.values };
-          return forInvitationKind(c, isStaticCard);
+          const baseContent = m ? (isStaticCard ? withoutMusicValues(m.fields, c.values) : c.values) : forInvitationKind(c, isStaticCard);
+          return {
+            ...(typeof baseContent === "object" ? baseContent : { values: baseContent }),
+            accompanimentMessage: accompanimentMessage,
+          };
         })(),
-        // Détails saisis à l'achat (Premium / Gold) : nombre d'invités, date, lieu, budget…
-        ...(requiresEventDetails(selectedPlan) ? eventDetailsToRow(detailsWithInvitation) : {})
+        ...(!isMicroService && requiresEventDetails(selectedPlan) ? eventDetailsToRow(detailsWithInvitation) : {})
       };
 
       let { data: newEvent, error: eventError } = await supabase
@@ -885,17 +936,19 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         console.warn("Événement fallback local :", eventError);
         newEvent = {
           id: `evt-${Date.now()}`,
-          client_id: user.id,
+          client_id: effectiveUserId,
           ...eventPayload
         };
       }
 
-      // 3. Enregistrer la transaction d'achat
+      // 3. Enregistrer la transaction d'achat avec le montant exact
       try {
         await supabase.from('transactions').insert([{
           event_id: newEvent.id,
-          libelle: `Achat Formule ${selectedPlan} (${currentModel.name})`,
-          montant: planPrice,
+          libelle: isMicroService
+            ? `Achat ${isMotDoux ? "Mot Doux" : isVoeu ? "Vœu d'Exception" : "Invitation Couple"} (${currentModel.name})`
+            : `Achat Formule ${selectedPlan} (${currentModel.name})`,
+          montant: currentActualPrice,
           type: 'revenu',
           date: new Date().toISOString()
         }]);
@@ -1082,7 +1135,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
               <button
                 type="button"
                 onClick={() => setIsPreviewFullScreenOpen(true)}
-                className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-300 hover:border-black bg-white text-gray-800 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95"
+                className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-300 hover:border-black bg-white text-gray-800 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 cursor-pointer"
               >
                 <Eye size={16} className="text-[#b8924a] shrink-0" />
                 <span className="sm:hidden">Aperçu</span>
@@ -1091,20 +1144,81 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
               <button
                 type="button"
-                onClick={() => {
-                  if (isCardStudioModel) {
-                    setIsCartesModalOpen(true);
-                  } else {
-                    setIsCheckoutModalOpen(true);
-                  }
-                }}
-                className="px-3 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 border border-[#b8924a]/30 transition-all flex items-center justify-center gap-1.5 sm:gap-2 group active:scale-95"
+                onClick={() => setIsCheckoutModalOpen(true)}
+                className="px-3 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#f0d999] rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 border border-[#b8924a]/40 transition-all flex items-center justify-center gap-1.5 sm:gap-2 group active:scale-95 cursor-pointer"
               >
-                <Crown size={16} className="text-[#b8924a] shrink-0" />
-                <span className="sm:hidden">Valider</span>
-                <span className="hidden sm:inline">Valider &amp; Finaliser l&apos;achat</span>
-                <ArrowRight size={14} className="hidden sm:block group-hover:translate-x-1 transition-transform" />
+                <Crown size={16} className="text-[#d4af37] shrink-0" />
+                <span className="sm:hidden">Valider ({currentActualPrice.toLocaleString('fr-FR')} F)</span>
+                <span className="hidden sm:inline">Valider ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
+                <ArrowRight size={14} className="hidden sm:block group-hover:translate-x-1 transition-transform text-[#f0d999]" />
               </button>
+            </div>
+          </div>
+
+          {/* Bloc d'édition du petit message d'accompagnement chic (WhatsApp & Partage) */}
+          <div className="bg-gradient-to-r from-[#fdfbf7] via-white to-[#fdfbf7] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-[#b8924a]/30 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8f6f33] bg-[#fbf7f0] px-2.5 py-0.5 rounded-full border border-[#b8924a]/25">
+                  Haute Couture &amp; Partage Chic
+                </span>
+                <h3 className="font-serif text-base sm:text-lg font-bold text-gray-900 mt-1 flex items-center gap-1.5">
+                  <span>✉️ Message d&apos;accompagnement chic (WhatsApp / SMS)</span>
+                </h3>
+                <p className="text-[11px] sm:text-xs text-gray-500">
+                  Ce texte soigné précédera votre lien officiel lors de vos envois à vos convives ou à votre destinataire.
+                </p>
+              </div>
+
+              {/* Suggestions rapides de tons */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isVoeu) setAccompanimentMessage("🌟 Que cette nouvelle étape de vie t'apporte bonheur, santé et réussite éclatante. Ouvre ta carte de vœux officielle ici :");
+                    else if (isMotDoux) setAccompanimentMessage("💌 Pour que tu n'oublies jamais à quel point tu comptes pour moi... Découvre ce mot doux qui t'est dédié :");
+                    else if (isCouple) setAccompanimentMessage("🥂 Ce soir, le monde s'arrête pour nous deux. J'ai imaginé notre rendez-vous, découvre l'invitation ici :");
+                    else setAccompanimentMessage(`⚜️ Invitation d'Honneur : Nous sollicitons le privilège de votre présence à notre célébration "${eventMetadata.name}". Découvrez votre faire-part interactif :`);
+                  }}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white border border-[#b8924a]/35 text-[#8f6f33] hover:bg-[#fbf7f0] transition-colors cursor-pointer"
+                >
+                  ⚜️ Ton Prestige
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isVoeu) setAccompanimentMessage("🎂 Joyeux Anniversaire ! Une dose d'amour, de rires et de joie pour ta journée spéciale. Clique ici pour voir tes vœux :");
+                    else if (isMotDoux) setAccompanimentMessage("❤️ Un petit sourire pour illuminer ta journée. J'ai déposé mes tendres pensées ici rien que pour toi :");
+                    else if (isCouple) setAccompanimentMessage("🕯️ Prépare-toi à une soirée magique en tête-à-tête... Ton invitation secrète t'attend ici :");
+                    else setAccompanimentMessage(`✨ Grande nouvelle ! Nous serions tellement heureux de vous compter parmi nous pour "${eventMetadata.name}". Retrouvez tous les détails ici :`);
+                  }}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white border border-[#b8924a]/35 text-[#8f6f33] hover:bg-[#fbf7f0] transition-colors cursor-pointer"
+                >
+                  🎉 Ton Chaleureux
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              rows={2}
+              value={accompanimentMessage}
+              onChange={(e) => setAccompanimentMessage(e.target.value)}
+              placeholder="Rédigez votre message d'accompagnement chic..."
+              className="w-full bg-white border border-gray-200 focus:border-[#b8924a] rounded-xl p-3 text-xs text-gray-800 leading-relaxed outline-none focus:ring-1 focus:ring-[#b8924a]"
+            />
+
+            {/* Aperçu du partage WhatsApp en direct */}
+            <div className="bg-[#f0f9f3] border border-emerald-200/70 rounded-xl p-2.5 sm:p-3 flex items-start gap-2.5 text-[11px] text-emerald-950">
+              <span className="text-base shrink-0">📱</span>
+              <div className="min-w-0 flex-1">
+                <span className="font-bold text-emerald-800 block mb-0.5">Aperçu WhatsApp en direct :</span>
+                <p className="italic text-gray-700 whitespace-pre-line leading-relaxed">
+                  {accompanimentMessage || "Votre message d'accompagnement..."}
+                </p>
+                <span className="text-emerald-700 font-mono text-[10px] mt-1 block">
+                  👉 https://evenium.com/invite/votre-lien-officiel
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1527,19 +1641,23 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
       )}
 
       {isCheckoutModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
-          <div className="w-full max-w-5xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-3 sm:my-auto animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[150] flex items-start justify-center p-3 sm:p-6 md:p-8 py-6 sm:py-10 md:py-14 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+          <div className="w-full max-w-4xl lg:max-w-5xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
 
             {/* Header Modal */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-gray-100 bg-[#fbf7f0] gap-3">
               <div className="min-w-0">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33] bg-white px-2.5 py-0.5 rounded-full border border-[#b8924a]/30">
-                  {standardSuccessEvent ? "Paiement Validé · Accès Dashboard Débloqué" : "Étape finale"}
+                  {standardSuccessEvent
+                    ? "Paiement Validé · Lien Officiel Débloqué"
+                    : isMicroService
+                    ? `${isMotDoux ? "💌 Service Les Mots Doux" : isVoeu ? "🌟 Service Vœux d'Exception" : "🥂 Service Invitation Couple"} · ${microFixedPrice.toLocaleString('fr-FR')} FCFA`
+                    : "Étape finale · Formule & Organisation"}
                 </span>
                 <h3 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 mt-1 leading-snug">
                   {standardSuccessEvent
-                    ? "Votre Événement & Votre Dashboard sont Prêts !"
-                    : "Activez votre Événement & Partagez votre Invitation"}
+                    ? (isMicroService ? "Votre Création est Prête à Être Partagée !" : "Votre Événement & Votre Dashboard sont Prêts !")
+                    : (isMicroService ? `Finalisez votre ${isMotDoux ? "Mot Doux" : isVoeu ? "Vœu d'Exception" : "Invitation Couple"} & Obtenez votre Lien` : "Activez votre Événement & Partagez votre Invitation")}
                 </h3>
               </div>
               <button
@@ -1548,7 +1666,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   setIsCheckoutModalOpen(false);
                   if (standardSuccessEvent) setStandardSuccessEvent(null);
                 }}
-                className="w-9 h-9 rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-black flex items-center justify-center transition-colors shrink-0"
+                className="w-9 h-9 rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-black flex items-center justify-center transition-colors shrink-0 cursor-pointer shadow-xs"
               >
                 <X size={18} />
               </button>
@@ -1564,13 +1682,17 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     </div>
                   </div>
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8f6f33] bg-[#fbf7f0] px-3 py-1 rounded-full border border-[#b8924a]/30">
-                    Formule {standardSuccessEvent.plan || selectedPlan} Activée · {planPrice.toLocaleString('fr-FR')} FCFA
+                    {isMicroService
+                      ? `${standardSuccessEvent.type || "Création"} Activée · ${currentActualPrice.toLocaleString('fr-FR')} FCFA`
+                      : `Formule ${standardSuccessEvent.plan || selectedPlan} Activée · ${planPrice.toLocaleString('fr-FR')} FCFA`}
                   </span>
                   <h3 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900 mt-2">
-                    Félicitations {fullName || "Organisateur"} !
+                    Félicitations {fullName || "Expéditeur"} !
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1.5 leading-relaxed">
-                    Votre paiement est validé. Votre invitation interactive et vos accès à votre Dashboard Organisateur sont désormais actifs.
+                    {isMicroService
+                      ? "Votre paiement est confirmé. Votre création interactive est active et diffusable immédiatement en 1 clic !"
+                      : "Votre paiement est validé. Votre invitation interactive et vos accès à votre Dashboard Organisateur sont désormais actifs."}
                   </p>
                 </div>
 
@@ -1588,7 +1710,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-[9px] font-bold uppercase tracking-wider text-[#8f6f33]">
-                        {currentModel.badge} · Invitation &amp; Dashboard Débloqués
+                        {currentModel.badge} · {isMicroService ? "Lien Direct Prêt à Envoyer" : "Invitation & Dashboard Débloqués"}
                       </span>
                       <h4 className="font-serif font-bold text-gray-900 text-sm truncate">
                         {eventMetadata.name}
@@ -1603,7 +1725,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   <div className="pt-1">
                     <label className="block text-[11px] font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                       <Share2 size={13} className="text-[#b8924a]" />
-                      Lien officiel de votre invitation (partageable partout) :
+                      Lien officiel direct de votre création (copiable en 1 clic) :
                     </label>
                     <div className="flex items-center gap-2">
                       <input
@@ -1620,10 +1742,11 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                           setCopiedLink(true);
                           setTimeout(() => setCopiedLink(false), 2500);
                         }}
-                        className={`px-3 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${copiedLink
+                        className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
+                          copiedLink
                             ? "bg-emerald-600 text-white"
                             : "bg-black hover:bg-gray-800 text-[#b8924a] border border-[#b8924a]/30"
-                          }`}
+                        }`}
                       >
                         {copiedLink ? (
                           <>
@@ -1633,7 +1756,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         ) : (
                           <>
                             <Share2 size={14} />
-                            <span>Copier</span>
+                            <span>Copier le lien</span>
                           </>
                         )}
                       </button>
@@ -1644,7 +1767,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     <a
                       href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                        `✨ Vous êtes cordialement invité(e) : ${eventMetadata.name} !\n\nDécouvrez votre invitation interactive de prestige ici :\n${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${standardSuccessEvent.id}`
+                        `${accompanimentMessage}\n\n👉 ${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${standardSuccessEvent.id}`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1661,9 +1784,24 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                       className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
                     >
                       <Eye size={15} className="text-[#b8924a]" />
-                      <span>Tester mon invitation</span>
+                      <span>Tester / Voir mon lien</span>
                     </a>
                   </div>
+
+                  {/* Bouton pour copier le message complet avec lien */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fullText = `${accompanimentMessage}\n\n👉 ${window.location.origin}/invite/${standardSuccessEvent.id}`;
+                      navigator.clipboard.writeText(fullText);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 2500);
+                    }}
+                    className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>📋</span>
+                    <span>Copier le message complet d&apos;accompagnement + lien</span>
+                  </button>
 
                   {/* QR Code Actif & Téléchargements */}
                   <div className="pt-2">
@@ -1675,65 +1813,64 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     />
                   </div>
 
-                  {/* Rappel des éléments d'authentification */}
-                  <div className="p-3.5 bg-white/90 rounded-2xl border border-gray-200/90 text-[11px] text-gray-700 space-y-1.5">
-                    <p className="font-bold text-gray-900 flex items-center gap-1.5">
-                      <Lock size={12} className="text-[#b8924a]" /> Éléments d&apos;authentification de l&apos;organisateur :
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                      <div>
-                        <span className="text-gray-400">Nom de l&apos;organisateur :</span>{" "}
-                        <strong className="text-gray-900">{fullName || "Non spécifié"}</strong>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Identifiant Email :</span>{" "}
-                        <strong className="text-gray-900">{email || currentUser?.email}</strong>
-                      </div>
+                  {!isMicroService && (
+                    <div className="p-4 bg-gradient-to-r from-[#fbf7f0] via-[#f7f0e4] to-[#fbf7f0] rounded-2xl border border-[#b8924a]/35 text-[11px] text-gray-800 space-y-1.5">
+                      <p className="font-bold flex items-center gap-1.5 text-xs text-[#8f6f33]">
+                        <Crown size={14} className="text-[#b8924a]" /> Espace Dashboard Organisateur Débloqué !
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-gray-600">
+                        Félicitations ! Vous pouvez désormais piloter votre organisation, suivre vos confirmations, télécharger vos cartons numériques et personnaliser vos contenus en toute liberté depuis votre tableau de bord.
+                      </p>
                     </div>
-                    <p className="text-[10px] text-gray-500 pt-1 border-t border-gray-100">
-                      💡 Vos identifiants vous permettent d&apos;accéder à tout moment à votre Dashboard Organisateur pour suivre votre événement et retrouver votre lien.
-                    </p>
-                  </div>
-
-                  {/* Information Espace Dashboard Organisateur Débloqué */}
-                  <div className="p-4 bg-gradient-to-r from-[#fbf7f0] via-[#f7f0e4] to-[#fbf7f0] rounded-2xl border border-[#b8924a]/35 text-[11px] text-gray-800 space-y-1.5">
-                    <p className="font-bold flex items-center gap-1.5 text-xs text-[#8f6f33]">
-                      <Crown size={14} className="text-[#b8924a]" /> Espace Dashboard Organisateur Débloqué !
-                    </p>
-                    <p className="text-[11px] leading-relaxed text-gray-600">
-                      Félicitations ! Vous pouvez désormais piloter votre organisation, suivre vos confirmations, télécharger vos cartons numériques et personnaliser vos contenus en toute liberté depuis votre tableau de bord.
-                    </p>
-                  </div>
+                  )}
                 </div>
 
                 {/* Boutons de navigation post-activation */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsCheckoutModalOpen(false);
-                      const targetId = standardSuccessEvent.id;
-                      setStandardSuccessEvent(null);
-                      window.location.href = `/dashboard/events/${targetId}`;
-                    }}
-                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-sm shadow-xl shadow-[#b8924a]/25 hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/60 cursor-pointer"
-                  >
-                    <LayoutDashboard size={17} />
-                    <span>Accéder à mon Dashboard Organisateur</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  {!isMicroService ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCheckoutModalOpen(false);
+                          const targetId = standardSuccessEvent.id;
+                          setStandardSuccessEvent(null);
+                          window.location.href = `/dashboard/events/${targetId}`;
+                        }}
+                        className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-[#b8924a] via-[#F3E5AB] to-[#b8924a] text-black font-extrabold text-sm shadow-xl shadow-[#b8924a]/25 hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/60 cursor-pointer"
+                      >
+                        <LayoutDashboard size={17} />
+                        <span>Accéder à mon Dashboard Organisateur</span>
+                        <ArrowRight size={15} />
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsCheckoutModalOpen(false);
-                      setStandardSuccessEvent(null);
-                      window.location.href = '/dashboard';
-                    }}
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs sm:text-sm border border-gray-300 shadow-xs transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-                  >
-                    <span>Tous mes événements</span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCheckoutModalOpen(false);
+                          setStandardSuccessEvent(null);
+                          window.location.href = '/dashboard';
+                        }}
+                        className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs sm:text-sm border border-gray-300 shadow-xs transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                      >
+                        <span>Tous mes événements</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCheckoutModalOpen(false);
+                        setStandardSuccessEvent(null);
+                        window.location.href = isVoeu ? '/voeux' : '/mots-doux';
+                      }}
+                      className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-black via-gray-900 to-black text-[#f0d999] font-extrabold text-xs sm:text-sm shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/40 cursor-pointer"
+                    >
+                      <Sparkles size={16} className="text-[#d4af37]" />
+                      <span>Créer une autre attention</span>
+                      <ArrowRight size={15} />
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1751,262 +1888,358 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   {/* Colonne Gauche : Formule, Compte & Paiement (7 cols) */}
                   <div className="lg:col-span-7 space-y-5 sm:space-y-6 min-w-0">
 
-                    {/* 1. Choix Formule */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                          <Crown size={15} className="text-[#b8924a] shrink-0" /> 1. Choisissez votre formule Evenium
-                        </label>
-                      </div>
-                      <p className="text-[11px] text-gray-500 mb-3">
-                        Sélectionnez la formule correspondant à votre besoin d&apos;organisation.
-                      </p>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                        {/* Formule Standard */}
-                        <div
-                          onClick={() => choosePlan('Standard')}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Standard'
-                              ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                            }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-serif font-bold text-sm text-gray-900">Standard</span>
-                              {selectedPlan === 'Standard' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
+                    {/* Tunnel simplifié pour Micro-Services : Vœux, Mots Doux, Couple */}
+                    {isMicroService ? (
+                      <div className="space-y-5">
+                        {/* Offre dédiée avec tarif fixe */}
+                        <div className="bg-gradient-to-br from-[#fbf7f0] via-[#f7f0e4] to-[#fbf7f0] p-4 sm:p-5 rounded-2xl border-2 border-[#b8924a]/80 shadow-sm space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8f6f33] bg-white/90 px-2.5 py-0.5 rounded-full border border-[#b8924a]/30">
+                                Service Dédié · Accès Direct
+                              </span>
+                              <h4 className="font-serif font-bold text-gray-900 text-lg sm:text-xl mt-1">
+                                {isMotDoux ? "💌 Les Mots Doux" : isVoeu ? "✨ Vœux d'Exception" : "🥂 Invitation Couple"}
+                              </h4>
+                              <p className="text-xs text-gray-600 mt-0.5">
+                                {isMotDoux
+                                  ? "Lettre d'amour scellée interactive & confidentielle pour faire fondre son cœur."
+                                  : isVoeu
+                                  ? "Vœux d'anniversaire et de félicitations féeriques en haute définition."
+                                  : "Invitation intime et romantique pour une soirée exclusive à deux."}
+                              </p>
                             </div>
-                            <p className="text-lg font-bold text-black mb-2">
-                              5 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
-                            </p>
-                            <ul className="text-[10px] text-gray-600 space-y-1.5">
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Faire-part digital interactif</span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Accès Dashboard Organisateur</strong></span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Lien officiel direct &amp; QR Code actif</strong></span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Téléchargement PNG &amp; Carton imprimable</span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Partage WhatsApp &amp; réseaux illimité</span>
-                              </li>
-                            </ul>
+                            <div className="text-right shrink-0 bg-white/85 px-3.5 py-2 rounded-xl border border-[#b8924a]/40 shadow-xs">
+                              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Tarif Unique</span>
+                              <span className="font-serif font-black text-xl sm:text-2xl text-black">
+                                {microFixedPrice.toLocaleString('fr-FR')}
+                              </span>
+                              <span className="text-[10px] text-gray-600 font-bold block">FCFA</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[#b8924a]/20 text-[11px] text-gray-700">
+                            <div className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 size={13} className="text-[#b8924a] shrink-0" />
+                              <span>Modèle personnalisé &amp; animations</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 size={13} className="text-[#b8924a] shrink-0" />
+                              <span><strong>Lien direct copiable en 1 clic</strong></span>
+                            </div>
+                            <div className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 size={13} className="text-[#b8924a] shrink-0" />
+                              <span>Message chic WhatsApp inclus</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 size={13} className="text-[#b8924a] shrink-0" />
+                              <span>QR Code actif &amp; validité illimitée</span>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Formule Premium */}
-                        <div
-                          onClick={() => choosePlan('Premium')}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Premium'
-                              ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                            }`}
-                        >
+                        {/* Coordonnées Simplifiées */}
+                        <div className="bg-[#fbf7f0] p-4 sm:p-5 rounded-2xl border border-gray-200 space-y-3">
                           <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-serif font-bold text-sm text-gray-900">Premium</span>
-                              {selectedPlan === 'Premium' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
-                            </div>
-                            <p className="text-lg font-bold text-black mb-2">
-                              10 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
-                            </p>
-                            <ul className="text-[10px] text-gray-600 space-y-1.5">
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Tout le pack Standard inclus</span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Accès Dashboard Organisateur</strong></span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Suivi des confirmations RSVP</span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Programme &amp; GPS Maps</span>
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-
-                        {/* Formule Gold */}
-                        <div
-                          onClick={() => choosePlan('Gold')}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${selectedPlan === 'Gold'
-                              ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                            }`}
-                        >
-                          <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-                            Recommandée
-                          </span>
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-serif font-bold text-sm text-gray-900">Gold VIP</span>
-                              {selectedPlan === 'Gold' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
-                            </div>
-                            <p className="text-lg font-bold text-black mb-2">
-                              20 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
-                            </p>
-                            <ul className="text-[10px] text-gray-600 space-y-1.5">
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Tout le pack Premium inclus</span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Dashboard complet de Gestion</strong></span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Budget &amp; Checklist Jour J</span>
-                              </li>
-                              <li className="flex items-start gap-1 font-medium">
-                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span>Prestataires &amp; Support 7j/7</span>
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Détails de l'événement : obligatoires pour Premium et Gold */}
-                    {requiresEventDetails(selectedPlan) && (
-                      <div className="pt-2 border-t border-gray-100">
-                        <div className="mb-3">
-                          <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                            <Crown size={15} className="text-[#b8924a] shrink-0" /> Détails de votre événement
-                          </label>
-                          <p className="text-[11px] text-gray-500 mt-0.5">
-                            Inclus dans la formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} : ces informations sont reportées automatiquement dans votre dashboard, où vous pourrez les modifier.
-                          </p>
-                        </div>
-                        <div className="bg-[#fbf7f0] p-3 sm:p-4 rounded-2xl border border-[#b8924a]/30 overflow-hidden">
-                          <EventDetailsFields value={detailsWithInvitation} onChange={setEventDetails} showErrors={showDetailsErrors} compact />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 2. Nom de l'Organisateur & Éléments d'Authentification */}
-                    <div className={`pt-2 border-t border-gray-100 ${inDashboard && currentUser ? 'hidden' : ''}`}>
-                      <div className="mb-2.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                          <User size={15} className="text-[#b8924a] shrink-0" /> 2. Nom de l&apos;organisateur &amp; Éléments d&apos;authentification
-                        </label>
-                        <p className="text-[11px] text-gray-500 mt-0.5">
-                          Renseignez le nom de l&apos;organisateur et vos éléments d&apos;authentification (mail et mot de passe) pour télécharger votre lien officiel, votre QR Code actif et accéder à votre tableau de bord Organisateur.
-                        </p>
-                      </div>
-
-                      {currentUser ? (
-                        <div className="space-y-3 bg-[#fbf7f0] p-3.5 sm:p-4 rounded-2xl border border-[#b8924a]/30">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                              <span className="text-xs font-bold text-gray-900 truncate">Compte Organisateur vérifié</span>
-                            </div>
-                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full shrink-0">
-                              Connecté
-                            </span>
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                              Nom de l&apos;organisateur
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                              <User size={15} className="text-[#b8924a] shrink-0" /> Coordonnées &amp; Signature
                             </label>
-                            <input
-                              type="text"
-                              required={!inDashboard}
-                              value={fullName}
-                              onChange={(e) => setFullName(e.target.value)}
-                              placeholder="Ex: Alexandre Diop ou Famille Diop"
-                              className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
-                            />
-                          </div>
-
-                          <div className="p-2.5 bg-white rounded-xl border border-gray-200 flex items-center justify-between text-xs gap-2 min-w-0">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Mail size={14} className="text-gray-400 shrink-0" />
-                              <span className="text-gray-600 font-medium truncate">{currentUser.email}</span>
-                            </div>
-                            <span className="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">Authentification validée</span>
-                          </div>
-
-                          <p className="text-[10px] text-gray-500 italic">
-                            💡 Vos modèles et votre lien de téléchargement direct seront rattachés à ce compte organisateur.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 bg-gray-50 p-3.5 sm:p-4 rounded-2xl border border-gray-200">
-                          <div>
-                            <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
-                              <span>Nom de l&apos;organisateur</span>
-                              <span className="text-[10px] font-normal text-gray-500">Requis</span>
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={fullName}
-                              onChange={(e) => setFullName(e.target.value)}
-                              placeholder="Ex: Alexandre Diop (ou Famille Diop)"
-                              className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
-                            />
+                            <p className="text-[11px] text-gray-500 mt-0.5">
+                              Indiquez votre nom ou signature et votre email pour la confirmation et le lien direct.
+                            </p>
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="min-w-0">
-                              <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
-                                <span>Adresse Mail (Identifiant)</span>
-                                <Mail size={12} className="text-gray-400 shrink-0" />
+                            <div>
+                              <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                                Votre Nom ou Signature
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                placeholder={isMotDoux ? "Ex: Mon Chéri, Ton Amoureux..." : "Ex: Alexandre Diop"}
+                                className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                                Votre Adresse Email
                               </label>
                               <input
                                 type="email"
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="organisateur@exemple.com"
-                                className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
+                                placeholder="votre-email@exemple.com"
+                                className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
                               />
                             </div>
-
-                            <div className="min-w-0">
-                              <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
-                                <span>Mot de passe</span>
-                                <Lock size={12} className="text-gray-400 shrink-0" />
-                              </label>
-                              <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/60 text-[10px] text-amber-900 flex items-start gap-2">
-                            <Lock size={13} className="text-[#b8924a] shrink-0 mt-0.5" />
-                            <span>
-                              Ces éléments d&apos;authentification (mail et mot de passe) vous permettront d&apos;avoir accès à votre modèle par téléchargement direct du lien d&apos;invitation à tout moment.
-                            </span>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* 1. Choix Formule Grands Événements */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                              <Crown size={15} className="text-[#b8924a] shrink-0" /> 1. Choisissez votre formule Evenium
+                            </label>
+                          </div>
+                          <p className="text-[11px] text-gray-500 mb-3">
+                            Sélectionnez la formule correspondant à votre besoin d&apos;organisation.
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                            {/* Formule Standard */}
+                            <div
+                              onClick={() => choosePlan('Standard')}
+                              className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Standard'
+                                  ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
+                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                                }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-serif font-bold text-sm text-gray-900">Standard</span>
+                                  {selectedPlan === 'Standard' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
+                                </div>
+                                <p className="text-lg font-bold text-black mb-2">
+                                  5 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
+                                </p>
+                                <ul className="text-[10px] text-gray-600 space-y-1.5">
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Faire-part digital interactif</span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span><strong>Accès Dashboard Organisateur</strong></span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span><strong>Lien officiel direct &amp; QR Code actif</strong></span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Téléchargement PNG &amp; Carton imprimable</span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Partage WhatsApp &amp; réseaux illimité</span>
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+
+                            {/* Formule Premium */}
+                            <div
+                              onClick={() => choosePlan('Premium')}
+                              className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Premium'
+                                  ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
+                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                                }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-serif font-bold text-sm text-gray-900">Premium</span>
+                                  {selectedPlan === 'Premium' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
+                                </div>
+                                <p className="text-lg font-bold text-black mb-2">
+                                  10 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
+                                </p>
+                                <ul className="text-[10px] text-gray-600 space-y-1.5">
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Tout le pack Standard inclus</span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span><strong>Accès Dashboard Organisateur</strong></span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Suivi des confirmations RSVP</span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Programme &amp; GPS Maps</span>
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+
+                            {/* Formule Gold */}
+                            <div
+                              onClick={() => choosePlan('Gold')}
+                              className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${selectedPlan === 'Gold'
+                                  ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
+                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                                }`}
+                            >
+                              <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                                Recommandée
+                              </span>
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-serif font-bold text-sm text-gray-900">Gold VIP</span>
+                                  {selectedPlan === 'Gold' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
+                                </div>
+                                <p className="text-lg font-bold text-black mb-2">
+                                  20 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
+                                </p>
+                                <ul className="text-[10px] text-gray-600 space-y-1.5">
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Tout le pack Premium inclus</span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span><strong>Dashboard complet de Gestion</strong></span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Budget &amp; Checklist Jour J</span>
+                                  </li>
+                                  <li className="flex items-start gap-1 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Prestataires &amp; Support 7j/7</span>
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Détails de l'événement : obligatoires pour Premium et Gold */}
+                        {requiresEventDetails(selectedPlan) && (
+                          <div className="pt-2 border-t border-gray-100">
+                            <div className="mb-3">
+                              <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                                <Crown size={15} className="text-[#b8924a] shrink-0" /> Détails de votre événement
+                              </label>
+                              <p className="text-[11px] text-gray-500 mt-0.5">
+                                Inclus dans la formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} : ces informations sont reportées automatiquement dans votre dashboard, où vous pourrez les modifier.
+                              </p>
+                            </div>
+                            <div className="bg-[#fbf7f0] p-3 sm:p-4 rounded-2xl border border-[#b8924a]/30 overflow-hidden">
+                              <EventDetailsFields value={detailsWithInvitation} onChange={setEventDetails} showErrors={showDetailsErrors} compact />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 2. Nom de l'Organisateur & Éléments d'Authentification */}
+                        <div className={`pt-2 border-t border-gray-100 ${inDashboard && currentUser ? 'hidden' : ''}`}>
+                          <div className="mb-2.5">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+                              <User size={15} className="text-[#b8924a] shrink-0" /> 2. Nom de l&apos;organisateur &amp; Éléments d&apos;authentification
+                            </label>
+                            <p className="text-[11px] text-gray-500 mt-0.5">
+                              Renseignez le nom de l&apos;organisateur et vos éléments d&apos;authentification (mail et mot de passe) pour télécharger votre lien officiel, votre QR Code actif et accéder à votre tableau de bord Organisateur.
+                            </p>
+                          </div>
+
+                          {currentUser ? (
+                            <div className="space-y-3 bg-[#fbf7f0] p-3.5 sm:p-4 rounded-2xl border border-[#b8924a]/30">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                                  <span className="text-xs font-bold text-gray-900 truncate">Compte Organisateur vérifié</span>
+                                </div>
+                                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full shrink-0">
+                                  Connecté
+                                </span>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                                  Nom de l&apos;organisateur
+                                </label>
+                                <input
+                                  type="text"
+                                  required={!inDashboard}
+                                  value={fullName}
+                                  onChange={(e) => setFullName(e.target.value)}
+                                  placeholder="Ex: Alexandre Diop ou Famille Diop"
+                                  className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
+                                />
+                              </div>
+
+                              <div className="p-2.5 bg-white rounded-xl border border-gray-200 flex items-center justify-between text-xs gap-2 min-w-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Mail size={14} className="text-gray-400 shrink-0" />
+                                  <span className="text-gray-600 font-medium truncate">{currentUser.email}</span>
+                                </div>
+                                <span className="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">Authentification validée</span>
+                              </div>
+
+                              <p className="text-[10px] text-gray-500 italic">
+                                💡 Vos modèles et votre lien de téléchargement direct seront rattachés à ce compte organisateur.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3 bg-gray-50 p-3.5 sm:p-4 rounded-2xl border border-gray-200">
+                              <div>
+                                <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
+                                  <span>Nom de l&apos;organisateur</span>
+                                  <span className="text-[10px] font-normal text-gray-500">Requis</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={fullName}
+                                  onChange={(e) => setFullName(e.target.value)}
+                                  placeholder="Ex: Alexandre Diop (ou Famille Diop)"
+                                  className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-[#b8924a] outline-none"
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="min-w-0">
+                                  <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
+                                    <span>Adresse Mail (Identifiant)</span>
+                                    <Mail size={12} className="text-gray-400 shrink-0" />
+                                  </label>
+                                  <input
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="organisateur@exemple.com"
+                                    className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
+                                  />
+                                </div>
+
+                                <div className="min-w-0">
+                                  <label className="block text-[11px] font-bold text-gray-800 mb-1 flex items-center justify-between">
+                                    <span>Mot de passe</span>
+                                    <Lock size={12} className="text-gray-400 shrink-0" />
+                                  </label>
+                                  <input
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full min-w-0 bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/60 text-[10px] text-amber-900 flex items-start gap-2">
+                                <Lock size={13} className="text-[#b8924a] shrink-0 mt-0.5" />
+                                <span>
+                                  Ces éléments d&apos;authentification (mail et mot de passe) vous permettront d&apos;avoir accès à votre modèle par téléchargement direct du lien d&apos;invitation à tout moment.
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
 
                     {/* 3. Moyen de paiement */}
                     <div className="pt-2 border-t border-gray-100">
@@ -2096,45 +2329,71 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                       </div>
                     </div>
 
-                    {/* Informations reprises automatiquement de l'invitation */}
-                    <div className="space-y-2 text-xs">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
-                        Reprise automatique des données
-                      </span>
-
-                      <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1 min-w-0">
-                        <p className="text-gray-500 text-[11px]">Nom officiel de l&apos;événement :</p>
-                        <p className="font-serif font-bold text-gray-900 text-sm break-words">
-                          {eventMetadata.name}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
-                          <p className="text-gray-400 text-[10px]">Date &amp; Heure :</p>
-                          <p className="font-semibold text-gray-800 text-[11px] truncate">
-                            {eventMetadata.date} à {eventMetadata.time}
+                    {/* Informations reprises automatiquement */}
+                    {isMicroService ? (
+                      <div className="space-y-2.5 text-xs">
+                        <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1 min-w-0">
+                          <p className="text-gray-500 text-[11px]">
+                            {isMotDoux ? "Titre / Destinataire du Mot Doux :" : isVoeu ? "Vœux destinés à :" : "Titre de l'Invitation :"}
+                          </p>
+                          <p className="font-serif font-bold text-gray-900 text-sm break-words">
+                            {eventMetadata.name}
                           </p>
                         </div>
 
-                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
-                          <p className="text-gray-400 text-[10px]">Lieu :</p>
-                          <p className="font-semibold text-gray-800 text-[11px] truncate">
-                            {eventMetadata.location || "Non spécifié"}
+                        {/* Message chic d'accompagnement */}
+                        <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1.5 min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33] flex items-center gap-1">
+                            <span>✉️ Message chic d&apos;accompagnement :</span>
+                          </p>
+                          <p className="text-[11px] text-gray-700 italic bg-[#fbf7f0] p-2.5 rounded-lg border border-[#b8924a]/20 leading-relaxed break-words">
+                            « {accompanimentMessage} »
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            Ce texte élégant précédera votre lien lors du partage WhatsApp &amp; SMS.
                           </p>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-2 text-xs">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                          Reprise automatique des données
+                        </span>
+
+                        <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1 min-w-0">
+                          <p className="text-gray-500 text-[11px]">Nom officiel de l&apos;événement :</p>
+                          <p className="font-serif font-bold text-gray-900 text-sm break-words">
+                            {eventMetadata.name}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
+                            <p className="text-gray-400 text-[10px]">Date &amp; Heure :</p>
+                            <p className="font-semibold text-gray-800 text-[11px] truncate">
+                              {eventMetadata.date} à {eventMetadata.time}
+                            </p>
+                          </div>
+
+                          <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
+                            <p className="text-gray-400 text-[10px]">Lieu :</p>
+                            <p className="font-semibold text-gray-800 text-[11px] truncate">
+                              {eventMetadata.location || "Non spécifié"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Prix Total */}
                     <div className="pt-3 border-t border-gray-200">
                       <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                        <span>Formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} :</span>
-                        <span>{planPrice.toLocaleString('fr-FR')} FCFA</span>
+                        <span>{isMicroService ? "Tarif unique accès direct :" : `Formule ${selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} :`}</span>
+                        <span>{currentActualPrice.toLocaleString('fr-FR')} FCFA</span>
                       </div>
                       <div className="flex items-center justify-between text-base font-bold text-black">
                         <span>Total à régler :</span>
-                        <span className="text-[#b8924a] font-serif text-lg">{planPrice.toLocaleString('fr-FR')} FCFA</span>
+                        <span className="text-[#b8924a] font-serif text-lg">{currentActualPrice.toLocaleString('fr-FR')} FCFA</span>
                       </div>
                     </div>
 
@@ -2142,12 +2401,17 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-3.5 sm:py-4 px-4 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/40 disabled:opacity-50 active:scale-98 text-center"
+                      className="w-full py-3.5 sm:py-4 px-4 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#b8924a] rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 transition-all flex items-center justify-center gap-2 border border-[#b8924a]/40 disabled:opacity-50 active:scale-98 text-center cursor-pointer"
                     >
                       {isSubmitting ? (
                         <>
                           <div className="w-4 h-4 border-2 border-[#b8924a] border-t-transparent rounded-full animate-spin shrink-0" />
                           <span>Activation en cours...</span>
+                        </>
+                      ) : isMicroService ? (
+                        <>
+                          <Sparkles size={17} className="text-[#d4af37] shrink-0" />
+                          <span>Valider le paiement ({microFixedPrice.toLocaleString('fr-FR')} FCFA) &amp; Obtenir mon Lien</span>
                         </>
                       ) : (
                         <>
@@ -2160,7 +2424,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
                     <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-1">
                       <Lock size={11} className="shrink-0" />
-                      <span>Paiement sécurisé — Lien officiel, QR Code actif &amp; Dashboard</span>
+                      <span>{isMicroService ? "Paiement sécurisé — Lien direct copiable & Partage WhatsApp immédiat" : "Paiement sécurisé — Lien officiel, QR Code actif & Dashboard"}</span>
                     </p>
 
                   </div>

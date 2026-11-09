@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Music, Palette, PenLine, Save, X } from "lucide-react";
+import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Mail, Music, Palette, PenLine, Save, X } from "lucide-react";
 import CoverModal from "./CoverModal";
 import CustomSectionsEditor, { CustomMusicFields } from "@/components/invitations/custom/CustomSectionsEditor";
 import CustomInvitationFrame from "@/components/invitations/custom/CustomInvitationFrame";
 import StyleEditor from "./StyleEditor";
 import { STYLE_KEY, customValues, parseStyle, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
 
-type Tab = "contenu" | "style" | "musique";
+type Tab = "contenu" | "message" | "style" | "musique";
 
 interface Props {
   model: CustomModelRow;
@@ -84,8 +84,27 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
     onClose();
   };
 
+  const defaultCustomMessage = (() => {
+    const mName = (name || model.name || "").toLowerCase();
+    const type = (model.invitation_type || "").toLowerCase();
+    const evs = (model.event_types || []).map((e) => e.toLowerCase()).join(" ");
+    if (type === "voeu" || evs.includes("vœu") || evs.includes("voeu") || mName.includes("vœu") || mName.includes("voeu") || mName.includes("birthday queen")) {
+      return "✨ Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux d'exception personnalisés en cliquant sur le lien :";
+    }
+    if (type === "mot_doux" || evs.includes("mot doux") || mName.includes("mot doux") || mName.includes("lettre")) {
+      return "💌 Mon cœur, j'ai préparé quelque chose de doux et secret rien que pour toi... Ouvre ta lettre scellée en cliquant sur le lien :";
+    }
+    if (type === "couple" || evs.includes("couple") || mName.includes("rendez-vous") || mName.includes("amour")) {
+      return "🥂 Une soirée d'exception, rien que nous deux... Découvre notre invitation secrète en cliquant sur le lien :";
+    }
+    return `✨ Nous avons l'immense honneur de vous convier à notre événement d'exception "${name || model.name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :`;
+  })();
+
+  const currentMessage = values.accompanimentMessage !== undefined ? values.accompanimentMessage : defaultCustomMessage;
+
   const tabs: { id: Tab; label: string; icon: typeof PenLine }[] = [
     { id: "contenu", label: "Contenu", icon: PenLine },
+    { id: "message", label: "Message chic", icon: Mail },
     { id: "style", label: "Style & polices", icon: Palette },
     ...(isStatic ? [] : [{ id: "musique" as const, label: "Musique", icon: Music }]),
   ];
@@ -185,6 +204,118 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
             </div>
           )}
 
+          {tab === "message" && (
+            <div className="h-full overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
+              <div className="bg-white rounded-3xl border border-gray-200/80 p-5 sm:p-6 space-y-5 shadow-xs">
+                <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+                  <div className="w-10 h-10 rounded-2xl bg-[#fbf7f0] border border-[#b8924a]/30 flex items-center justify-center text-[#b8924a] shrink-0">
+                    <Mail size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg sm:text-xl text-gray-900 font-bold">
+                      Message d&apos;accompagnement chic
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      Ce texte élégant précédera le lien officiel de l&apos;invitation lors des partages par WhatsApp ou SMS.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Suggestions de modèles rapides */}
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-2">
+                    Modèles de messages rapides :
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => update({ ...values, accompanimentMessage: `✨ Nous avons l'immense honneur de vous convier à notre événement d'exception "${name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :` })}
+                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
+                    >
+                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">👑 Prestige &amp; Cérémonie</span>
+                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Nous avons l&apos;immense honneur de vous convier à notre événement d&apos;exception...</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => update({ ...values, accompanimentMessage: "✨ Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux d'exception personnalisés en cliquant sur le lien :" })}
+                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
+                    >
+                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">🌟 Vœux d&apos;Exception</span>
+                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux...</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => update({ ...values, accompanimentMessage: "💌 Mon cœur, j'ai préparé quelque chose de doux et secret rien que pour toi... Ouvre ta lettre scellée en cliquant sur le lien :" })}
+                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
+                    >
+                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">💌 Les Mots Doux</span>
+                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Mon cœur, j&apos;ai préparé quelque chose de doux et secret rien que pour toi...</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => update({ ...values, accompanimentMessage: "🥂 Une soirée d'exception, rien que nous deux... Découvre notre invitation secrète en cliquant sur le lien :" })}
+                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
+                    >
+                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">🥂 Soirée Couple Intime</span>
+                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Une soirée d&apos;exception, rien que nous deux... Découvre notre invitation secrète...</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Champ d'édition */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-800">
+                      Texte personnalisé du message d&apos;accompagnement :
+                    </label>
+                    <span className="text-[10px] text-gray-400">
+                      {String(currentMessage).length} caractères
+                    </span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={currentMessage}
+                    onChange={(e) => update({ ...values, accompanimentMessage: e.target.value })}
+                    placeholder="Écrivez le message qui introduira le lien de l'invitation..."
+                    className="w-full bg-gray-50/70 border border-gray-200 rounded-2xl p-3.5 text-xs text-gray-800 focus:bg-white focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none transition-all leading-relaxed"
+                  />
+                </div>
+
+                {/* Simulation bulle WhatsApp */}
+                <div className="pt-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-2">
+                    Aperçu en direct (tel qu&apos;affiché dans WhatsApp) :
+                  </span>
+                  <div className="bg-[#e5ddd5] p-3 sm:p-4 rounded-2xl border border-gray-300">
+                    <div className="max-w-md ml-auto bg-[#dcf8c6] p-3 rounded-2xl rounded-tr-xs shadow-xs text-xs text-gray-900 space-y-2 border border-[#b2d89b]">
+                      <p className="whitespace-pre-wrap leading-relaxed font-sans">
+                        {currentMessage}
+                      </p>
+                      <div className="bg-white/80 p-2 rounded-xl border border-emerald-300/60 flex items-center gap-2">
+                        <span className="text-lg">✨</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-[11px] text-gray-900 truncate">
+                            {name || model.name}
+                          </p>
+                          <p className="text-[10px] text-[#0066cc] truncate font-mono">
+                            https://evenium.com/invite/demo-invitation
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-1 text-[9px] text-gray-500 pt-0.5">
+                        <span>12:45</span>
+                        <span className="text-[#34b7f1] font-bold">✓✓</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
           {tab === "style" && (
             <StyleEditor value={parseStyle(values)} onChange={(style) => update({ ...values, [STYLE_KEY]: JSON.stringify(style) })} />
           )}
