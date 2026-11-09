@@ -1392,13 +1392,23 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
             {/* Modale de sortie Haute Couture : le client choisit sans jamais gâter la vue pendant l'aperçu */}
             {showDemoExitModal && (
-              <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-                <div className="card-lux max-w-sm w-full p-6 sm:p-7 text-center relative rounded-3xl bg-[#140e0a] border border-[#d4af37]/40 shadow-2xl">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-transparent border border-[#d4af37]/40 flex items-center justify-center">
+              <div className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="relative max-w-sm w-full p-6 sm:p-7 text-center rounded-3xl bg-[#15100c] border border-[#d4af37]/60 shadow-[0_25px_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-200">
+                  {/* Bouton pour fermer la modale et reprendre l'admiration du modèle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoExitModal(false)}
+                    className="absolute top-4 right-4 text-white/50 hover:text-white p-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                    aria-label="Fermer la modale"
+                  >
+                    <X size={16} />
+                  </button>
+
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37]/25 to-transparent border border-[#d4af37]/50 flex items-center justify-center">
                     <Sparkles size={22} className="text-[#d4af37]" />
                   </div>
-                  <h3 className="font-serif text-xl sm:text-2xl text-white mb-2">Ce modèle vous plaît ?</h3>
-                  <p className="text-xs text-white/70 mb-6 leading-relaxed">
+                  <h3 className="font-serif text-xl sm:text-2xl text-white font-semibold mb-2">Ce modèle vous plaît ?</h3>
+                  <p className="text-xs sm:text-[13px] text-[#f0e4d0]/80 leading-relaxed mb-6">
                     Sélectionnez ce modèle pour le personnaliser avec vos propres textes, photos et musiques, ou continuez à explorer notre collection.
                   </p>
                   <div className="flex flex-col gap-2.5">
@@ -1420,7 +1430,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                         setDemoModelId(null);
                         setShowDemoExitModal(false);
                       }}
-                      className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer border border-white/10"
+                      className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer"
                     >
                       Explorer d&apos;autres modèles
                     </button>

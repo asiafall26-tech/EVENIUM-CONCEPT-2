@@ -566,14 +566,8 @@
     }, 120);
   });
 
-  // Détection immédiate du changement de slide au toucher/clic pour révéler le bloc dès la fin sans latence
-  var storyNavEvents = ["click", "touchend", "pointerup", "keyup"];
-  storyNavEvents.forEach(function (evt) {
-    window.addEventListener(evt, function () {
-      setTimeout(syncCtaVisibility, 80);
-      setTimeout(syncCtaVisibility, 350);
-    }, { passive: true });
-  });
+  // La modale ne s'ouvre JAMAIS automatiquement pendant la manipulation du modèle
+  function syncCtaVisibility() {}
 
   /*
    * PROPOSITION 2 EVENIUM HAUTE COUTURE : « ZÉRO BOUTON SUR LE MODÈLE »
@@ -581,7 +575,7 @@
    * - Zéro barre en haut : les alliances, couronnes et titres restent 100% visibles et intègres.
    * - Zéro bloc au milieu ou en bas : les lettres, princesses et interactions restent 100% libres.
    * - Seul un micro-bouton de fermeture discret ✕ flotte dans le coin supérieur gauche.
-   * - Le client choisit son modèle via la modale soyeuse de sortie (au clic sur ✕) ou à la fin de la story.
+   * - Le client choisit son modèle via la modale soyeuse de sortie UNIQUEMENT s'il clique sur ✕.
    */
   var currentCtaText = null;
   var exitBtn = null;
@@ -598,12 +592,13 @@
     modal.id = "ev-exit-modal";
     modal.setAttribute(
       "style",
-      "position:fixed !important;inset:0 !important;background:rgba(0,0,0,0.82) !important;backdrop-filter:blur(10px) !important;-webkit-backdrop-filter:blur(10px) !important;z-index:2147483647 !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:16px !important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important;animation:evFadeIn 0.2s ease !important;"
+      "position:fixed !important;inset:0 !important;background:rgba(0,0,0,0.85) !important;backdrop-filter:blur(10px) !important;-webkit-backdrop-filter:blur(10px) !important;z-index:2147483647 !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:16px !important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important;animation:evFadeIn 0.2s ease !important;"
     );
 
     modal.innerHTML =
       '<style>@keyframes evFadeIn { from { opacity: 0; } to { opacity: 1; } }</style>' +
-      '<div style="background:#140e0a;border:1px solid rgba(212,175,55,0.45);border-radius:24px;padding:28px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.85);box-sizing:border-box;">' +
+      '<div style="position:relative;background:#140e0a;border:1px solid rgba(212,175,55,0.45);border-radius:24px;padding:28px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.85);box-sizing:border-box;">' +
+      '<button id="ev-btn-close-x" type="button" aria-label="Fermer" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.6);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</button>' +
       '<div style="width:48px;height:48px;margin:0 auto 12px;border-radius:50%;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.35);display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:22px;">✨</div>' +
       '<h3 style="font-family:Georgia,serif;font-size:21px;font-weight:600;color:#ffffff;margin:0 0 8px;letter-spacing:-0.02em;">Ce modèle vous plaît ?</h3>' +
       '<p style="font-size:12px;color:rgba(255,255,255,0.72);line-height:1.55;margin:0 0 20px;">Choisissez-le pour le personnaliser avec vos textes, photos et musiques, ou continuez à explorer.</p>' +
@@ -616,8 +611,17 @@
     document.body.appendChild(modal);
     exitModal = modal;
 
+    var closeXBtn = modal.querySelector("#ev-btn-close-x");
     var pickBtn = modal.querySelector("#ev-btn-pick");
     var backBtn = modal.querySelector("#ev-btn-back");
+
+    if (closeXBtn) {
+      closeXBtn.onclick = function (e) {
+        e.stopPropagation();
+        modal.remove();
+        exitModal = null;
+      };
+    }
 
     pickBtn.onclick = function (e) {
       e.stopPropagation();
@@ -666,13 +670,6 @@
 
     exitBtn = btn;
     document.body.appendChild(btn);
-  }
-
-  function syncCtaVisibility() {
-    if (isStoryAtEnd() && currentCtaText && !exitModal) {
-      // Fin de story atteinte : proposer en douceur le choix
-      showExitModal();
-    }
   }
 
   function placeCta() {}

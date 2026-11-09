@@ -101,12 +101,27 @@ export default function InvitationEndCta({
     return null;
   }
 
-  const modalTitle = isChoose ? custom!.title : "Votre invitation est prête !";
+  const isFinalCheckout = !isChoose && (pathname?.includes("checkout") || pathname?.includes("step-5"));
+  const modalTitle = isChoose
+    ? custom!.title
+    : isFinalCheckout
+    ? "Votre invitation est prête !"
+    : "Ce modèle vous plaît ?";
   const modalDesc = isChoose
     ? custom!.desc
-    : "Sélectionnez ce modèle pour le personnaliser avec vos propres textes, photos et musiques, puis validez votre événement.";
-  const primaryLabel = isChoose ? custom!.primary : "Valider l'achat";
-  const secondaryLabel = isChoose ? custom!.secondary : "Revenir aux modèles";
+    : isFinalCheckout
+    ? "Toutes vos personnalisations sont en place. Validez votre commande pour activer votre lien officiel et vos accès organisateur."
+    : "Sélectionnez ce modèle pour le personnaliser avec vos propres textes, photos et musiques, ou continuez à explorer notre collection.";
+  const primaryLabel = isChoose
+    ? custom!.primary
+    : isFinalCheckout
+    ? "Valider & Finaliser l'achat"
+    : "Choisir ce modèle";
+  const secondaryLabel = isChoose
+    ? custom!.secondary
+    : isFinalCheckout
+    ? "Revenir à la création"
+    : "Explorer d'autres modèles";
 
   const content = (
     <>
@@ -120,15 +135,25 @@ export default function InvitationEndCta({
         <X size={16} />
       </button>
 
-      {/* 2. Modale de confirmation Haute Couture : le client choisit sans jamais gâter la vue pendant l'animation */}
+      {/* 2. Modale de confirmation Haute Couture : lisibilité absolue noir et or impérial */}
       {showExitModal && (
-        <div className="fixed inset-0 z-[2147483647] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="card-lux max-w-sm w-full p-6 sm:p-7 text-center relative rounded-3xl bg-[#140e0a] border border-[#d4af37]/40 shadow-2xl">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-transparent border border-[#d4af37]/40 flex items-center justify-center">
+        <div className="fixed inset-0 z-[2147483647] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="relative max-w-sm w-full p-6 sm:p-7 text-center rounded-3xl bg-[#15100c] border border-[#d4af37]/60 shadow-[0_25px_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-200">
+            {/* Bouton pour fermer la modale et reprendre l'admiration du modèle */}
+            <button
+              type="button"
+              onClick={() => setShowExitModal(false)}
+              className="absolute top-4 right-4 text-white/50 hover:text-white p-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label="Fermer la modale"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37]/25 to-transparent border border-[#d4af37]/50 flex items-center justify-center">
               <Sparkles size={22} className="text-[#d4af37]" />
             </div>
-            <h3 className="font-serif text-xl sm:text-2xl text-white mb-2">{modalTitle}</h3>
-            <p className="text-xs text-white/70 mb-6 leading-relaxed">{modalDesc}</p>
+            <h3 className="font-serif text-xl sm:text-2xl text-white font-semibold mb-2">{modalTitle}</h3>
+            <p className="text-xs sm:text-[13px] text-[#f0e4d0]/80 leading-relaxed mb-6">{modalDesc}</p>
             <div className="flex flex-col gap-2.5">
               {isCreate ? (
                 <button
@@ -158,7 +183,7 @@ export default function InvitationEndCta({
                     setShowExitModal(false);
                     handleBackToCreation();
                   }}
-                  className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer border border-white/10"
+                  className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer"
                 >
                   {secondaryLabel}
                 </button>
@@ -166,7 +191,7 @@ export default function InvitationEndCta({
                 <Link
                   href="/invitations"
                   target={isDemo ? "_top" : undefined}
-                  className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer border border-white/10 block text-center"
+                  className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer block text-center"
                 >
                   {secondaryLabel}
                 </Link>
