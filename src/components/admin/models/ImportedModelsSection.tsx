@@ -5,6 +5,7 @@ import { FileArchive, Loader2, UploadCloud } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { customModelUrl, fetchCustomModel, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
 import { saveCustomModelAction } from "@/app/actions/adminModelActions";
+import { broadcastChange, subscribeToSync } from "@/lib/syncService";
 import type { InvitationKind } from "@/lib/modelDefaults";
 import ImportModelModal from "./ImportModelModal";
 import CustomModelStudio from "./CustomModelStudio";
@@ -50,7 +51,12 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-  }, [load]);
+    const unsub = subscribeToSync("models", () => {
+      load();
+      onReload?.();
+    });
+    return () => unsub();
+  }, [load, onReload]);
 
   const act = async (m: CustomModelRow, action: () => Promise<void>, done: string) => {
     setBusy(m.slug);
@@ -58,6 +64,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
     try {
       await action();
       onNotice({ ok: true, text: done });
+      broadcastChange("models");
       await load();
       await onReload?.();
     } catch (e) {

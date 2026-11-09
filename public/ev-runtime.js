@@ -576,67 +576,107 @@
   });
 
   /*
-   * En-tête Haute Couture épuré : deux capsules flottantes discrètes dans les coins supérieurs
-   * (Retour à gauche, Choisir ce modèle à droite).
-   * RÈGLE ABSOLUE : Le conteneur est 100% transparent, ne pousse pas la page (padding-top: 0),
-   * n'altère ni la taille ni la position du modèle (#stage, .app, .slide restent 100% intacts),
-   * et laisse le centre totalement dégagé pour que les anneaux, couronnes, lettres et textes s'affichent
-   * dans toute leur splendeur sans jamais gâter la vue.
+   * PROPOSITION 2 EVENIUM HAUTE COUTURE : « ZÉRO BOUTON SUR LE MODÈLE »
+   * L'invitation est présentée comme une œuvre d'art pure à 100% :
+   * - Zéro barre en haut : les alliances, couronnes et titres restent 100% visibles et intègres.
+   * - Zéro bloc au milieu ou en bas : les lettres, princesses et interactions restent 100% libres.
+   * - Seul un micro-bouton de fermeture discret ✕ flotte dans le coin supérieur gauche.
+   * - Le client choisit son modèle via la modale soyeuse de sortie (au clic sur ✕) ou à la fin de la story.
    */
-  function cta(text) {
-    var old = document.getElementById("ev-top-bar") || document.getElementById("ev-end-cta");
-    if (old) old.remove();
-    ctaBox = null;
-    ctaObserver.disconnect();
-    document.body.classList.remove("ev-has-top-bar");
-    if (!text) return;
+  var currentCtaText = null;
+  var exitBtn = null;
+  var exitModal = null;
 
-    var header = document.createElement("header");
-    header.id = "ev-top-bar";
-    header.setAttribute("data-inv-cta", "");
-    header.setAttribute(
+  function showExitModal() {
+    if (inFrame) {
+      window.parent.postMessage({ type: "evenium:close-preview" }, "*");
+      return;
+    }
+    if (document.getElementById("ev-exit-modal")) return;
+
+    var modal = document.createElement("div");
+    modal.id = "ev-exit-modal";
+    modal.setAttribute(
       "style",
-      "position:fixed !important;top:0 !important;left:0 !important;right:0 !important;width:100% !important;padding-top:max(10px, env(safe-area-inset-top, 10px)) !important;padding-left:12px !important;padding-right:12px !important;box-sizing:border-box !important;z-index:2147483647 !important;background:transparent !important;border:none !important;box-shadow:none !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:12px !important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important;pointer-events:none !important;transform:none !important;"
+      "position:fixed !important;inset:0 !important;background:rgba(0,0,0,0.82) !important;backdrop-filter:blur(10px) !important;-webkit-backdrop-filter:blur(10px) !important;z-index:2147483647 !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:16px !important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important;animation:evFadeIn 0.2s ease !important;"
     );
 
-    header.innerHTML =
-      '<style>' +
-      '#ev-top-bar button { -webkit-tap-highlight-color: transparent; }' +
-      '#ev-top-bar button:active { transform: scale(0.96); }' +
-      '</style>' +
-      '<button data-a="secondary" type="button" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;background:rgba(14,10,8,0.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#ffffff;border:1px solid rgba(255,255,255,0.24);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,0.4);pointer-events:auto;transition:all 0.15s ease;">' +
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
-      '<span data-r="secondary-text">Retour</span>' +
-      '</button>' +
-      '<div style="flex:1;min-width:0;pointer-events:none;"></div>' +
-      '<button data-a="primary" type="button" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;background:linear-gradient(135deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%);color:#0d0804;font-size:11.5px;font-weight:800;border:1px solid rgba(255,255,255,0.45);cursor:pointer;white-space:nowrap;box-sizing:border-box;box-shadow:0 4px 18px rgba(212,175,55,0.4);pointer-events:auto;transition:all 0.15s ease;">' +
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d0804" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>' +
-      '<span data-r="primary-text">Choisir ce modèle</span>' +
-      '</button>';
+    modal.innerHTML =
+      '<style>@keyframes evFadeIn { from { opacity: 0; } to { opacity: 1; } }</style>' +
+      '<div style="background:#140e0a;border:1px solid rgba(212,175,55,0.45);border-radius:24px;padding:28px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.85);box-sizing:border-box;">' +
+      '<div style="width:48px;height:48px;margin:0 auto 12px;border-radius:50%;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.35);display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:22px;">✨</div>' +
+      '<h3 style="font-family:Georgia,serif;font-size:21px;font-weight:600;color:#ffffff;margin:0 0 8px;letter-spacing:-0.02em;">Ce modèle vous plaît ?</h3>' +
+      '<p style="font-size:12px;color:rgba(255,255,255,0.72);line-height:1.55;margin:0 0 20px;">Choisissez-le pour le personnaliser avec vos textes, photos et musiques, ou continuez à explorer.</p>' +
+      '<div style="display:flex;flex-direction:column;gap:9px;">' +
+      '<button id="ev-btn-pick" type="button" style="width:100%;padding:13px;border-radius:999px;background:linear-gradient(135deg,#d4af37 0%,#f5e6b8 50%,#d4af37 100%);color:#0d0804;font-size:12px;font-weight:800;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(212,175,55,0.38);transition:transform 0.15s ease;">✨ ' + ((currentCtaText && currentCtaText.primary) || "Choisir ce modèle") + '</button>' +
+      '<button id="ev-btn-back" type="button" style="width:100%;padding:11px;border-radius:999px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85);font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,0.18);cursor:pointer;transition:background 0.15s ease;">' + ((currentCtaText && currentCtaText.secondary) || "Explorer d'autres modèles") + '</button>' +
+      '</div>' +
+      '</div>';
 
-    var primaryTxt = header.querySelector('[data-r="primary-text"]');
-    var secondaryTxt = header.querySelector('[data-r="secondary-text"]');
+    document.body.appendChild(modal);
+    exitModal = modal;
 
-    primaryTxt.textContent = text.primary || "Choisir ce modèle";
-    secondaryTxt.textContent = text.secondary || "Retour";
+    var pickBtn = modal.querySelector("#ev-btn-pick");
+    var backBtn = modal.querySelector("#ev-btn-back");
 
-    var primary = header.querySelector('[data-a="primary"]');
-    var secondary = header.querySelector('[data-a="secondary"]');
-    primary.onclick = function (e) {
+    pickBtn.onclick = function (e) {
       e.stopPropagation();
-      if (text.primaryHref) window.top.location.href = text.primaryHref;
-      else window.parent.postMessage({ type: "evenium:open-checkout" }, location.origin);
-    };
-    secondary.onclick = function (e) {
-      e.stopPropagation();
-      if (text.secondaryHref) window.top.location.href = text.secondaryHref;
-      else window.parent.postMessage({ type: "evenium:close-preview" }, location.origin);
+      if (currentCtaText && currentCtaText.primaryHref) {
+        window.top.location.href = currentCtaText.primaryHref;
+      } else {
+        window.parent.postMessage({ type: "evenium:open-checkout" }, location.origin);
+      }
     };
 
-    ctaBox = header;
-    document.body.appendChild(header);
-    ctaObserver.observe(document.body, { childList: true, subtree: true, attributes: false });
+    backBtn.onclick = function (e) {
+      e.stopPropagation();
+      modal.remove();
+      exitModal = null;
+      if (currentCtaText && currentCtaText.secondaryHref) {
+        window.top.location.href = currentCtaText.secondaryHref;
+      } else {
+        if (history.length > 1) history.back();
+        else window.top.location.href = "/invitations";
+      }
+    };
   }
+
+  function cta(text) {
+    var old = document.getElementById("ev-top-bar") || document.getElementById("ev-end-cta") || document.getElementById("ev-exit-btn");
+    if (old) old.remove();
+    currentCtaText = text;
+    if (!text) return;
+
+    // Bouton de sortie discret Haute Joaillerie (croix ✕)
+    var btn = document.createElement("button");
+    btn.id = "ev-exit-btn";
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Quitter l'aperçu");
+    btn.setAttribute(
+      "style",
+      "position:fixed !important;top:max(12px, env(safe-area-inset-top, 12px)) !important;left:12px !important;z-index:2147483647 !important;width:34px !important;height:34px !important;border-radius:50% !important;background:rgba(14,10,8,0.65) !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;border:1px solid rgba(255,255,255,0.24) !important;color:#ffffff !important;display:flex !important;align-items:center !important;justify-content:center !important;cursor:pointer !important;box-shadow:0 4px 16px rgba(0,0,0,0.4) !important;transition:transform 0.15s ease !important;padding:0 !important;line-height:1 !important;"
+    );
+
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+    btn.onclick = function (e) {
+      e.stopPropagation();
+      showExitModal();
+    };
+
+    exitBtn = btn;
+    document.body.appendChild(btn);
+  }
+
+  function syncCtaVisibility() {
+    if (isStoryAtEnd() && currentCtaText && !exitModal) {
+      // Fin de story atteinte : proposer en douceur le choix
+      showExitModal();
+    }
+  }
+
+  function placeCta() {}
+  function bleedCta() {}
   window.addEventListener("load", function () {
     placeCta();
     paintCta();

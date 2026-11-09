@@ -82,6 +82,7 @@ export async function saveModelDraftAction(modelId: string, content: object, cus
     payload.name = cleanName.trim();
   }
   await writeModelDefault(payload);
+  purgeModelCaches();
 }
 
 /** Publie un modèle sur le site */

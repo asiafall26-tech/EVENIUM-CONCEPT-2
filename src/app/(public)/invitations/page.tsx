@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { classificationOf, fetchModelDefaults, invalidateModelDefaultsCache, modelCoverOf, modelNameOf, type ModelDefaultRow } from "@/lib/modelDefaults";
 import { customModelId, customModelUrl, fetchCustomModels, invalidateCustomModelsCache, type CustomModelRow } from "@/lib/customModels";
+import { subscribeToSync } from "@/lib/syncService";
 import { previewHref } from "@/lib/modelPreview";
 import { Fleuron, DiamondRule, LuxFrame } from "@/components/landing/LuxOrnaments";
 
@@ -43,6 +44,8 @@ export default function InvitationsPage() {
     };
     reload();
 
+    const unsubSync = subscribeToSync("models", () => reload(true));
+
     const channel = supabase
       .channel("invitations_gallery_realtime")
       .on(
@@ -58,6 +61,7 @@ export default function InvitationsPage() {
       .subscribe();
 
     return () => {
+      unsubSync();
       supabase.removeChannel(channel);
     };
   }, []);

@@ -12,6 +12,7 @@ import { fetchModelDefaults, invalidateModelDefaultsCache } from "@/lib/modelDef
 import { fetchCustomModels, invalidateCustomModelsCache } from "@/lib/customModels";
 import { buildShowcase } from "@/lib/showcase";
 import { previewHref } from "@/lib/modelPreview";
+import { subscribeToSync } from "@/lib/syncService";
 
 interface HomeShowcaseProps {
   initialModels: InvitationModel[];
@@ -44,6 +45,8 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
     // Chargement immédiat côté client pour avoir l'état le plus frais
     reload();
 
+    const unsubSync = subscribeToSync("models", () => reload(true));
+
     // Abonnement Supabase Realtime pour actualisation automatique instantanée (modèles built-in ET modèles importés du studio)
     const channel = supabase
       .channel("home_showcase_models_realtime")
@@ -60,6 +63,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
       .subscribe();
 
     return () => {
+      unsubSync();
       supabase.removeChannel(channel);
     };
   }, []);

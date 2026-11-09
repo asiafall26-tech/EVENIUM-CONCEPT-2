@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
@@ -25,6 +25,7 @@ export default function InvitationEndCta({
   hideCta = false,
 }: InvitationEndCtaProps) {
   const [mounted, setMounted] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
   const [isIframe, setIsIframe] = useState(false);
   // Démo publique affichée dans le cadre téléphone de la page d'aperçu (/apercu, sur ordinateur)
   const [isDemo, setIsDemo] = useState(false);
@@ -100,60 +101,81 @@ export default function InvitationEndCta({
     return null;
   }
 
+  const modalTitle = isChoose ? custom!.title : "Votre invitation est prête !";
+  const modalDesc = isChoose
+    ? custom!.desc
+    : "Sélectionnez ce modèle pour le personnaliser avec vos propres textes, photos et musiques, puis validez votre événement.";
+  const primaryLabel = isChoose ? custom!.primary : "Valider l'achat";
+  const secondaryLabel = isChoose ? custom!.secondary : "Revenir aux modèles";
+
   const content = (
-    <header
-      data-inv-cta=""
-      className="fixed top-0 left-0 right-0 z-[2147483647] w-full pt-[max(0.65rem,env(safe-area-inset-top,0.65rem))] px-3 sm:px-5 pointer-events-none flex items-center justify-between gap-3 select-none"
-    >
-      {/* 1. Left Action: Retour */}
-      <div className="pointer-events-auto">
-        {isCreate ? (
-          <button
-            type="button"
-            onClick={handleBackToCreation}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0e0a08]/70 hover:bg-[#0e0a08]/90 text-white backdrop-blur-md border border-white/20 hover:border-[#D4AF37]/60 shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer"
-          >
-            <ArrowLeft size={13} className="shrink-0 text-[#f0d999]" />
-            <span>{isChoose ? custom!.secondary : "Revenir"}</span>
-          </button>
-        ) : (
-          <Link
-            href="/invitations"
-            target={isDemo ? "_top" : undefined}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0e0a08]/70 hover:bg-[#0e0a08]/90 text-white backdrop-blur-md border border-white/20 hover:border-[#D4AF37]/60 shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer"
-          >
-            <ArrowLeft size={13} className="shrink-0 text-[#f0d999]" />
-            <span>Retour</span>
-          </Link>
-        )}
-      </div>
+    <>
+      {/* 1. Bouton de sortie discret Haute Joaillerie : aucun bandeau, zéro camouflage de l'œuvre */}
+      <button
+        type="button"
+        onClick={() => setShowExitModal(true)}
+        aria-label="Quitter l'aperçu"
+        className="fixed top-3 left-3 z-[2147483647] w-9 h-9 rounded-full bg-[#0e0a08]/75 hover:bg-[#0e0a08]/90 text-white/90 hover:text-white border border-white/25 backdrop-blur-md flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer"
+      >
+        <X size={16} />
+      </button>
 
-      {/* 2. Center: Transparent open view (zéro obstruction, les anneaux et créations restent 100% visibles) */}
-      <div className="flex-1 min-w-0 pointer-events-none" />
+      {/* 2. Modale de confirmation Haute Couture : le client choisit sans jamais gâter la vue pendant l'animation */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-[2147483647] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="card-lux max-w-sm w-full p-6 sm:p-7 text-center relative rounded-3xl bg-[#140e0a] border border-[#d4af37]/40 shadow-2xl">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-transparent border border-[#d4af37]/40 flex items-center justify-center">
+              <Sparkles size={22} className="text-[#d4af37]" />
+            </div>
+            <h3 className="font-serif text-xl sm:text-2xl text-white mb-2">{modalTitle}</h3>
+            <p className="text-xs text-white/70 mb-6 leading-relaxed">{modalDesc}</p>
+            <div className="flex flex-col gap-2.5">
+              {isCreate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExitModal(false);
+                    handleValiderAchat();
+                  }}
+                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#d4af37] via-[#f7e7b4] to-[#d4af37] text-black font-extrabold text-xs shadow-lg hover:brightness-105 active:scale-95 transition-all cursor-pointer border border-[#d4af37]/70"
+                >
+                  ✨ {primaryLabel}
+                </button>
+              ) : (
+                <Link
+                  href={createUrl}
+                  target={isDemo ? "_top" : undefined}
+                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#d4af37] via-[#f7e7b4] to-[#d4af37] text-black font-extrabold text-xs shadow-lg hover:brightness-105 active:scale-95 transition-all cursor-pointer border border-[#d4af37]/70 block text-center"
+                >
+                  ✨ {primaryLabel}
+                </Link>
+              )}
 
-      {/* 3. Right Action: Primary CTA */}
-      <div className="pointer-events-auto">
-        {isCreate ? (
-          <button
-            type="button"
-            onClick={handleValiderAchat}
-            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-lg shadow-[#D4AF37]/30 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/70 whitespace-nowrap cursor-pointer"
-          >
-            <Sparkles size={13} className="text-black shrink-0" />
-            <span>{isChoose ? custom!.primary : "Valider l'achat"}</span>
-          </button>
-        ) : (
-          <Link
-            href={createUrl}
-            target={isDemo ? "_top" : undefined}
-            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-lg shadow-[#D4AF37]/30 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/70 whitespace-nowrap cursor-pointer"
-          >
-            <Sparkles size={13} className="text-black shrink-0" />
-            <span>Choisir ce modèle</span>
-          </Link>
-        )}
-      </div>
-    </header>
+              {isCreate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExitModal(false);
+                    handleBackToCreation();
+                  }}
+                  className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer border border-white/10"
+                >
+                  {secondaryLabel}
+                </button>
+              ) : (
+                <Link
+                  href="/invitations"
+                  target={isDemo ? "_top" : undefined}
+                  className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer border border-white/10 block text-center"
+                >
+                  {secondaryLabel}
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 
   return createPortal(content, document.body);

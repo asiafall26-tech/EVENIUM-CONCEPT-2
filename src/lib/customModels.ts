@@ -6,6 +6,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { InvitationKind } from "@/lib/modelDefaults";
 import { googleFontHrefs, styleCss, styleFonts, type InvitationStyle, type PartSelectors } from "@/lib/invitationStyle";
+import { broadcastChange, registerInvalidator } from "@/lib/syncService";
 
 /** Valeurs réservées : style (polices, couleurs) et musique d'ambiance ajoutée dans le studio */
 export const STYLE_KEY = "__style";
@@ -84,6 +85,10 @@ export function invalidateCustomModelsCache() {
   customModelsCache = { published: null, all: null, timestamp: 0 };
 }
 
+try {
+  registerInvalidator(invalidateCustomModelsCache);
+} catch {}
+
 const LIGHT_CUSTOM_COLUMNS = "slug, name, entry, cover_url, invitation_type, event_types, status, created_at, published_at";
 
 export async function fetchCustomModels(
@@ -139,11 +144,15 @@ export async function saveCustomModel(supabase: SupabaseClient, slug: string, pa
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("slug", slug);
   if (error) throw new Error(isMissingTable(error) ? "Exécutez d'abord le script supabase_custom_models.sql dans Supabase." : error.message);
+  invalidateCustomModelsCache();
+  broadcastChange("models");
 }
 
 export async function insertCustomModel(supabase: SupabaseClient, row: Omit<CustomModelRow, "updated_at" | "published_at" | "draft_content">) {
   const { error } = await supabase.from(CUSTOM_MODELS_TABLE).insert(row);
   if (error) throw new Error(isMissingTable(error) ? "Exécutez d'abord le script supabase_custom_models.sql dans Supabase." : error.message);
+  invalidateCustomModelsCache();
+  broadcastChange("models");
 }
 
 /** Petit identifiant lisible et unique pour le dossier du modèle */

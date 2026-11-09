@@ -19,6 +19,7 @@ import {
   invalidateCustomModelsCache,
   type CustomModelRow,
 } from "@/lib/customModels";
+import { broadcastChange, subscribeToSync } from "@/lib/syncService";
 import {
   saveModelDraftAction,
   publishModelAction,
@@ -99,6 +100,8 @@ export default function AdminModelsStudioPage() {
   useEffect(() => {
     load();
 
+    const unsubSync = subscribeToSync("models", () => load(true));
+
     const channel = supabase
       .channel("admin_models_studio_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "invitation_model_defaults" }, () => load(true))
@@ -106,6 +109,7 @@ export default function AdminModelsStudioPage() {
       .subscribe();
 
     return () => {
+      unsubSync();
       supabase.removeChannel(channel);
     };
   }, [load, supabase]);
@@ -119,6 +123,7 @@ export default function AdminModelsStudioPage() {
     try {
       await action();
       setNotice({ ok: true, text: done });
+      broadcastChange("models");
       await load(true);
     } catch (e) {
       setNotice({ ok: false, text: e instanceof Error ? e.message : "Une erreur est survenue." });

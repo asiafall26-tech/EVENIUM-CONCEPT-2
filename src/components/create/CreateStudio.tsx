@@ -35,6 +35,7 @@ import EventQRCode from '@/components/ui/EventQRCode';
 import ModelCard from '@/components/landing/ModelCard';
 import { Fleuron, DiamondRule, LuxFrame } from '@/components/landing/LuxOrnaments';
 import { EVENT_TYPES, EVENT_TYPE_ICONS as EVENT_ICONS } from '@/lib/eventTypes';
+import { subscribeToSync } from '@/lib/syncService';
 import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
 
@@ -444,6 +445,8 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
     reload();
 
+    const unsubSync = subscribeToSync("models", () => reload(true));
+
     // Abonnement Supabase Realtime : actualisation automatique instantanée sur les deux tables
     const channel = supabase
       .channel("create_studio_models_realtime")
@@ -461,6 +464,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
     return () => {
       cancelled = true;
+      unsubSync();
       supabase.removeChannel(channel);
     };
   }, []);
@@ -558,9 +562,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   }, [selectedEventCategory, filteredModels, selectedModelId]);
 
   const [demoModelId, setDemoModelId] = useState<string | null>(null);
+  const [showDemoExitModal, setShowDemoExitModal] = useState(false);
   const demoOpenRef = useRef(false);
+  const demoModelIdRef = useRef<string | null>(null);
   useEffect(() => {
     demoOpenRef.current = !!demoModelId;
+    demoModelIdRef.current = demoModelId;
+    if (!demoModelId) setShowDemoExitModal(false);
   }, [demoModelId]);
 
   // Aperçu plein écran : la page de création ne défile pas derrière
@@ -578,14 +586,23 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
 
   // Écouteurs globaux pour la communication avec les boutons de l'invitation
   useEffect(() => {
-    // Les boutons de l'aperçu d'un modèle de la galerie sont gérés par cet aperçu
     const handleClose = () => {
-      if (!demoOpenRef.current) setIsPreviewFullScreenOpen(false);
+      if (demoOpenRef.current) {
+        setShowDemoExitModal(true);
+      } else {
+        setIsPreviewFullScreenOpen(false);
+      }
     };
     const handleCheckout = () => {
-      if (demoOpenRef.current) return;
-      setIsPreviewFullScreenOpen(false);
-      setIsCheckoutModalOpen(true);
+      if (demoOpenRef.current && demoModelIdRef.current) {
+        handleChooseModel(demoModelIdRef.current);
+        setDemoModelId(null);
+        setShowDemoExitModal(false);
+        window.scrollTo({ top: 0 });
+      } else {
+        setIsPreviewFullScreenOpen(false);
+        setIsCheckoutModalOpen(true);
+      }
     };
 
     window.addEventListener('evenium:close-preview', handleClose);
@@ -1356,43 +1373,61 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
         </InvitationCtaContext.Provider>
       )}
 
-      {/* Aperçu d'un modèle de la galerie : centré dans son châssis smartphone sur grand écran avec barre de choix supérieure */}
+      {/* Aperçu d'un modèle de la galerie : immersion totale 100% pure (Proposition 2 Evenium Haute Couture) */}
       {demoModelId && (
         <InvitationCtaContext.Provider value={{ force: true, variant: 'choose' }}>
           <div
             className="fixed inset-0 z-[100] w-screen h-screen bg-[#0c0a09] flex flex-col overflow-hidden select-none"
             onContextMenu={(e) => e.preventDefault()}
           >
-            {/* Barre supérieure flottante haut de gamme */}
-            <div className="shrink-0 h-16 px-4 sm:px-6 bg-[#15110e]/95 border-b border-white/10 backdrop-blur-md flex items-center justify-between gap-3 z-30">
-              <button
-                type="button"
-                onClick={() => setDemoModelId(null)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition-colors"
-              >
-                <ArrowLeft size={16} /> <span>Retour aux modèles</span>
-              </button>
+            {/* Bouton de sortie discret Haute Joaillerie : zéro barre, zéro camouflage, le haut reste 100% libre */}
+            <button
+              type="button"
+              onClick={() => setShowDemoExitModal(true)}
+              aria-label="Fermer l'aperçu"
+              className="absolute top-3 left-3 sm:top-5 sm:left-5 z-50 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/85 text-white/90 hover:text-white border border-white/20 backdrop-blur-md flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
 
-              <div className="text-center min-w-0 max-w-md hidden sm:block">
-                <span className="text-[10px] uppercase tracking-[0.2em] text-[#d4af37] font-bold block">Aperçu du modèle</span>
-                <p className="font-serif text-sm text-white/90 truncate font-medium">
-                  {classifiedModels.find((m) => m.id === demoModelId)?.name || customOf(demoModelId)?.name || "Invitation"}
-                </p>
+            {/* Modale de sortie Haute Couture : le client choisit sans jamais gâter la vue pendant l'aperçu */}
+            {showDemoExitModal && (
+              <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="card-lux max-w-sm w-full p-6 sm:p-7 text-center relative rounded-3xl bg-[#140e0a] border border-[#d4af37]/40 shadow-2xl">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-transparent border border-[#d4af37]/40 flex items-center justify-center">
+                    <Sparkles size={22} className="text-[#d4af37]" />
+                  </div>
+                  <h3 className="font-serif text-xl sm:text-2xl text-white mb-2">Ce modèle vous plaît ?</h3>
+                  <p className="text-xs text-white/70 mb-6 leading-relaxed">
+                    Sélectionnez ce modèle pour le personnaliser avec vos propres textes, photos et musiques, ou continuez à explorer notre collection.
+                  </p>
+                  <div className="flex flex-col gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleChooseModel(demoModelId);
+                        setDemoModelId(null);
+                        setShowDemoExitModal(false);
+                        window.scrollTo({ top: 0 });
+                      }}
+                      className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#d4af37] via-[#f7e7b4] to-[#d4af37] text-black font-extrabold text-xs shadow-lg hover:brightness-105 active:scale-95 transition-all cursor-pointer border border-[#d4af37]/70"
+                    >
+                      ✨ Choisir ce modèle
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDemoModelId(null);
+                        setShowDemoExitModal(false);
+                      }}
+                      className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer border border-white/10"
+                    >
+                      Explorer d&apos;autres modèles
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  handleChooseModel(demoModelId);
-                  setDemoModelId(null);
-                  window.scrollTo({ top: 0 });
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f7e7b4] to-[#d4af37] text-black text-xs font-extrabold hover:brightness-105 active:scale-95 transition-all shadow-md border border-[#d4af37]/60"
-              >
-                <Sparkles size={14} className="text-black shrink-0" />
-                <span>Choisir ce modèle</span>
-              </button>
-            </div>
+            )}
 
             {/* Corps de l'aperçu : centré dans un châssis smartphone sur grand écran, pleine page sur mobile */}
             <div className="flex-1 min-h-0 w-full flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden relative">

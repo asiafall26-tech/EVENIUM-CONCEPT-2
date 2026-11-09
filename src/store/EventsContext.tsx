@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { usePathname } from 'next/navigation';
 import { Event, PlanType, FormatType, EventType } from '@/data/mock/events';
 import { createClient } from '@/utils/supabase/client';
+import { broadcastChange, subscribeToSync } from '@/lib/syncService';
 
 interface EventsContextType {
   events: Event[];
@@ -121,6 +122,21 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     if (isDashboardRoute && !isLoaded) {
       fetchEvents();
     }
+
+    if (isDashboardRoute) {
+      const unsubSync = subscribeToSync("events", () => fetchEvents(true));
+
+      const channel = supabase
+        .channel("user_events_realtime")
+        .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => fetchEvents(true))
+        .on("postgres_changes", { event: "*", schema: "public", table: "guests" }, () => fetchEvents(true))
+        .subscribe();
+
+      return () => {
+        unsubSync();
+        supabase.removeChannel(channel);
+      };
+    }
   }, [isDashboardRoute, isLoaded]);
 
   const addEvent = async (event: Partial<Event>, extraRow?: Record<string, unknown>): Promise<string | null> => {
@@ -166,7 +182,8 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     }
 
     if (data) {
-      // Refresh the list after successful insert
+      // Refresh the list after successful insert and broadcast
+      broadcastChange("events");
       await fetchEvents();
       return data.id;
     }
@@ -179,17 +196,20 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       const { event_details: _omit, ...rest } = row;
       ({ error } = await supabase.from('events').update(rest).eq('id', id));
       if (!error) {
+        broadcastChange("events");
         await fetchEvents();
         throw new Error("Les informations principales sont enregistrées, mais pas le thème, le programme ni les notes : exécutez le script « supabase_evenements_details.sql » dans Supabase.");
       }
     }
     if (error) throw error;
+    broadcastChange("events");
     await fetchEvents();
   };
 
   const updateEventPlan = async (id: string, newPlan: PlanType) => {
     const { error } = await supabase.from('events').update({ plan: newPlan }).eq('id', id);
     if (!error) {
+      broadcastChange("events");
       await fetchEvents();
     }
   };
@@ -197,6 +217,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const updateEventStatus = async (id: string, newStatus: "draft" | "published" | "completed") => {
     const { error } = await supabase.from('events').update({ status: newStatus }).eq('id', id);
     if (!error) {
+      broadcastChange("events");
       await fetchEvents();
     }
   };
@@ -207,6 +228,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       invitation_message: message
     }).eq('id', id);
     if (!error) {
+      broadcastChange("events");
       await fetchEvents();
     }
   };
@@ -217,6 +239,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       console.error("Supabase update error:", error);
       throw error;
     }
+    broadcastChange("events");
     await fetchEvents();
   };
 
@@ -226,6 +249,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       console.error("Supabase delete error:", error);
       throw error;
     }
+    broadcastChange("events");
     await fetchEvents(true);
   };
 

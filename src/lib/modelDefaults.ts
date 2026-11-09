@@ -8,6 +8,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { registerModelNames } from "@/data/mock/invitations";
+import { broadcastChange, registerInvalidator } from "@/lib/syncService";
 
 export const MODEL_DEFAULTS_TABLE = "invitation_model_defaults";
 
@@ -100,6 +101,10 @@ export function invalidateModelDefaultsCache() {
   defaultsCache = null;
 }
 
+try {
+  registerInvalidator(invalidateModelDefaultsCache);
+} catch {}
+
 /** Toutes les lignes, indexées par identifiant de modèle (vide si la table n'existe pas encore). */
 export async function fetchModelDefaults(supabase: SupabaseClient, force = false): Promise<Record<string, ModelDefaultRow>> {
   const now = Date.now();
@@ -164,7 +169,11 @@ async function write(supabase: SupabaseClient, row: Record<string, unknown>) {
     const retry = await supabase.from(MODEL_DEFAULTS_TABLE).upsert(fallbackRow, { onConflict: "model_id" });
     error = retry.error;
   }
-  if (!error) return;
+  if (!error) {
+    invalidateModelDefaultsCache();
+    broadcastChange("models");
+    return;
+  }
   if (isMissingTable(error)) throw new Error(`La table des modèles n'existe pas encore : ${SETUP_HINT}`);
   if (isMissingColumn(error)) throw new Error(`La table des modèles doit être mise à jour : ${SETUP_HINT}`);
   throw new Error(error.message);
