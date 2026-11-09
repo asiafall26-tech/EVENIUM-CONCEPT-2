@@ -27,6 +27,7 @@ export default function InvitationEndCta({
   const [mounted, setMounted] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [isIframe, setIsIframe] = useState(false);
+  const [returnCategory, setReturnCategory] = useState<string>("");
   // Démo publique affichée dans le cadre téléphone de la page d'aperçu (/apercu, sur ordinateur)
   const [isDemo, setIsDemo] = useState(false);
   const pathname = usePathname();
@@ -36,7 +37,18 @@ export default function InvitationEndCta({
 
   useEffect(() => {
     setMounted(true);
-    setIsDemo(new URLSearchParams(window.location.search).get("demo") === "1");
+    const sp = new URLSearchParams(window.location.search);
+    setIsDemo(sp.get("demo") === "1");
+    const cat = sp.get("cat") || sp.get("category") || "";
+    if (cat && cat !== "Tous") {
+      setReturnCategory(cat);
+      try { sessionStorage.setItem("evenium:last_category", cat); } catch {}
+    } else {
+      try {
+        const saved = sessionStorage.getItem("evenium:last_category");
+        if (saved && saved !== "Tous") setReturnCategory(saved);
+      } catch {}
+    }
     try {
       setIsIframe(window.self !== window.top);
     } catch {
@@ -189,7 +201,7 @@ export default function InvitationEndCta({
                 </button>
               ) : (
                 <Link
-                  href="/invitations"
+                  href={returnCategory ? `/invitations?cat=${encodeURIComponent(returnCategory)}` : "/invitations"}
                   target={isDemo ? "_top" : undefined}
                   className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer block text-center"
                 >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Sparkles, 
@@ -20,6 +20,10 @@ import { CardStudioModal } from "@/components/cartes/CardStudioModal";
 export default function VoeuxPage() {
   const [selectedOccasion, setSelectedOccasion] = useState<VoeuxOccasion | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("evenium:last_category", "Vœux"); } catch {}
+  }, []);
 
   const handleOpenStudio = (occasion: VoeuxOccasion) => {
     setSelectedOccasion(occasion);

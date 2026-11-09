@@ -28,6 +28,40 @@ function GallerySectionTitle({ eyebrow, title, lead }: { eyebrow: string; title:
 export default function InvitationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Tous");
 
+  // Initialisation avec la catégorie demandée dans l'URL ou dernièrement consultée
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const fromUrl = sp.get("cat") || sp.get("category");
+      if (fromUrl) {
+        setSelectedCategory(fromUrl);
+        try {
+          sessionStorage.setItem("evenium:last_category", fromUrl);
+        } catch {}
+      } else {
+        try {
+          const saved = sessionStorage.getItem("evenium:last_category");
+          if (saved) setSelectedCategory(saved);
+        } catch {}
+      }
+    }
+  }, []);
+
+  const handleSelectCategory = (cat: string) => {
+    setSelectedCategory(cat);
+    if (typeof window !== "undefined") {
+      try {
+        if (cat === "Tous") {
+          sessionStorage.removeItem("evenium:last_category");
+          window.history.replaceState(null, "", window.location.pathname);
+        } else {
+          sessionStorage.setItem("evenium:last_category", cat);
+          window.history.replaceState(null, "", `${window.location.pathname}?cat=${encodeURIComponent(cat)}`);
+        }
+      } catch {}
+    }
+  };
+
   // Classement et présence sur le site choisis par l'admin (studio des modèles)
   const [rows, setRows] = useState<Record<string, ModelDefaultRow>>({});
   // Modèles importés par l'admin (ZIP / HTML) et publiés
@@ -188,7 +222,7 @@ export default function InvitationsPage() {
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => handleSelectCategory(cat.id)}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
                   isActive
                     ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-[0_0_20px_-6px_rgba(233,196,120,0.7)] border border-[#c9a45e]"
@@ -225,7 +259,7 @@ export default function InvitationsPage() {
             {animatedModels.map((model) => (
               <ModelCard
                 key={model.id}
-                href={previewHref(model)}
+                href={previewHref(model, selectedCategory)}
                 name={model.name}
                 image={model.thumbnail}
                 kind="animée"
@@ -245,7 +279,7 @@ export default function InvitationsPage() {
             </p>
             <button
               type="button"
-              onClick={() => setSelectedCategory("Mariage")}
+              onClick={() => handleSelectCategory("Mariage")}
               className="btn-lux relative px-7 py-3.5 text-[11px]"
             >
               Voir la collection Mariage
@@ -266,7 +300,7 @@ export default function InvitationsPage() {
             {cardModels.map((model) => (
               <ModelCard
                 key={model.id}
-                href={previewHref(model)}
+                href={previewHref(model, selectedCategory)}
                 name={model.name}
                 image={model.thumbnail}
                 kind={model.type as any}

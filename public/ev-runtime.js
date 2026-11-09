@@ -636,11 +636,16 @@
       e.stopPropagation();
       modal.remove();
       exitModal = null;
+      var cat = (location.search.match(/[?&]cat=([^&#]+)/) || [])[1] || "";
+      if (!cat) {
+        try { cat = sessionStorage.getItem("evenium:last_category") || ""; } catch(e){}
+      }
+      var galleryUrl = "/invitations" + (cat && cat !== "Tous" ? "?cat=" + encodeURIComponent(decodeURIComponent(cat)) : "");
       if (currentCtaText && currentCtaText.secondaryHref) {
         window.top.location.href = currentCtaText.secondaryHref;
       } else {
         if (history.length > 1) history.back();
-        else window.top.location.href = "/invitations";
+        else window.top.location.href = galleryUrl;
       }
     };
   }
@@ -857,12 +862,18 @@
     if (slug) {
       // Démo ouverte seule : choisir ce modèle (création d'événement) ou revenir aux autres modèles.
       // Affiché d'emblée, même si les valeurs publiées ne se chargent pas : le client n'est jamais sans issue.
+      var catMatch = (location.search.match(/[?&]cat=([^&#]+)/) || [])[1];
+      if (!catMatch) {
+        try { catMatch = sessionStorage.getItem("evenium:last_category"); } catch (e) {}
+      }
+      var catQuery = catMatch && catMatch !== "Tous" ? "?cat=" + encodeURIComponent(decodeURIComponent(catMatch)) : "";
+      var catParam = catMatch && catMatch !== "Tous" ? "&cat=" + encodeURIComponent(decodeURIComponent(catMatch)) : "";
       cta({
         kicker: "Aperçu du modèle",
         primary: "Choisir ce modèle",
         secondary: "Retour aux modèles",
-        primaryHref: "/create?model=custom:" + slug,
-        secondaryHref: "/invitations",
+        primaryHref: "/create?model=custom:" + slug + catParam,
+        secondaryHref: "/invitations" + catQuery,
       });
       // Démo publique : valeurs publiées par l'admin
       fetch("/api/custom-models/" + slug, { cache: "no-store" })

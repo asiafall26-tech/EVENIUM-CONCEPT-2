@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Heart, 
@@ -22,6 +22,10 @@ import { CardStudioModal } from "@/components/cartes/CardStudioModal";
 export default function RomancePage() {
   const [selectedService, setSelectedService] = useState<RomanceServiceType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("evenium:last_category", "Couple"); } catch {}
+  }, []);
 
   const handleOpenMotDoux = () => {
     setSelectedService("mot_doux");

@@ -47,6 +47,7 @@ export default async function ApercuPage({ searchParams }: { searchParams: Promi
   if (!isModelSrc(src)) redirect("/invitations");
   let name = one(sp.name).slice(0, 120);
   let cover = one(sp.cover);
+  const category = one(sp.cat) || one(sp.category) || "";
   if (!name || !isCoverUrl(cover)) {
     const info = await infoFor(src).catch(() => null);
     name ||= info?.name ?? "";
@@ -57,6 +58,7 @@ export default async function ApercuPage({ searchParams }: { searchParams: Promi
       src={src}
       name={name || "Invitation"}
       cover={isCoverUrl(cover) ? cover : null}
+      category={category}
       // Lien envoyé aux invités : pas de retour vers la galerie des modèles
       showBack={!src.startsWith("/invite/")}
     />

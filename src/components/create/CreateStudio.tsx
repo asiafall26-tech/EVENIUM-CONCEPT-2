@@ -252,22 +252,23 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   });
 
   // Événement & Modèle sélectionné
-  const categoryParam = searchParams.get('category');
+  const categoryParam = searchParams.get('category') || searchParams.get('cat');
   const [selectedEventCategory, setSelectedEventCategory] = useState<string>(() => {
-    if (categoryParam) {
-      const lower = categoryParam.toLowerCase();
+    const raw = categoryParam || (typeof window !== "undefined" ? sessionStorage.getItem('evenium:last_category') : null);
+    if (raw) {
+      const lower = raw.toLowerCase();
       if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") return "Couple";
       if (lower === "voeux" || lower === "vœux" || lower === "voeu") return "Vœux";
       if (lower === "noel" || lower === "noël") return "Noël";
       if (lower === "fetes" || lower === "fêtes" || lower === "nouvel-an" || lower.includes("fin")) return "Fêtes de fin d'année";
-      return categoryParam;
+      return raw;
     }
     return "Mariage";
   });
   const [selectedModelId, setSelectedModelId] = useState<string>(VELOURS_MODEL_ID);
 
   useEffect(() => {
-    const cat = searchParams.get('category');
+    const cat = searchParams.get('category') || searchParams.get('cat');
     if (cat) {
       const lower = cat.toLowerCase();
       if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") setSelectedEventCategory("Couple");
@@ -938,7 +939,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setSelectedEventCategory(cat.id)}
+                  onClick={() => {
+                    setSelectedEventCategory(cat.id);
+                    try { sessionStorage.setItem('evenium:last_category', cat.id); } catch {}
+                  }}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${selectedEventCategory === cat.id
                       ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
                       : "bg-[#fffbf5] text-gray-700 border border-[#e4d8c4] hover:border-[#c9a45e]"

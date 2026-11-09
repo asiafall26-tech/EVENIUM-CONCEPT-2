@@ -16,6 +16,7 @@ interface Props {
   src: string;
   name: string;
   cover: string | null;
+  category?: string;
   showBack: boolean;
 }
 
@@ -24,26 +25,38 @@ interface Props {
  * de smartphone, devant sa couverture floutée. Sur mobile, le modèle s'ouvre directement en plein écran.
  * Le choix du modèle se fait avec le bloc de fin de l'invitation.
  */
-export default function ModelPreview({ src, name, cover, showBack }: Props) {
+export default function ModelPreview({ src, name, cover, category, showBack }: Props) {
   const desktop = useSyncExternalStore(subscribeMobile, () => !window.matchMedia(MOBILE).matches, () => false);
 
+  const backUrl = category && category !== "Tous" ? `/invitations?cat=${encodeURIComponent(category)}` : "/invitations";
+
   const chooseUrl = (() => {
+    const catParam = category && category !== "Tous" ? `&cat=${encodeURIComponent(category)}` : "";
     const custom = src.match(/^\/m\/([a-z0-9-]+)/);
-    if (custom) return `/create?model=custom:${custom[1]}`;
-    if (src.includes("rose-or")) return "/create?model=invit-10";
-    if (src.includes("sceau-dor")) return "/create?model=invit-8";
-    if (src.includes("velours") || src.includes("mariage")) return "/create?model=invit-7";
-    if (src.includes("ivoire")) return "/create?model=invit-9";
-    if (src.includes("anniversaire")) return "/create?model=invit-11";
-    if (src.includes("voeux")) return "/create?model=voeu-exception";
-    if (src.includes("mots-doux")) return "/create?model=mot-doux";
-    return "/create";
+    if (custom) return `/create?model=custom:${custom[1]}${catParam}`;
+    if (src.includes("rose-or")) return `/create?model=invit-10${catParam}`;
+    if (src.includes("sceau-dor")) return `/create?model=invit-8${catParam}`;
+    if (src.includes("velours") || src.includes("mariage")) return `/create?model=invit-7${catParam}`;
+    if (src.includes("ivoire")) return `/create?model=invit-9${catParam}`;
+    if (src.includes("anniversaire")) return `/create?model=invit-11${catParam}`;
+    if (src.includes("voeux")) return `/create?model=voeu-exception${catParam}`;
+    if (src.includes("mots-doux")) return `/create?model=mot-doux${catParam}`;
+    return `/create${catParam ? `?${catParam.slice(1)}` : ""}`;
   })();
+
+  // Mémorise la catégorie active pour que le retour ramène toujours à la bonne catégorie
+  useEffect(() => {
+    if (category && category !== "Tous") {
+      try {
+        sessionStorage.setItem("evenium:last_category", category);
+      } catch {}
+    }
+  }, [category]);
 
   // Écran étroit : la page en plein écran (demo=1, pour ne pas être re-cadrée par le proxy)
   useEffect(() => {
-    if (window.matchMedia(MOBILE).matches) window.location.replace(demoSrc(src));
-  }, [src]);
+    if (window.matchMedia(MOBILE).matches) window.location.replace(demoSrc(src, category));
+  }, [src, category]);
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-[#1a120c]">
@@ -63,7 +76,7 @@ export default function ModelPreview({ src, name, cover, showBack }: Props) {
           <header className="shrink-0 h-14 px-4 sm:px-8 bg-[#0e0a08]/92 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg z-30 select-none">
             {showBack ? (
               <Link
-                href="/invitations"
+                href={backUrl}
                 aria-label="Retour aux modèles"
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
               >
