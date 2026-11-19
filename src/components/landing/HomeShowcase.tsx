@@ -82,6 +82,21 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
     };
   }, []);
 
+  // Événements réellement disponibles dans la vitrine d'accueil pour la catégorie active
+  const homeAvailableEvents = useMemo(() => {
+    const base = showcaseModels.filter((m) => modelMatchesCategory(m, selectedCategory));
+    const counts: Record<string, number> = {};
+    for (const evt of SERVICE_EVENT_FILTERS) {
+      const c = base.filter((m) => modelMatchesEvent(m, evt)).length;
+      if (c > 0) counts[evt] = c;
+    }
+    return Object.keys(counts).map((name) => ({
+      name,
+      count: counts[name],
+      icon: EVENT_TYPE_ICONS[name as keyof typeof EVENT_TYPE_ICONS] || "🎉",
+    }));
+  }, [showcaseModels, selectedCategory]);
+
   // Filtrage strict par catégorie et par événement sélectionné
   const displayedModels = useMemo(() => {
     let list = showcaseModels.filter((m) => modelMatchesCategory(m, selectedCategory));
@@ -143,8 +158,8 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
           </div>
         </div>
 
-        {/* Filtre par événement pour Invitations événementielles et Vœux */}
-        {(selectedCategory === "invitations" || selectedCategory === "voeux") && (
+        {/* Filtre par événement pour la vitrine (uniquement si des événements sont disponibles) */}
+        {homeAvailableEvents.length > 0 && (
           <div className="flex justify-center -mt-2 mb-10 max-w-5xl mx-auto px-2 animate-in fade-in duration-300">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 px-2 bg-white/85 backdrop-blur-sm rounded-full border border-[#b8924a]/35 shadow-xs scroll-smooth max-w-full">
               <button
@@ -158,21 +173,22 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
               >
                 Tous
               </button>
-              {SERVICE_EVENT_FILTERS.map((evt) => {
-                const isSelected = selectedEvent.toLowerCase() === evt.toLowerCase();
+              {homeAvailableEvents.map((evt) => {
+                const isSelected = selectedEvent.toLowerCase() === evt.name.toLowerCase();
                 return (
                   <button
-                    key={evt}
+                    key={evt.name}
                     type="button"
-                    onClick={() => setSelectedEvent(isSelected ? "all" : evt)}
+                    onClick={() => setSelectedEvent(isSelected ? "all" : evt.name)}
                     className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
                       isSelected
                         ? "bg-[#2b1d12] text-[#f0d999] shadow-xs"
                         : "text-gray-700 hover:text-black hover:bg-white"
                     }`}
                   >
-                    <span>{EVENT_TYPE_ICONS[evt] || "🎉"}</span>
-                    <span>{evt}</span>
+                    <span>{evt.icon}</span>
+                    <span>{evt.name}</span>
+                    <span className="text-[10px] opacity-70">({evt.count})</span>
                   </button>
                 );
               })}

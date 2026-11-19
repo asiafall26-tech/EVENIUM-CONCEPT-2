@@ -1,7 +1,7 @@
 "use client";
 
 import { mockInvitationModels, defaultClassification } from "@/data/mock/invitations";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Search, X, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import ModelCard from "@/components/landing/ModelCard";
 import { useEffect, useState, useMemo } from "react";
@@ -34,7 +34,7 @@ import {
   type ServiceCategory,
   FALLBACK_CATEGORIES,
 } from "@/lib/serviceCategories";
-import { SERVICE_EVENT_FILTERS, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
+import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 
 /** Titre de rubrique de la galerie : sur-titre doré, titre Playfair, filet. */
 function GallerySectionTitle({ eyebrow, title, lead }: { eyebrow: string; title: React.ReactNode; lead?: string | null }) {
@@ -62,6 +62,7 @@ export default function InvitationsClientPage({
   const [selectedCategory, setSelectedCategory] = useState<string>("tous");
   const [selectedFormat, setSelectedFormat] = useState<InvitationFormatFilter>("all");
   const [selectedEvent, setSelectedEvent] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [categories, setCategories] = useState<ServiceCategory[]>(initialCategories);
   const [rows, setRows] = useState<Record<string, ModelDefaultRow>>(initialRows);
   const [customs, setCustoms] = useState<CustomModelRow[]>(initialCustoms);
@@ -96,6 +97,7 @@ export default function InvitationsClientPage({
     setSelectedCategory(slug);
     setSelectedFormat("all");
     setSelectedEvent("all");
+    setSearchQuery("");
     if (typeof window !== "undefined") {
       try {
         if (slug === "tous" || slug === "all") {
@@ -226,20 +228,55 @@ export default function InvitationsClientPage({
     };
   }, [siteModels]);
 
-  // Compteurs d'événements pour le service sélectionné (Invitations ou Vœux)
-  const eventCounts = useMemo(() => {
+  // Événements réellement disponibles pour la sélection active (compteur > 0 uniquement !)
+  const availableEvents = useMemo(() => {
     const base = siteModels.filter((m) => {
-      if (selectedCategory === "tous" || selectedCategory === "all") return true;
-      return modelMatchesCategory(m, selectedCategory);
+      if (selectedCategory !== "tous" && selectedCategory !== "all" && !modelMatchesCategory(m, selectedCategory)) {
+        return false;
+      }
+      if (selectedCategory === "invitations" || selectedCategory === "evenementielles") {
+        return modelMatchesFormat(m, selectedFormat);
+      }
+      return true;
     });
-    const counts: Record<string, number> = { all: base.length };
-    for (const evt of SERVICE_EVENT_FILTERS) {
-      counts[evt] = base.filter((m) => modelMatchesEvent(m, evt)).length;
-    }
-    return counts;
-  }, [siteModels, selectedCategory]);
 
-  // Modèles filtrés selon la catégorie active, le format et l'événement
+    const counts: Record<string, number> = {};
+    for (const evt of EVENT_TYPES) {
+      const c = base.filter((m) => modelMatchesEvent(m, evt)).length;
+      if (c > 0) {
+        counts[evt] = c;
+      }
+    }
+
+    const list = Object.keys(counts).map((name) => ({
+      name,
+      count: counts[name],
+      icon: EVENT_TYPE_ICONS[name as keyof typeof EVENT_TYPE_ICONS] || "🎉",
+    }));
+
+    // Respect de l'ordre officiel de présentation
+    list.sort((a, b) => {
+      const idxA = (EVENT_TYPES as readonly string[]).indexOf(a.name as any);
+      const idxB = (EVENT_TYPES as readonly string[]).indexOf(b.name as any);
+      return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
+    });
+
+    return { list, total: base.length };
+  }, [siteModels, selectedCategory, selectedFormat]);
+
+  // Réinitialiser automatiquement le filtre d'événement s'il n'est plus pertinent pour la nouvelle catégorie
+  useEffect(() => {
+    if (selectedEvent !== "all" && selectedEvent !== "Tous" && selectedEvent !== "tous") {
+      const exists = availableEvents.list.some(
+        (e) => e.name.toLowerCase() === selectedEvent.toLowerCase()
+      );
+      if (!exists) {
+        setSelectedEvent("all");
+      }
+    }
+  }, [availableEvents, selectedEvent]);
+
+  // Modèles filtrés selon la catégorie active, le format, l'événement et la recherche en temps réel
   const filteredModels = useMemo(() => {
     let list = siteModels;
     if (selectedCategory !== "tous" && selectedCategory !== "all") {
@@ -251,14 +288,24 @@ export default function InvitationsClientPage({
     if (selectedEvent !== "all" && selectedEvent !== "Tous" && selectedEvent !== "tous") {
       list = list.filter((m) => modelMatchesEvent(m, selectedEvent));
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((m) =>
+        m.name.toLowerCase().includes(q) ||
+        (m.description || "").toLowerCase().includes(q) ||
+        (m.category || "").toLowerCase().includes(q) ||
+        (m.events || []).some((e) => e.toLowerCase().includes(q))
+      );
+    }
     return list;
-  }, [siteModels, selectedCategory, selectedFormat, selectedEvent]);
+  }, [siteModels, selectedCategory, selectedFormat, selectedEvent, searchQuery]);
 
   const activeCategoryInfo = useMemo(() => {
     const eventSuffix = selectedEvent !== "all" && selectedEvent !== "Tous" ? ` · ${selectedEvent}` : "";
+    const searchSuffix = searchQuery.trim() ? ` · « ${searchQuery.trim()} »` : "";
     if (selectedCategory === "tous" || selectedCategory === "all") {
       return {
-        label: `Tous les modèles${eventSuffix}`,
+        label: `Tous les modèles${eventSuffix}${searchSuffix}`,
         description: selectedEvent !== "all" && selectedEvent !== "Tous"
           ? `Explorez nos modèles d'exception adaptés pour : ${selectedEvent}.`
           : "Explorez l'intégralité de nos invitations digitales, vœux et lettres d'amour haute couture.",
@@ -267,66 +314,71 @@ export default function InvitationsClientPage({
     }
     const match = categories.find((c) => c.slug.toLowerCase() === selectedCategory.toLowerCase());
     return {
-      label: `${match ? match.label : "Collection"}${eventSuffix}`,
+      label: `${match ? match.label : "Collection"}${eventSuffix}${searchSuffix}`,
       description: selectedEvent !== "all" && selectedEvent !== "Tous"
         ? `Découvrez nos créations dédiées à votre événement : ${selectedEvent}.`
         : (match?.description || "Créations exclusives Evenium."),
       count: filteredModels.length,
     };
-  }, [selectedCategory, selectedEvent, categories, filteredModels.length]);
+  }, [selectedCategory, selectedEvent, searchQuery, categories, filteredModels.length]);
 
-  // Responsive grid layout based on model count
+  // Responsive grid layout harmonisé et centré selon le nombre de modèles
   const gridClass = (count: number) =>
     count === 1
-      ? "grid grid-cols-1 max-w-md mx-auto gap-12"
+      ? "grid grid-cols-1 max-w-sm mx-auto gap-8 sm:gap-10"
       : count === 2
-        ? "grid grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto gap-10"
+        ? "grid grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto gap-8 sm:gap-10"
         : count === 3
-          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10"
-          : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8";
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto gap-8"
+          : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8";
 
   return (
     <div className="bg-[#faf3e8] min-h-screen">
-      <main className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* En-tête Collection */}
-        <div className="text-center mb-10 sm:mb-14">
-          <Fleuron className="mx-auto w-44 md:w-52 h-auto mb-3" />
-          <p className="pl-[0.35em] text-[11px] md:text-xs font-medium tracking-[0.35em] uppercase text-[#8f6f33] mb-3">
-            La collection Evenium
+        <div className="text-center mb-8 sm:mb-12">
+          <Fleuron className="mx-auto w-40 md:w-48 h-auto mb-3" />
+          <p className="pl-[0.35em] text-[10.5px] md:text-xs font-semibold tracking-[0.35em] uppercase text-[#8f6f33] mb-2.5">
+            La collection exclusive
           </p>
-          <h1 className="font-serif not-italic text-3xl sm:text-5xl md:text-6xl mb-3 text-[#1d120a]">
+          <h1 className="font-serif not-italic text-3xl sm:text-5xl md:text-6xl mb-3 text-[#1d120a] tracking-tight">
             Nos <span className="italic text-gold-foil">Créations</span> &amp; Modèles
           </h1>
-          <DiamondRule className="mt-4 mb-5" />
+          <DiamondRule className="mt-3 mb-4" />
           <p className="text-[#3d3126] max-w-2xl mx-auto font-sans text-sm sm:text-base leading-relaxed">
             Faites sensation avec nos invitations digitales interactives. Touchez n&apos;importe quel modèle pour explorer son univers immersif et tester les fonctionnalités.
           </p>
         </div>
 
-        {/* Barre de sélection dynamique des catégories (sans prix affichés) */}
-        <div className="max-w-4xl mx-auto mb-12 sm:mb-16">
-          <div className="bg-white/90 border border-[#b8924a]/35 rounded-2xl sm:rounded-full p-2 flex flex-wrap items-center justify-center gap-2 shadow-sm">
+        {/* 1. Barre des 4 Services (+ Tous les modèles) — Design Prestige */}
+        <div className="max-w-4xl mx-auto mb-8 sm:mb-10">
+          <div className="bg-white/90 backdrop-blur-md border border-[#c9a45e]/35 rounded-2xl sm:rounded-full p-1.5 sm:p-2 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-[0_4px_24px_-6px_rgba(43,33,24,0.08)]">
             {filterCategories.map((cat) => {
               const isActive = selectedCategory === cat.slug;
+              const isEmpty = cat.count === 0 && cat.slug !== "all" && cat.slug !== "tous";
               return (
                 <button
                   key={cat.slug}
                   type="button"
                   onClick={() => handleSelectCategory(cat.slug)}
-                  className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer ${isActive
-                    ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-[0_0_20px_-6px_rgba(233,196,120,0.7)] border border-[#c9a45e]"
-                    : "bg-transparent hover:bg-[#f2e4cf]/60 text-gray-700 border border-transparent"
-                    }`}
+                  className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                    isActive
+                      ? "bg-gradient-to-b from-[#2e1d12] via-[#1f130b] to-[#120a06] text-[#f5dfaa] shadow-[0_4px_16px_-2px_rgba(201,164,94,0.4)] border border-[#c9a45e]"
+                      : "bg-transparent hover:bg-[#f6ebd9]/80 text-[#3d3126] border border-transparent"
+                  }`}
                 >
-                  <span>{cat.icon}</span>
+                  <span className="text-base sm:text-sm">{cat.icon}</span>
                   <span>{cat.label}</span>
                   <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${isActive
-                      ? "bg-[#b8924a]/30 text-[#f0d999]"
-                      : "bg-gray-100 text-gray-600"
-                      }`}
+                    className={`text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                      isActive
+                        ? "bg-[#c9a45e]/30 text-[#fcf4e3]"
+                        : isEmpty
+                        ? "bg-[#efe5d4] text-[#8c7864] font-normal"
+                        : "bg-black/5 text-[#544638]"
+                    }`}
                   >
-                    {cat.count}
+                    {isEmpty ? "Bientôt" : cat.count}
                   </span>
                 </button>
               );
@@ -334,103 +386,160 @@ export default function InvitationsClientPage({
           </div>
         </div>
 
-        {/* Sélecteur de format pour les Invitations événementielles : Invitation animée / Invitation statique */}
-        {(selectedCategory === "invitations" || selectedCategory === "evenementielles") && (
-          <div className="flex justify-center -mt-8 sm:-mt-10 mb-12 animate-in fade-in duration-300">
-            <div className="bg-white/85 border border-[#b8924a]/30 p-1 sm:p-1.5 rounded-full inline-flex items-center gap-1 sm:gap-1.5 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setSelectedFormat("all")}
-                className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  selectedFormat === "all"
-                    ? "bg-[#2b1d12] text-[#f0d999] shadow-xs"
-                    : "text-gray-600 hover:text-black"
-                }`}
-              >
-                Tous les formats ({formatCounts.all})
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedFormat("animée")}
-                className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  selectedFormat === "animée"
-                    ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-xs"
-                    : "text-gray-600 hover:text-black"
-                }`}
-              >
-                <span>🎬 Invitation animée</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-[#f0d999]">{formatCounts.animee}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedFormat("statique")}
-                className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  selectedFormat === "statique"
-                    ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-xs"
-                    : "text-gray-600 hover:text-black"
-                }`}
-              >
-                <span>📜 Invitation statique</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-[#f0d999]">{formatCounts.statique}</span>
-              </button>
+        {/* 2. Barre de Contrôle Contextuelle (Format, Recherche, Événements Disponibles) */}
+        <div className="max-w-5xl mx-auto mb-10 sm:mb-12 space-y-3.5">
+          {/* Rangée supérieure : Sélecteur de formats + Recherche rapide */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/70 backdrop-blur-sm border border-[#c9a45e]/25 rounded-2xl p-2 sm:p-2.5 shadow-2xs">
+            {/* Formats : uniquement si Invitations ou Tous */}
+            {(selectedCategory === "invitations" || selectedCategory === "evenementielles" || selectedCategory === "tous") ? (
+              <div className="flex items-center gap-1 bg-[#f5eee1] p-1 rounded-xl w-full sm:w-auto shrink-0 justify-center">
+                <button
+                  type="button"
+                  onClick={() => setSelectedFormat("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedFormat === "all"
+                      ? "bg-[#2b2118] text-[#f5eee1] shadow-2xs"
+                      : "text-[#6e6255] hover:text-[#2b2118]"
+                  }`}
+                >
+                  Tous les formats ({formatCounts.all})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFormat("animée")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectedFormat === "animée"
+                      ? "bg-[#2b2118] text-[#f5eee1] shadow-2xs"
+                      : "text-[#6e6255] hover:text-[#2b2118]"
+                  }`}
+                >
+                  <span>🎬 Animée</span>
+                  <span className="text-[10px] opacity-80">({formatCounts.animee})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFormat("statique")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectedFormat === "statique"
+                      ? "bg-[#2b2118] text-[#f5eee1] shadow-2xs"
+                      : "text-[#6e6255] hover:text-[#2b2118]"
+                  }`}
+                >
+                  <span>📜 Statique</span>
+                  <span className="text-[10px] opacity-80">({formatCounts.statique})</span>
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2 pl-2">
+                <span className="text-xs text-[#8f6f33] font-semibold flex items-center gap-1">
+                  <Sparkles size={13} /> {activeCategoryInfo.label}
+                </span>
+              </div>
+            )}
+
+            {/* Champ de recherche rapide */}
+            <div className="relative w-full sm:w-72 shrink-0">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8f6f33]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un modèle, univers..."
+                className="w-full pl-9 pr-8 py-2 bg-white/90 border border-[#c9a45e]/30 rounded-xl text-xs text-[#2b2118] placeholder-[#948473] focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40 focus:border-[#b8924a] transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5 cursor-pointer"
+                  title="Effacer la recherche"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Filtre par événement pour Invitations événementielles et Vœux */}
-        {(selectedCategory === "invitations" || selectedCategory === "evenementielles" || selectedCategory === "voeux" || selectedCategory === "celebrations" || selectedCategory === "tous") && (
-          <div className="max-w-6xl mx-auto -mt-6 sm:-mt-8 mb-10 sm:mb-12 animate-in fade-in duration-300">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2 px-1 scroll-smooth">
+          {/* Rangée inférieure : Événements réellement disponibles (compte > 0 uniquement) */}
+          {availableEvents.list.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-0.5 scroll-smooth justify-start sm:justify-center flex-nowrap sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => setSelectedEvent("all")}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                   selectedEvent === "all" || selectedEvent === "Tous"
-                    ? "bg-[#2b1d12] text-[#f0d999] shadow-xs border border-[#c9a45e]/50"
-                    : "bg-white/80 border border-gray-200 text-gray-700 hover:border-[#b8924a] hover:bg-white"
+                    ? "bg-gradient-to-b from-[#2e1d12] to-[#120a06] text-[#f5dfaa] shadow-xs border border-[#c9a45e]"
+                    : "bg-white/80 border border-[#c9a45e]/25 text-[#3d3126] hover:border-[#b8924a] hover:bg-white"
                 }`}
               >
                 <span>Tous les événements</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  selectedEvent === "all" || selectedEvent === "Tous" ? "bg-white/20 text-[#f0d999]" : "bg-gray-100 text-gray-600"
+                  selectedEvent === "all" || selectedEvent === "Tous" ? "bg-white/20 text-[#f5dfaa]" : "bg-[#f5eee1] text-[#6e6255]"
                 }`}>
-                  {eventCounts.all || 0}
+                  {availableEvents.total}
                 </span>
               </button>
 
-              {SERVICE_EVENT_FILTERS.map((evt) => {
-                const isSelected = selectedEvent.toLowerCase() === evt.toLowerCase();
-                const count = eventCounts[evt] || 0;
+              {availableEvents.list.map((evt) => {
+                const isSelected = selectedEvent.toLowerCase() === evt.name.toLowerCase();
                 return (
                   <button
-                    key={evt}
+                    key={evt.name}
                     type="button"
-                    onClick={() => setSelectedEvent(isSelected ? "all" : evt)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    onClick={() => setSelectedEvent(isSelected ? "all" : evt.name)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                       isSelected
-                        ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-xs border border-[#c9a45e]"
-                        : "bg-white/80 border border-gray-200 text-gray-700 hover:border-[#b8924a] hover:bg-[#fbf7f0]"
-                    } ${count === 0 ? "opacity-60" : ""}`}
+                        ? "bg-gradient-to-b from-[#2e1d12] to-[#120a06] text-[#f5dfaa] shadow-xs border border-[#c9a45e]"
+                        : "bg-white/85 border border-[#c9a45e]/25 text-[#3d3126] hover:border-[#b8924a] hover:bg-[#fbf7f0]"
+                    }`}
                   >
-                    <span>{EVENT_TYPE_ICONS[evt] || "🎉"}</span>
-                    <span>{evt}</span>
+                    <span>{evt.icon}</span>
+                    <span>{evt.name}</span>
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                         isSelected
-                          ? "bg-white/20 text-[#f0d999]"
-                          : count > 0
-                          ? "bg-amber-100/70 text-amber-900"
-                          : "bg-gray-100 text-gray-500"
+                          ? "bg-white/20 text-[#f5dfaa]"
+                          : "bg-[#f3e7d3] text-[#785b28]"
                       }`}
                     >
-                      {count}
+                      {evt.count}
                     </span>
+                    {isSelected && (
+                      <X size={12} className="ml-0.5 text-[#f5dfaa] hover:opacity-80" />
+                    )}
                   </button>
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Puce d'information si un sous-filtre ou une recherche est actif */}
+          {(selectedEvent !== "all" || searchQuery || selectedFormat !== "all") && (
+            <div className="flex items-center justify-center gap-2 pt-1 animate-in fade-in duration-200">
+              <span className="text-xs text-[#8f6f33]">
+                Filtre actif :{" "}
+                <strong className="text-[#2b2118]">
+                  {selectedEvent !== "all" ? selectedEvent : ""}
+                  {selectedEvent !== "all" && selectedFormat !== "all" ? " · " : ""}
+                  {selectedFormat !== "all" ? (selectedFormat === "animée" ? "Format animé" : "Format statique") : ""}
+                  {searchQuery ? ` « ${searchQuery} »` : ""}
+                </strong>
+                {" "}· {filteredModels.length} {filteredModels.length > 1 ? "créations" : "création"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEvent("all");
+                  setSelectedFormat("all");
+                  setSearchQuery("");
+                }}
+                className="text-[11px] font-bold text-[#8f6f33] hover:text-[#2b2118] underline cursor-pointer flex items-center gap-1 ml-1"
+              >
+                <RotateCcw size={11} /> Réinitialiser
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Titre de la section filtrée */}
         <div className="max-w-6xl mx-auto mb-12">
@@ -466,11 +575,16 @@ export default function InvitationsClientPage({
               </p>
               <button
                 type="button"
-                onClick={() => handleSelectCategory("tous")}
+                onClick={() => {
+                  setSelectedCategory("tous");
+                  setSelectedEvent("all");
+                  setSelectedFormat("all");
+                  setSearchQuery("");
+                }}
                 className="btn-lux relative px-7 py-3 text-xs flex items-center gap-2 mx-auto cursor-pointer"
               >
                 <Sparkles size={14} className="text-[#f0d999]" />
-                <span>Voir tous les modèles ({siteModels.length})</span>
+                <span>Réinitialiser les filtres ({siteModels.length} modèles)</span>
               </button>
             </div>
           )}

@@ -669,3 +669,15 @@ textarea {
   transform: translateX(50%);
 }
 
+/* ==========================================================================
+   Utilitaires d'affichage & suppression discrète des scrollbars Windows/Mac
+   ========================================================================== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
