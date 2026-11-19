@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { X, ArrowRight, Menu, Sparkles, Heart, Store, Calendar, LogIn } from "lucide-react";
+import { X, ArrowRight, Sparkles, Heart, Store, Calendar } from "lucide-react";
 
 export function PublicHeader() {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   // In the event creation funnel, render a clean, distraction-free header without marketing navigation
   if (pathname.startsWith('/create')) {
     return (
@@ -70,42 +67,54 @@ export function PublicHeader() {
 
           <span aria-hidden className="hidden md:block h-6 sm:h-7 w-px bg-gradient-to-b from-transparent via-[#b8924a] to-transparent shrink-0" />
 
-          {/* Liens principaux affichés à partir de md: (tablettes larges et ordinateurs) : Les 3 Services */}
-          <nav className="hidden md:flex items-center gap-1.5 lg:gap-3 shrink-0">
-            {/* Service 1 : Modèles d'Invitation */}
+          {/* Liens principaux affichés à partir de md: (tablettes larges et ordinateurs) : Les 4 Catégories + Prestataires sans prix */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2.5 shrink-0">
+            {/* Catégorie 1 : Invitations Grands Événements */}
             <Link
-              href="/invitations"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.1em] lg:tracking-[0.14em] transition-colors whitespace-nowrap shrink-0 ${
-                pathname.startsWith('/invitations') ? 'text-[#8f6f33] font-bold' : 'text-[#2b1d12] hover:text-[#8f6f33]'
+              href="/invitations?cat=invitations"
+              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] transition-colors whitespace-nowrap shrink-0 ${
+                pathname === '/invitations' ? 'text-[#8f6f33] font-bold' : 'text-[#2b1d12] hover:text-[#8f6f33]'
               }`}
             >
-              <span>1. Invitations</span>
+              <span>Invitations</span>
             </Link>
 
             <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
 
-            {/* Service 2 : Vœux d'Exception */}
+            {/* Catégorie 2 : Vœux */}
             <Link
-              href="/voeux"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.1em] lg:tracking-[0.14em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 ${
+              href="/invitations?cat=voeux"
+              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 ${
                 pathname.startsWith('/voeux') ? 'text-[#8f6f33] font-bold' : 'text-[#2b1d12] hover:text-[#8f6f33]'
               }`}
             >
               <Sparkles size={11} className="text-[#b8924a]" />
-              <span>2. Vœux (2 000 F)</span>
+              <span>Vœux</span>
             </Link>
 
             <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
 
-            {/* Service 3 : Mots Doux & Couple */}
+            {/* Catégorie 3 : Mots Doux */}
             <Link
-              href="/mots-doux"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.1em] lg:tracking-[0.14em] text-[#9e1b23] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1 ${
-                pathname.startsWith('/mots-doux') || pathname.startsWith('/couple') ? 'font-bold' : ''
+              href="/invitations?cat=mots_doux"
+              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#9e1b23] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1 ${
+                pathname.startsWith('/mots-doux') ? 'font-bold' : ''
               }`}
             >
               <Heart size={11} className="text-[#d62828]" />
-              <span>3. Mots Doux &amp; Couple</span>
+              <span>Mots Doux</span>
+            </Link>
+
+            <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
+
+            {/* Catégorie 4 : Invitations Couple */}
+            <Link
+              href="/invitations?cat=couple"
+              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#7a1c22] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1 ${
+                pathname.startsWith('/couple') ? 'font-bold' : ''
+              }`}
+            >
+              <span>Invitations Couple</span>
             </Link>
 
             <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
@@ -113,7 +122,7 @@ export function PublicHeader() {
             {/* Prestataires */}
             <Link
               href="/espace-prestataire"
-              className="py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.1em] lg:tracking-[0.14em] text-[#2b1d12] hover:text-[#8f6f33] transition-colors whitespace-nowrap shrink-0"
+              className="py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#2b1d12] hover:text-[#8f6f33] transition-colors whitespace-nowrap shrink-0"
             >
               <span>Prestataires</span>
             </Link>
@@ -129,52 +138,49 @@ export function PublicHeader() {
             <span>Créer mon événement</span>
             <ArrowRight size={13} className="hidden sm:inline-block text-[#f0d999]" />
           </Link>
-
-          {/* Bouton Hamburger pour mobile et tablette (visible jusqu'à md:) */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Menu de navigation"
-            className="md:hidden p-2 rounded-xl border border-[#c9a45e]/40 bg-[#fbf5ec] text-[#2b1d12] hover:bg-white transition-colors"
-          >
-            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-          </button>
         </div>
       </div>
 
-      {/* Sur téléphone : Barre de navigation directe des 3 Services sans aucun menu caché ni 3 points */}
-      <div className="md:hidden flex items-center gap-1 px-2.5 py-1.5 bg-[#faf3e8]/90 border-t border-[#c9a45e]/20 overflow-x-auto no-scrollbar scroll-smooth">
+      {/* Sur téléphone : Barre de navigation directe des 4 catégories sans aucun prix */}
+      <div className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-[#faf3e8]/95 border-t border-[#c9a45e]/20 overflow-x-auto no-scrollbar scroll-smooth">
         <Link
-          href="/invitations"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${
-            pathname.startsWith('/invitations')
+          href="/invitations?cat=invitations"
+          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname === '/invitations'
               ? 'bg-[#2b1d12] text-[#f0d999] shadow-xs'
               : 'bg-white/90 border border-[#c9a45e]/40 text-[#2b1d12]'
-          }`}
+            }`}
         >
           <Calendar size={11} className="text-[#b8924a]" /> Invitations
         </Link>
 
         <Link
-          href="/voeux"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${
-            pathname.startsWith('/voeux')
+          href="/invitations?cat=voeux"
+          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/voeux')
               ? 'bg-[#2b1d12] text-[#f0d999] shadow-xs'
               : 'bg-white/90 border border-[#c9a45e]/40 text-[#2b1d12]'
-          }`}
+            }`}
         >
-          <Sparkles size={11} className="text-[#b8924a]" /> Vœux (2 000 F)
+          <Sparkles size={11} className="text-[#b8924a]" /> Vœux
         </Link>
 
         <Link
-          href="/mots-doux"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${
-            pathname.startsWith('/mots-doux') || pathname.startsWith('/couple')
+          href="/invitations?cat=mots_doux"
+          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/mots-doux') || pathname.startsWith('/couple')
               ? 'bg-[#9e1b23] text-white shadow-xs'
               : 'bg-white/90 border border-[#f4c2c9] text-[#9e1b23]'
-          }`}
+            }`}
         >
-          <Heart size={11} className="text-[#e63946]" /> Mots Doux &amp; Couple
+          <Heart size={11} className="text-[#e63946]" /> Mots Doux
+        </Link>
+
+        <Link
+          href="/invitations?cat=couple"
+          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/couple')
+              ? 'bg-[#7a1c22] text-white shadow-xs'
+              : 'bg-white/90 border border-[#f4c2c9] text-[#7a1c22]'
+            }`}
+        >
+          <span>Couple</span>
         </Link>
 
         <Link
@@ -185,71 +191,6 @@ export function PublicHeader() {
         </Link>
       </div>
 
-      {/* Menu déroulant mobile & tablette raffiné Haute Couture */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-[#faf3e8] border-b border-[#c9a45e]/40 px-4 py-4 space-y-2.5 shadow-xl animate-in slide-in-from-top-2 duration-200">
-          <Link
-            href="/invitations"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center justify-between p-3 rounded-xl bg-white border border-[#e4d8c4] text-[#2b1d12] text-xs font-semibold uppercase tracking-wider"
-          >
-            <span className="flex items-center gap-2">
-              <Calendar size={15} className="text-[#b8924a]" /> 1. Modèles d&apos;Invitation (Grands Événements)
-            </span>
-            <ArrowRight size={14} className="text-gray-400" />
-          </Link>
-
-          <Link
-            href="/voeux"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center justify-between p-3 rounded-xl bg-white border border-[#e4d8c4] text-[#2b1d12] text-xs font-semibold uppercase tracking-wider"
-          >
-            <span className="flex items-center gap-2">
-              <Sparkles size={15} className="text-[#b8924a]" /> 2. Vœux d&apos;Exception (2 000 FCFA)
-            </span>
-            <ArrowRight size={14} className="text-gray-400" />
-          </Link>
-
-          <Link
-            href="/mots-doux"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center justify-between p-3 rounded-xl bg-white border border-[#eed7dc] text-[#9e1b23] text-xs font-semibold uppercase tracking-wider font-serif"
-          >
-            <span className="flex items-center gap-2">
-              <Heart size={15} className="text-[#d62828]" /> 3. Mots Doux (1 000 F) &amp; Couple (4 000 F)
-            </span>
-            <ArrowRight size={14} className="text-gray-400" />
-          </Link>
-
-          <Link
-            href="/espace-prestataire"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-[#2a1b0f] to-[#120b06] text-[#fbf3e4] text-xs font-semibold uppercase tracking-wider"
-          >
-            <span className="flex items-center gap-2">
-              <Store size={15} className="text-[#e2c178]" /> Espace Prestataire (Pro)
-            </span>
-            <ArrowRight size={14} className="text-[#f0d999]" />
-          </Link>
-
-          <div className="pt-2 border-t border-[#c9a45e]/30 flex gap-2">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 py-2.5 text-center text-xs font-semibold rounded-xl border border-gray-300 bg-white text-gray-800"
-            >
-              Connexion
-            </Link>
-            <Link
-              href="/create"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 py-2.5 text-center text-xs font-semibold rounded-xl bg-[#b8924a] text-white"
-            >
-              Créer un événement
-            </Link>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

@@ -122,7 +122,11 @@ export async function fetchModelDefaults(supabase: SupabaseClient, force = false
     let res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[0]);
     for (let i = 1; i < selects.length && res.error && isMissingColumn(res.error); i++) res = await supabase.from(MODEL_DEFAULTS_TABLE).select(selects[i]);
     if (res.error || !res.data) return defaultsCache?.data ?? {};
-    const rows = Object.fromEntries((res.data as unknown as ModelDefaultRow[]).map((r) => [r.model_id, normalize(r)]));
+    const rows = Object.fromEntries(
+      (res.data as unknown as ModelDefaultRow[])
+        .filter((r) => !r.model_id.startsWith("__"))
+        .map((r) => [r.model_id, normalize(r)])
+    );
     try {
       registerModelNames(modelNamesMap(rows));
     } catch {

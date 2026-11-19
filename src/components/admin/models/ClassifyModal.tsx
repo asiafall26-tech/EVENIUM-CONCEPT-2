@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 import type { InvitationKind, ModelClassification } from "@/lib/modelDefaults";
+import { createClient } from "@/utils/supabase/client";
+import { fetchServiceCategories } from "@/lib/serviceCategories";
 
 const KINDS: { id: InvitationKind; label: string; hint: string }[] = [
   { id: "animée", label: "Invitation animée", hint: "Ouverture animée, musique, défilement" },
@@ -35,8 +37,22 @@ export default function ClassifyModal({
 }) {
   const [type, setType] = useState<InvitationKind>(initial.type);
   const [events, setEvents] = useState<string[]>(initial.events);
+  const [extraCats, setExtraCats] = useState(EXTRA_EVENT_CATEGORIES);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchServiceCategories(createClient()).then((cats) => {
+      if (cats && cats.length > 0) {
+        const mapped = cats.map((c) => ({ name: c.label, icon: c.icon || "📜" }));
+        setExtraCats((prev) => {
+          const names = new Set(prev.map((p) => p.name));
+          const toAdd = mapped.filter((m) => !names.has(m.name));
+          return [...prev, ...toAdd];
+        });
+      }
+    });
+  }, []);
 
   const toggle = (t: string) => setEvents((list) => (list.includes(t) ? list.filter((x) => x !== t) : [...list, t]));
 
@@ -81,7 +97,7 @@ export default function ClassifyModal({
           <p className="text-xs font-semibold text-gray-700 mb-1">Types d&apos;événement</p>
           <p className="text-xs text-gray-500 mb-2">Le modèle apparaît dans ces filtres, sur le site et à la création d&apos;événement. Le premier choisi est le type principal.</p>
           <div className="flex flex-wrap gap-2">
-            {EXTRA_EVENT_CATEGORIES.map((cat) => {
+            {extraCats.map((cat) => {
               const on = events.includes(cat.name);
               return (
                 <button

@@ -3,20 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { 
-  Home, 
-  Calendar, 
-  FileText, 
-  Store, 
-  Users, 
-  Wallet, 
-  MessageSquare, 
-  PieChart, 
+import {
+  Home,
+  Calendar,
+  FileText,
+  Store,
+  Users,
+  Wallet,
+  MessageSquare,
+  PieChart,
   Settings,
   Bell,
   Music,
   Brush,
-  Megaphone
+  Megaphone,
+  Tag
 } from "lucide-react";
 import { SidebarHeading, sidebarIconClass, sidebarLinkClass } from "./layout/DashboardFrame";
 import { getAdminAlertsAndAutoTerminate } from "@/app/admin/admin-actions";
@@ -37,7 +38,7 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
         if (res.stats) {
           setAlertsCount(res.stats.urgentReminders);
         }
-      } catch (_) {}
+      } catch (_) { }
     }
     loadData();
   }, []);
@@ -53,6 +54,7 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
     { name: "Finances & Revenus", href: "/admin/budget", icon: Wallet },
     { name: "Messages", href: "/admin/messages", icon: MessageSquare, badge: badgeLabel(unreadCount), urgent: true },
     { name: "Studio des modèles", href: "/admin/modeles", icon: Brush },
+    { name: "Catégories & Tarifs", href: "/admin/categories", icon: Tag },
     { name: "Banque de sons", href: "/admin/sons", icon: Music },
     { name: "Rapports", href: "/admin/rapports", icon: PieChart },
     { name: "Paramètres", href: "/admin/settings", icon: Settings },
@@ -64,9 +66,9 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
       {links.map((link) => {
         const isActive = pathname === link.href;
         return (
-          <Link 
-            key={link.href} 
-            href={link.href} 
+          <Link
+            key={link.href}
+            href={link.href}
             className={
               dark
                 ? isActive
@@ -76,31 +78,30 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
             }
           >
             <div className="flex items-center gap-3">
-              <link.icon 
-                size={19} 
-                strokeWidth={1.7} 
+              <link.icon
+                size={19}
+                strokeWidth={1.7}
                 className={
                   dark
-                    ? isActive 
-                      ? "text-[#241b13] shrink-0" 
+                    ? isActive
+                      ? "text-[#241b13] shrink-0"
                       : "text-[#b8924a] shrink-0 group-hover:text-white transition-colors"
                     : sidebarIconClass(isActive, false)
-                } 
-              /> 
+                }
+              />
               <span>{link.name}</span>
             </div>
             {link.badge && (
               <span
                 aria-label={`${link.badge} en attente`}
-                className={`min-w-[20px] text-center text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                isActive
-                  ? 'bg-[#241b13] text-[#b8924a]'
-                  : link.urgent
-                    ? 'bg-[#E53935] text-white shadow-sm shadow-red-900/40 animate-in zoom-in'
-                    : dark
-                      ? 'bg-[#b8924a]/25 text-[#d9c08c]'
-                      : 'bg-[#b8924a]/20 text-[#8f6f33]'
-              }`}>
+                className={`min-w-[20px] text-center text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive
+                    ? 'bg-[#241b13] text-[#b8924a]'
+                    : link.urgent
+                      ? 'bg-[#E53935] text-white shadow-sm shadow-red-900/40 animate-in zoom-in'
+                      : dark
+                        ? 'bg-[#b8924a]/25 text-[#d9c08c]'
+                        : 'bg-[#b8924a]/20 text-[#8f6f33]'
+                  }`}>
                 {link.badge}
               </span>
             )}

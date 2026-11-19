@@ -242,3 +242,37 @@ export async function insertCustomModelAction(row: Omit<CustomModelRow, "updated
   }
   purgeModelCaches();
 }
+
+/** Affecte directement un modèle à une catégorie précise */
+export async function assignModelCategoryAction(modelId: string, categorySlug: string, categoryLabel?: string): Promise<void> {
+  let type: any = "animée";
+  let events: string[] = [];
+
+  if (categorySlug === "invitations") {
+    type = "animée";
+    events = ["Mariage", "Anniversaire", "Baptême", "Gala", "Grands Événements"];
+  } else if (categorySlug === "voeux") {
+    type = "voeu";
+    events = ["Vœux"];
+  } else if (categorySlug === "mots_doux") {
+    type = "mot_doux";
+    events = ["Mots Doux"];
+  } else if (categorySlug === "couple") {
+    type = "couple";
+    events = ["Invitations Couple", "Couple"];
+  } else {
+    type = "animée";
+    events = [categoryLabel || categorySlug];
+  }
+
+  if (modelId.startsWith("custom-")) {
+    const slug = modelId.replace("custom-", "");
+    await saveCustomModelAction(slug, {
+      invitation_type: type,
+      event_types: events,
+    });
+    return;
+  }
+
+  await saveModelClassificationAction(modelId, { type, events });
+}

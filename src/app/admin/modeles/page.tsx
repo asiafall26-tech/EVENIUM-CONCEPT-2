@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Brush, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { Brush, CheckCircle2, Loader2, RotateCcw, Tag } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
   classificationOf,
@@ -183,15 +184,23 @@ export default function AdminModelsStudioPage() {
 
   return (
     <div className="max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
-      <div>
-        <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33] flex items-center gap-1.5">
-          <Brush size={13} /> Studio des modèles
-        </p>
-        <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight">Modèles d&apos;invitation du site</h1>
-        <p className="text-gray-500 text-sm mt-1 max-w-2xl">
-          Ajustez noms, textes, photos, polices, couleurs et musique dans le studio, enregistrez, puis publiez. La version publiée s&apos;affiche
-          dans la démo du site et sert de point de départ aux clients. Un modèle retiré disparaît des galeries et de la création d&apos;événement.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33] flex items-center gap-1.5">
+            <Brush size={13} /> Studio des modèles
+          </p>
+          <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight">Modèles d&apos;invitation du site</h1>
+          <p className="text-gray-500 text-sm mt-1 max-w-2xl">
+            Ajustez noms, textes, photos, polices, couleurs et musique dans le studio, enregistrez, puis publiez. La version publiée s&apos;affiche
+            dans la démo du site et sert de point de départ aux clients. Un modèle retiré disparaît des galeries et de la création d&apos;événement.
+          </p>
+        </div>
+        <Link
+          href="/admin/categories"
+          className="btn-lux px-4 py-2.5 text-xs flex items-center gap-2 cursor-pointer shadow-sm"
+        >
+          <Tag size={14} /> Gérer les Catégories &amp; Tarifs
+        </Link>
       </div>
 
       {notice && (

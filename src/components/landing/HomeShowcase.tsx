@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import ModelCard from "@/components/landing/ModelCard";
-import { ArrowRight, Sparkles, Heart, Calendar, Crown } from "lucide-react";
+import { ArrowRight, Sparkles, Heart, Calendar, Eye } from "lucide-react";
 import Reveal from "@/components/landing/Reveal";
 import SectionHeading from "@/components/landing/SectionHeading";
 import type { InvitationModel } from "@/data/mock/invitations";
@@ -13,6 +13,12 @@ import { fetchCustomModels, invalidateCustomModelsCache } from "@/lib/customMode
 import { buildShowcase } from "@/lib/showcase";
 import { previewHref } from "@/lib/modelPreview";
 import { subscribeToSync } from "@/lib/syncService";
+import {
+  fetchServiceCategories,
+  modelMatchesCategory,
+  type ServiceCategory,
+  FALLBACK_CATEGORIES,
+} from "@/lib/serviceCategories";
 
 interface HomeShowcaseProps {
   initialModels: InvitationModel[];
@@ -20,8 +26,8 @@ interface HomeShowcaseProps {
 
 export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
   const [showcaseModels, setShowcaseModels] = useState<InvitationModel[]>(initialModels);
-  // Les 3 services clairement séparés pour ne pas les mélanger
-  const [selectedService, setSelectedService] = useState<"invitations" | "voeux" | "couple">("invitations");
+  const [categories, setCategories] = useState<ServiceCategory[]>(FALLBACK_CATEGORIES);
+  const [selectedCategory, setSelectedCategory] = useState<string>("invitations");
 
   useEffect(() => {
     const supabase = createClient();
@@ -32,24 +38,26 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
           invalidateModelDefaultsCache();
           invalidateCustomModelsCache();
         }
-        // Modèles Evenium (nom, couverture, retrait) et modèles importés publiés
-        const [rows, customs] = await Promise.all([
+        const [rows, customs, cats] = await Promise.all([
           fetchModelDefaults(supabase, force),
           fetchCustomModels(supabase, { publishedOnly: true, force }),
+          fetchServiceCategories(supabase, force),
         ]);
         const ordered = buildShowcase(rows, customs);
         setShowcaseModels(ordered);
+        if (cats && cats.length > 0) {
+          setCategories(cats);
+        }
       } catch (err) {
         console.error("Erreur lors de l'actualisation des modèles vitrine :", err);
       }
     };
 
-    // Chargement immédiat côté client pour avoir l'état le plus frais
     reload();
 
     const unsubSync = subscribeToSync("models", () => reload(true));
+    const unsubCats = subscribeToSync("categories", () => reload(true));
 
-    // Abonnement Supabase Realtime pour actualisation automatique instantanée
     const channel = supabase
       .channel("home_showcase_models_realtime")
       .on(
@@ -66,71 +74,26 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
 
     return () => {
       unsubSync();
+      unsubCats();
       supabase.removeChannel(channel);
     };
   }, []);
 
-  // Filtrage strict par service pour ne pas mélanger les univers
+  // Filtrage strict par catégorie sélectionnée
   const displayedModels = useMemo(() => {
-    if (selectedService === "voeux") {
-      const list = showcaseModels.filter(
-        (m) =>
-          m.category === "Vœux" ||
-          m.type === "voeu" ||
-          m.name.toLowerCase().includes("vœu") ||
-          m.name.toLowerCase().includes("voeu") ||
-          m.name.toLowerCase().includes("birthday")
-      );
-      return list.length > 0 ? list : showcaseModels.slice(0, 4);
-    }
-    if (selectedService === "couple") {
-      const list = showcaseModels.filter(
-        (m) =>
-          m.category === "Couple" ||
-          m.type === "couple" ||
-          m.type === "mot_doux" ||
-          m.name.toLowerCase().includes("mot") ||
-          m.name.toLowerCase().includes("rendez") ||
-          m.name.toLowerCase().includes("amour") ||
-          m.name.toLowerCase().includes("princesse")
-      );
-      return list.length > 0 ? list : showcaseModels.slice(0, 4);
-    }
-    // "invitations" : Grands événements (Mariages, Anniversaires, Galas) - exclut vœux et couple
-    const list = showcaseModels.filter(
-      (m) =>
-        m.category !== "Vœux" &&
-        m.category !== "Couple" &&
-        m.type !== "voeu" &&
-        m.type !== "mot_doux" &&
-        m.type !== "couple"
-    );
-    return list.length > 0 ? list : showcaseModels.slice(0, 4);
-  }, [showcaseModels, selectedService]);
+    const list = showcaseModels.filter((m) => modelMatchesCategory(m, selectedCategory));
+    return list;
+  }, [showcaseModels, selectedCategory]);
 
-  const serviceMeta = {
-    invitations: {
-      badge: "Grands Événements",
-      title: "Modèles d'Invitation & Réceptions",
-      lead: "Faire-part digitaux haute couture pour mariages, anniversaires, baptêmes et galas d'envergure. Dès 5 000 FCFA avec tableau de bord et gestion RSVP.",
-      cta: "Explorer tous les modèles d'invitation",
-      href: "/invitations",
-    },
-    voeux: {
-      badge: "Célébration Personnelle",
-      title: "Vœux d'Exception",
-      lead: "Cartes interactives étincelantes avec musique festive et animation pour faire éclore les émotions. Tarif direct : 2 000 FCFA avec lien copiable immédiat.",
-      cta: "Découvrir les Vœux d'Exception (2 000 F)",
-      href: "/voeux",
-    },
-    couple: {
-      badge: "Écrin Privé des Amoureux",
-      title: "Les Mots Doux & Invitations Couple",
-      lead: "Lettres d'amour numériques scellées au cachet de cire (1 000 FCFA) et cartons secrets en tête-à-tête (4 000 FCFA). Partage confidentiel en 1 clic.",
-      cta: "Découvrir les Mots Doux & Couples",
-      href: "/mots-doux",
-    },
-  }[selectedService];
+  const activeCategory = categories.find((c) => c.slug === selectedCategory) || categories[0];
+
+  const getCategoryIcon = (slug: string) => {
+    if (slug === "invitations") return <Calendar size={14} className="text-[#d4af37]" />;
+    if (slug === "voeux") return <Sparkles size={14} className="text-[#d4af37]" />;
+    if (slug === "mots_doux") return <Heart size={14} className="text-[#e63946]" />;
+    if (slug === "couple") return <Heart size={14} className="text-[#d62828]" />;
+    return <Sparkles size={14} className="text-[#d4af37]" />;
+  };
 
   return (
     <section className="py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#f2e4cf] via-[#f8efe2] to-[#fbf6ee]">
@@ -139,75 +102,65 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
           eyebrow="La collection Evenium"
           title={
             <>
-              Trois univers d&apos;exception,{" "}
+              Des univers d&apos;exception,{" "}
               <span className="italic text-gold-foil">chacun à sa juste valeur</span>
             </>
           }
-          lead="Faites votre choix parmi nos 3 services distincts : invitations de grands événements, vœux chaleureux ou déclarations romantiques."
+          lead="Faites votre choix parmi nos collections : invitations de grands événements, vœux chaleureux ou déclarations romantiques."
           className="mb-8 md:mb-12"
         />
 
-        {/* Sélecteur des 3 Services Distincts (Ne pas mélanger) */}
+        {/* Sélecteur des catégories dynamiques sans prix */}
         <div className="flex justify-center mb-10">
-          <div className="bg-white/90 border border-[#b8924a]/35 p-1.5 rounded-2xl sm:rounded-full inline-flex flex-col sm:flex-row gap-1 shadow-sm max-w-full overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => setSelectedService("invitations")}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-                selectedService === "invitations"
-                  ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-md"
-                  : "text-gray-700 hover:text-black"
-              }`}
-            >
-              <Calendar size={14} className="text-[#d4af37]" />
-              <span>1. Modèles d&apos;Invitation</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedService("voeux")}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-                selectedService === "voeux"
-                  ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-md"
-                  : "text-gray-700 hover:text-black"
-              }`}
-            >
-              <Sparkles size={14} className="text-[#d4af37]" />
-              <span>2. Vœux d&apos;Exception (2 000 F)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedService("couple")}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-                selectedService === "couple"
-                  ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-md"
-                  : "text-gray-700 hover:text-black"
-              }`}
-            >
-              <Heart size={14} className="text-[#e63946]" />
-              <span>3. Mots Doux (1 000 F) &amp; Couple (4 000 F)</span>
-            </button>
+          <div className="bg-white/90 border border-[#b8924a]/35 p-1.5 rounded-2xl sm:rounded-full inline-flex flex-wrap justify-center gap-1.5 shadow-sm max-w-full">
+            {categories.map((cat) => {
+              const isSelected = selectedCategory === cat.slug;
+              return (
+                <button
+                  key={cat.id || cat.slug}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.slug)}
+                  className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
+                    isSelected
+                      ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-md border border-[#c9a45e]"
+                      : "text-gray-700 hover:text-black hover:bg-gray-100/60"
+                  }`}
+                >
+                  {getCategoryIcon(cat.slug)}
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Bandeau d'information sur le service sélectionné */}
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2 animate-in fade-in duration-300">
-          <span className="inline-block px-3 py-1 rounded-full bg-[#fbf7f0] border border-[#b8924a]/30 text-[#8f6f33] text-[10px] font-bold uppercase tracking-widest">
-            {serviceMeta.badge}
-          </span>
-          <h3 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900">
-            {serviceMeta.title}
-          </h3>
-          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-xl mx-auto">
-            {serviceMeta.lead}
-          </p>
-        </div>
+        {/* Bandeau d'information sur la catégorie sélectionnée */}
+        {activeCategory && (
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2 animate-in fade-in duration-300">
+            <span className="inline-block px-3 py-1 rounded-full bg-[#fbf7f0] border border-[#b8924a]/30 text-[#8f6f33] text-[10px] font-bold uppercase tracking-widest">
+              {activeCategory.label}
+            </span>
+            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900">
+              {activeCategory.label}
+            </h3>
+            {activeCategory.description && (
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-xl mx-auto">
+                {activeCategory.description}
+              </p>
+            )}
+          </div>
+        )}
 
         {displayedModels.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 bg-white/50 rounded-3xl border border-[#c9a45e]/20 max-w-lg mx-auto p-8 mb-12">
             <p className="font-serif text-lg text-gray-700 mb-2">Notre collection se renouvelle.</p>
-            <p className="text-sm">De nouveaux modèles exclusifs seront bientôt disponibles.</p>
+            <p className="text-sm">De nouveaux modèles exclusifs pour cette catégorie seront bientôt disponibles.</p>
+            <Link
+              href="/invitations?cat=tous"
+              className="mt-6 inline-flex items-center gap-2 text-xs font-semibold text-[#8f6f33] hover:underline"
+            >
+              <Eye size={14} /> Voir tous les modèles disponibles
+            </Link>
           </div>
         ) : (
           <Reveal
@@ -220,17 +173,11 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
             {displayedModels.map((model, i) => (
               <ModelCard
                 key={model.id}
-                href={previewHref(model, selectedService === "voeux" ? "Vœux" : selectedService === "couple" ? "Couple" : model.category)}
+                href={previewHref(model, selectedCategory)}
                 name={model.name}
                 image={model.thumbnail}
                 kind={model.type}
-                eyebrow={
-                  selectedService === "voeux"
-                    ? "Vœu · 2 000 FCFA"
-                    : selectedService === "couple"
-                    ? model.type === "mot_doux" ? "Mot Doux · 1 000 FCFA" : "Couple · 4 000 FCFA"
-                    : `Collection ${model.category}`
-                }
+                eyebrow={activeCategory?.label || `Collection ${model.category}`}
                 compact
                 sizes="(min-width: 768px) 25vw, 50vw"
                 className={`${
@@ -245,10 +192,10 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
 
         <div className="text-center">
           <Link
-            href={serviceMeta.href}
+            href={`/invitations?cat=${selectedCategory}`}
             className="btn-lux group px-8 py-4 text-xs sm:text-[13px] inline-flex items-center gap-2"
           >
-            <span>{serviceMeta.cta}</span>
+            <span>Explorer la collection {activeCategory?.label}</span>
             <ArrowRight size={16} strokeWidth={1.5} className="text-[#f0d999] group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>

@@ -239,7 +239,7 @@ export default function PricingSection() {
               }`}
             >
               <Sparkles size={14} className="text-[#d4af37]" />
-              <span>Vœux (2 000 F), Mots Doux (1 000 F) &amp; Couple (4 000 F)</span>
+              <span>Vœux, Mots Doux &amp; Invitations Couple</span>
             </button>
           </div>
         </div>
