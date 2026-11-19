@@ -64,15 +64,15 @@ export default function ModelCard({
         <span className="inline-flex items-center gap-1 rounded-full border border-[#c9a45e]/60 bg-[#150d07]/75 backdrop-blur-md px-2.5 py-1 text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.18em] text-[#f0d999]">
           {kind === "voeu" ? (
             <>
-              <Sparkles size={11} className="text-[#f5d77f]" /> Vœu
+              <Sparkles size={11} className="text-[#f5d77f]" /> Vœux
             </>
           ) : kind === "mot_doux" ? (
             <>
-              <Heart size={11} className="text-[#f87171]" /> Mot Doux
+              <Heart size={11} className="text-[#f87171]" /> Mots doux
             </>
           ) : kind === "couple" ? (
             <>
-              <Heart size={11} className="text-[#e879f9]" /> Couple
+              <Heart size={11} className="text-[#e879f9]" /> Espace Couple
             </>
           ) : kind === "animée" ? (
             <>
@@ -80,7 +80,7 @@ export default function ModelCard({
             </>
           ) : (
             <>
-              <FileImage size={11} /> Carte
+              <FileImage size={11} /> Statique
             </>
           )}
         </span>

@@ -220,8 +220,8 @@ const buildEventCategories = (models: ModelItem[]): { id: string; label: string;
 
   return [
     { id: "Tous", label: "Tous les modèles", icon: "✨", count: countFor("Tous"), isSoon: false },
-    { id: "Vœux", label: "Vœux d'Exception", icon: "🌟", count: countFor("Vœux"), isSoon: countFor("Vœux") === 0 },
-    { id: "Couple", label: "Mots Doux & Couple", icon: "❤️", count: countFor("Couple"), isSoon: countFor("Couple") === 0 },
+    { id: "Vœux", label: "Vœux & Célébrations", icon: "🎁", count: countFor("Vœux"), isSoon: countFor("Vœux") === 0 },
+    { id: "Couple", label: "Mots doux & Espace Couple", icon: "💌", count: countFor("Couple"), isSoon: countFor("Couple") === 0 },
     ...EVENT_TYPES.map((t) => {
       const c = countFor(t);
       return {
@@ -1651,13 +1651,13 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                   {standardSuccessEvent
                     ? "Paiement Validé · Lien Officiel Débloqué"
                     : isMicroService
-                    ? `${isMotDoux ? "💌 Service Les Mots Doux" : isVoeu ? "🌟 Service Vœux d'Exception" : "🥂 Service Invitation Couple"} · ${microFixedPrice.toLocaleString('fr-FR')} FCFA`
+                    ? `${isMotDoux ? "💌 Service Mots doux" : isVoeu ? "🎁 Service Vœux & Célébrations" : "❤️ Service Espace Couple"} · ${microFixedPrice.toLocaleString('fr-FR')} FCFA`
                     : "Étape finale · Formule & Organisation"}
                 </span>
                 <h3 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 mt-1 leading-snug">
                   {standardSuccessEvent
                     ? (isMicroService ? "Votre Création est Prête à Être Partagée !" : "Votre Événement & Votre Dashboard sont Prêts !")
-                    : (isMicroService ? `Finalisez votre ${isMotDoux ? "Mot Doux" : isVoeu ? "Vœu d'Exception" : "Invitation Couple"} & Obtenez votre Lien` : "Activez votre Événement & Partagez votre Invitation")}
+                    : (isMicroService ? `Finalisez votre ${isMotDoux ? "Mot doux" : isVoeu ? "Vœu & Célébration" : "Invitation Couple"} & Obtenez votre Lien` : "Activez votre Événement & Partagez votre Invitation")}
                 </h3>
               </div>
               <button
@@ -1899,7 +1899,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
                                 Service Dédié · Accès Direct
                               </span>
                               <h4 className="font-serif font-bold text-gray-900 text-lg sm:text-xl mt-1">
-                                {isMotDoux ? "💌 Les Mots Doux" : isVoeu ? "✨ Vœux d'Exception" : "🥂 Invitation Couple"}
+                                {isMotDoux ? "💌 Mots doux" : isVoeu ? "🎁 Vœux & Célébrations" : "❤️ Espace Couple"}
                               </h4>
                               <p className="text-xs text-gray-600 mt-0.5">
                                 {isMotDoux

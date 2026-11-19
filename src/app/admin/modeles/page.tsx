@@ -50,11 +50,11 @@ import {
 } from "@/lib/serviceCategories";
 
 const KIND_GROUPS: { id: InvitationKind; title: string; icon: string }[] = [
-  { id: "animée", title: "Invitations animées", icon: "✨" },
-  { id: "carte", title: "Cartes d'invitation", icon: "📜" },
-  { id: "voeu", title: "Vœux d'Exception", icon: "🌟" },
-  { id: "mot_doux", title: "Les Mots Doux", icon: "💌" },
-  { id: "couple", title: "Invitations Couple", icon: "🕯️" },
+  { id: "animée", title: "Invitations animées", icon: "🎬" },
+  { id: "carte", title: "Invitations statiques", icon: "📜" },
+  { id: "voeu", title: "Vœux & Célébrations", icon: "🎁" },
+  { id: "mot_doux", title: "Mots doux", icon: "💌" },
+  { id: "couple", title: "Espace Couple", icon: "❤️" },
 ];
 
 const formatDate = (iso: string) =>
@@ -328,16 +328,16 @@ export default function AdminModelsStudioPage() {
                 >
                   <span>
                     {k === "Tous"
-                      ? "✨ Tous les types"
+                      ? "✨ Tous les formats"
                       : k === "animée"
-                      ? "🎬 Animées"
+                      ? "🎬 Invitations animées"
                       : k === "carte"
-                      ? "📜 Cartes"
+                      ? "📜 Invitations statiques"
                       : k === "voeu"
-                      ? "🌟 Vœux"
+                      ? "🎁 Vœux & Célébrations"
                       : k === "mot_doux"
-                      ? "💌 Mots Doux"
-                      : "🕯️ Couple"}
+                      ? "💌 Mots doux"
+                      : "❤️ Espace Couple"}
                   </span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                     kindFilter === k ? "bg-white/20 text-[#f5eee1]" : "bg-gray-100 text-gray-600"

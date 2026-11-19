@@ -88,11 +88,11 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
   const activeCategory = categories.find((c) => c.slug === selectedCategory) || categories[0];
 
   const getCategoryIcon = (slug: string) => {
-    if (slug === "invitations") return <Calendar size={14} className="text-[#d4af37]" />;
-    if (slug === "voeux") return <Sparkles size={14} className="text-[#d4af37]" />;
-    if (slug === "mots_doux") return <Heart size={14} className="text-[#e63946]" />;
-    if (slug === "couple") return <Heart size={14} className="text-[#d62828]" />;
-    return <Sparkles size={14} className="text-[#d4af37]" />;
+    if (slug === "invitations" || slug === "evenementielles") return <span className="text-sm">🎉</span>;
+    if (slug === "voeux" || slug === "celebrations") return <span className="text-sm">🎁</span>;
+    if (slug === "mots_doux") return <span className="text-sm">💌</span>;
+    if (slug === "couple") return <span className="text-sm">❤️</span>;
+    return <span className="text-sm">✨</span>;
   };
 
   return (
@@ -106,7 +106,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
               <span className="italic text-gold-foil">chacun à sa juste valeur</span>
             </>
           }
-          lead="Faites votre choix parmi nos collections : invitations de grands événements, vœux chaleureux ou déclarations romantiques."
+          lead="Faites votre choix parmi nos 4 services : invitations événementielles (animées ou statiques), vœux & célébrations, mots doux et espace couple."
           className="mb-8 md:mb-12"
         />
 

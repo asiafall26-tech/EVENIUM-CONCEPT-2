@@ -122,7 +122,17 @@ export default function ModelCard(p: Props) {
       </div>
       <div className="p-4 flex-1 flex flex-col gap-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{p.kind === "carte" ? "Carte" : "Animée"}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+            {p.kind === "carte"
+              ? "📜 Statique"
+              : p.kind === "animée"
+              ? "🎬 Animée"
+              : p.kind === "voeu"
+              ? "🎁 Vœux"
+              : p.kind === "mot_doux"
+              ? "💌 Mots doux"
+              : "❤️ Couple"}
+          </span>
           {p.events.map((e) => (
             <span key={e} className="text-[11px] px-2 py-0.5 rounded-full bg-[#fbf7f0] border border-[#b8924a]/25 text-[#6f5527]">
               {EVENT_TYPE_ICONS[e as keyof typeof EVENT_TYPE_ICONS]} {e}

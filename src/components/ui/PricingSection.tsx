@@ -226,8 +226,8 @@ export default function PricingSection() {
                   : "text-gray-700 hover:text-black"
               }`}
             >
-              <Crown size={14} className="text-[#d4af37]" />
-              <span>Grands Événements &amp; Mariages</span>
+              <span>🎉</span>
+              <span>Invitations événementielles</span>
             </button>
             <button
               type="button"
@@ -238,8 +238,7 @@ export default function PricingSection() {
                   : "text-gray-700 hover:text-black"
               }`}
             >
-              <Sparkles size={14} className="text-[#d4af37]" />
-              <span>Vœux, Mots Doux &amp; Invitations Couple</span>
+              <span>🎁 Vœux, 💌 Mots doux &amp; ❤️ Espace Couple</span>
             </button>
           </div>
         </div>
@@ -259,7 +258,7 @@ export default function PricingSection() {
                       : 'text-gray-600 hover:text-black'
                   }`}
                 >
-                  ✨ Faire-part immersif animé
+                  🎬 Invitation animée
                 </button>
                 <button
                   type="button"
@@ -270,7 +269,7 @@ export default function PricingSection() {
                       : 'text-gray-600 hover:text-black'
                   }`}
                 >
-                  📄 Carte statique classique
+                  📜 Invitation statique
                 </button>
               </div>
 
@@ -477,12 +476,12 @@ export default function PricingSection() {
                       💌
                     </span>
                     <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-[#ffe5e9] text-[#9e1b23] border border-[#f8bcc5]">
-                      Romance Privée
+                      Mots doux
                     </span>
                   </div>
 
                   <h3 className="font-serif text-2xl font-bold text-[#1a0a0e] mb-1">
-                    Les Mots Doux
+                    Mots doux
                   </h3>
                   <p className="text-xs text-[#663e46] mb-4 leading-relaxed">
                     Lettre d&apos;amour confidentielle, scellée de cire avec douce mélodie au piano.
@@ -524,7 +523,7 @@ export default function PricingSection() {
                 </Link>
               </motion.div>
 
-              {/* 2. VŒUX D'EXCEPTION : 2 000 FCFA */}
+              {/* 2. VŒUX & CÉLÉBRATIONS : 2 000 FCFA */}
               <motion.div
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -537,15 +536,15 @@ export default function PricingSection() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="w-11 h-11 rounded-2xl bg-[#faf0dc] border border-[#d9c08c] flex items-center justify-center text-2xl shadow-xs">
-                      🌟
+                      🎁
                     </span>
                     <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
-                      Vœu d&apos;Or
+                      Vœux &amp; Célébrations
                     </span>
                   </div>
 
                   <h3 className="font-serif text-2xl font-bold text-[#1a0f07] mb-1">
-                    Vœux d&apos;Exception
+                    Vœux &amp; Célébrations
                   </h3>
                   <p className="text-xs text-gray-600 mb-4 leading-relaxed">
                     Faire-part digital interactif de vœux, anniversaires et moments inoubliables.
@@ -582,12 +581,12 @@ export default function PricingSection() {
                   href="/create?category=Vœux"
                   className="btn-lux w-full py-3.5 text-xs font-bold"
                 >
-                  <span>Créer un Vœu (2 000 F)</span>
+                  <span>Créer des Vœux (2 000 F)</span>
                   <ArrowRight size={14} className="text-[#f0d999]" />
                 </Link>
               </motion.div>
 
-              {/* 3. INVITATIONS COUPLE : 4 000 FCFA */}
+              {/* 3. ESPACE COUPLE : 4 000 FCFA */}
               <motion.div
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -596,15 +595,15 @@ export default function PricingSection() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="w-11 h-11 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl shadow-xs">
-                      🥂
+                      ❤️
                     </span>
                     <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-rose-950/70 text-rose-300 border border-rose-800">
-                      Tête-à-tête Privé
+                      Espace Couple
                     </span>
                   </div>
 
                   <h3 className="font-serif text-2xl font-bold text-[#fed7aa] mb-1">
-                    Invitations Couple
+                    Espace Couple
                   </h3>
                   <p className="text-xs text-white/70 mb-4 leading-relaxed">
                     Carton d&apos;invitation secret haute couture pour surprendre votre partenaire.
@@ -641,7 +640,7 @@ export default function PricingSection() {
                   href="/create?category=Couple"
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#e63946] via-[#d62828] to-[#991b1b] hover:brightness-110 text-white font-bold text-xs tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
-                  <span>Créer une Invitation (4 000 F)</span>
+                  <span>Créer une Invitation Couple (4 000 F)</span>
                   <ArrowRight size={14} />
                 </Link>
               </motion.div>

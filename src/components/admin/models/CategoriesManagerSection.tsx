@@ -23,7 +23,7 @@ import {
   type ServiceCategory,
 } from "@/lib/serviceCategories";
 
-const ICONS = ["📜", "🌟", "💌", "🥂", "🎊", "🌸", "✨", "🎂", "💍", "👶", "🎓", "🌿", "🕯️", "🏆", "🎵"];
+const ICONS = ["🎉", "🎁", "💌", "❤️", "📜", "🌟", "🥂", "🎊", "🌸", "✨", "🎂", "💍", "👶", "🎓", "🌿", "🕯️", "🏆", "🎵"];
 
 interface CategoriesManagerSectionProps {
   categories: ServiceCategory[];

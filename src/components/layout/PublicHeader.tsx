@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { X, ArrowRight, Sparkles, Heart, Store, Calendar } from "lucide-react";
+import { X, ArrowRight, Menu, Sparkles, Heart, Store, Calendar, ChevronRight } from "lucide-react";
 
 export function PublicHeader() {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // In the event creation funnel, render a clean, distraction-free header without marketing navigation
   if (pathname.startsWith('/create')) {
     return (
@@ -52,7 +55,7 @@ export function PublicHeader() {
       }}
     >
       <div className="max-w-7xl mx-auto px-3.5 sm:px-5 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
-        {/* Logo & Navigation gauche : les 3 services + prestataires visibles */}
+        {/* Logo & Navigation gauche : les 4 services + prestataires */}
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
           <Link href="/" className="flex items-center shrink-0 group">
             <Image
@@ -67,54 +70,52 @@ export function PublicHeader() {
 
           <span aria-hidden className="hidden md:block h-6 sm:h-7 w-px bg-gradient-to-b from-transparent via-[#b8924a] to-transparent shrink-0" />
 
-          {/* Liens principaux affichés à partir de md: (tablettes larges et ordinateurs) : Les 4 Catégories + Prestataires sans prix */}
+          {/* Liens principaux affichés à partir de md: (tablettes larges et ordinateurs) : Les 4 Services sans prix */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-2.5 shrink-0">
-            {/* Catégorie 1 : Invitations Grands Événements */}
+            {/* Service 1 : Invitations événementielles */}
             <Link
               href="/invitations?cat=invitations"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] transition-colors whitespace-nowrap shrink-0 ${
+              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 ${
                 pathname === '/invitations' ? 'text-[#8f6f33] font-bold' : 'text-[#2b1d12] hover:text-[#8f6f33]'
               }`}
             >
-              <span>Invitations</span>
+              <span>🎉 Invitations événementielles</span>
             </Link>
 
             <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
 
-            {/* Catégorie 2 : Vœux */}
+            {/* Service 2 : Vœux & Célébrations */}
             <Link
               href="/invitations?cat=voeux"
               className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 ${
                 pathname.startsWith('/voeux') ? 'text-[#8f6f33] font-bold' : 'text-[#2b1d12] hover:text-[#8f6f33]'
               }`}
             >
-              <Sparkles size={11} className="text-[#b8924a]" />
-              <span>Vœux</span>
+              <span>🎁 Vœux &amp; Célébrations</span>
             </Link>
 
             <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
 
-            {/* Catégorie 3 : Mots Doux */}
+            {/* Service 3 : Mots doux */}
             <Link
               href="/invitations?cat=mots_doux"
               className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#9e1b23] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1 ${
                 pathname.startsWith('/mots-doux') ? 'font-bold' : ''
               }`}
             >
-              <Heart size={11} className="text-[#d62828]" />
-              <span>Mots Doux</span>
+              <span>💌 Mots doux</span>
             </Link>
 
             <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
 
-            {/* Catégorie 4 : Invitations Couple */}
+            {/* Service 4 : Espace Couple */}
             <Link
               href="/invitations?cat=couple"
               className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#7a1c22] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1 ${
                 pathname.startsWith('/couple') ? 'font-bold' : ''
               }`}
             >
-              <span>Invitations Couple</span>
+              <span>❤️ Espace Couple</span>
             </Link>
 
             <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
@@ -138,6 +139,16 @@ export function PublicHeader() {
             <span>Créer mon événement</span>
             <ArrowRight size={13} className="hidden sm:inline-block text-[#f0d999]" />
           </Link>
+
+          {/* Bouton Hamburger mobile / tablette */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Menu principal"
+            className="md:hidden p-2 rounded-xl border border-[#c9a45e]/40 bg-[#fbf5ec] text-[#2b1d12] hover:bg-white transition-colors cursor-pointer"
+          >
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
       </div>
 
@@ -150,7 +161,7 @@ export function PublicHeader() {
               : 'bg-white/90 border border-[#c9a45e]/40 text-[#2b1d12]'
             }`}
         >
-          <Calendar size={11} className="text-[#b8924a]" /> Invitations
+          <span>🎉 Invitations</span>
         </Link>
 
         <Link
@@ -160,17 +171,17 @@ export function PublicHeader() {
               : 'bg-white/90 border border-[#c9a45e]/40 text-[#2b1d12]'
             }`}
         >
-          <Sparkles size={11} className="text-[#b8924a]" /> Vœux
+          <span>🎁 Vœux</span>
         </Link>
 
         <Link
           href="/invitations?cat=mots_doux"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/mots-doux') || pathname.startsWith('/couple')
+          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/mots-doux')
               ? 'bg-[#9e1b23] text-white shadow-xs'
               : 'bg-white/90 border border-[#f4c2c9] text-[#9e1b23]'
             }`}
         >
-          <Heart size={11} className="text-[#e63946]" /> Mots Doux
+          <span>💌 Mots doux</span>
         </Link>
 
         <Link
@@ -180,7 +191,7 @@ export function PublicHeader() {
               : 'bg-white/90 border border-[#f4c2c9] text-[#7a1c22]'
             }`}
         >
-          <span>Couple</span>
+          <span>❤️ Espace Couple</span>
         </Link>
 
         <Link
@@ -191,6 +202,130 @@ export function PublicHeader() {
         </Link>
       </div>
 
+      {/* Menu déroulant mobile raffiné Haute Couture présentant les 4 services sans prix */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#faf3e8] border-b border-[#c9a45e]/40 px-4 py-4 space-y-2.5 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+          {/* Service 1 : Invitations événementielles */}
+          <Link
+            href="/invitations?cat=invitations"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-[#e4d8c4] text-[#2b1d12] shadow-xs hover:border-[#b8924a] transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🎉</span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#2b1d12] group-hover:text-[#8f6f33]">
+                  Invitations événementielles
+                </p>
+                <p className="text-[10px] text-gray-500 font-normal">
+                  Invitation animée / Invitation statique
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={15} className="text-gray-400 group-hover:text-[#8f6f33] transition-colors" />
+          </Link>
+
+          {/* Service 2 : Vœux & Célébrations */}
+          <Link
+            href="/invitations?cat=voeux"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-[#e4d8c4] text-[#2b1d12] shadow-xs hover:border-[#b8924a] transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🎁</span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#2b1d12] group-hover:text-[#8f6f33]">
+                  Vœux &amp; Célébrations
+                </p>
+                <p className="text-[10px] text-gray-500 font-normal">
+                  Vœux chaleureux, félicitations et célébrations
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={15} className="text-gray-400 group-hover:text-[#8f6f33] transition-colors" />
+          </Link>
+
+          {/* Service 3 : Mots doux */}
+          <Link
+            href="/invitations?cat=mots_doux"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-[#eed7dc] text-[#9e1b23] shadow-xs hover:border-[#d62828] transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">💌</span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#9e1b23] font-serif">
+                  Mots doux
+                </p>
+                <p className="text-[10px] text-gray-500 font-normal font-sans">
+                  Messages affectueux et attentions romantiques
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={15} className="text-gray-400 group-hover:text-[#d62828] transition-colors" />
+          </Link>
+
+          {/* Service 4 : Espace Couple */}
+          <Link
+            href="/invitations?cat=couple"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-[#eed7dc] text-[#7a1c22] shadow-xs hover:border-[#d62828] transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">❤️</span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#7a1c22] font-serif">
+                  Espace Couple
+                </p>
+                <p className="text-[10px] text-gray-500 font-normal font-sans">
+                  Invitations secrètes et moments intimes à deux
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={15} className="text-gray-400 group-hover:text-[#d62828] transition-colors" />
+          </Link>
+
+          {/* Espace Prestataire (Pro) */}
+          <Link
+            href="/espace-prestataire"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#2a1b0f] to-[#120b06] text-[#fbf3e4] shadow-md transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-sm">
+                <Store size={15} className="text-[#e2c178]" />
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#f0d999]">
+                  Espace Prestataire (Pro)
+                </p>
+                <p className="text-[10px] text-gray-300 font-normal">
+                  Proposez vos prestations et vos services
+                </p>
+              </div>
+            </div>
+            <ArrowRight size={15} className="text-[#f0d999]" />
+          </Link>
+
+          {/* Boutons d'action inférieurs */}
+          <div className="pt-2 border-t border-[#c9a45e]/30 flex gap-2">
+            <Link
+              href="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex-1 py-2.5 text-center text-xs font-semibold rounded-xl border border-gray-300 bg-white text-gray-800 shadow-2xs hover:bg-gray-50"
+            >
+              Connexion
+            </Link>
+            <Link
+              href="/create"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex-1 py-2.5 text-center text-xs font-bold rounded-xl bg-[#b8924a] text-white shadow-md hover:bg-[#8f6f33] transition-colors"
+            >
+              Créer un événement
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

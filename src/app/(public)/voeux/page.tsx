@@ -151,7 +151,7 @@ export default function VoeuxPage() {
               <span>Espace Dédié aux Couples</span>
             </span>
             <h3 className="font-serif text-xl sm:text-2xl text-white">
-              Découvrez nos Mots Doux & Invitations Couple
+              Découvrez nos Mots doux &amp; Espace Couple
             </h3>
             <p className="text-xs text-[#d1a3ac] max-w-lg leading-relaxed">
               Pour ceux qui s'aiment : lettres d'amour numériques confidentielles, dîners secrets aux chandelles et rendez-vous en tête-à-tête.

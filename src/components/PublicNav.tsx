@@ -15,8 +15,10 @@ export function PublicNav({ onItemClick, mobile = false, user = null }: PublicNa
 
   const links = [
     { name: "Accueil", href: "/" },
-    { name: "Nos services", href: "/#services" },
-    { name: "Invitations", href: "/invitations" },
+    { name: "Invitations événementielles", href: "/invitations?cat=invitations" },
+    { name: "Vœux & Célébrations", href: "/invitations?cat=voeux" },
+    { name: "Mots doux", href: "/invitations?cat=mots_doux" },
+    { name: "Espace Couple", href: "/invitations?cat=couple" },
     { name: "Formules", href: "/#tarifs" },
     { name: "Espace Prestataire", href: "/espace-prestataire", special: true },
   ];

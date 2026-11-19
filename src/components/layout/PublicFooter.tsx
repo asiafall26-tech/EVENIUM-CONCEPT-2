@@ -75,12 +75,17 @@ export function PublicFooter() {
               Se connecter
             </Link>
           )}
-          <Link href="/invitations" className="hover:text-[#f0d999] transition-colors">
-            Modèles
+          <Link href="/invitations?cat=invitations" className="hover:text-[#f0d999] transition-colors">
+            Invitations événementielles
           </Link>
-          <Link href="/voeux" className="hover:text-[#f0d999] transition-colors flex items-center gap-1.5">
-            <span>Vœux</span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#c9a45e]/25 text-[#f0d999] border border-[#c9a45e]/40">Nouveau</span>
+          <Link href="/invitations?cat=voeux" className="hover:text-[#f0d999] transition-colors">
+            Vœux &amp; Célébrations
+          </Link>
+          <Link href="/invitations?cat=mots_doux" className="hover:text-[#f0d999] transition-colors">
+            Mots doux
+          </Link>
+          <Link href="/invitations?cat=couple" className="hover:text-[#f0d999] transition-colors">
+            Espace Couple
           </Link>
           <Link href="/espace-prestataire" className="hover:text-[#f0d999] transition-colors">
             Espace Prestataire

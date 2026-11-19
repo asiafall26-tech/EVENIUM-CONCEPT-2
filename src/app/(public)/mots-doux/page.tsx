@@ -99,7 +99,7 @@ export default function RomancePage() {
               </div>
 
               <h2 className="font-serif text-2xl sm:text-3xl text-[#1a0a0e] font-medium">
-                Les Mots Doux
+                Mots doux
               </h2>
 
               <p className="text-xs sm:text-sm text-[#663e46] leading-relaxed">
@@ -146,7 +146,7 @@ export default function RomancePage() {
               </div>
 
               <h2 className="font-serif text-2xl sm:text-3xl text-[#1a0a0e] font-medium">
-                Invitations Couple
+                Espace Couple
               </h2>
 
               <p className="text-xs sm:text-sm text-[#663e46] leading-relaxed">

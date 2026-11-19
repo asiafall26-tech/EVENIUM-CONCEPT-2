@@ -9,17 +9,17 @@ import { createClient } from "@/utils/supabase/client";
 import { fetchServiceCategories } from "@/lib/serviceCategories";
 
 const KINDS: { id: InvitationKind; label: string; hint: string }[] = [
-  { id: "animée", label: "Invitation animée", hint: "Ouverture animée, musique, défilement" },
-  { id: "carte", label: "Carte statique", hint: "Faire-part ou carton sans musique" },
-  { id: "voeu", label: "🌟 Vœu d'Exception", hint: "Pour célébrer : anniversaire, mariage, baptême, graduation" },
-  { id: "mot_doux", label: "💌 Les Mots Doux", hint: "Lettre d'amour confidentielle scellée au cachet de cire" },
-  { id: "couple", label: "🕯️ Invitation Couple", hint: "Tête-à-tête secret avec scénographie & bouton d'amour RSVP" },
+  { id: "animée", label: "🎬 Invitation animée", hint: "Ouverture animée, musique d'ambiance, défilement cinématique" },
+  { id: "carte", label: "📜 Invitation statique", hint: "Faire-part ou carton digital épuré sans musique" },
+  { id: "voeu", label: "🎁 Vœux & Célébrations", hint: "Vœux chaleureux, félicitations et célébrations (2 000 FCFA)" },
+  { id: "mot_doux", label: "💌 Mots doux", hint: "Lettre d'amour confidentielle scellée au cachet de cire (1 000 FCFA)" },
+  { id: "couple", label: "❤️ Espace Couple", hint: "Invitation secrète en tête-à-tête avec scénographie (4 000 FCFA)" },
 ];
 
 const EXTRA_EVENT_CATEGORIES: { name: string; icon: string }[] = [
-  { name: "Vœux", icon: "🌟" },
-  { name: "Mots Doux", icon: "💌" },
-  { name: "Couple", icon: "🕯️" },
+  { name: "Vœux & Célébrations", icon: "🎁" },
+  { name: "Mots doux", icon: "💌" },
+  { name: "Espace Couple", icon: "❤️" },
   { name: "Graduation", icon: "🎓" },
 ];
 

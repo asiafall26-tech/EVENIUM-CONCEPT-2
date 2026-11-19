@@ -27,6 +27,8 @@ import { Fleuron, DiamondRule, LuxFrame } from "@/components/landing/LuxOrnament
 import {
   fetchServiceCategories,
   modelMatchesCategory,
+  modelMatchesFormat,
+  type InvitationFormatFilter,
   type ServiceCategory,
   FALLBACK_CATEGORIES,
 } from "@/lib/serviceCategories";
@@ -45,6 +47,7 @@ import {
 
   export default function InvitationsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>("tous");
+    const [selectedFormat, setSelectedFormat] = useState<InvitationFormatFilter>("all");
     const [categories, setCategories] = useState<ServiceCategory[]>(FALLBACK_CATEGORIES);
     const [rows, setRows] = useState<Record<string, ModelDefaultRow>>({});
     const [customs, setCustoms] = useState<CustomModelRow[]>([]);
@@ -73,6 +76,7 @@ import {
       const handleSelectCategory = (catSlug: string) => {
         const slug = catSlug.toLowerCase();
         setSelectedCategory(slug);
+        setSelectedFormat("all");
         if (typeof window !== "undefined") {
           try {
               if (slug === "tous" || slug === "all") {
@@ -193,13 +197,27 @@ import {
                 return [allPill, ...dynamicPills];
               }, [categories, siteModels]);
 
-        // Modèles filtrés selon la catégorie active
+        // Compteurs de formats pour Invitations événementielles (animée vs statique)
+        const formatCounts = useMemo(() => {
+          const base = siteModels.filter((m) => modelMatchesCategory(m, "invitations"));
+          return {
+            all: base.length,
+            animee: base.filter((m) => modelMatchesFormat(m, "animée")).length,
+            statique: base.filter((m) => modelMatchesFormat(m, "statique")).length,
+          };
+        }, [siteModels]);
+
+        // Modèles filtrés selon la catégorie active et le format
         const filteredModels = useMemo(() => {
-          if (selectedCategory === "tous" || selectedCategory === "all") {
-            return siteModels;
+          let list = siteModels;
+          if (selectedCategory !== "tous" && selectedCategory !== "all") {
+            list = list.filter((m) => modelMatchesCategory(m, selectedCategory));
           }
-        return siteModels.filter((m) => modelMatchesCategory(m, selectedCategory));
-      }, [siteModels, selectedCategory]);
+          if (selectedCategory === "invitations" || selectedCategory === "evenementielles") {
+            list = list.filter((m) => modelMatchesFormat(m, selectedFormat));
+          }
+          return list;
+        }, [siteModels, selectedCategory, selectedFormat]);
 
           const activeCategoryInfo = useMemo(() => {
             if (selectedCategory === "tous" || selectedCategory === "all") {
@@ -275,6 +293,49 @@ import {
             })}
                                 </div>
                               </div>
+
+                              {/* Sélecteur de format pour les Invitations événementielles : Invitation animée / Invitation statique */}
+                              {(selectedCategory === "invitations" || selectedCategory === "evenementielles") && (
+                                <div className="flex justify-center -mt-8 sm:-mt-10 mb-12 animate-in fade-in duration-300">
+                                  <div className="bg-white/85 border border-[#b8924a]/30 p-1 sm:p-1.5 rounded-full inline-flex items-center gap-1 sm:gap-1.5 shadow-sm">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedFormat("all")}
+                                      className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                        selectedFormat === "all"
+                                          ? "bg-[#2b1d12] text-[#f0d999] shadow-xs"
+                                          : "text-gray-600 hover:text-black"
+                                      }`}
+                                    >
+                                      Tous les formats ({formatCounts.all})
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedFormat("animée")}
+                                      className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                        selectedFormat === "animée"
+                                          ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-xs"
+                                          : "text-gray-600 hover:text-black"
+                                      }`}
+                                    >
+                                      <span>🎬 Invitation animée</span>
+                                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-[#f0d999]">{formatCounts.animee}</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedFormat("statique")}
+                                      className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                        selectedFormat === "statique"
+                                          ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-xs"
+                                          : "text-gray-600 hover:text-black"
+                                      }`}
+                                    >
+                                      <span>📜 Invitation statique</span>
+                                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-[#f0d999]">{formatCounts.statique}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Titre de la section filtrée */}
                               <div className="max-w-6xl mx-auto mb-12">
