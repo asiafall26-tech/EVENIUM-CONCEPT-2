@@ -119,28 +119,27 @@ export function defaultClassification(id: string): { type: any; events: string[]
     return {
       type: "voeu",
       events: [
-        "Vœux",
-        "Mariage",
         "Anniversaire",
+        "Mariage",
         "Anniversaire de mariage",
-        "Baptême",
-        "Demande en mariage",
-        "Henné time",
-        "Enterrement de vie de jeune fille",
-        "Communion",
         "Gala",
         "Conférence",
-        "Yendou",
-        "Picnic",
         "Noël",
         "Pâques",
         "Pentecôte",
+        "Communion",
+        "Demande en mariage",
+        "Yendou",
+        "Picnic",
+        "Baptême",
+        "Enterrement de vie de jeune fille",
+        "Henné time",
         "Fêtes de fin d'année",
       ],
     };
   }
-  if (id === "mot-doux") return { type: "mot_doux", events: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Demande en mariage", "Fêtes de fin d'année"] };
-  if (id === "invitation-couple") return { type: "couple", events: ["Couple", "Invitations Couple", "Dîner", "Soirée", "Demande en mariage", "Picnic", "Fêtes de fin d'année"] };
+  if (id === "mot-doux") return { type: "mot_doux", events: ["Mariage", "Anniversaire de mariage", "Demande en mariage", "Dîner", "Soirée", "Fêtes de fin d'année"] };
+  if (id === "invitation-couple") return { type: "couple", events: ["Demande en mariage", "Anniversaire de mariage", "Dîner", "Soirée", "Picnic", "Fêtes de fin d'année"] };
   const m = mockInvitationModels.find((x) => x.id === id);
   if (id === "invit-7") {
     return {

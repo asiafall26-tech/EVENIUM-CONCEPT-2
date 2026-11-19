@@ -41,7 +41,7 @@ import RenameModelModal from "@/components/admin/models/RenameModelModal";
 import CoverModal from "@/components/admin/models/CoverModal";
 import CategoriesManagerSection from "@/components/admin/models/CategoriesManagerSection";
 import { defaultClassification } from "@/data/mock/invitations";
-import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
+import { EVENT_TYPES, EVENT_TYPE_ICONS, SERVICE_EVENT_FILTERS } from "@/lib/eventTypes";
 import {
   fetchAllServiceCategories,
   type ServiceCategory,
@@ -179,20 +179,19 @@ export default function AdminModelsStudioPage() {
     .filter((g) => g.models.length || kindFilter !== "Tous");
 
   const eventCount = (t: string) => {
+    if (t === "Tous") {
+      const builtin = activeModels.length;
+      const custom = customModels.filter((m) => m.status !== "hidden").length;
+      return builtin + custom;
+    }
     const builtin = activeModels.filter((m) => {
       const c = classOf(m);
-      if (t === "Vœux") return c.type === "voeu" || c.events.includes("Vœux");
-      if (t === "Mots Doux") return c.type === "mot_doux" || c.events.includes("Mots Doux");
-      if (t === "Couple") return c.type === "couple" || c.events.includes("Couple") || c.events.includes("Invitations Couple");
       return c.events.includes(t);
     }).length;
 
     const custom = customModels.filter((m) => {
       if (m.status === "hidden") return false;
       const evs = m.event_types || [];
-      if (t === "Vœux") return m.invitation_type === "voeu" || evs.includes("Vœux");
-      if (t === "Mots Doux") return m.invitation_type === "mot_doux" || evs.includes("Mots Doux");
-      if (t === "Couple") return m.invitation_type === "couple" || evs.includes("Couple") || evs.includes("Invitations Couple");
       return evs.includes(t);
     }).length;
 
@@ -353,27 +352,28 @@ export default function AdminModelsStudioPage() {
               <button
                 type="button"
                 onClick={() => setEventFilter("Tous")}
-                className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium cursor-pointer ${
-                  eventFilter === "Tous" ? "bg-[#b8924a] text-white" : "text-gray-600 hover:bg-gray-100"
+                className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                  eventFilter === "Tous" ? "bg-[#b8924a] text-white shadow-2xs" : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 Tous ({eventCount("Tous")})
               </button>
               {EVENT_TYPES.map((t) => {
                 const count = eventCount(t);
-                if (count === 0 && eventFilter !== t) return null;
+                const isCore = (SERVICE_EVENT_FILTERS as readonly string[]).includes(t);
+                if (!isCore && count === 0 && eventFilter !== t) return null;
                 return (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setEventFilter(t)}
-                    className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium cursor-pointer ${
-                      eventFilter === t ? "bg-[#b8924a] text-white" : "text-gray-600 hover:bg-gray-100"
+                    className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                      eventFilter === t ? "bg-[#b8924a] text-white shadow-2xs font-semibold" : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
                     <span>{EVENT_TYPE_ICONS[t] ?? "📅"}</span>
                     <span>{t}</span>
-                    <span className="text-[10px] opacity-75">({count})</span>
+                    <span className={`text-[10px] ${eventFilter === t ? "text-white/80 font-bold" : "text-gray-400"}`}>({count})</span>
                   </button>
                 );
               })}

@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 import type { InvitationKind, ModelClassification } from "@/lib/modelDefaults";
-import { createClient } from "@/utils/supabase/client";
-import { fetchServiceCategories } from "@/lib/serviceCategories";
 
 const KINDS: { id: InvitationKind; label: string; hint: string }[] = [
   { id: "animée", label: "🎬 Invitation animée", hint: "Ouverture animée, musique d'ambiance, défilement cinématique" },
@@ -16,14 +14,30 @@ const KINDS: { id: InvitationKind; label: string; hint: string }[] = [
   { id: "couple", label: "❤️ Espace Couple", hint: "Invitation secrète en tête-à-tête avec scénographie (4 000 FCFA)" },
 ];
 
-const EXTRA_EVENT_CATEGORIES: { name: string; icon: string }[] = [
-  { name: "Vœux & Célébrations", icon: "🎁" },
-  { name: "Mots doux", icon: "💌" },
-  { name: "Espace Couple", icon: "❤️" },
-  { name: "Graduation", icon: "🎓" },
+const SERVICE_STRINGS = [
+  "vœux",
+  "voeux",
+  "vœux & célébrations",
+  "voeux & celebrations",
+  "mots doux",
+  "mot doux",
+  "mot_doux",
+  "espace couple",
+  "couple",
+  "invitations couple",
+  "invitations événementielles",
+  "invitations evenementielles",
+  "invitation animée",
+  "invitation statique",
+  "graduation",
 ];
 
-/** Classer un modèle : type d'invitation et types d'événement pour lesquels il est proposé. */
+const isServiceCategory = (name: string) => {
+  const s = name.toLowerCase().trim();
+  return SERVICE_STRINGS.some((b) => s === b || s.includes("vœux") || s.includes("voeux") || s.includes("mot doux") || s.includes("couple") || s.includes("invitation"));
+};
+
+/** Classer un modèle : type d'invitation (service) et types d'événement (ordre officiel). */
 export default function ClassifyModal({
   modelName,
   initial,
@@ -36,25 +50,14 @@ export default function ClassifyModal({
   onSave: (c: ModelClassification) => Promise<void>;
 }) {
   const [type, setType] = useState<InvitationKind>(initial.type);
-  const [events, setEvents] = useState<string[]>(initial.events);
-  const [extraCats, setExtraCats] = useState(EXTRA_EVENT_CATEGORIES);
+  // Nettoyage strict : ne conserver QUE les véritables types d'événements
+  const cleanInitialEvents = (initial.events || []).filter((e) => !isServiceCategory(e));
+  const [events, setEvents] = useState<string[]>(cleanInitialEvents);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchServiceCategories(createClient()).then((cats) => {
-      if (cats && cats.length > 0) {
-        const mapped = cats.map((c) => ({ name: c.label, icon: c.icon || "📜" }));
-        setExtraCats((prev) => {
-          const names = new Set(prev.map((p) => p.name));
-          const toAdd = mapped.filter((m) => !names.has(m.name));
-          return [...prev, ...toAdd];
-        });
-      }
-    });
-  }, []);
-
-  const toggle = (t: string) => setEvents((list) => (list.includes(t) ? list.filter((x) => x !== t) : [...list, t]));
+  const toggle = (t: string) =>
+    setEvents((list) => (list.includes(t) ? list.filter((x) => x !== t) : [...list, t]));
 
   const save = async () => {
     if (!events.length) {
@@ -82,7 +85,9 @@ export default function ClassifyModal({
                 key={k.id}
                 type="button"
                 onClick={() => setType(k.id)}
-                className={`text-left rounded-2xl border px-4 py-3 ${type === k.id ? "border-[#b8924a] bg-[#fbf7f0]" : "border-gray-200"}`}
+                className={`text-left rounded-2xl border px-4 py-3 cursor-pointer transition-all ${
+                  type === k.id ? "border-[#b8924a] bg-[#fbf7f0] shadow-2xs" : "border-gray-200 hover:border-gray-300"
+                }`}
               >
                 <span className="flex items-center justify-between gap-2 text-sm font-semibold text-gray-900">
                   {k.label} {type === k.id && <Check size={16} className="text-[#b8924a]" />}
@@ -94,25 +99,14 @@ export default function ClassifyModal({
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-gray-700 mb-1">Types d&apos;événement</p>
-          <p className="text-xs text-gray-500 mb-2">Le modèle apparaît dans ces filtres, sur le site et à la création d&apos;événement. Le premier choisi est le type principal.</p>
-          <div className="flex flex-wrap gap-2">
-            {extraCats.map((cat) => {
-              const on = events.includes(cat.name);
-              return (
-                <button
-                  key={cat.name}
-                  type="button"
-                  onClick={() => toggle(cat.name)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-semibold ${
-                    on ? "bg-[#b8924a] text-white border-[#b8924a] shadow-xs" : "border-amber-200 bg-amber-50/50 text-[#8f6f33] hover:bg-amber-100/50"
-                  }`}
-                >
-                  <span>{cat.icon}</span> {cat.name}
-                  {on && events[0] === cat.name && <span className="ml-1 text-[9px] uppercase tracking-wider text-[#2b181c] font-bold bg-white/70 px-1.5 py-0.2 rounded-full">principal</span>}
-                </button>
-              );
-            })}
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-semibold text-gray-700">Types d&apos;événement</p>
+            <span className="text-[11px] text-[#8f6f33] font-medium">Ordre officiel</span>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            Le modèle apparaîtra dans ces filtres d&apos;événement. Le premier sélectionné est le type principal.
+          </p>
+          <div className="flex flex-wrap gap-2 max-h-[300px] overflow-y-auto pr-1">
             {EVENT_TYPES.map((t) => {
               const on = events.includes(t);
               return (
@@ -120,12 +114,18 @@ export default function ClassifyModal({
                   key={t}
                   type="button"
                   onClick={() => toggle(t)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-semibold ${
-                    on ? "bg-[#2b2118] text-[#f5eee1] border-[#2b2118]" : "border-gray-200 text-gray-700"
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-semibold cursor-pointer transition-all ${
+                    on
+                      ? "bg-[#2b2118] text-[#f5eee1] border-[#2b2118] shadow-xs"
+                      : "border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  <span>{EVENT_TYPE_ICONS[t]}</span> {t}
-                  {on && events[0] === t && <span className="ml-1 text-[9px] uppercase tracking-wider text-[#d9c08c]">principal</span>}
+                  <span>{EVENT_TYPE_ICONS[t] || "🎉"}</span> {t}
+                  {on && events[0] === t && (
+                    <span className="ml-1 text-[9px] uppercase tracking-wider text-[#d9c08c] font-bold bg-white/10 px-1.5 py-0.5 rounded-full">
+                      principal
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -134,15 +134,19 @@ export default function ClassifyModal({
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700">
+        <div className="flex justify-end gap-2 pt-1 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
+          >
             Annuler
           </button>
           <button
             type="button"
             disabled={saving}
             onClick={save}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#2b2118] text-[#f5eee1] text-sm font-semibold disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#2b2118] text-[#f5eee1] text-sm font-semibold disabled:opacity-60 hover:bg-[#3d2f23] cursor-pointer"
           >
             {saving && <Loader2 size={16} className="animate-spin" />} Enregistrer le classement
           </button>
