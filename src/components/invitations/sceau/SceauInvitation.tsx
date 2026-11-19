@@ -425,9 +425,12 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
     };
   }, [mounted]);
 
-  // The couple's own song (chosen excerpt) replaces the music box when there is one
+  // The couple's own song (chosen excerpt)
   useEffect(() => {
     musicBox.current?.setTrack(c.audioUrl, c.audioStart, c.audioEnd);
+    if (!c.audioUrl) {
+      setMusic("hidden");
+    }
   }, [mounted, c.audioUrl, c.audioStart, c.audioEnd]);
 
   useEffect(() => {
@@ -524,8 +527,10 @@ export default function SceauInvitation({ content, onRsvp, preview, onBackToEdit
     if (phase !== "closed") return;
     const r = sealRef.current?.getBoundingClientRect();
     setPhase("open");
-    musicBox.current?.start();
-    setMusic("on");
+    if (c.audioUrl) {
+      musicBox.current?.start();
+      setMusic("on");
+    }
     if (r) petals.current?.burst(r.left + r.width / 2, r.top + r.height / 2, 70);
     const T = reduce() ? [0, 0] : [2700, 4600];
     const at = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));

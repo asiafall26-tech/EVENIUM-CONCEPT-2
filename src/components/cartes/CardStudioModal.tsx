@@ -96,7 +96,7 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
       setKicker(cardConfig.defaultKicker || "");
       setTitle(cardConfig.defaultTitle || "");
       setMessage(cardConfig.defaultMessage || "");
-      setMusic(cardConfig.suggestedMusic || "Clair de Lune - Debussy");
+      setMusic(cardConfig.suggestedMusic || "");
       setSealColor(
         (cardConfig.waxSealColor as any) ||
         (cardConfig.type === "mot_doux" || cardConfig.type === "invitation_couple" ? "ruby" : "gold")

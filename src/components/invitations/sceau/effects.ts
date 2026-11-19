@@ -408,15 +408,14 @@ export function createMusicBox(): MusicBox {
   };
 }
 
-/* ---------- Soundtrack: the couple's own song (chosen excerpt, looped), else the music box ---------- */
+/* ---------- Soundtrack: the couple's own song (chosen excerpt, looped) ---------- */
 
 export interface Soundtrack extends MusicBox {
-  /** Switches to a song file (url) and the part of it to play; empty url = synthesised music box */
+  /** Switches to a song file (url) and the part of it to play; empty url = silent */
   setTrack: (url?: string, start?: number, end?: number) => void;
 }
 
 export function createSoundtrack(): Soundtrack {
-  const box = createMusicBox();
   let audio: HTMLAudioElement | null = null;
   let unbind: (() => void) | null = null;
   let url = "";
@@ -425,17 +424,15 @@ export function createSoundtrack(): Soundtrack {
 
   const play = () => {
     if (audio) audio.play().catch(() => {});
-    else box.start();
   };
   const pause = () => {
     audio?.pause();
-    box.stop();
   };
 
   return {
     start() {
       playing = true;
-      play();
+      if (audio) play();
     },
     stop() {
       playing = false;
@@ -455,14 +452,13 @@ export function createSoundtrack(): Soundtrack {
         audio.volume = 0.7;
         unbind = bindSegment(audio, () => range);
       }
-      if (playing) play();
+      if (playing && audio) play();
     },
     destroy() {
       playing = false;
       unbind?.();
       audio?.pause();
       audio = null;
-      box.destroy();
     },
   };
 }

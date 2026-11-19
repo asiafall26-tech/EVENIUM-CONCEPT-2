@@ -135,8 +135,10 @@ export function detectFields(html: string): { html: string; fields: CustomField[
     if (tag === "AUDIO") {
       const own = el.getAttribute("src");
       const target = own ? el : el.querySelector("source[src]");
-      const src = target?.getAttribute("src");
-      if (target && src) add(target, { type: "audio", label: `Musique ${fields.filter((f) => f.type === "audio").length + 1}`, original: src }, "audio");
+      if (target) {
+        add(target, { type: "audio", label: `Musique ${fields.filter((f) => f.type === "audio").length + 1}`, original: "" }, "audio");
+        target.removeAttribute("src");
+      }
       return;
     }
 

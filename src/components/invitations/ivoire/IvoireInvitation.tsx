@@ -304,9 +304,12 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
     };
   }, []);
 
-  // The couple's own song (chosen excerpt) replaces the music box when there is one
+  // The couple's own song (chosen excerpt)
   useEffect(() => {
     musicBox.current?.setTrack(c.audioUrl, c.audioStart, c.audioEnd);
+    if (!c.audioUrl) {
+      setMusic("hidden");
+    }
   }, [c.audioUrl, c.audioStart, c.audioEnd]);
 
   // Page scroll stays locked behind the envelope (top-level only)
@@ -384,7 +387,7 @@ export default function IvoireInvitation({ content, onRsvp, preview, onBackToEdi
     if (opened) return;
     window.scrollTo(0, 0);
     setOpened(true);
-    if (withMusic) {
+    if (withMusic && c.audioUrl) {
       musicBox.current?.start();
       setMusic("on");
     }

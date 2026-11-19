@@ -73,6 +73,7 @@ const PAPER_OPTIONS: Array<{
 ];
 
 const MUSIC_OPTIONS = [
+  { id: "", name: "Aucune musique (silencieux)" },
   { id: "Experience - Ludovico Einaudi", name: "Experience (Ludovico Einaudi)" },
   { id: "Clair de Lune - Debussy", name: "Clair de Lune (Debussy)" },
   { id: "Nocturne Op. 9 No. 2 - Chopin", name: "Nocturne Op. 9 (Chopin)" },
@@ -408,28 +409,31 @@ export function CartesStudio({
               </div>
 
               <div className="space-y-2">
-                {MUSIC_OPTIONS.map((music) => (
-                  <button
-                    key={music.id}
-                    type="button"
-                    onClick={() => onChange({ music: music.name })}
-                    className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
-                      value.music.includes(music.name) || music.id.includes(value.music)
-                        ? "bg-[#faf0dc] border-[#b8924a] text-[#1a0f07] font-semibold shadow-xs"
-                        : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Volume2 size={16} className="text-[#b8924a]" />
-                      <span className="text-xs">{music.name}</span>
-                    </div>
-                    {(value.music.includes(music.name) || music.id.includes(value.music)) && (
-                      <span className="text-[10px] uppercase font-bold text-[#8f6f33] bg-white px-2 py-0.5 rounded-full border border-[#d9c08c]">
-                        Sélectionné
-                      </span>
-                    )}
-                  </button>
-                ))}
+                {MUSIC_OPTIONS.map((music) => {
+                  const isSelected = (!value.music && music.id === "") || (Boolean(value.music) && Boolean(music.name) && (value.music.includes(music.name) || music.id.includes(value.music)));
+                  return (
+                    <button
+                      key={music.id}
+                      type="button"
+                      onClick={() => onChange({ music: music.id === "" ? "" : music.name })}
+                      className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                        isSelected
+                          ? "bg-[#faf0dc] border-[#b8924a] text-[#1a0f07] font-semibold shadow-xs"
+                          : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Volume2 size={16} className={isSelected ? "text-[#b8924a]" : "text-gray-400"} />
+                        <span className="text-xs">{music.name}</span>
+                      </div>
+                      {isSelected && (
+                        <span className="text-[10px] uppercase font-bold text-[#8f6f33] bg-white px-2 py-0.5 rounded-full border border-[#d9c08c]">
+                          Sélectionné
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
             </div>
@@ -573,10 +577,12 @@ export function CartesStudio({
             />
 
             {/* BADGE MUSIQUE EN DIRECT */}
-            <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/60 border border-[#b8924a]/30 text-[#d4af37] text-[9px] font-medium flex items-center gap-1">
-              <Volume2 size={10} />
-              <span className="max-w-[140px] truncate">{value.music}</span>
-            </div>
+            {value.music && (
+              <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/60 border border-[#b8924a]/30 text-[#d4af37] text-[9px] font-medium flex items-center gap-1">
+                <Volume2 size={10} />
+                <span className="max-w-[140px] truncate">{value.music}</span>
+              </div>
+            )}
 
             {/* ÉTAT 1 : ENVELOPPE SCELLÉE */}
             {!previewEnvelopeOpen ? (

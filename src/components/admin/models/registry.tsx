@@ -24,7 +24,7 @@ export const DEFAULT_VOEU_CONTENT: CartesStudioValue = {
   kicker: "Joyeux Anniversaire & Vœux d'Exception",
   title: "Que cette journée soit mémorable",
   message: "Que cette nouvelle année t'apporte bonheur, santé et réussite...",
-  music: "Experience - Ludovico Einaudi",
+  music: "",
   sealColor: "gold",
   paperTheme: "parchment",
 };
@@ -35,7 +35,7 @@ export const DEFAULT_MOT_DOUX_CONTENT: CartesStudioValue = {
   kicker: "Confidentiel & Secret",
   title: "Pour que tu n'oublies jamais à quel point tu comptes",
   message: "Au milieu du bruit du monde, il y a ton sourire qui apaise tout...",
-  music: "Experience - Ludovico Einaudi",
+  music: "",
   sealColor: "ruby",
   paperTheme: "rose",
 };
@@ -46,7 +46,7 @@ export const DEFAULT_COUPLE_CONTENT: CartesStudioValue = {
   kicker: "Rendez-vous Intime • Privé",
   title: "Ce soir, laisse-toi guider... Je m'occupe de tout",
   message: "Oublie les contraintes et le quotidien. J'ai réservé une parenthèse rien que pour nous deux...",
-  music: "Experience - Ludovico Einaudi",
+  music: "",
   sealColor: "ruby",
   paperTheme: "ivory",
   rendezVousDate: "Ce Vendredi soir",

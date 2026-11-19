@@ -225,7 +225,7 @@ export default function RomancePage() {
             defaultMessage: selectedService === "mot_doux" 
               ? "Au milieu du bruit du monde, il y a ton sourire qui apaise tout. Je voulais simplement te rappeler à quel point ma vie a pris une saveur unique depuis que tu en fais partie. Merci d'être mon port d'attache et mon plus doux réconfort."
               : "Oublie les contraintes, les écrans et le quotidien. J'ai réservé une parenthèse rien que pour nous deux. Viens avec ton plus beau sourire et laisse-toi chérir comme au premier jour.",
-            suggestedMusic: "Experience - Ludovico Einaudi",
+            suggestedMusic: "",
             defaultDate: selectedService === "invitation_couple" ? "Ce Vendredi soir" : undefined,
             defaultTime: selectedService === "invitation_couple" ? "20h30 précises" : undefined,
             defaultPlace: selectedService === "invitation_couple" ? "Lieu secret... Je passe te chercher" : undefined,

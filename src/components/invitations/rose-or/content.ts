@@ -18,11 +18,11 @@ import { mapsEmbedUrl, mapsLink } from "../sceau/content";
 export const ROSE_OR_MODEL_ID = "invit-10";
 
 const ASSETS = "/invitations/rose-or";
-export const DEFAULT_MUSIC = `${ASSETS}/ambiance.mp3`;
+export const DEFAULT_MUSIC = "";
 export const DEFAULT_FOOTER_PHOTO = `${ASSETS}/photo3.jpg`;
 
 /** Bump after each change to index.html so browsers that cached the page fetch the new version */
-export const PAGE_VERSION = "4";
+export const PAGE_VERSION = "5";
 
 /** URL of the invitation page, in "live" mode (waits for content sent by the parent window) */
 export const LIVE_SRC = `${ASSETS}/index.html?live=1&v=${PAGE_VERSION}`;
@@ -132,8 +132,8 @@ export const DEFAULT_ROSE_OR: RoseOrContent = {
   rsvpText: "Les places étant limitées, chaque invitation est strictement nominative.",
   footerPhoto: DEFAULT_FOOTER_PHOTO,
   footerText: "Fait avec ♥",
-  music: DEFAULT_MUSIC,
-  musicTitle: "Ambiance douce",
+  music: "",
+  musicTitle: "",
   musicStart: 0,
   musicEnd: 0,
 };

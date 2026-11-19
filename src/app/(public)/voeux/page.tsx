@@ -203,7 +203,7 @@ export default function VoeuxPage() {
             defaultKicker: `Pour célébrer votre ${selectedOccasion.name}`,
             defaultTitle: selectedOccasion.hook,
             defaultMessage: selectedOccasion.description,
-            suggestedMusic: "Clair de Lune - Debussy",
+            suggestedMusic: "",
             priceFcfa: 3900,
             priceEur: "3,90 €",
             inspirations: VOEUX_INSPIRATIONS.filter((i) => i.occasionId === selectedOccasion.id).map((i) => ({

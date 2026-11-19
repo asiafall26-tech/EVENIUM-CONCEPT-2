@@ -258,7 +258,7 @@ function CreateExpressStudioContent({
     kicker: "Attention Particulière",
     title: "Pour que tu n'oublies jamais à quel point tu comptes",
     message: "Au milieu du bruit du monde, il y a ton sourire qui apaise tout. Je voulais simplement te rappeler à quel point ma vie a pris une saveur unique depuis que tu en fais partie.",
-    music: "Experience - Ludovico Einaudi",
+    music: "",
     sealColor: "ruby",
     paperTheme: "rose",
     rendezVousDate: "Ce vendredi soir",
