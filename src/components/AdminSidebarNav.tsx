@@ -54,7 +54,6 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
     { name: "Finances & Revenus", href: "/admin/budget", icon: Wallet },
     { name: "Messages", href: "/admin/messages", icon: MessageSquare, badge: badgeLabel(unreadCount), urgent: true },
     { name: "Studio des modèles", href: "/admin/modeles", icon: Brush },
-    { name: "Catégories & Tarifs", href: "/admin/categories", icon: Tag },
     { name: "Banque de sons", href: "/admin/sons", icon: Music },
     { name: "Rapports", href: "/admin/rapports", icon: PieChart },
     { name: "Paramètres", href: "/admin/settings", icon: Settings },
