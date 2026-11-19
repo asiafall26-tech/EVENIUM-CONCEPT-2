@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Brush, CheckCircle2, Loader2, RotateCcw, Tag, ExternalLink, Search, X } from "lucide-react";
+import { Brush, CheckCircle2, Loader2, RotateCcw, Tag, ExternalLink, Search, X, VolumeX } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
   classificationOf,
@@ -30,6 +30,7 @@ import {
   setModelHiddenAction,
   setModelDeletedAction,
   resetModelDefaultAction,
+  removeModelSoundAction,
 } from "@/app/actions/adminModelActions";
 import ModelCard from "@/components/admin/models/ModelCard";
 import { SITE_MODELS, type ModelContent, type SiteModel } from "@/components/admin/models/registry";
@@ -539,6 +540,19 @@ export default function AdminModelsStudioPage() {
                           await act(model, async () => { await setModelDeletedAction(model.id, true); }, `« ${name} » est supprimé.`);
                         }}
                         extra={[
+                          {
+                            label: "Supprimer le son",
+                            icon: <VolumeX size={14} className="text-red-500" />,
+                            title: "Supprimer définitivement tout son ou musique d'origine sur ce modèle",
+                            onClick: async () => {
+                              if (!confirm(`Supprimer le son d'origine de « ${name} » ?\n\nLe modèle sera mis à jour sans musique ni son sur l'ensemble du site.`)) return;
+                              await act(
+                                model,
+                                () => removeModelSoundAction(model.id),
+                                `Le son d'origine de « ${name} » a été supprimé. Le modèle est désormais silencieux.`
+                              );
+                            },
+                          },
                           {
                             label: "Version d'origine",
                             icon: <RotateCcw size={14} />,

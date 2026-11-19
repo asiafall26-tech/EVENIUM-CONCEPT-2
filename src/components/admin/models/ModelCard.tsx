@@ -10,6 +10,8 @@ export interface ModelCardAction {
   icon: ReactNode;
   onClick: () => void;
   disabled?: boolean;
+  className?: string;
+  title?: string;
 }
 
 /**
@@ -69,7 +71,14 @@ export default function ModelCard(p: Props) {
   );
   for (const a of p.extra ?? [])
     buttons.push(
-      <button key={a.label} type="button" disabled={p.busy || a.disabled} onClick={a.onClick} className={`${SMALL} border-gray-200 text-gray-700 hover:bg-gray-50`}>
+      <button
+        key={a.label}
+        type="button"
+        title={a.title}
+        disabled={p.busy || a.disabled}
+        onClick={a.onClick}
+        className={a.className || `${SMALL} border-gray-200 text-gray-700 hover:bg-gray-50`}
+      >
         {a.icon} {a.label}
       </button>
     );

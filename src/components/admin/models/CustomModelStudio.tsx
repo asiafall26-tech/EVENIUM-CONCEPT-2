@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Mail, Music, Palette, PenLine, Save, X } from "lucide-react";
+import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Mail, Music, Palette, PenLine, Save, VolumeX, X } from "lucide-react";
 import CoverModal from "./CoverModal";
 import CustomSectionsEditor, { CustomMusicFields } from "@/components/invitations/custom/CustomSectionsEditor";
 import CustomInvitationFrame from "@/components/invitations/custom/CustomInvitationFrame";
 import StyleEditor from "./StyleEditor";
-import { STYLE_KEY, customValues, parseStyle, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
+import { STYLE_KEY, customValues, parseStyle, withoutMusicValues, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
 import { generateAccompanimentMessage, getAccompanimentSuggestions } from "@/lib/accompanimentMessages";
 
 type Tab = "contenu" | "message" | "style" | "musique";
@@ -304,7 +304,20 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
           {tab === "musique" && !isStatic && (
             <div className="h-full overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8 space-y-5 max-w-3xl mx-auto">
               <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 space-y-3">
-                <h3 className="font-serif text-xl text-gray-900">Musique de l&apos;invitation</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-serif text-xl text-gray-900">Musique de l&apos;invitation</h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      update(withoutMusicValues(fields, values));
+                      setMessage({ ok: true, text: "Le son d'origine du modèle a été supprimé. Le modèle est désormais silencieux." });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-semibold text-red-700 transition-colors cursor-pointer"
+                    title="Supprimer toute musique ou piste sonore de ce modèle"
+                  >
+                    <VolumeX size={14} /> Supprimer le son d&apos;origine
+                  </button>
+                </div>
                 <p className="text-xs text-gray-500">
                   « Choisir une musique » ouvre la banque de sons Evenium. Écoutez, choisissez, puis ajustez le passage joué avec la barre de découpe.
                 </p>

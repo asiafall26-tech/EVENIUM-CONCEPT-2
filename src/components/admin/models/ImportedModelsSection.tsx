@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FileArchive, Loader2, UploadCloud } from "lucide-react";
+import { FileArchive, Loader2, UploadCloud, VolumeX } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { customModelUrl, fetchCustomModel, fetchCustomModels, type CustomModelRow } from "@/lib/customModels";
-import { saveCustomModelAction } from "@/app/actions/adminModelActions";
+import { removeModelSoundAction, saveCustomModelAction } from "@/app/actions/adminModelActions";
 import { broadcastChange, subscribeToSync } from "@/lib/syncService";
 import type { InvitationKind } from "@/lib/modelDefaults";
 import ImportModelModal from "./ImportModelModal";
@@ -174,6 +174,21 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
                 act(m, () => saveCustomModelAction(m.slug, { status: "hidden" }), `« ${m.name} » est retiré du site.`);
               }}
               onDelete={() => remove(m)}
+              extra={[
+                {
+                  label: "Supprimer le son",
+                  icon: <VolumeX size={14} className="text-red-500" />,
+                  title: "Supprimer tout son ou musique de ce modèle",
+                  onClick: async () => {
+                    if (!confirm(`Supprimer le son d'origine de « ${m.name} » ?\n\nLe modèle sera mis à jour sans musique ni son sur l'ensemble du site.`)) return;
+                    await act(
+                      m,
+                      () => removeModelSoundAction(`custom-${m.slug}`),
+                      `Le son d'origine de « ${m.name} » a été supprimé. Le modèle est désormais silencieux.`
+                    );
+                  },
+                },
+              ]}
             />
           ))}
         </div>

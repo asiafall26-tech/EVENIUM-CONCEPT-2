@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/utils/supabase/server";
 import { MODEL_DEFAULTS_TABLE, invalidateModelDefaultsCache, type ModelClassification, type ModelDefaultRow } from "@/lib/modelDefaults";
-import { CUSTOM_MODELS_TABLE, invalidateCustomModelsCache, type CustomModelRow } from "@/lib/customModels";
+import { CUSTOM_MODELS_TABLE, invalidateCustomModelsCache, withoutMusicValues, type CustomField, type CustomModelRow } from "@/lib/customModels";
+import { withoutMusic } from "@/lib/staticCard";
 
 function purgeModelCaches() {
   invalidateModelDefaultsCache();
@@ -293,4 +294,51 @@ export async function assignModelCategoryAction(modelId: string, categorySlug: s
   }
 
   await saveModelClassificationAction(modelId, { type, events });
+}
+
+/** Supprime définitivement tout son ou musique d'origine sur un modèle */
+export async function removeModelSoundAction(modelId: string): Promise<void> {
+  const userId = await verifyAdmin();
+  const now = new Date().toISOString();
+
+  // 1. Modèle importé (ZIP / HTML)
+  if (modelId.startsWith("custom-")) {
+    const slug = modelId.replace("custom-", "");
+    const client = getAdminClient();
+    const { data: row } = await client.from(CUSTOM_MODELS_TABLE).select("*").eq("slug", slug).maybeSingle();
+    if (row) {
+      const fields = (row.fields ?? []) as CustomField[];
+      const cleanContent = withoutMusicValues(fields, row.content ?? {});
+      const cleanDraft = row.draft_content ? withoutMusicValues(fields, row.draft_content) : null;
+      await client
+        .from(CUSTOM_MODELS_TABLE)
+        .update({
+          content: cleanContent,
+          draft_content: cleanDraft,
+          updated_at: now,
+        })
+        .eq("slug", slug);
+    }
+    purgeModelCaches();
+    return;
+  }
+
+  // 2. Modèle officiel Evenium
+  const client = getAdminClient();
+  const { data: row } = await client.from(MODEL_DEFAULTS_TABLE).select("*").eq("model_id", modelId).maybeSingle();
+
+  const currentContent = (row?.draft_content ?? row?.content ?? {}) as Record<string, unknown>;
+  const cleanContent = withoutMusic(currentContent);
+
+  const payload: Record<string, unknown> = {
+    model_id: modelId,
+    content: cleanContent,
+    draft_content: cleanContent,
+    updated_at: now,
+    published_at: now,
+    updated_by: userId,
+  };
+
+  await writeModelDefault(payload);
+  purgeModelCaches();
 }
