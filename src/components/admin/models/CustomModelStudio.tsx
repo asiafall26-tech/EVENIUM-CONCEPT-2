@@ -9,6 +9,7 @@ import CustomSectionsEditor, { CustomMusicFields } from "@/components/invitation
 import CustomInvitationFrame from "@/components/invitations/custom/CustomInvitationFrame";
 import StyleEditor from "./StyleEditor";
 import { STYLE_KEY, customValues, parseStyle, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
+import { generateAccompanimentMessage, getAccompanimentSuggestions } from "@/lib/accompanimentMessages";
 
 type Tab = "contenu" | "message" | "style" | "musique";
 
@@ -84,21 +85,14 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
     onClose();
   };
 
-  const defaultCustomMessage = (() => {
-    const mName = (name || model.name || "").toLowerCase();
-    const type = (model.invitation_type || "").toLowerCase();
-    const evs = (model.event_types || []).map((e) => e.toLowerCase()).join(" ");
-    if (type === "voeu" || evs.includes("vœu") || evs.includes("voeu") || mName.includes("vœu") || mName.includes("voeu") || mName.includes("birthday queen")) {
-      return "✨ Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux d'exception personnalisés en cliquant sur le lien :";
-    }
-    if (type === "mot_doux" || evs.includes("mot doux") || mName.includes("mot doux") || mName.includes("lettre")) {
-      return "💌 Mon cœur, j'ai préparé quelque chose de doux et secret rien que pour toi... Ouvre ta lettre scellée en cliquant sur le lien :";
-    }
-    if (type === "couple" || evs.includes("couple") || mName.includes("rendez-vous") || mName.includes("amour")) {
-      return "🥂 Une soirée d'exception, rien que nous deux... Découvre notre invitation secrète en cliquant sur le lien :";
-    }
-    return `✨ Nous avons l'immense honneur de vous convier à notre événement d'exception "${name || model.name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :`;
-  })();
+  const defaultCustomMessage = generateAccompanimentMessage({
+    serviceType: model.invitation_type,
+    eventType: model.event_types?.[0],
+    eventName: name || model.name,
+    isVoeu: model.invitation_type === "voeu",
+    isMotDoux: model.invitation_type === "mot_doux",
+    isCouple: model.invitation_type === "couple",
+  });
 
   const currentMessage = values.accompanimentMessage !== undefined ? values.accompanimentMessage : defaultCustomMessage;
 
@@ -221,47 +215,34 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
                   </div>
                 </div>
 
-                {/* Suggestions de modèles rapides */}
+                {/* Suggestions de modèles rapides adaptées sur-mesure */}
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-2">
-                    Modèles de messages rapides :
+                    Modèles de messages rapides adaptés :
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => update({ ...values, accompanimentMessage: `✨ Nous avons l'immense honneur de vous convier à notre événement d'exception "${name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :` })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">👑 Prestige &amp; Cérémonie</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Nous avons l&apos;immense honneur de vous convier à notre événement d&apos;exception...</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => update({ ...values, accompanimentMessage: "✨ Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux d'exception personnalisés en cliquant sur le lien :" })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">🌟 Vœux d&apos;Exception</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux...</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => update({ ...values, accompanimentMessage: "💌 Mon cœur, j'ai préparé quelque chose de doux et secret rien que pour toi... Ouvre ta lettre scellée en cliquant sur le lien :" })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">💌 Les Mots Doux</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Mon cœur, j&apos;ai préparé quelque chose de doux et secret rien que pour toi...</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => update({ ...values, accompanimentMessage: "🥂 Une soirée d'exception, rien que nous deux... Découvre notre invitation secrète en cliquant sur le lien :" })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">🥂 Soirée Couple Intime</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Une soirée d&apos;exception, rien que nous deux... Découvre notre invitation secrète...</span>
-                    </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {getAccompanimentSuggestions({
+                      serviceType: model.invitation_type,
+                      eventType: model.event_types?.[0],
+                      eventName: name || model.name,
+                      isVoeu: model.invitation_type === "voeu",
+                      isMotDoux: model.invitation_type === "mot_doux",
+                      isCouple: model.invitation_type === "couple",
+                    }).map((sug) => (
+                      <button
+                        key={sug.id}
+                        type="button"
+                        onClick={() => update({ ...values, accompanimentMessage: sug.text })}
+                        className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
+                      >
+                        <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">
+                          {sug.icon} {sug.label}
+                        </span>
+                        <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">
+                          {sug.text}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 

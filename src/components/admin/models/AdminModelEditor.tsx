@@ -9,6 +9,8 @@ import { InvitationCtaContext } from "@/components/invitations/InvitationCtaCont
 import StyleEditor from "./StyleEditor";
 import { withoutMusic } from "@/lib/staticCard";
 import type { ModelContent, SiteModel } from "./registry";
+import { defaultClassification } from "@/data/mock/invitations";
+import { getAccompanimentSuggestions } from "@/lib/accompanimentMessages";
 
 type Tab = "contenu" | "message" | "style" | "musique";
 
@@ -256,47 +258,31 @@ export default function AdminModelEditor({
                   </div>
                 </div>
 
-                {/* Suggestions de modèles rapides */}
+                {/* Suggestions de modèles rapides adaptées sur-mesure */}
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-2">
-                    Modèles de messages rapides :
+                    Modèles de messages rapides adaptés :
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => update({ ...draft, accompanimentMessage: `✨ Nous avons l'immense honneur de vous convier à notre événement d'exception "${modelName}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :` })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">👑 Prestige &amp; Cérémonie</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Nous avons l&apos;immense honneur de vous convier à notre événement d&apos;exception...</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => update({ ...draft, accompanimentMessage: "✨ Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux d'exception personnalisés en cliquant sur le lien :" })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">🌟 Vœux d&apos;Exception</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux...</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => update({ ...draft, accompanimentMessage: "💌 Mon cœur, j'ai préparé quelque chose de doux et secret rien que pour toi... Ouvre ta lettre scellée en cliquant sur le lien :" })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">💌 Les Mots Doux</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Mon cœur, j&apos;ai préparé quelque chose de doux et secret rien que pour toi...</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => update({ ...draft, accompanimentMessage: "🥂 Une soirée d'exception, rien que nous deux... Découvre notre invitation secrète en cliquant sur le lien :" })}
-                      className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
-                    >
-                      <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">🥂 Soirée Couple Intime</span>
-                      <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">Une soirée d&apos;exception, rien que nous deux... Découvre notre invitation secrète...</span>
-                    </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {getAccompanimentSuggestions({
+                      serviceType: defaultClassification(model.id).type,
+                      eventType: defaultClassification(model.id).events[0],
+                      eventName: modelName,
+                    }).map((sug) => (
+                      <button
+                        key={sug.id}
+                        type="button"
+                        onClick={() => update({ ...draft, accompanimentMessage: sug.text })}
+                        className="p-3 rounded-2xl border border-gray-200 hover:border-[#b8924a] bg-gray-50 hover:bg-[#fbf7f0] text-left text-xs transition-colors cursor-pointer group"
+                      >
+                        <span className="font-bold text-gray-900 block mb-1 group-hover:text-[#8f6f33]">
+                          {sug.icon} {sug.label}
+                        </span>
+                        <span className="text-gray-500 line-clamp-2 text-[11px] leading-relaxed">
+                          {sug.text}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 

@@ -7,6 +7,7 @@ import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { markRsvpSeen } from "@/store/BadgeStore";
+import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
 
 export default function ParticipantsDashboardPage({
   params,
@@ -114,35 +115,17 @@ export default function ParticipantsDashboardPage({
   };
 
   const generateWhatsAppMessage = (guestName?: string, tone: "chaleureux" | "prestige" | "court" = "chaleureux") => {
-    const link = getShareUrl();
-    const greeting = guestName ? `Bonjour ${guestName} !` : "Bonjour !";
-    const dateText = event.date ? ` le *${event.date}*` : "";
-    const locationText = event.location ? ` à *${event.location}*` : "";
-
-    if (tone === "prestige") {
-      return `🎩 *INVITATION OFFICIELLE*\n\n` +
-        `${greeting}\n\n` +
-        `Vous êtes cordialement invité(e) à célébrer *${event.name}*${dateText}${locationText}.\n\n` +
-        `Veuillez découvrir votre carton d'invitation d'honneur et enregistrer votre confirmation de présence via ce lien :\n` +
-        `👉 ${link}\n\n` +
-        `Au plaisir de vous accueillir parmi nous.`;
-    }
-
-    if (tone === "court") {
-      return `✨ *Invitation - ${event.name}*\n\n` +
-        `${greeting}\n\n` +
-        `Voici le lien de votre invitation interactive pour le ${event.date || "jour J"} :\n` +
-        `👉 ${link}\n\n` +
-        `Merci de confirmer votre présence directement sur le lien. À très bientôt ! 🎉`;
-    }
-
-    // Chaleureux par défaut
-    return `✨ *VOUS ÊTES INVITÉ(E) !* ✨\n\n` +
-      `${greeting}\n\n` +
-      `Nous avons l'immense joie de vous convier à célébrer *${event.name}*${dateText}${locationText} !\n\n` +
-      `Découvrez votre invitation interactive et confirmez votre présence en quelques secondes ici :\n` +
-      `👉 ${link}\n\n` +
-      `Nous avons hâte de partager ce moment inoubliable avec vous ! 🎉🥂`;
+    return generateAccompanimentMessage({
+      serviceType: (event as any).invitation_model_type || (event as any).type,
+      eventType: event.type,
+      eventName: event.name,
+      guestName,
+      dateFormatted: event.date,
+      time: event.time,
+      location: event.location,
+      link: getShareUrl(),
+      tone,
+    });
   };
 
   const openWhatsAppModalForGuest = (guest: { id?: string; name: string; phone?: string }) => {

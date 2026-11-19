@@ -39,6 +39,7 @@ import { defaultClassification } from '@/data/mock/invitations';
 import { subscribeToSync } from '@/lib/syncService';
 import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
+import { generateAccompanimentMessage, getAccompanimentSuggestions } from '@/lib/accompanimentMessages';
 
 // Full Studio components
 import VeloursStudio from '@/components/invitations/velours/VeloursStudio';
@@ -751,17 +752,56 @@ function CreateExpressStudioContent({
 
   // Message d'accompagnement chic qui précède le lien lors des partages WhatsApp / SMS
   const defaultAccompaniment = useMemo(() => {
-    if (isVoeu) {
-      return "✨ Une pensée toute particulière pour toi en ce jour précieux... Découvre tes vœux d'exception personnalisés en cliquant sur le lien :";
-    }
-    if (isMotDoux) {
-      return "💌 Mon cœur, j'ai préparé quelque chose de doux et secret rien que pour toi... Ouvre ta lettre scellée en cliquant sur le lien :";
-    }
-    if (isCouple) {
-      return "🥂 Une soirée d'exception, rien que nous deux... Découvre notre invitation secrète en cliquant sur le lien :";
-    }
-    return `✨ Nous avons l'immense honneur de vous convier à notre événement d'exception "${eventMetadata.name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :`;
-  }, [isVoeu, isMotDoux, isCouple, eventMetadata.name]);
+    return generateAccompanimentMessage({
+      serviceType: currentModel?.kind,
+      eventType: selectedEventCategory || currentModel?.category,
+      eventName: eventMetadata.name || currentModel?.name,
+      isVoeu,
+      isMotDoux,
+      isCouple,
+      dateFormatted: eventMetadata.rawDate,
+      time: eventMetadata.rawTime,
+      location: eventMetadata.rawLocation,
+    });
+  }, [
+    currentModel?.kind,
+    currentModel?.category,
+    currentModel?.name,
+    selectedEventCategory,
+    eventMetadata.name,
+    eventMetadata.rawDate,
+    eventMetadata.rawTime,
+    eventMetadata.rawLocation,
+    isVoeu,
+    isMotDoux,
+    isCouple,
+  ]);
+
+  const accompanimentSuggestions = useMemo(() => {
+    return getAccompanimentSuggestions({
+      serviceType: currentModel?.kind,
+      eventType: selectedEventCategory || currentModel?.category,
+      eventName: eventMetadata.name || currentModel?.name,
+      isVoeu,
+      isMotDoux,
+      isCouple,
+      dateFormatted: eventMetadata.rawDate,
+      time: eventMetadata.rawTime,
+      location: eventMetadata.rawLocation,
+    });
+  }, [
+    currentModel?.kind,
+    currentModel?.category,
+    currentModel?.name,
+    selectedEventCategory,
+    eventMetadata.name,
+    eventMetadata.rawDate,
+    eventMetadata.rawTime,
+    eventMetadata.rawLocation,
+    isVoeu,
+    isMotDoux,
+    isCouple,
+  ]);
 
   const [accompanimentMessage, setAccompanimentMessage] = useState<string>("");
 
@@ -1137,32 +1177,19 @@ function CreateExpressStudioContent({
                 </p>
               </div>
 
-              {/* Suggestions rapides de tons */}
+              {/* Suggestions rapides de tons adaptées au type d'invitation, de vœux ou de mots doux */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isVoeu) setAccompanimentMessage("🌟 Que cette nouvelle étape de vie t'apporte bonheur, santé et réussite éclatante. Ouvre ta carte de vœux officielle ici :");
-                    else if (isMotDoux) setAccompanimentMessage("💌 Pour que tu n'oublies jamais à quel point tu comptes pour moi... Découvre ce mot doux qui t'est dédié :");
-                    else if (isCouple) setAccompanimentMessage("🥂 Ce soir, le monde s'arrête pour nous deux. J'ai imaginé notre rendez-vous, découvre l'invitation ici :");
-                    else setAccompanimentMessage(`⚜️ Invitation d'Honneur : Nous sollicitons le privilège de votre présence à notre célébration "${eventMetadata.name}". Découvrez votre faire-part interactif :`);
-                  }}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white border border-[#b8924a]/35 text-[#8f6f33] hover:bg-[#fbf7f0] transition-colors cursor-pointer"
-                >
-                  ⚜️ Ton Prestige
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isVoeu) setAccompanimentMessage("🎂 Joyeux Anniversaire ! Une dose d'amour, de rires et de joie pour ta journée spéciale. Clique ici pour voir tes vœux :");
-                    else if (isMotDoux) setAccompanimentMessage("❤️ Un petit sourire pour illuminer ta journée. J'ai déposé mes tendres pensées ici rien que pour toi :");
-                    else if (isCouple) setAccompanimentMessage("🕯️ Prépare-toi à une soirée magique en tête-à-tête... Ton invitation secrète t'attend ici :");
-                    else setAccompanimentMessage(`✨ Grande nouvelle ! Nous serions tellement heureux de vous compter parmi nous pour "${eventMetadata.name}". Retrouvez tous les détails ici :`);
-                  }}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white border border-[#b8924a]/35 text-[#8f6f33] hover:bg-[#fbf7f0] transition-colors cursor-pointer"
-                >
-                  🎉 Ton Chaleureux
-                </button>
+                {accompanimentSuggestions.map((sug) => (
+                  <button
+                    key={sug.id}
+                    type="button"
+                    onClick={() => setAccompanimentMessage(sug.text)}
+                    className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white border border-[#b8924a]/35 text-[#8f6f33] hover:bg-[#fbf7f0] transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                  >
+                    <span>{sug.icon}</span>
+                    <span>{sug.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
