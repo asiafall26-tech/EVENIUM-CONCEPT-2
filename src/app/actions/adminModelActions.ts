@@ -248,21 +248,39 @@ export async function assignModelCategoryAction(modelId: string, categorySlug: s
   let type: any = "animée";
   let events: string[] = [];
 
+  const officialEvents = [
+    "Mariage",
+    "Anniversaire de mariage",
+    "Gala",
+    "Conférence",
+    "Noël",
+    "Pâques",
+    "Pentecôte",
+    "Communion",
+    "Demande en mariage",
+    "Yendou",
+    "Picnic",
+    "Anniversaire",
+    "Baptême",
+    "Enterrement de vie de jeune fille",
+    "Henné time",
+  ];
+
   if (categorySlug === "invitations") {
     type = "animée";
-    events = ["Mariage", "Anniversaire", "Baptême", "Gala", "Grands Événements"];
+    events = officialEvents;
   } else if (categorySlug === "voeux") {
     type = "voeu";
-    events = ["Vœux"];
+    events = officialEvents;
   } else if (categorySlug === "mots_doux") {
     type = "mot_doux";
-    events = ["Mots Doux"];
+    events = ["Demande en mariage", "Anniversaire de mariage", "Mariage"];
   } else if (categorySlug === "couple") {
     type = "couple";
-    events = ["Invitations Couple", "Couple"];
+    events = ["Demande en mariage", "Anniversaire de mariage", "Mariage"];
   } else {
     type = "animée";
-    events = [categoryLabel || categorySlug];
+    events = officialEvents;
   }
 
   if (modelId.startsWith("custom-")) {

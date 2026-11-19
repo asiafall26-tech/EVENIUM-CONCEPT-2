@@ -37,11 +37,11 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
 
       const eventTypes =
         invitationType === "voeu"
-          ? ["Vœux", "Anniversaire"]
+          ? ["Anniversaire", "Fêtes de fin d'année"]
           : invitationType === "mot_doux"
-          ? ["Couple", "Mots Doux"]
+          ? ["Demande en mariage", "Anniversaire de mariage"]
           : invitationType === "couple"
-          ? ["Couple", "Invitations Couple"]
+          ? ["Demande en mariage", "Anniversaire de mariage"]
           : ["Mariage"];
 
       setStep("Enregistrement du modèle…");
@@ -86,7 +86,7 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
             {[
               { id: "animée" as const, label: "🎬 Faire-part Animé", desc: "Mariage, événement" },
               { id: "carte" as const, label: "📜 Carte Statique", desc: "Faire-part classique" },
-              { id: "voeu" as const, label: "🌟 Vœu d'Exception", desc: "Anniversaire, graduation" },
+              { id: "voeu" as const, label: "🌟 Vœu d'Exception", desc: "Anniversaire, célébration" },
               { id: "mot_doux" as const, label: "💌 Mots Doux", desc: "Lettre d'amour scellée" },
               { id: "couple" as const, label: "🕯️ Invitation Couple", desc: "Tête-à-tête & RSVP" },
             ].map((k) => (

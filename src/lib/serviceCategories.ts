@@ -333,7 +333,9 @@ export function modelMatchesEvent(
     ? model.events.map((e) => e.toLowerCase().trim())
     : [model.category?.toLowerCase().trim() || ""];
 
-  return evs.some((e) => e === target || e.includes(target) || target.includes(e));
+  // Égalité stricte insensible à la casse : "Mariage", "Anniversaire de mariage",
+  // "Demande en mariage" et "Anniversaire" sont des types d'événements strictement distincts.
+  return evs.some((e) => e === target);
 }
 
 /**
