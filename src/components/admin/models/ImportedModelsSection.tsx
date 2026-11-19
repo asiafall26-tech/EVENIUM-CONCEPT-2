@@ -26,12 +26,13 @@ function status(m: CustomModelRow) {
 interface Props {
   kindFilter: "Tous" | InvitationKind;
   eventFilter: string;
+  searchQuery?: string;
   onNotice: (n: { ok: boolean; text: string } | null) => void;
   onReload?: () => Promise<void> | void;
 }
 
 /** Modèles importés (ZIP / HTML) : import, studio, publication, retrait, classement, suppression. */
-export default function ImportedModelsSection({ kindFilter, eventFilter, onNotice, onReload }: Props) {
+export default function ImportedModelsSection({ kindFilter, eventFilter, searchQuery = "", onNotice, onReload }: Props) {
   const [supabase] = useState(() => createClient());
   const [models, setModels] = useState<CustomModelRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,9 +96,19 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, onNotic
     );
   };
 
-  const shown = models.filter(
-    (m) => (kindFilter === "Tous" || m.invitation_type === kindFilter) && (eventFilter === "Tous" || m.event_types.includes(eventFilter))
-  );
+  const shown = models.filter((m) => {
+    if (kindFilter !== "Tous" && m.invitation_type !== kindFilter) return false;
+    if (eventFilter !== "Tous" && !m.event_types.includes(eventFilter)) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        m.name.toLowerCase().includes(q) ||
+        m.slug.toLowerCase().includes(q) ||
+        (m.event_types || []).some((e) => e.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
   const editing = models.find((m) => m.slug === editingSlug) ?? null;
   const classifying = models.find((m) => m.slug === classifyingSlug) ?? null;
   const renaming = models.find((m) => m.slug === renamingSlug) ?? null;

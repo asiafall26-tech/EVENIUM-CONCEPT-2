@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Brush, CheckCircle2, Loader2, RotateCcw, Tag, ExternalLink } from "lucide-react";
+import { Brush, CheckCircle2, Loader2, RotateCcw, Tag, ExternalLink, Search, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
   classificationOf,
@@ -92,6 +92,7 @@ export default function AdminModelsStudioPage() {
   const [coverModel, setCoverModel] = useState<SiteModel | null>(null);
   const [kindFilter, setKindFilter] = useState<"Tous" | InvitationKind>("Tous");
   const [eventFilter, setEventFilter] = useState<string>("Tous");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Détection du paramètre d'URL tab=categories
   useEffect(() => {
@@ -173,30 +174,67 @@ export default function AdminModelsStudioPage() {
       ...g,
       models: activeModels.filter((m) => {
         const c = classOf(m);
-        return c.type === g.id && (eventFilter === "Tous" || c.events.includes(eventFilter));
+        if (c.type !== g.id) return false;
+        if (eventFilter !== "Tous" && !c.events.includes(eventFilter)) return false;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          const name = currentName(m).toLowerCase();
+          const orig = m.name.toLowerCase();
+          const evs = c.events.map((e) => e.toLowerCase());
+          return name.includes(q) || orig.includes(q) || evs.some((e) => e.includes(q));
+        }
+        return true;
       }),
     }))
     .filter((g) => g.models.length || kindFilter !== "Tous");
 
-  const eventCount = (t: string) => {
-    if (t === "Tous") {
-      const builtin = activeModels.length;
-      const custom = customModels.filter((m) => m.status !== "hidden").length;
-      return builtin + custom;
-    }
-    const builtin = activeModels.filter((m) => {
+  // Événements réellement disponibles dans le dashboard admin pour le format actif (compteur > 0 uniquement !)
+  const availableEvents = useMemo(() => {
+    const filteredBuiltin = activeModels.filter((m) => {
       const c = classOf(m);
-      return c.events.includes(t);
-    }).length;
+      return kindFilter === "Tous" || c.type === kindFilter;
+    });
 
-    const custom = customModels.filter((m) => {
+    const filteredCustom = customModels.filter((m) => {
       if (m.status === "hidden") return false;
-      const evs = m.event_types || [];
-      return evs.includes(t);
-    }).length;
+      return kindFilter === "Tous" || m.invitation_type === kindFilter;
+    });
 
-    return builtin + custom;
-  };
+    const counts: Record<string, number> = {};
+    for (const evt of EVENT_TYPES) {
+      const bCount = filteredBuiltin.filter((m) => classOf(m).events.includes(evt)).length;
+      const cCount = filteredCustom.filter((m) => (m.event_types || []).includes(evt)).length;
+      const total = bCount + cCount;
+      if (total > 0) {
+        counts[evt] = total;
+      }
+    }
+
+    const list = Object.keys(counts).map((name) => ({
+      name,
+      count: counts[name],
+      icon: EVENT_TYPE_ICONS[name as keyof typeof EVENT_TYPE_ICONS] || "🎉",
+    }));
+
+    list.sort((a, b) => {
+      const idxA = (EVENT_TYPES as readonly string[]).indexOf(a.name as any);
+      const idxB = (EVENT_TYPES as readonly string[]).indexOf(b.name as any);
+      return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
+    });
+
+    const totalMatching = filteredBuiltin.length + filteredCustom.length;
+    return { list, total: totalMatching };
+  }, [activeModels, customModels, kindFilter, rows]);
+
+  // Réinitialiser automatiquement le filtre d'événement s'il n'existe plus dans les événements disponibles
+  useEffect(() => {
+    if (eventFilter !== "Tous") {
+      const exists = availableEvents.list.some((e) => e.name === eventFilter);
+      if (!exists) {
+        setEventFilter("Tous");
+      }
+    }
+  }, [availableEvents, eventFilter]);
 
   const kindCount = (k: "Tous" | InvitationKind) => {
     if (k === "Tous") {
@@ -311,18 +349,19 @@ export default function AdminModelsStudioPage() {
       {/* ONGLET 1 : GESTION DES MODÈLES D'INVITATION (STUDIO COMPLET) */}
       {activeTab === "modeles" && (
         <div className="space-y-6">
-          {/* Classement : type d'invitation et type d'événement */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-3 sm:p-4 space-y-3">
+          {/* Studio Toolbar : Formats / Services, Recherche rapide & Événements disponibles */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-5 space-y-3.5">
+            {/* Ligne 1 : Filtre par format / service */}
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
               {(["Tous", "animée", "carte", "voeu", "mot_doux", "couple"] as const).map((k) => (
                 <button
                   key={k}
                   type="button"
                   onClick={() => setKindFilter(k)}
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                     kindFilter === k
                       ? "bg-[#2b2118] text-[#f5eee1] border-[#2b2118] shadow-xs"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      : "border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                   }`}
                 >
                   <span>
@@ -338,7 +377,7 @@ export default function AdminModelsStudioPage() {
                       ? "💌 Mots doux"
                       : "❤️ Espace Couple"}
                   </span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                     kindFilter === k ? "bg-white/20 text-[#f5eee1]" : "bg-gray-100 text-gray-600"
                   }`}>
                     {kindCount(k)}
@@ -347,41 +386,101 @@ export default function AdminModelsStudioPage() {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 border-t border-gray-100">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 shrink-0">Filtrer par événement :</span>
-              <button
-                type="button"
-                onClick={() => setEventFilter("Tous")}
-                className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all ${
-                  eventFilter === "Tous" ? "bg-[#b8924a] text-white shadow-2xs" : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                Tous ({eventCount("Tous")})
-              </button>
-              {EVENT_TYPES.map((t) => {
-                const count = eventCount(t);
-                const isCore = (SERVICE_EVENT_FILTERS as readonly string[]).includes(t);
-                if (!isCore && count === 0 && eventFilter !== t) return null;
-                return (
+            {/* Ligne 2 : Recherche en direct & Filtres actifs */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-gray-100">
+              <div className="relative w-full sm:w-80">
+                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher par nom, modèle, slug..."
+                  className="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30 focus:border-[#b8924a] transition-all"
+                />
+                {searchQuery && (
                   <button
-                    key={t}
                     type="button"
-                    onClick={() => setEventFilter(t)}
-                    className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                      eventFilter === t ? "bg-[#b8924a] text-white shadow-2xs font-semibold" : "text-gray-600 hover:bg-gray-100"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5 cursor-pointer"
+                    title="Effacer la recherche"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Indicateur de filtre actif et bouton réinitialiser */}
+              {(kindFilter !== "Tous" || eventFilter !== "Tous" || searchQuery) && (
+                <div className="flex items-center gap-2 text-xs text-gray-600 self-end sm:self-center">
+                  <span>
+                    Filtre actif :{" "}
+                    <strong className="text-gray-900">
+                      {kindFilter !== "Tous" ? kindFilter : ""}
+                      {kindFilter !== "Tous" && eventFilter !== "Tous" ? " · " : ""}
+                      {eventFilter !== "Tous" ? eventFilter : ""}
+                      {searchQuery ? ` « ${searchQuery} »` : ""}
+                    </strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKindFilter("Tous");
+                      setEventFilter("Tous");
+                      setSearchQuery("");
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#b8924a] hover:underline cursor-pointer ml-1"
+                  >
+                    <RotateCcw size={11} /> Réinitialiser
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Ligne 3 : Événements réellement disponibles (compteur > 0 uniquement !) */}
+            {availableEvents.list.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-gray-100">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 shrink-0 mr-1">Événements :</span>
+                <button
+                  type="button"
+                  onClick={() => setEventFilter("Tous")}
+                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                    eventFilter === "Tous" ? "bg-[#b8924a] text-white shadow-2xs" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Tous ({availableEvents.total})
+                </button>
+                {availableEvents.list.map((evt) => (
+                  <button
+                    key={evt.name}
+                    type="button"
+                    onClick={() => setEventFilter(evt.name)}
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
+                      eventFilter === evt.name
+                        ? "bg-[#2b2118] text-[#f5eee1] shadow-2xs font-semibold"
+                        : "bg-gray-50 border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-100"
                     }`}
                   >
-                    <span>{EVENT_TYPE_ICONS[t] ?? "📅"}</span>
-                    <span>{t}</span>
-                    <span className={`text-[10px] ${eventFilter === t ? "text-white/80 font-bold" : "text-gray-400"}`}>({count})</span>
+                    <span>{evt.icon}</span>
+                    <span>{evt.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      eventFilter === evt.name ? "bg-white/20 text-[#f5eee1]" : "bg-gray-200 text-gray-600"
+                    }`}>
+                      {evt.count}
+                    </span>
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Section Modèles importés (ZIP / HTML) */}
-          <ImportedModelsSection kindFilter={kindFilter} eventFilter={eventFilter} onReload={load} onNotice={setNotice} />
+          {/* Section Modèles importés (ZIP / HTML) avec filtre de recherche */}
+          <ImportedModelsSection
+            kindFilter={kindFilter}
+            eventFilter={eventFilter}
+            searchQuery={searchQuery}
+            onReload={load}
+            onNotice={setNotice}
+          />
 
           {/* Grille des modèles du site regroupés par type */}
           {loading ? (
