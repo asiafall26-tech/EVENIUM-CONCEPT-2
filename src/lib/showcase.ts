@@ -20,6 +20,7 @@ export function buildShowcase(rows: Record<string, ModelDefaultRow>, customs: Cu
         thumbnail: modelCoverOf(rows[m.id], m.thumbnail),
         type: c.type,
         category: (c.events[0] ?? m.category) as InvitationModel["category"],
+        events: c.events,
       };
     });
   const imported: InvitationModel[] = customs
@@ -29,7 +30,8 @@ export function buildShowcase(rows: Record<string, ModelDefaultRow>, customs: Cu
       id: customModelId(m.slug),
       name: m.name,
       type: m.invitation_type,
-      category: (m.event_types[0] ?? "Mariage") as InvitationModel["category"],
+      category: (m.event_types?.[0] ?? "Mariage") as InvitationModel["category"],
+      events: Array.isArray(m.event_types) ? m.event_types : [],
       thumbnail: m.cover_url || "/invit-velours-cover.jpg",
       isPremium: true,
       description: "Création exclusive Evenium, personnalisable de A à Z.",
@@ -37,7 +39,6 @@ export function buildShowcase(rows: Record<string, ModelDefaultRow>, customs: Cu
     }));
   return [
     ...imported,
-    ...showcaseModelIds.map((id) => builtIn.find((m) => m.id === id)).filter((m): m is (typeof builtIn)[number] => m !== undefined),
-    ...builtIn.filter((m) => !showcaseModelIds.includes(m.id)),
-  ].slice(0, SHOWCASE_SIZE);
+    ...builtIn,
+  ];
 }

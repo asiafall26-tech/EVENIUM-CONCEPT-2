@@ -16,6 +16,7 @@ import { subscribeToSync } from "@/lib/syncService";
 import {
   fetchServiceCategories,
   modelMatchesCategory,
+  modelMatchesEvent,
   type ServiceCategory,
   FALLBACK_CATEGORIES,
 } from "@/lib/serviceCategories";
@@ -85,20 +86,9 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
   const displayedModels = useMemo(() => {
     let list = showcaseModels.filter((m) => modelMatchesCategory(m, selectedCategory));
     if (selectedEvent !== "all" && selectedEvent !== "Tous" && selectedEvent !== "tous") {
-      const target = selectedEvent.toLowerCase();
-      list = list.filter((m) => {
-        const evs = Array.isArray(m.events) ? m.events.map((e: string) => e.toLowerCase()) : [];
-        const cat = (m.category || "").toLowerCase();
-        const name = (m.name || "").toLowerCase();
-        return (
-          evs.some((e: string) => e.includes(target) || target.includes(e)) ||
-          cat.includes(target) ||
-          target.includes(cat) ||
-          name.includes(target)
-        );
-      });
+      list = list.filter((m) => modelMatchesEvent(m, selectedEvent));
     }
-    return list;
+    return list.slice(0, 8);
   }, [showcaseModels, selectedCategory, selectedEvent]);
 
   const activeCategory = categories.find((c) => c.slug === selectedCategory) || categories[0];

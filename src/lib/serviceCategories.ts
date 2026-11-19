@@ -242,7 +242,8 @@ export async function deleteServiceCategory(
 }
 
 /**
- * Détermine si un modèle appartient à une catégorie donnée.
+ * Détermine si un modèle appartient à une catégorie de service donnée.
+ * Le type d'invitation défini par l'admin (ou par défaut) est la référence absolue.
  */
 export function modelMatchesCategory(
   model: {
@@ -256,97 +257,83 @@ export function modelMatchesCategory(
 ): boolean {
   if (catSlug === "Tous" || catSlug === "tous" || catSlug === "all") return true;
 
-  const type = (model.type || "").toLowerCase();
-  const category = (model.category || "").toLowerCase();
-  const events = Array.isArray(model.events) ? model.events.map((e) => e.toLowerCase()) : [];
-  const name = (model.name || "").toLowerCase();
+  const type = (model.type || "").toLowerCase().trim();
+  const slug = catSlug.toLowerCase().trim();
 
+  // 1. Invitations événementielles (animée ou carte/statique)
   if (
-    catSlug === "invitations" ||
-    catSlug === "evenementielles" ||
-    catSlug === "invitations_evenementielles" ||
-    catSlug === "Grands Événements" ||
-    catSlug === "grands_evenements"
+    slug === "invitations" ||
+    slug === "evenementielles" ||
+    slug === "invitations_evenementielles" ||
+    slug === "grands_evenements"
   ) {
-    // Les invitations événementielles excluent voeu, mot_doux et couple
     if (type === "voeu" || type === "mot_doux" || type === "couple") return false;
-    if (category.includes("vœu") || category.includes("voeu") || category.includes("mot doux") || category.includes("couple")) {
-      return false;
-    }
-    return (
-      type === "animée" ||
-      type === "carte" ||
-      events.some((e) =>
-        e.includes("mariage") ||
-        e.includes("anniversaire") ||
-        e.includes("baptême") ||
-        e.includes("bapteme") ||
-        e.includes("cérémonie") ||
-        e.includes("ceremonie") ||
-        e.includes("gala") ||
-        e.includes("invitation")
-      ) ||
-      !type ||
-      type === "invitation"
-    );
+    return type === "animée" || type === "carte" || type === "statique" || !type || type === "invitation";
   }
 
+  // 2. Vœux & Célébrations
   if (
-    catSlug === "voeux" ||
-    catSlug === "celebrations" ||
-    catSlug === "voeux_celebrations" ||
-    catSlug === "Vœux" ||
-    catSlug === "voeu"
+    slug === "voeux" ||
+    slug === "celebrations" ||
+    slug === "voeux_celebrations" ||
+    slug === "voeu"
   ) {
-    return (
-      type === "voeu" ||
-      events.some((e) => e.includes("vœu") || e.includes("voeu") || e.includes("célébration") || e.includes("celebration")) ||
-      category.includes("vœu") ||
-      category.includes("voeu") ||
-      category.includes("célébration") ||
-      name.includes("vœu") ||
-      name.includes("voeu")
-    );
+    return type === "voeu";
   }
 
+  // 3. Mots doux
   if (
-    catSlug === "mots_doux" ||
-    catSlug === "Mots Doux" ||
-    catSlug === "mot_doux" ||
-    catSlug === "mots-doux" ||
-    catSlug === "mots doux"
+    slug === "mots_doux" ||
+    slug === "mot_doux" ||
+    slug === "mots-doux" ||
+    slug === "mots doux"
   ) {
-    return (
-      type === "mot_doux" ||
-      (events.some((e) => e.includes("mot")) && !events.some((e) => e.includes("invitations couple") || e.includes("espace couple"))) ||
-      (category.includes("mot") && !category.includes("couple")) ||
-      (name.includes("mot") && !name.includes("couple"))
-    );
+    return type === "mot_doux";
   }
 
+  // 4. Espace Couple
   if (
-    catSlug === "couple" ||
-    catSlug === "espace_couple" ||
-    catSlug === "espace-couple" ||
-    catSlug === "Couple" ||
-    catSlug === "invitations_couple"
+    slug === "couple" ||
+    slug === "espace_couple" ||
+    slug === "espace-couple" ||
+    slug === "invitations_couple"
   ) {
-    return (
-      type === "couple" ||
-      events.some((e) => e.includes("couple") || e.includes("espace couple") || e.includes("invitations couple")) ||
-      category.includes("couple") ||
-      name.includes("couple")
-    );
+    return type === "couple";
   }
 
   // Pour toute catégorie personnalisée ajoutée par l'admin
-  const normalizedSlug = catSlug.toLowerCase().replace(/_/g, " ");
+  const normalizedSlug = slug.replace(/_/g, " ");
+  const category = (model.category || "").toLowerCase();
+  const events = Array.isArray(model.events) ? model.events.map((e) => e.toLowerCase()) : [];
+  const name = (model.name || "").toLowerCase();
   return (
-    type === catSlug ||
+    type === slug ||
     category.includes(normalizedSlug) ||
     events.some((e) => e.includes(normalizedSlug)) ||
     name.includes(normalizedSlug)
   );
+}
+
+/**
+ * Détermine si un modèle correspond au filtre d'événement sélectionné.
+ * Utilise strictement le classement des événements (`events`) défini par l'admin.
+ */
+export function modelMatchesEvent(
+  model: {
+    events?: string[];
+    category?: string;
+  },
+  selectedEvent: string
+): boolean {
+  if (!selectedEvent || selectedEvent === "all" || selectedEvent === "Tous" || selectedEvent === "tous") {
+    return true;
+  }
+  const target = selectedEvent.toLowerCase().trim();
+  const evs = Array.isArray(model.events) && model.events.length > 0
+    ? model.events.map((e) => e.toLowerCase().trim())
+    : [model.category?.toLowerCase().trim() || ""];
+
+  return evs.some((e) => e === target || e.includes(target) || target.includes(e));
 }
 
 /**

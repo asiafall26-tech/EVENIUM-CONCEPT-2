@@ -28,6 +28,7 @@ import {
   fetchServiceCategories,
   modelMatchesCategory,
   modelMatchesFormat,
+  modelMatchesEvent,
   type InvitationFormatFilter,
   type ServiceCategory,
   FALLBACK_CATEGORIES,
@@ -222,18 +223,7 @@ import { SERVICE_EVENT_FILTERS, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
           });
           const counts: Record<string, number> = { all: base.length };
           for (const evt of SERVICE_EVENT_FILTERS) {
-            const target = evt.toLowerCase();
-            counts[evt] = base.filter((m) => {
-              const evs = Array.isArray(m.events) ? m.events.map((e) => e.toLowerCase()) : [];
-              const cat = (m.category || "").toLowerCase();
-              const name = (m.name || "").toLowerCase();
-              return (
-                evs.some((e) => e.includes(target) || target.includes(e)) ||
-                cat.includes(target) ||
-                target.includes(cat) ||
-                name.includes(target)
-              );
-            }).length;
+            counts[evt] = base.filter((m) => modelMatchesEvent(m, evt)).length;
           }
           return counts;
         }, [siteModels, selectedCategory]);
@@ -248,18 +238,7 @@ import { SERVICE_EVENT_FILTERS, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
             list = list.filter((m) => modelMatchesFormat(m, selectedFormat));
           }
           if (selectedEvent !== "all" && selectedEvent !== "Tous" && selectedEvent !== "tous") {
-            const target = selectedEvent.toLowerCase();
-            list = list.filter((m) => {
-              const evs = Array.isArray(m.events) ? m.events.map((e) => e.toLowerCase()) : [];
-              const cat = (m.category || "").toLowerCase();
-              const name = (m.name || "").toLowerCase();
-              return (
-                evs.some((e) => e.includes(target) || target.includes(e)) ||
-                cat.includes(target) ||
-                target.includes(cat) ||
-                name.includes(target)
-              );
-            });
+            list = list.filter((m) => modelMatchesEvent(m, selectedEvent));
           }
           return list;
         }, [siteModels, selectedCategory, selectedFormat, selectedEvent]);

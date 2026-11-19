@@ -35,6 +35,7 @@ import EventQRCode from '@/components/ui/EventQRCode';
 import ModelCard from '@/components/landing/ModelCard';
 import { Fleuron, DiamondRule, LuxFrame } from '@/components/landing/LuxOrnaments';
 import { EVENT_TYPES, EVENT_TYPE_ICONS as EVENT_ICONS } from '@/lib/eventTypes';
+import { defaultClassification } from '@/data/mock/invitations';
 import { subscribeToSync } from '@/lib/syncService';
 import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
@@ -204,18 +205,11 @@ const CATALOG_MODELS: ModelItem[] = [
 const buildEventCategories = (models: ModelItem[]): { id: string; label: string; icon: string; count: number; isSoon?: boolean }[] => {
   const countFor = (catId: string) => {
     if (catId === "Tous") return models.length;
-    if (catId === "Vœux") return models.filter((m) => m.kind === "voeu" || m.compatibleEvents.includes("Vœux")).length;
+    if (catId === "Vœux") return models.filter((m) => m.kind === "voeu").length;
     if (catId === "Couple") {
-      return models.filter(
-        (m) =>
-          m.kind === "couple" ||
-          m.kind === "mot_doux" ||
-          m.compatibleEvents.includes("Couple") ||
-          m.compatibleEvents.includes("Invitations Couple") ||
-          m.compatibleEvents.includes("Mots Doux")
-      ).length;
+      return models.filter((m) => m.kind === "couple" || m.kind === "mot_doux").length;
     }
-    return models.filter((m) => m.compatibleEvents.includes(catId)).length;
+    return models.filter((m) => (m.compatibleEvents || []).includes(catId)).length;
   };
 
   return [
@@ -302,7 +296,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   const classifiedModels = useMemo(
     () =>
       CATALOG_MODELS.map((m) => {
-        const c = classificationOf(publishedModels[m.id], { type: 'animée', events: m.compatibleEvents });
+        const c = classificationOf(publishedModels[m.id], defaultClassification(m.id));
         return {
           ...m,
           name: modelNameOf(publishedModels[m.id], m.name),
@@ -517,19 +511,12 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     // Modèles retirés du site par l'admin : absents de la galerie
     if (selectedEventCategory === "Tous") return siteModels;
     if (selectedEventCategory === "Vœux") {
-      return siteModels.filter((m) => m.kind === "voeu" || m.compatibleEvents.includes("Vœux"));
+      return siteModels.filter((m) => m.kind === "voeu");
     }
     if (selectedEventCategory === "Couple") {
-      return siteModels.filter(
-        (m) =>
-          m.kind === "couple" ||
-          m.kind === "mot_doux" ||
-          m.compatibleEvents.includes("Couple") ||
-          m.compatibleEvents.includes("Invitations Couple") ||
-          m.compatibleEvents.includes("Mots Doux")
-      );
+      return siteModels.filter((m) => m.kind === "couple" || m.kind === "mot_doux");
     }
-    return siteModels.filter(m => m.compatibleEvents.includes(selectedEventCategory));
+    return siteModels.filter((m) => (m.compatibleEvents || []).includes(selectedEventCategory));
   }, [selectedEventCategory, siteModels]);
 
   // Chargement à la demande des champs complets d'un modèle importé lorsqu'il est sélectionné
