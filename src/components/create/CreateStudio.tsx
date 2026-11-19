@@ -88,9 +88,9 @@ import {
 import { VOEUX_INSPIRATIONS } from '@/data/mock/voeux';
 import { ROMANCE_INSPIRATIONS } from '@/data/mock/romance';
 
-export const VOEU_EXCEPTION_MODEL_ID = "voeu-exception";
-export const MOT_DOUX_MODEL_ID = "mot-doux";
-export const INVI_COUPLE_MODEL_ID = "invitation-couple";
+const VOEU_EXCEPTION_MODEL_ID = "__legacy_voeu_exception__";
+const MOT_DOUX_MODEL_ID = "__legacy_mot_doux__";
+const INVI_COUPLE_MODEL_ID = "__legacy_invitation_couple__";
 
 /** « public » : parcours du site. « dashboard » : événement supplémentaire d'un client déjà connecté. */
 export type CreateStudioMode = 'public' | 'dashboard';
@@ -164,39 +164,6 @@ const CATALOG_MODELS: ModelItem[] = [
     category: "Anniversaire",
     compatibleEvents: ["Anniversaire"],
     liveUrl: "/invitation-anniversaire"
-  },
-  {
-    id: VOEU_EXCEPTION_MODEL_ID,
-    name: "Vœu d'Exception",
-    subtitle: "Papeterie haute couture, cachet de cire scellé & piano céleste",
-    image: "/invit-sceau-dor-cover.jpg",
-    color: "from-[#b8924a] to-[#805e26]",
-    badge: "Attention 3 900 FCFA",
-    category: "Vœux",
-    compatibleEvents: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Mariage", "Baptême", "Noël", "Fêtes de fin d'année", "Tous"],
-    liveUrl: "/voeux"
-  },
-  {
-    id: MOT_DOUX_MODEL_ID,
-    name: "Les Mots Doux",
-    subtitle: "Lettre d'amour confidentielle scellée au cachet de cire rubis",
-    image: "/invit-rose-or-cover.jpg",
-    color: "from-[#9e1b23] to-[#590d12]",
-    badge: "Romance 3 900 FCFA",
-    category: "Mots Doux",
-    compatibleEvents: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Noël", "Fêtes de fin d'année", "Tous"],
-    liveUrl: "/mots-doux"
-  },
-  {
-    id: INVI_COUPLE_MODEL_ID,
-    name: "Invitations Couple",
-    subtitle: "Tête-à-tête secret avec scénographie & bouton d'amour « J'accepte »",
-    image: "/invit-velours-cover.jpg",
-    color: "from-[#4a0e17] to-[#140306]",
-    badge: "Tête-à-tête 3 900 FCFA",
-    category: "Invitations Couple",
-    compatibleEvents: ["Couple", "Invitations Couple", "Soirée", "Dîner", "Noël", "Fêtes de fin d'année", "Tous"],
-    liveUrl: "/mots-doux"
   }
 ];
 
@@ -229,7 +196,17 @@ const buildEventCategories = (models: ModelItem[]): { id: string; label: string;
   ];
 };
 
-function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
+interface CreateStudioProps {
+  mode?: CreateStudioMode;
+  initialPublishedModels?: Record<string, ModelDefaultRow>;
+  initialCustomModels?: CustomModelRow[];
+}
+
+function CreateExpressStudioContent({
+  mode,
+  initialPublishedModels = {},
+  initialCustomModels = [],
+}: CreateStudioProps & { mode: CreateStudioMode }) {
   const inDashboard = mode === 'dashboard';
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -289,10 +266,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     dressCode: "Chic & Séduction",
   });
   const [isCartesModalOpen, setIsCartesModalOpen] = useState(false);
-  const isCardStudioModel = selectedModelId === VOEU_EXCEPTION_MODEL_ID || selectedModelId === MOT_DOUX_MODEL_ID || selectedModelId === INVI_COUPLE_MODEL_ID;
+  const isCardStudioModel = false;
 
   // Modèles ajustés, classés ou retirés du site par l'admin (studio des modèles)
-  const [publishedModels, setPublishedModels] = useState<Record<string, ModelDefaultRow>>({});
+  const [publishedModels, setPublishedModels] = useState<Record<string, ModelDefaultRow>>(initialPublishedModels);
   const classifiedModels = useMemo(
     () =>
       CATALOG_MODELS.map((m) => {
@@ -309,7 +286,7 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
     [publishedModels]
   );
   // Modèles importés par l'admin (ZIP / HTML), publiés
-  const [customModels, setCustomModels] = useState<CustomModelRow[]>([]);
+  const [customModels, setCustomModels] = useState<CustomModelRow[]>(initialCustomModels);
   const [customContents, setCustomContents] = useState<Record<string, CustomValues>>({});
   const reloadCustoms = React.useCallback((force = false) => {
     if (force) invalidateCustomModelsCache();
@@ -339,7 +316,10 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   );
   const siteModels = useMemo(() => {
     const hidden = hiddenModelIds(publishedModels);
-    return [...classifiedModels.filter((m) => !hidden.has(m.id)), ...customItems];
+    return [
+      ...classifiedModels.filter((m) => !hidden.has(m.id)),
+      ...customItems.filter((m) => !hidden.has(m.id)),
+    ];
   }, [classifiedModels, publishedModels, customItems]);
   const customOf = (id: string) => (isCustomModelId(id) ? customModels.find((m) => customModelId(m.slug) === id) ?? null : null);
   /** Contenu en cours d'un modèle importé (sinon celui publié par l'admin) */
@@ -2428,7 +2408,11 @@ function CreateExpressStudioContent({ mode }: { mode: CreateStudioMode }) {
   );
 }
 
-export default function CreateStudio({ mode = 'public' }: { mode?: CreateStudioMode }) {
+export default function CreateStudio({
+  mode = 'public',
+  initialPublishedModels = {},
+  initialCustomModels = [],
+}: CreateStudioProps) {
   return (
     <Suspense
       fallback={
@@ -2437,7 +2421,11 @@ export default function CreateStudio({ mode = 'public' }: { mode?: CreateStudioM
         </div>
       }
     >
-      <CreateExpressStudioContent mode={mode} />
+      <CreateExpressStudioContent
+        mode={mode}
+        initialPublishedModels={initialPublishedModels}
+        initialCustomModels={initialCustomModels}
+      />
     </Suspense>
   );
 }

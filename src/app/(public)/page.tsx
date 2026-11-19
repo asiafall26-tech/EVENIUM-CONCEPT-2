@@ -19,7 +19,10 @@ export const revalidate = 0;
 async function getShowcaseModels() {
   try {
     const supabase = await createClient();
-    const [rows, customs] = await Promise.all([fetchModelDefaults(supabase), fetchCustomModels(supabase, { publishedOnly: true })]);
+    const [rows, customs] = await Promise.all([
+      fetchModelDefaults(supabase, true),
+      fetchCustomModels(supabase, { publishedOnly: true, force: true }),
+    ]);
     return buildShowcase(rows, customs);
   } catch (e) {
     console.error("Erreur getShowcaseModels:", e);

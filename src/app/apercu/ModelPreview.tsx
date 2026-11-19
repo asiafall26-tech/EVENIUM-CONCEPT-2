@@ -39,8 +39,8 @@ export default function ModelPreview({ src, name, cover, category, showBack }: P
     if (src.includes("velours") || src.includes("mariage")) return `/create?model=invit-7${catParam}`;
     if (src.includes("ivoire")) return `/create?model=invit-9${catParam}`;
     if (src.includes("anniversaire")) return `/create?model=invit-11${catParam}`;
-    if (src.includes("voeux")) return `/create?model=voeu-exception${catParam}`;
-    if (src.includes("mots-doux")) return `/create?model=mot-doux${catParam}`;
+    if (src.includes("voeux")) return `/create?cat=voeux`;
+    if (src.includes("mots-doux")) return `/create?cat=mots_doux`;
     return `/create${catParam ? `?${catParam.slice(1)}` : ""}`;
   })();
 

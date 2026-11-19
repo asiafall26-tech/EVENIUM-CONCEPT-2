@@ -78,36 +78,6 @@ export const mockInvitationModels: InvitationModel[] = [
     description: "Une invitation sur deux pages qui se tourne comme un faire-part : votre photo en couverture « Happy Birthday », puis une carte crème aux roses bordeaux et dorures avec date, lieu, programme et confirmation de présence.",
     liveUrl: "/invitation-anniversaire",
   },
-  {
-    id: "voeu-exception",
-    name: "Vœu d'Exception",
-    type: "voeu" as any,
-    category: "Anniversaire",
-    thumbnail: "/invit-sceau-dor-cover.jpg",
-    isPremium: true,
-    description: "Une enveloppe scellée d'or ou de rubis, douce mélodie au piano et lettre dépliée avec message d'émotion personnalisable.",
-    liveUrl: "/voeux",
-  },
-  {
-    id: "mot-doux",
-    name: "Les Mots Doux",
-    type: "mot_doux" as any,
-    category: "Mariage",
-    thumbnail: "/invit-rose-or-cover.jpg",
-    isPremium: true,
-    description: "Une lettre d'amour confidentielle scellée au cachet de cire rubis, accompagnée d'un air de piano romantique.",
-    liveUrl: "/mots-doux",
-  },
-  {
-    id: "invitation-couple",
-    name: "Invitations Couple",
-    type: "couple" as any,
-    category: "Mariage",
-    thumbnail: "/invit-velours-cover.jpg",
-    isPremium: true,
-    description: "Un carton d'invitation secret en tête-à-tête avec détails du rendez-vous et bouton interactif d'acceptation « J'accepte avec amour ».",
-    liveUrl: "/mots-doux",
-  },
 ];
 
 /** Models shown in the homepage showcase (up to 4), in display order */
@@ -115,31 +85,6 @@ export const showcaseModelIds: string[] = ["invit-7", "invit-8", "invit-9", "inv
 
 /** Classement d'origine d'un modèle (type d'invitation et événement), remplaçable dans le studio des modèles */
 export function defaultClassification(id: string): { type: any; events: string[] } {
-  if (id === "voeu-exception") {
-    return {
-      type: "voeu",
-      events: [
-        "Anniversaire",
-        "Mariage",
-        "Anniversaire de mariage",
-        "Gala",
-        "Conférence",
-        "Noël",
-        "Pâques",
-        "Pentecôte",
-        "Communion",
-        "Demande en mariage",
-        "Yendou",
-        "Picnic",
-        "Baptême",
-        "Enterrement de vie de jeune fille",
-        "Henné time",
-        "Fêtes de fin d'année",
-      ],
-    };
-  }
-  if (id === "mot-doux") return { type: "mot_doux", events: ["Mariage", "Anniversaire de mariage", "Demande en mariage", "Dîner", "Soirée", "Fêtes de fin d'année"] };
-  if (id === "invitation-couple") return { type: "couple", events: ["Demande en mariage", "Anniversaire de mariage", "Dîner", "Soirée", "Picnic", "Fêtes de fin d'année"] };
   const m = mockInvitationModels.find((x) => x.id === id);
   if (id === "invit-7") {
     return {

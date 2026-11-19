@@ -140,9 +140,9 @@ export async function fetchModelDefaults(supabase: SupabaseClient, force = false
   }
 }
 
-/** Identifiants des modèles retirés du site. */
+/** Identifiants des modèles retirés du site ou supprimés. */
 export const hiddenModelIds = (rows: Record<string, ModelDefaultRow>) =>
-  new Set(Object.values(rows).filter((r) => r.is_hidden).map((r) => r.model_id));
+  new Set(Object.values(rows).filter((r) => r.is_hidden || isModelDeleted(r)).map((r) => r.model_id));
 
 /** Version publiée d'un modèle et son état sur le site. */
 export async function fetchPublishedModel<T>(
