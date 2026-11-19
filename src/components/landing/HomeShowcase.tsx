@@ -19,6 +19,7 @@ import {
   type ServiceCategory,
   FALLBACK_CATEGORIES,
 } from "@/lib/serviceCategories";
+import { SERVICE_EVENT_FILTERS, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 
 interface HomeShowcaseProps {
   initialModels: InvitationModel[];
@@ -28,6 +29,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
   const [showcaseModels, setShowcaseModels] = useState<InvitationModel[]>(initialModels);
   const [categories, setCategories] = useState<ServiceCategory[]>(FALLBACK_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState<string>("invitations");
+  const [selectedEvent, setSelectedEvent] = useState<string>("all");
 
   useEffect(() => {
     const supabase = createClient();
@@ -79,11 +81,25 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
     };
   }, []);
 
-  // Filtrage strict par catégorie sélectionnée
+  // Filtrage strict par catégorie et par événement sélectionné
   const displayedModels = useMemo(() => {
-    const list = showcaseModels.filter((m) => modelMatchesCategory(m, selectedCategory));
+    let list = showcaseModels.filter((m) => modelMatchesCategory(m, selectedCategory));
+    if (selectedEvent !== "all" && selectedEvent !== "Tous" && selectedEvent !== "tous") {
+      const target = selectedEvent.toLowerCase();
+      list = list.filter((m) => {
+        const evs = Array.isArray(m.events) ? m.events.map((e: string) => e.toLowerCase()) : [];
+        const cat = (m.category || "").toLowerCase();
+        const name = (m.name || "").toLowerCase();
+        return (
+          evs.some((e: string) => e.includes(target) || target.includes(e)) ||
+          cat.includes(target) ||
+          target.includes(cat) ||
+          name.includes(target)
+        );
+      });
+    }
     return list;
-  }, [showcaseModels, selectedCategory]);
+  }, [showcaseModels, selectedCategory, selectedEvent]);
 
   const activeCategory = categories.find((c) => c.slug === selectedCategory) || categories[0];
 
@@ -111,7 +127,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
         />
 
         {/* Sélecteur des catégories dynamiques sans prix */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center mb-6 sm:mb-8">
           <div className="bg-white/90 border border-[#b8924a]/35 p-1.5 rounded-2xl sm:rounded-full inline-flex flex-wrap justify-center gap-1.5 shadow-sm max-w-full">
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat.slug;
@@ -119,7 +135,10 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
                 <button
                   key={cat.id || cat.slug}
                   type="button"
-                  onClick={() => setSelectedCategory(cat.slug)}
+                  onClick={() => {
+                    setSelectedCategory(cat.slug);
+                    setSelectedEvent("all");
+                  }}
                   className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
                     isSelected
                       ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-md border border-[#c9a45e]"
@@ -133,6 +152,43 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
             })}
           </div>
         </div>
+
+        {/* Filtre par événement pour Invitations événementielles et Vœux */}
+        {(selectedCategory === "invitations" || selectedCategory === "voeux") && (
+          <div className="flex justify-center -mt-2 mb-10 max-w-5xl mx-auto px-2 animate-in fade-in duration-300">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 px-2 bg-white/85 backdrop-blur-sm rounded-full border border-[#b8924a]/35 shadow-xs scroll-smooth max-w-full">
+              <button
+                type="button"
+                onClick={() => setSelectedEvent("all")}
+                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedEvent === "all"
+                    ? "bg-[#2b1d12] text-[#f0d999] shadow-xs"
+                    : "text-gray-600 hover:text-black"
+                }`}
+              >
+                Tous
+              </button>
+              {SERVICE_EVENT_FILTERS.map((evt) => {
+                const isSelected = selectedEvent.toLowerCase() === evt.toLowerCase();
+                return (
+                  <button
+                    key={evt}
+                    type="button"
+                    onClick={() => setSelectedEvent(isSelected ? "all" : evt)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                      isSelected
+                        ? "bg-[#2b1d12] text-[#f0d999] shadow-xs"
+                        : "text-gray-700 hover:text-black hover:bg-white"
+                    }`}
+                  >
+                    <span>{EVENT_TYPE_ICONS[evt] || "🎉"}</span>
+                    <span>{evt}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Bandeau d'information sur la catégorie sélectionnée */}
         {activeCategory && (

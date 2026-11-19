@@ -19,6 +19,7 @@ export interface InvitationModel {
   name: string;
   type: InvitationType;
   category: EventCategory;
+  events?: string[];
   thumbnail: string;
   isPremium: boolean;
   description: string;
@@ -114,12 +115,117 @@ export const showcaseModelIds: string[] = ["invit-7", "invit-8", "invit-9", "inv
 
 /** Classement d'origine d'un modèle (type d'invitation et événement), remplaçable dans le studio des modèles */
 export function defaultClassification(id: string): { type: any; events: string[] } {
-  if (id === "voeu-exception") return { type: "voeu", events: ["Vœux", "Anniversaire", "Anniversaire de mariage", "Graduation", "Baptême", "Noël", "Fêtes de fin d'année"] };
-  if (id === "mot-doux") return { type: "mot_doux", events: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Fêtes de fin d'année"] };
-  if (id === "invitation-couple") return { type: "couple", events: ["Couple", "Invitations Couple", "Dîner", "Soirée", "Fêtes de fin d'année"] };
+  if (id === "voeu-exception") {
+    return {
+      type: "voeu",
+      events: [
+        "Vœux",
+        "Mariage",
+        "Anniversaire",
+        "Anniversaire de mariage",
+        "Baptême",
+        "Demande en mariage",
+        "Henné time",
+        "Enterrement de vie de jeune fille",
+        "Communion",
+        "Gala",
+        "Conférence",
+        "Yendou",
+        "Picnic",
+        "Noël",
+        "Pâques",
+        "Pentecôte",
+        "Fêtes de fin d'année",
+      ],
+    };
+  }
+  if (id === "mot-doux") return { type: "mot_doux", events: ["Couple", "Mots Doux", "Mariage", "Anniversaire de mariage", "Demande en mariage", "Fêtes de fin d'année"] };
+  if (id === "invitation-couple") return { type: "couple", events: ["Couple", "Invitations Couple", "Dîner", "Soirée", "Demande en mariage", "Picnic", "Fêtes de fin d'année"] };
   const m = mockInvitationModels.find((x) => x.id === id);
-  if (id === "invit-7" || id === "invit-8" || id === "invit-9" || id === "invit-10") {
-    return { type: m?.type ?? "animée", events: [m?.category ?? "Mariage", "Anniversaire de mariage", "Gala", "Soirée", "Noël", "Fêtes de fin d'année"] };
+  if (id === "invit-7") {
+    return {
+      type: "animée",
+      events: [
+        "Mariage",
+        "Anniversaire de mariage",
+        "Gala",
+        "Conférence",
+        "Demande en mariage",
+        "Communion",
+        "Yendou",
+        "Noël",
+        "Pâques",
+        "Pentecôte",
+        "Soirée",
+      ],
+    };
+  }
+  if (id === "invit-8") {
+    return {
+      type: "animée",
+      events: [
+        "Mariage",
+        "Anniversaire de mariage",
+        "Gala",
+        "Conférence",
+        "Baptême",
+        "Communion",
+        "Demande en mariage",
+        "Yendou",
+        "Noël",
+        "Pâques",
+        "Pentecôte",
+      ],
+    };
+  }
+  if (id === "invit-9") {
+    return {
+      type: "animée",
+      events: [
+        "Mariage",
+        "Anniversaire de mariage",
+        "Baptême",
+        "Communion",
+        "Demande en mariage",
+        "Henné time",
+        "Enterrement de vie de jeune fille",
+        "Picnic",
+        "Gala",
+        "Pâques",
+      ],
+    };
+  }
+  if (id === "invit-10") {
+    return {
+      type: "animée",
+      events: [
+        "Mariage",
+        "Anniversaire de mariage",
+        "Baptême",
+        "Demande en mariage",
+        "Henné time",
+        "Enterrement de vie de jeune fille",
+        "Gala",
+        "Communion",
+        "Pâques",
+        "Pentecôte",
+        "Noël",
+      ],
+    };
+  }
+  if (id === "invit-11") {
+    return {
+      type: "animée",
+      events: [
+        "Anniversaire",
+        "Anniversaire de mariage",
+        "Picnic",
+        "Yendou",
+        "Enterrement de vie de jeune fille",
+        "Gala",
+        "Fêtes de fin d'année",
+      ],
+    };
   }
   return { type: m?.type ?? "animée", events: m ? [m.category] : [] };
 }

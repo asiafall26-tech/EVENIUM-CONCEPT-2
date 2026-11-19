@@ -32,6 +32,7 @@ import {
   type ServiceCategory,
   FALLBACK_CATEGORIES,
 } from "@/lib/serviceCategories";
+import { SERVICE_EVENT_FILTERS, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 
 /** Titre de rubrique de la galerie : sur-titre doré, titre Playfair, filet. */
   function GallerySectionTitle({ eyebrow, title, lead }: { eyebrow: string; title: React.ReactNode; lead?: string | null }) {
@@ -48,16 +49,21 @@ import {
   export default function InvitationsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>("tous");
     const [selectedFormat, setSelectedFormat] = useState<InvitationFormatFilter>("all");
+    const [selectedEvent, setSelectedEvent] = useState<string>("all");
     const [categories, setCategories] = useState<ServiceCategory[]>(FALLBACK_CATEGORIES);
     const [rows, setRows] = useState<Record<string, ModelDefaultRow>>({});
     const [customs, setCustoms] = useState<CustomModelRow[]>([]);
     const [loaded, setLoaded] = useState(false);
 
-    // Initialisation avec la catégorie demandée dans l'URL ou dernièrement consultée
+    // Initialisation avec la catégorie et l'événement demandés dans l'URL ou dernièrement consultés
     useEffect(() => {
       if (typeof window !== "undefined") {
         const sp = new URLSearchParams(window.location.search);
         const fromUrl = sp.get("cat") || sp.get("category");
+        const fromEvent = sp.get("event") || sp.get("evt");
+        if (fromEvent) {
+          setSelectedEvent(fromEvent);
+        }
         if (fromUrl) {
           const normalized = fromUrl.toLowerCase();
           setSelectedCategory(normalized);
@@ -77,6 +83,7 @@ import {
         const slug = catSlug.toLowerCase();
         setSelectedCategory(slug);
         setSelectedFormat("all");
+        setSelectedEvent("all");
         if (typeof window !== "undefined") {
           try {
               if (slug === "tous" || slug === "all") {
@@ -207,7 +214,31 @@ import {
           };
         }, [siteModels]);
 
-        // Modèles filtrés selon la catégorie active et le format
+        // Compteurs d'événements pour le service sélectionné (Invitations ou Vœux)
+        const eventCounts = useMemo(() => {
+          const base = siteModels.filter((m) => {
+            if (selectedCategory === "tous" || selectedCategory === "all") return true;
+            return modelMatchesCategory(m, selectedCategory);
+          });
+          const counts: Record<string, number> = { all: base.length };
+          for (const evt of SERVICE_EVENT_FILTERS) {
+            const target = evt.toLowerCase();
+            counts[evt] = base.filter((m) => {
+              const evs = Array.isArray(m.events) ? m.events.map((e) => e.toLowerCase()) : [];
+              const cat = (m.category || "").toLowerCase();
+              const name = (m.name || "").toLowerCase();
+              return (
+                evs.some((e) => e.includes(target) || target.includes(e)) ||
+                cat.includes(target) ||
+                target.includes(cat) ||
+                name.includes(target)
+              );
+            }).length;
+          }
+          return counts;
+        }, [siteModels, selectedCategory]);
+
+        // Modèles filtrés selon la catégorie active, le format et l'événement
         const filteredModels = useMemo(() => {
           let list = siteModels;
           if (selectedCategory !== "tous" && selectedCategory !== "all") {
@@ -216,24 +247,43 @@ import {
           if (selectedCategory === "invitations" || selectedCategory === "evenementielles") {
             list = list.filter((m) => modelMatchesFormat(m, selectedFormat));
           }
+          if (selectedEvent !== "all" && selectedEvent !== "Tous" && selectedEvent !== "tous") {
+            const target = selectedEvent.toLowerCase();
+            list = list.filter((m) => {
+              const evs = Array.isArray(m.events) ? m.events.map((e) => e.toLowerCase()) : [];
+              const cat = (m.category || "").toLowerCase();
+              const name = (m.name || "").toLowerCase();
+              return (
+                evs.some((e) => e.includes(target) || target.includes(e)) ||
+                cat.includes(target) ||
+                target.includes(cat) ||
+                name.includes(target)
+              );
+            });
+          }
           return list;
-        }, [siteModels, selectedCategory, selectedFormat]);
+        }, [siteModels, selectedCategory, selectedFormat, selectedEvent]);
 
           const activeCategoryInfo = useMemo(() => {
+            const eventSuffix = selectedEvent !== "all" && selectedEvent !== "Tous" ? ` · ${selectedEvent}` : "";
             if (selectedCategory === "tous" || selectedCategory === "all") {
               return {
-                label: "Tous les modèles",
-                description: "Explorez l'intégralité de nos invitations digitales, vœux et lettres d'amour haute couture.",
-                count: siteModels.length,
+                label: `Tous les modèles${eventSuffix}`,
+                description: selectedEvent !== "all" && selectedEvent !== "Tous"
+                  ? `Explorez nos modèles d'exception adaptés pour : ${selectedEvent}.`
+                  : "Explorez l'intégralité de nos invitations digitales, vœux et lettres d'amour haute couture.",
+                count: filteredModels.length,
               };
             }
           const match = categories.find((c) => c.slug.toLowerCase() === selectedCategory.toLowerCase());
           return {
-            label: match ? match.label : "Collection",
-            description: match?.description || "Créations exclusives Evenium.",
+            label: `${match ? match.label : "Collection"}${eventSuffix}`,
+            description: selectedEvent !== "all" && selectedEvent !== "Tous"
+              ? `Découvrez nos créations dédiées à votre événement : ${selectedEvent}.`
+              : (match?.description || "Créations exclusives Evenium."),
             count: filteredModels.length,
           };
-        }, [selectedCategory, categories, siteModels.length, filteredModels.length]);
+        }, [selectedCategory, selectedEvent, categories, filteredModels.length]);
 
         // Responsive grid layout based on model count
         const gridClass = (count: number) =>
@@ -333,6 +383,61 @@ import {
                                       <span>📜 Invitation statique</span>
                                       <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-[#f0d999]">{formatCounts.statique}</span>
                                     </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Filtre par événement pour Invitations événementielles et Vœux */}
+                              {(selectedCategory === "invitations" || selectedCategory === "evenementielles" || selectedCategory === "voeux" || selectedCategory === "celebrations" || selectedCategory === "tous") && (
+                                <div className="max-w-6xl mx-auto -mt-6 sm:-mt-8 mb-10 sm:mb-12 animate-in fade-in duration-300">
+                                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2 px-1 scroll-smooth">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedEvent("all")}
+                                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                                        selectedEvent === "all" || selectedEvent === "Tous"
+                                          ? "bg-[#2b1d12] text-[#f0d999] shadow-xs border border-[#c9a45e]/50"
+                                          : "bg-white/80 border border-gray-200 text-gray-700 hover:border-[#b8924a] hover:bg-white"
+                                      }`}
+                                    >
+                                      <span>Tous les événements</span>
+                                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                        selectedEvent === "all" || selectedEvent === "Tous" ? "bg-white/20 text-[#f0d999]" : "bg-gray-100 text-gray-600"
+                                      }`}>
+                                        {eventCounts.all || 0}
+                                      </span>
+                                    </button>
+
+                                    {SERVICE_EVENT_FILTERS.map((evt) => {
+                                      const isSelected = selectedEvent.toLowerCase() === evt.toLowerCase();
+                                      const count = eventCounts[evt] || 0;
+                                      return (
+                                        <button
+                                          key={evt}
+                                          type="button"
+                                          onClick={() => setSelectedEvent(isSelected ? "all" : evt)}
+                                          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                                            isSelected
+                                              ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] shadow-xs border border-[#c9a45e]"
+                                              : "bg-white/80 border border-gray-200 text-gray-700 hover:border-[#b8924a] hover:bg-[#fbf7f0]"
+                                          } ${count === 0 ? "opacity-60" : ""}`}
+                                        >
+                                          <span>{EVENT_TYPE_ICONS[evt] || "🎉"}</span>
+                                          <span>{evt}</span>
+                                          <span
+                                            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                              isSelected
+                                                ? "bg-white/20 text-[#f0d999]"
+                                                : count > 0
+                                                ? "bg-amber-100/70 text-amber-900"
+                                                : "bg-gray-100 text-gray-500"
+                                            }`}
+                                          >
+                                            {count}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}
