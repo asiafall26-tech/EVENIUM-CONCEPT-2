@@ -473,6 +473,93 @@ function DetailsSection({ c, dates }: SectionProps) {
   );
 }
 
+function FamillesSection({ c }: SectionProps) {
+  if (!c.familyParents && !c.familyBlessing) return null;
+  return (
+    <section data-inv-sec="familles" className={`${s.section} ${s.mist} ${s.left}`}>
+      <Reveal>
+        <Label>Familles</Label>
+        <h2 className={s.title}>Annonce des Familles</h2>
+      </Reveal>
+      {c.familyParents && (
+        <Reveal delay={0.15}>
+          <p className={s.body}>{c.familyParents}</p>
+        </Reveal>
+      )}
+      {c.familyBlessing && (
+        <Reveal delay={0.3} className={s.quoteWrap}>
+          <p className={s.quote}>« {c.familyBlessing} »</p>
+          <Swash className={s.swash} />
+        </Reveal>
+      )}
+    </section>
+  );
+}
+
+function DressCodeSection({ c }: SectionProps) {
+  const colors = Array.isArray(c.dressColors) ? c.dressColors : c.dressColors ? [c.dressColors] : [];
+  if (!c.dressCodeText && colors.length === 0) return null;
+  return (
+    <section data-inv-sec="dresscode" className={`${s.section} ${s.velvetBg} ${s.left}`}>
+      <div className={s.folds} />
+      <Reveal>
+        <Label light>Dress code</Label>
+        <h2 className={`${s.title} ${s.titleLight}`}>Nuances &amp; Élégance</h2>
+        {c.dressCodeText && <p className={s.bodyLight}>{c.dressCodeText}</p>}
+      </Reveal>
+      {colors.length > 0 && (
+        <Reveal delay={0.2} className="flex flex-wrap gap-3 justify-center my-4">
+          {colors.map((hex: string, i: number) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <span
+                className="w-9 h-9 rounded-full border-2 border-white/50 shadow-md transition-transform hover:scale-110"
+                style={{ backgroundColor: hex }}
+              />
+            </div>
+          ))}
+        </Reveal>
+      )}
+    </section>
+  );
+}
+
+function GallerySection({ c }: SectionProps) {
+  const photos = Array.isArray(c.gallery) ? c.gallery : [];
+  if (photos.length === 0) return null;
+  return (
+    <section data-inv-sec="galerie" className={`${s.section} ${s.satin} ${s.left}`}>
+      <div className={s.satinFolds} />
+      <Reveal>
+        <Label>Galerie</Label>
+        <h2 className={s.title}>Moments Précieux</h2>
+      </Reveal>
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        {photos.map((src: string, i: number) => (
+          <Reveal key={i} delay={0.1 * i} className={i === 0 ? "col-span-2" : ""}>
+            <div className="aspect-[4/3] rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-md">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function GiftSection({ c }: SectionProps) {
+  if (!c.giftTitle && !c.giftText) return null;
+  return (
+    <section data-inv-sec="cadeau" className={`${s.section} ${s.mist} ${s.left}`}>
+      <Reveal>
+        <Label>Cadeaux</Label>
+        <h2 className={s.title}>{c.giftTitle || "Un mot sur les cadeaux"}</h2>
+        {c.giftText && <p className={s.body}>{c.giftText}</p>}
+      </Reveal>
+    </section>
+  );
+}
+
 function RsvpSection({ c, dates, onRsvp }: SectionProps & { onRsvp?: Props["onRsvp"] }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
@@ -739,7 +826,13 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
     if (!preview || window.parent === window) return;
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || !e.data?.type) return;
-      if (e.data.type === PREVIEW_MSG.content) setLive(e.data.content);
+      if (
+        e.data.type === PREVIEW_MSG.content ||
+        e.data.type === "evenium:model-update" ||
+        e.data.type === "ev:content"
+      ) {
+        setLive(e.data.content || e.data.values);
+      }
       if (e.data.type === PREVIEW_MSG.skip) setPhase("done");
       if (e.data.type === PREVIEW_MSG.replay) {
         timers.current.forEach((t) => window.clearTimeout(t));
@@ -751,9 +844,33 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
         window.scrollTo(0, 0);
         setPhase("closed");
       }
+      if (e.data.type === "evenium:focus-field" || e.data.type === "ev:focus") {
+        const sec = e.data.sectionId;
+        const field = e.data.fieldId || e.data.id;
+        const target =
+          (sec ? document.querySelector(`[data-inv-sec="${sec}"]`) : null) ||
+          (field ? document.querySelector(`[data-inv-sec="${field}"]`) : null) ||
+          (field ? document.querySelector(`[data-field="${field}"]`) : null) ||
+          (field ? document.getElementById(field) : null);
+        if (target) {
+          (target as HTMLElement).scrollIntoView({ behavior: "smooth", block: "center" });
+          const prevOutline = (target as HTMLElement).style.outline;
+          const prevShadow = (target as HTMLElement).style.boxShadow;
+          const prevTransition = (target as HTMLElement).style.transition;
+          (target as HTMLElement).style.transition = "all 0.3s ease";
+          (target as HTMLElement).style.outline = "3px solid #D4AF37";
+          (target as HTMLElement).style.boxShadow = "0 0 25px rgba(212, 175, 55, 0.7)";
+          setTimeout(() => {
+            (target as HTMLElement).style.outline = prevOutline;
+            (target as HTMLElement).style.boxShadow = prevShadow;
+            (target as HTMLElement).style.transition = prevTransition;
+          }, 1500);
+        }
+      }
     };
     window.addEventListener("message", onMessage);
     window.parent.postMessage({ type: PREVIEW_MSG.ready }, window.location.origin);
+    window.parent.postMessage({ type: "evenium:ready" }, window.location.origin);
     return () => window.removeEventListener("message", onMessage);
   }, [preview]);
 
@@ -869,9 +986,13 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
       <main className={s.card}>
         <Hero c={c} dates={dates} start={heroStart} />
         <DateSection c={c} dates={dates} />
+        <FamillesSection c={c} dates={dates} />
         <StorySection c={c} dates={dates} />
         <ProgrammeSection c={c} dates={dates} />
         <DetailsSection c={c} dates={dates} />
+        <DressCodeSection c={c} dates={dates} />
+        <GallerySection c={c} dates={dates} />
+        <GiftSection c={c} dates={dates} />
         <RsvpSection c={c} dates={dates} onRsvp={onRsvp} />
         {!hideCta && (
           <InvitationEndCta

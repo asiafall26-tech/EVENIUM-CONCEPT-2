@@ -36,6 +36,16 @@ export interface VeloursContent {
   closingQuote: string;
   photoStory: string;
   photoProgramme: string;
+  familyParents?: string;
+  familyBlessing?: string;
+  dressCodeText?: string;
+  dressColors?: string[];
+  mapsUrl?: string;
+  gallery?: string[];
+  rsvpDeadline?: string;
+  giftTitle?: string;
+  giftText?: string;
+  footerPhoto?: string;
   /** Custom MP3 or audio URL stored in Supabase Storage */
   audioUrl?: string;
   /** Title or label of the chosen soundtrack */
@@ -73,6 +83,20 @@ export const DEFAULT_VELOURS: VeloursContent = {
   closingQuote: "Les petits moments créent les grands souvenirs",
   photoStory: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=900&q=80",
   photoProgramme: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=900&q=80",
+  familyParents: "Les familles Dupont et Traoré ont l'immense joie de vous annoncer le mariage de leurs enfants.",
+  familyBlessing: "Avec la bénédiction de nos parents et aînés",
+  dressCodeText: "Nous serions ravis que vos tenues s'accordent aux nuances de notre fête :",
+  dressColors: ["#5e1622", "#7b5960", "#d4bfa4", "#f1e7da", "#D4AF37"],
+  mapsUrl: "https://maps.google.com",
+  gallery: [
+    "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80"
+  ],
+  rsvpDeadline: "Avant le 15 mai",
+  giftTitle: "Un mot sur les cadeaux",
+  giftText: "Votre présence est notre plus beau cadeau. Une urne vous attendra à l'entrée pour vos enveloppes et mots doux.",
+  footerPhoto: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80",
 };
 
 /** Fills missing keys (e.g. content saved by an older version) with defaults. */

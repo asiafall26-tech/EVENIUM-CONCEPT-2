@@ -556,3 +556,92 @@ export async function toggleEventTermination(eventId: string, newStatus: "active
   }
 }
 
+export async function listAdminMessageTemplates() {
+  noStore();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  if (!supabaseServiceKey) return { templates: [], error: "Clé service manquante" };
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("message_templates")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return { templates: data || [], error: null };
+  } catch (err: any) {
+    return { templates: [], error: err.message };
+  }
+}
+
+export async function upsertAdminMessageTemplate(payload: {
+  id?: string;
+  event_type: string;
+  sub_type?: string | null;
+  tone: string;
+  body: string;
+  is_active: boolean;
+}) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  if (!supabaseServiceKey) return { error: "Configuration serveur manquante." };
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  try {
+    const row: any = {
+      event_type: payload.event_type.toLowerCase().trim(),
+      sub_type: payload.sub_type?.trim() || null,
+      tone: payload.tone.toLowerCase().trim(),
+      body: payload.body.trim(),
+      is_active: payload.is_active,
+      updated_at: new Date().toISOString(),
+    };
+    if (payload.id && !payload.id.startsWith("seed-")) {
+      row.id = payload.id;
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("message_templates")
+      .upsert(row)
+      .select()
+      .single();
+
+    if (error) throw error;
+    revalidatePath("/admin/messages-templates");
+    return { success: true, data };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}
+
+export async function deleteAdminMessageTemplate(id: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  if (!supabaseServiceKey) return { error: "Configuration serveur manquante." };
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  try {
+    const { error } = await supabaseAdmin
+      .from("message_templates")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+    revalidatePath("/admin/messages-templates");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}
+

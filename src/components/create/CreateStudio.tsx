@@ -40,6 +40,7 @@ import { subscribeToSync } from '@/lib/syncService';
 import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
 import { generateAccompanimentMessage, getAccompanimentSuggestions } from '@/lib/accompanimentMessages';
+import SplitStudioEditor from '@/components/studio/SplitStudioEditor';
 
 // Full Studio components
 import VeloursStudio from '@/components/invitations/velours/VeloursStudio';
@@ -1093,217 +1094,42 @@ function CreateExpressStudioContent({
           </div>
         </div>
       ) : (
-        /* ─────────────── 2. STUDIO D'ÉDITION DU MODÈLE CHOISI (SANS AUTRES MODÈLES DISTRAYANTS) ─────────────── */
-        <>
-          {/* Bannière du modèle sélectionné : compacte sur téléphone, pour laisser la place aux champs */}
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border border-gray-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-5">
-            <div className="flex items-center gap-3 sm:gap-5 min-w-0">
-              <div className="w-11 h-14 sm:w-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden relative shrink-0 shadow-md border border-gray-200 bg-gray-100">
-                <Image
-                  key={currentModel.id}
-                  src={currentModel.image}
-                  alt={currentModel.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-0.5 sm:mb-1">
-                  <span className="inline-flex items-center gap-1.5 sm:bg-[#fbf7f0] sm:border border-[#b8924a]/30 sm:px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
-                    <Sparkles size={11} className="text-[#b8924a]" />
-                    Modèle sélectionné
-                  </span>
-                  <span className="hidden sm:inline text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                    {currentModel.badge}
-                  </span>
-                </div>
-                <h1 className="text-lg sm:text-2xl font-serif font-bold text-gray-950 truncate">
-                  <span className="hidden sm:inline">Personnalisation · </span>
-                  {currentModel.name}
-                </h1>
-                <p className="hidden sm:block text-xs text-gray-500 mt-1 max-w-xl leading-relaxed">
-                  Renseignez vos textes, photos, programme et musiques ci-dessous. Vous pourrez prévisualiser le résultat complet en plein écran à la dernière étape avant de valider votre création.
-                </p>
-                <div className="mt-0.5 sm:mt-2.5 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleReturnToGallery}
-                    className="text-xs text-[#8f6f33] hover:text-black font-semibold underline underline-offset-2 flex items-center gap-1 transition-colors"
-                  >
-                    ← <span className="sm:hidden">Changer de modèle</span>
-                    <span className="hidden sm:inline">Choisir un autre modèle dans la galerie</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Boutons d'action rapides : côte à côte sur téléphone */}
-            <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 sm:flex-wrap md:self-center">
-              <button
-                type="button"
-                onClick={() => setIsPreviewFullScreenOpen(true)}
-                className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-300 hover:border-black bg-white text-gray-800 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 cursor-pointer"
-              >
-                <Eye size={16} className="text-[#b8924a] shrink-0" />
-                <span className="sm:hidden">Aperçu</span>
-                <span className="hidden sm:inline">Voir le résultat en plein écran</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsCheckoutModalOpen(true)}
-                className="px-3 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-black via-gray-900 to-black hover:brightness-125 text-[#f0d999] rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-xl shadow-black/10 border border-[#b8924a]/40 transition-all flex items-center justify-center gap-1.5 sm:gap-2 group active:scale-95 cursor-pointer"
-              >
-                <Crown size={16} className="text-[#d4af37] shrink-0" />
-                <span className="sm:hidden">Valider ({currentActualPrice.toLocaleString('fr-FR')} F)</span>
-                <span className="hidden sm:inline">Valider ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
-                <ArrowRight size={14} className="hidden sm:block group-hover:translate-x-1 transition-transform text-[#f0d999]" />
-              </button>
-            </div>
-          </div>
-
-          {/* Bloc d'édition du petit message d'accompagnement chic (WhatsApp & Partage) */}
-          <div className="bg-gradient-to-r from-[#fdfbf7] via-white to-[#fdfbf7] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-[#b8924a]/30 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8f6f33] bg-[#fbf7f0] px-2.5 py-0.5 rounded-full border border-[#b8924a]/25">
-                  Haute Couture &amp; Partage Chic
-                </span>
-                <h3 className="font-serif text-base sm:text-lg font-bold text-gray-900 mt-1 flex items-center gap-1.5">
-                  <span>✉️ Message d&apos;accompagnement chic (WhatsApp / SMS)</span>
-                </h3>
-                <p className="text-[11px] sm:text-xs text-gray-500">
-                  Ce texte soigné précédera votre lien officiel lors de vos envois à vos convives ou à votre destinataire.
-                </p>
-              </div>
-
-              {/* Suggestions rapides de tons adaptées au type d'invitation, de vœux ou de mots doux */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {accompanimentSuggestions.map((sug) => (
-                  <button
-                    key={sug.id}
-                    type="button"
-                    onClick={() => setAccompanimentMessage(sug.text)}
-                    className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white border border-[#b8924a]/35 text-[#8f6f33] hover:bg-[#fbf7f0] transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-                  >
-                    <span>{sug.icon}</span>
-                    <span>{sug.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <textarea
-              rows={2}
-              value={accompanimentMessage}
-              onChange={(e) => setAccompanimentMessage(e.target.value)}
-              placeholder="Rédigez votre message d'accompagnement chic..."
-              className="w-full bg-white border border-gray-200 focus:border-[#b8924a] rounded-xl p-3 text-xs text-gray-800 leading-relaxed outline-none focus:ring-1 focus:ring-[#b8924a]"
-            />
-
-            {/* Aperçu du partage WhatsApp en direct */}
-            <div className="bg-[#f0f9f3] border border-emerald-200/70 rounded-xl p-2.5 sm:p-3 flex items-start gap-2.5 text-[11px] text-emerald-950">
-              <span className="text-base shrink-0">📱</span>
-              <div className="min-w-0 flex-1">
-                <span className="font-bold text-emerald-800 block mb-0.5">Aperçu WhatsApp en direct :</span>
-                <p className="italic text-gray-700 whitespace-pre-line leading-relaxed">
-                  {accompanimentMessage || "Votre message d'accompagnement..."}
-                </p>
-                <span className="text-emerald-700 font-mono text-[10px] mt-1 block">
-                  👉 https://evenium.com/invite/votre-lien-officiel
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Le Studio embarqué dédié uniquement au modèle choisi (sans cadre en double sur téléphone) */}
-          <div className={`w-full bg-white rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-xl border border-gray-200/90 overflow-hidden flex flex-col sm:min-h-[750px] lg:h-[940px] 2xl:h-[980px] [--studio-sticky-top:4rem] ${inDashboard ? 'sm:[--studio-sticky-top:5rem]' : ''} lg:[--studio-sticky-top:0px]`}>
-            {selectedModelId === VELOURS_MODEL_ID && (
-              <VeloursStudio
-                value={veloursContent}
-                onChange={setVeloursContent}
-                onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
-                onFinalize={() => setIsCheckoutModalOpen(true)}
-                isStatic={isStaticCard}
-              />
-            )}
-            {selectedModelId === SCEAU_MODEL_ID && (
-              <SceauStudio
-                value={sceauContent}
-                onChange={setSceauContent}
-                onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
-                onFinalize={() => setIsCheckoutModalOpen(true)}
-                isStatic={isStaticCard}
-              />
-            )}
-            {selectedModelId === IVOIRE_MODEL_ID && (
-              <IvoireStudio
-                value={ivoireContent}
-                onChange={setIvoireContent}
-                onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
-                onFinalize={() => setIsCheckoutModalOpen(true)}
-                isStatic={isStaticCard}
-              />
-            )}
-            {selectedModelId === ROSE_OR_MODEL_ID && (
-              <RoseOrStudio
-                value={roseOrContent}
-                onChange={setRoseOrContent}
-                onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
-                onFinalize={() => setIsCheckoutModalOpen(true)}
-                isStatic={isStaticCard}
-              />
-            )}
-            {(() => {
+        /* ─────────────── 2. ÉDITEUR EN ÉCRAN PARTAGÉ (PANNEAU 420px + IFRAME EN DIRECT) ─────────────── */
+        <SplitStudioEditor
+          modelId={selectedModelId}
+          initialContent={
+            selectedModelId === VELOURS_MODEL_ID
+              ? veloursContent
+              : selectedModelId === SCEAU_MODEL_ID
+              ? sceauContent
+              : selectedModelId === IVOIRE_MODEL_ID
+              ? ivoireContent
+              : selectedModelId === ROSE_OR_MODEL_ID
+              ? roseOrContent
+              : selectedModelId === ANNIVERSAIRE_MODEL_ID
+              ? anniversaireContent
+              : (customOf(selectedModelId) ? customContentOf(customOf(selectedModelId)!) : {})
+          }
+          customModel={customOf(selectedModelId)}
+          eventName={eventMetadata.name}
+          eventType={selectedEventCategory}
+          shareUrl="https://evenium.com/invite/votre-lien-officiel"
+          isStatic={isStaticCard}
+          onClose={() => setHasChosenModel(false)}
+          onFinalize={() => setIsCheckoutModalOpen(true)}
+          finalizeLabel={`Valider (${currentActualPrice.toLocaleString('fr-FR')} FCFA)`}
+          onSave={(updated) => {
+            if (selectedModelId === VELOURS_MODEL_ID) setVeloursContent(updated as any);
+            else if (selectedModelId === SCEAU_MODEL_ID) setSceauContent(updated as any);
+            else if (selectedModelId === IVOIRE_MODEL_ID) setIvoireContent(updated as any);
+            else if (selectedModelId === ROSE_OR_MODEL_ID) setRoseOrContent(updated as any);
+            else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) setAnniversaireContent(updated as any);
+            else {
               const m = customOf(selectedModelId);
-              if (!m) return null;
-              return (
-                <CustomSectionsEditor
-                  model={m}
-                  fields={m.fields}
-                  values={customContentOf(m)}
-                  onChange={(v) => setCustomContents((all) => ({ ...all, [customModelId(m.slug)]: v }))}
-                  isStatic={isStaticCard}
-                  onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
-                />
-              );
-            })()}
-            {isCardStudioModel && (
-              <div className="p-4 sm:p-8 bg-[#faf6ee] overflow-y-auto flex-1">
-                <CartesStudio
-                  cardType={
-                    selectedModelId === VOEU_EXCEPTION_MODEL_ID
-                      ? "voeu"
-                      : selectedModelId === MOT_DOUX_MODEL_ID
-                        ? "mot_doux"
-                        : "invitation_couple"
-                  }
-                  occasionName={currentModel.name}
-                  templateTitle={currentModel.name}
-                  priceFcfa={3900}
-                  priceEur="3,90 €"
-                  value={cartesContent}
-                  onChange={(patch) => setCartesContent((prev) => ({ ...prev, ...patch }))}
-                  onProceedToCheckout={() => setIsCartesModalOpen(true)}
-                  inspirations={
-                    selectedModelId === VOEU_EXCEPTION_MODEL_ID
-                      ? VOEUX_INSPIRATIONS.map((i) => ({ title: i.title, text: i.text }))
-                      : ROMANCE_INSPIRATIONS.filter((i) => i.type === (selectedModelId === MOT_DOUX_MODEL_ID ? "mot_doux" : "invitation_couple")).map((i) => ({ title: i.title, text: i.text }))
-                  }
-                />
-              </div>
-            )}
-            {selectedModelId === ANNIVERSAIRE_MODEL_ID && (
-              <AnniversaireStudio
-                value={anniversaireContent}
-                onChange={setAnniversaireContent}
-                onViewFullScreen={() => setIsPreviewFullScreenOpen(true)}
-                onFinalize={() => setIsCheckoutModalOpen(true)}
-                isStatic={isStaticCard}
-              />
-            )}
-          </div>
-        </>
+              if (m) setCustomContents((all) => ({ ...all, [customModelId(m.slug)]: updated }));
+            }
+          }}
+        />
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}

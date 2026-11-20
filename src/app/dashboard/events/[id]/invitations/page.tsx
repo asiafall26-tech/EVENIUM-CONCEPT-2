@@ -21,6 +21,7 @@ import * as anniversaire from "@/components/invitations/anniversaire/content";
 import EventQRCode from "@/components/ui/EventQRCode";
 import { createClient } from "@/utils/supabase/client";
 import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
+import SplitStudioEditor from "@/components/studio/SplitStudioEditor";
 
 export default function InvitationsDashboardPage({
   params,
@@ -95,6 +96,18 @@ export default function InvitationsDashboardPage({
     title: "",
     message: ""
   });
+
+  const [guestsList, setGuestsList] = useState<Array<{ id: string; nom: string; telephone?: string }>>([]);
+
+  useEffect(() => {
+    supabase
+      .from('guests')
+      .select('id, nom, telephone')
+      .eq('event_id', id)
+      .then(({ data }) => {
+        if (data) setGuestsList(data);
+      });
+  }, [id, supabase]);
 
   // Sync state with event data
   useEffect(() => {
@@ -371,107 +384,27 @@ export default function InvitationsDashboardPage({
         <p className="text-sm italic text-gray-700 leading-relaxed mt-2 whitespace-pre-line">{invitationData.message}</p>
       </section>
 
-      {isStudioOpen && isVelours && (
-        <VeloursEditorModal
-          initial={event.invitationContent ? withDefaults(event.invitationContent) : seedFromEvent(event)}
-          defaultContent={seedFromEvent(event)}
+      {isStudioOpen && (
+        <SplitStudioEditor
+          modelId={event.invitationModelId || VELOURS_MODEL_ID}
+          initialContent={
+            isCustom
+              ? ((event.invitationContent as { values?: Record<string, string> } | null)?.values ?? {})
+              : (event.invitationContent ? withDefaults(event.invitationContent) : seedFromEvent(event))
+          }
+          customModel={customModel}
+          eventName={event.name}
+          eventType={event.type}
+          shareUrl={shareUrl}
+          guests={guestsList}
           isStatic={isStatic}
           onClose={() => setIsStudioOpen(false)}
-          saveLabel="Mettre à jour l'invitation"
           onSave={async (content) => {
-            try {
-              await updateEventInvitationContent(event.id, { ...content });
-            } catch {
-              throw new Error("Enregistrement impossible : exécutez supabase_invitation_content.sql dans Supabase.");
-            }
-            setIsStudioOpen(false);
+            const payload = isCustom ? { values: content } : { ...content };
+            await updateEventInvitationContent(event.id, payload);
           }}
-        />
-      )}
-
-      {isStudioOpen && isSceau && (
-        <SceauEditorModal
-          initial={event.invitationContent ? sceau.withDefaults(event.invitationContent) : sceau.seedFromEvent(event)}
-          defaultContent={sceau.seedFromEvent(event)}
-          isStatic={isStatic}
-          onClose={() => setIsStudioOpen(false)}
-          saveLabel="Mettre à jour l'invitation"
-          onSave={async (content) => {
-            try {
-              await updateEventInvitationContent(event.id, { ...content });
-            } catch {
-              throw new Error("Enregistrement impossible : exécutez supabase_sceau_dor.sql dans Supabase.");
-            }
-            setIsStudioOpen(false);
-          }}
-        />
-      )}
-
-      {isStudioOpen && isIvoire && (
-        <IvoireEditorModal
-          initial={event.invitationContent ? ivoire.withDefaults(event.invitationContent) : ivoire.seedFromEvent(event)}
-          defaultContent={ivoire.seedFromEvent(event)}
-          isStatic={isStatic}
-          onClose={() => setIsStudioOpen(false)}
-          saveLabel="Mettre à jour l'invitation"
-          onSave={async (content) => {
-            try {
-              await updateEventInvitationContent(event.id, { ...content });
-            } catch {
-              throw new Error("Enregistrement impossible : exécutez supabase_sceau_dor.sql dans Supabase.");
-            }
-            setIsStudioOpen(false);
-          }}
-        />
-      )}
-
-      {isStudioOpen && isRoseOr && (
-        <RoseOrEditorModal
-          initial={event.invitationContent ? roseOr.withDefaults(event.invitationContent) : roseOr.seedFromEvent(event)}
-          defaultContent={roseOr.seedFromEvent(event)}
-          isStatic={isStatic}
-          onClose={() => setIsStudioOpen(false)}
-          saveLabel="Mettre à jour l'invitation"
-          onSave={async (content) => {
-            try {
-              await updateEventInvitationContent(event.id, { ...content });
-            } catch {
-              throw new Error("Enregistrement impossible : exécutez supabase_sceau_dor.sql dans Supabase.");
-            }
-            setIsStudioOpen(false);
-          }}
-        />
-      )}
-
-      {isStudioOpen && isAnniversaire && (
-        <AnniversaireEditorModal
-          initial={event.invitationContent ? anniversaire.withDefaults(event.invitationContent) : anniversaire.seedFromEvent(event)}
-          defaultContent={anniversaire.seedFromEvent(event)}
-          isStatic={isStatic}
-          onClose={() => setIsStudioOpen(false)}
-          saveLabel="Mettre à jour l'invitation"
-          onSave={async (content) => {
-            try {
-              await updateEventInvitationContent(event.id, { ...content });
-            } catch {
-              throw new Error("Enregistrement impossible : exécutez supabase_invitation_content.sql dans Supabase.");
-            }
-            setIsStudioOpen(false);
-          }}
-        />
-      )}
-
-      {isStudioOpen && isCustom && customModel && (
-        <CustomEditorModal
-          model={customModel}
-          initial={(event.invitationContent as { values?: Record<string, string> } | null)?.values ?? null}
-          isStatic={isStatic}
-          saveLabel="Mettre à jour l'invitation"
-          onClose={() => setIsStudioOpen(false)}
-          onSave={async (values) => {
-            await updateEventInvitationContent(event.id, { values });
-            setIsStudioOpen(false);
-          }}
+          onFinalize={() => window.open(shareUrl, "_blank")}
+          finalizeLabel="Voir en direct"
         />
       )}
 

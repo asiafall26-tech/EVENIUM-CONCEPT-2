@@ -53,6 +53,7 @@ export function AdminSidebarNav({ dark = true }: { dark?: boolean }) {
     { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
     { name: "Finances & Revenus", href: "/admin/budget", icon: Wallet },
     { name: "Messages", href: "/admin/messages", icon: MessageSquare, badge: badgeLabel(unreadCount), urgent: true },
+    { name: "Messages d'envoi", href: "/admin/messages-templates", icon: MessageSquare },
     { name: "Studio des modèles", href: "/admin/modeles", icon: Brush },
     { name: "Banque de sons", href: "/admin/sons", icon: Music },
     { name: "Rapports", href: "/admin/rapports", icon: PieChart },
