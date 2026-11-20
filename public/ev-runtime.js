@@ -8,68 +8,72 @@
   window.__evRuntime = true;
 
   /*
-   * RÈGLE ABSOLUE EVENIUM : Suppression définitive du petit crayon et de tout bouton d'édition interne
-   * aux modèles importés (fabEdit, editBtn, boutons de personnalisation locaux).
-   * Le client dispose de son propre studio d'édition complet après achat ; aucun bouton parasite ne doit
-   * s'afficher ni gâter la vue du modèle.
+   * RÈGLE EVENIUM : Masquage des boutons d'édition internes UNIQUEMENT pour les invités (guest=1 ou hideEdit=1).
+   * En mode personnalisation ou prévisualisation, le crayon et l'éditeur interne restent 100% actifs !
    */
-  var HIDE_PENCIL_CSS =
-    "#fabEdit, #editFab, #editBtn, #edit-toggle, #editRsvp, .edit-fab, .fab-edit, .btn-edit, .edit-btn, " +
-    "[aria-label*='Personnaliser'], [aria-label*='Modifier'], [aria-label*='Éditer'], " +
-    "[title*='Personnaliser'], [title*='Modifier'], [title*='Éditer'], " +
-    "#panel, #pf, #editor, .editor[role='dialog'], [id*='edit-modal'] { " +
-    "display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; " +
-    "width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }";
+  var isGuestView = (
+    location.search.indexOf("guest=1") !== -1 ||
+    location.search.indexOf("hideEdit=1") !== -1
+  ) && location.search.indexOf("canEdit=1") === -1;
 
-  try {
-    var editSt = document.createElement("style");
-    editSt.id = "ev-hide-pencils";
-    editSt.textContent = HIDE_PENCIL_CSS;
-    (document.head || document.documentElement).appendChild(editSt);
-  } catch (e) { }
+  if (isGuestView) {
+    var HIDE_PENCIL_CSS =
+      "#fabEdit, #editFab, #editBtn, #edit-toggle, #editRsvp, .edit-fab, .fab-edit, .btn-edit, .edit-btn, " +
+      "[aria-label*='Personnaliser'], [aria-label*='Modifier'], [aria-label*='Éditer'], " +
+      "[title*='Personnaliser'], [title*='Modifier'], [title*='Éditer'], " +
+      "#panel, #pf, #editor, .editor[role='dialog'], [id*='edit-modal'] { " +
+      "display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; " +
+      "width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }";
 
-  function purgeInternalEditButtons() {
-    var selectors = [
-      "#fabEdit", "#editFab", "#editBtn", "#edit-toggle", "#editRsvp",
-      ".edit-fab", ".fab-edit", ".btn-edit", ".edit-btn",
-      "[aria-label*='Personnaliser']", "[aria-label*='Modifier']", "[aria-label*='Éditer']",
-      "[title*='Personnaliser']", "[title*='Modifier']",
-      "#panel", "#pf", "#editor"
-    ];
-    for (var i = 0; i < selectors.length; i++) {
+    try {
+      var editSt = document.createElement("style");
+      editSt.id = "ev-hide-pencils";
+      editSt.textContent = HIDE_PENCIL_CSS;
+      (document.head || document.documentElement).appendChild(editSt);
+    } catch (e) { }
+
+    function purgeInternalEditButtons() {
+      var selectors = [
+        "#fabEdit", "#editFab", "#editBtn", "#edit-toggle", "#editRsvp",
+        ".edit-fab", ".fab-edit", ".btn-edit", ".edit-btn",
+        "[aria-label*='Personnaliser']", "[aria-label*='Modifier']", "[aria-label*='Éditer']",
+        "[title*='Personnaliser']", "[title*='Modifier']",
+        "#panel", "#pf", "#editor"
+      ];
+      for (var i = 0; i < selectors.length; i++) {
+        try {
+          var found = document.querySelectorAll(selectors[i]);
+          for (var j = 0; j < found.length; j++) {
+            found[j].remove();
+          }
+        } catch (e) { }
+      }
       try {
-        var found = document.querySelectorAll(selectors[i]);
-        for (var j = 0; j < found.length; j++) {
-          found[j].remove();
+        var fabs = document.querySelectorAll("button, .fab, a");
+        for (var k = 0; k < fabs.length; k++) {
+          var b = fabs[k];
+          if (b.id === "ev-top-bar" || b.closest("#ev-top-bar")) continue;
+          var p = b.querySelector("path");
+          if (p) {
+            var d = p.getAttribute("d") || "";
+            if (d.indexOf("M4 20h4L19") !== -1 || d.indexOf("M17 3a2.828") !== -1 || d.indexOf("18.37 5.63") !== -1) {
+              b.remove();
+            }
+          }
         }
       } catch (e) { }
     }
-    // Détection des boutons flottants contenant une icône crayon SVG
+
+    purgeInternalEditButtons();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", purgeInternalEditButtons);
+    }
+    window.addEventListener("load", purgeInternalEditButtons);
+    var pencilObserver = new MutationObserver(purgeInternalEditButtons);
     try {
-      var fabs = document.querySelectorAll("button, .fab, a");
-      for (var k = 0; k < fabs.length; k++) {
-        var b = fabs[k];
-        if (b.id === "ev-top-bar" || b.closest("#ev-top-bar")) continue;
-        var p = b.querySelector("path");
-        if (p) {
-          var d = p.getAttribute("d") || "";
-          if (d.indexOf("M4 20h4L19") !== -1 || d.indexOf("M17 3a2.828") !== -1 || d.indexOf("18.37 5.63") !== -1) {
-            b.remove();
-          }
-        }
-      }
+      pencilObserver.observe(document.documentElement, { childList: true, subtree: true });
     } catch (e) { }
   }
-
-  purgeInternalEditButtons();
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", purgeInternalEditButtons);
-  }
-  window.addEventListener("load", purgeInternalEditButtons);
-  var pencilObserver = new MutationObserver(purgeInternalEditButtons);
-  try {
-    pencilObserver.observe(document.documentElement, { childList: true, subtree: true });
-  } catch (e) { }
 
   /*
    * Fondus sonores des modèles : un volume calculé hors de 0 – 1 (ex. -0.0002 en fin de fondu) fait planter

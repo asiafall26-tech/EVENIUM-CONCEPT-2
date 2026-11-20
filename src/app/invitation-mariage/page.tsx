@@ -31,5 +31,5 @@ export default async function InvitationMariagePage({ searchParams }: Props) {
   if (hidden) notFound();
   // Carte statique : la démo est présentée sans musique
   const shown = isCard ? withoutMusic(withDefaults(content)) : content;
-  return <VeloursInvitation preview={isPreview} canEdit={canEdit} hideCta={hideCta} content={shown} />;
+  return <VeloursInvitation preview={isPreview} hideCta={hideCta} content={shown} />;
 }

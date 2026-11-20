@@ -218,11 +218,8 @@ function CreateExpressStudioContent({
   // Modale de prévisualisation plein écran du résultat avec modifications
   const [isPreviewFullScreenOpen, setIsPreviewFullScreenOpen] = useState(false);
 
-  // État de sélection du modèle : si l'utilisateur arrive sans modèle choisi (ex: /create), on lui présente la galerie
-  const [hasChosenModel, setHasChosenModel] = useState<boolean>(() => {
-    const p = searchParams.get('model');
-    return !!p && p.trim().length > 0;
-  });
+  // État de sélection du modèle : par défaut, immerger l'utilisateur dans l'éditeur (avec bouton Changer de modèle)
+  const [hasChosenModel, setHasChosenModel] = useState<boolean>(true);
 
   // Événement & Modèle sélectionné
   const categoryParam = searchParams.get('category') || searchParams.get('cat');
@@ -238,7 +235,10 @@ function CreateExpressStudioContent({
     }
     return "Mariage";
   });
-  const [selectedModelId, setSelectedModelId] = useState<string>(VELOURS_MODEL_ID);
+  const [selectedModelId, setSelectedModelId] = useState<string>(() => {
+    const p = searchParams.get('model');
+    return p || "custom:fatou-ibrahima-v2";
+  });
 
   useEffect(() => {
     const cat = searchParams.get('category') || searchParams.get('cat');
@@ -647,12 +647,12 @@ function CreateExpressStudioContent({
     else if (selectedModelId === IVOIRE_MODEL_ID) base = "/invitation-ivoire";
     else if (selectedModelId === ROSE_OR_MODEL_ID) base = "/invitation-rose-or";
     else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) base = "/invitation-anniversaire";
-    else {
+    else if (isCustomModelId(selectedModelId)) {
       const custom = customOf(selectedModelId);
-      if (custom) base = customModelUrl(custom);
+      base = custom ? customModelUrl(custom) : `/m/${selectedModelId.slice(7)}/index.html`;
     }
     const delim = base.includes("?") ? "&" : "?";
-    return `${base}${delim}preview=1&canEdit=1&hideCta=1`;
+    return `${base}${delim}preview=1&canEdit=1&autoEdit=1&hideCta=1`;
   }, [selectedModelId, customModels]);
 
   // Extraction automatique des métadonnées de l'événement depuis le contenu complet de l'invitation
@@ -1162,20 +1162,15 @@ function CreateExpressStudioContent({
             </button>
           </header>
 
-          {/* Corps : Affichage plein écran immersif de l'invitation */}
-          <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0 sm:p-4 lg:p-6">
-            <div className="w-full h-full sm:max-w-[430px] sm:max-h-[880px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#251219] overflow-hidden flex flex-col ring-0 sm:ring-1 sm:ring-white/10 relative">
-              {/* Encoche téléphone élégante visible uniquement sur grand écran */}
-              <div className="hidden sm:flex absolute top-0 left-1/2 -translate-x-1/2 w-32 h-4 bg-[#251219] rounded-b-xl z-30 items-center justify-center">
-                <span className="w-10 h-1 bg-black/40 rounded-full" />
-              </div>
-
+          {/* Corps : Affichage plein écran immersif de l'invitation (Split view sur grand écran, navigation Modifier/Aperçu sur mobile) */}
+          <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0">
+            <div className="w-full h-full bg-black overflow-hidden flex flex-col relative">
               {/* Iframe avec communication postMessage en temps réel */}
               <iframe
                 src={previewIframeSrc}
                 title="Aperçu interactif du modèle Evenium"
-                className="w-full h-full border-0 bg-black"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                className="w-full h-full border-0 bg-black block"
+                allow="autoplay; fullscreen"
               />
             </div>
           </main>

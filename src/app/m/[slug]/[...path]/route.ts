@@ -61,11 +61,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   if (isHtml) {
     let html = await res.text();
+    const isSelfContained = html.includes('id="editor"') || html.includes('id="fab"');
     const shouldHideEdit = req.nextUrl.searchParams.get("guest") === "1" || req.nextUrl.searchParams.get("hideEdit") === "1";
-    const injection = shouldHideEdit
-      ? `${HIDE_INTERNAL_EDITS}<script src="/ev-runtime.js" defer></script>`
-      : `<script src="/ev-runtime.js" defer></script>`;
-    html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${injection}</body>`) : html + injection;
+
+    let injection = "";
+    if (isSelfContained) {
+      if (shouldHideEdit) {
+        injection = `<style id="ev-guest-hide">#fab, #ebar, .fab, .ebar, #editor, .editor { display: none !important; visibility: hidden !important; }</style>`;
+      }
+    } else {
+      injection = shouldHideEdit
+        ? `${HIDE_INTERNAL_EDITS}<script src="/ev-runtime.js" defer></script>`
+        : `<script src="/ev-runtime.js" defer></script>`;
+    }
+
+    if (injection) {
+      html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${injection}</body>`) : html + injection;
+    }
     return new Response(html, { headers: { "Content-Type": type, "Cache-Control": "no-cache, must-revalidate" } });
   }
 
