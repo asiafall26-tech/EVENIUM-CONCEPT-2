@@ -727,8 +727,9 @@ body.editing .music{left:auto;right:16px;bottom:16px}
   const KEY='evenium-invitation-v2';
   let PRESET={};try{PRESET=JSON.parse($('inv-data').textContent||'{}')}catch(e){}
   let STORED=null;try{STORED=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-  const D=Object.assign(JSON.parse(JSON.stringify(DEF)),PRESET,STORED||{});
-  D.texts=Object.assign({},PRESET.texts||{},(STORED&&STORED.texts)||{});
+  // Les données officielles injectées par Evenium (PRESET) ont priorité absolue sur le localStorage
+  const D=Object.assign(JSON.parse(JSON.stringify(DEF)),STORED||{},PRESET);
+  D.texts=Object.assign({},(STORED&&STORED.texts)||{},PRESET.texts||{});
   const isHiddenMode = location.search.indexOf('hideEdit=1') !== -1 ||
     location.search.indexOf('guest=1') !== -1 ||
     location.search.indexOf('demo=1') !== -1 ||
@@ -740,6 +741,33 @@ body.editing .music{left:auto;right:16px;bottom:16px}
     try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){toast("Mémoire du navigateur pleine : les dernières photos ne seront pas conservées.")}
     try{if(window.parent&&window.parent!==window){window.parent.postMessage({type:'evenium:content-change',content:D,values:D,data:D},'*')}}catch(e){}
   }
+  window.addEventListener('message',function(e){
+    if(!e||!e.data)return;
+    if(e.data.type==='evenium:set-values'||e.data.type==='evenium:init-data'||e.data.type==='ev:content'){
+      const incoming=e.data.content||e.data.values||e.data.data;
+      if(incoming&&typeof incoming==='object'){
+        Object.assign(D,incoming);
+        if(incoming.texts)Object.assign(D.texts,incoming.texts);
+        try{
+          if(typeof applyDate==='function')applyDate();
+          if(typeof applyHero==='function')applyHero();
+          if(typeof applyColors==='function')applyColors();
+          if(typeof galImgs==='function')galImgs();
+          if(typeof FIELDS!=='undefined'){
+            FIELDS.forEach(([,fs])=>fs.forEach(f=>{
+              if(f[0][0]!=='@'&&D.texts[f[0]]!=null){
+                const el=f[2]();
+                if(el){
+                  if(f[3]&&f[3][0]==='l')el.textContent=D.texts[f[0]];
+                  else setTxt(el,D.texts[f[0]]);
+                }
+              }
+            }));
+          }
+        }catch(err){}
+      }
+    }
+  });
   let tT;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tT);tT=setTimeout(()=>t.hidden=true,3200)}
 
   // Galerie (rendue avant le repérage des textes)

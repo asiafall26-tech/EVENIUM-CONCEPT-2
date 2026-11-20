@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Mail, Music, Palette, PenLine, Save, VolumeX, X } from "lucide-react";
+import { ArrowLeft, Check, Eye, Globe, Image as ImageIcon, Loader2, Mail, Music, Palette, PenLine, Save, Sparkles, VolumeX, X } from "lucide-react";
 import CoverModal from "./CoverModal";
 import CustomSectionsEditor, { CustomMusicFields } from "@/components/invitations/custom/CustomSectionsEditor";
 import CustomInvitationFrame from "@/components/invitations/custom/CustomInvitationFrame";
 import StyleEditor from "./StyleEditor";
-import { STYLE_KEY, customValues, parseStyle, withoutMusicValues, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
+import { STYLE_KEY, customModelUrl, customValues, parseStyle, withoutMusicValues, type CustomField, type CustomModelRow, type CustomValues } from "@/lib/customModels";
 import { generateAccompanimentMessage, getAccompanimentSuggestions } from "@/lib/accompanimentMessages";
 
-type Tab = "contenu" | "message" | "style" | "musique";
+type Tab = "contenu" | "champs" | "message" | "style" | "musique";
 
 interface Props {
   model: CustomModelRow;
@@ -70,15 +70,36 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
     setMessage(null);
     const patch: Partial<CustomModelRow> = { name: name.trim() || model.name, cover_url: cover || null, fields, draft_content: values };
     try {
-      await (kind === "save" ? onSave(patch) : onPublish({ ...patch, content: values }));
+      await (kind === "save" ? onSave(patch) : onPublish({ ...patch, content: values, status: "published" }));
       setDirty(false);
-      setMessage({ ok: true, text: kind === "save" ? "Modification enregistrée (pas encore publiée)." : "Modèle publié sur le site." });
+      setMessage({ ok: true, text: kind === "save" ? "Modification enregistrée (brouillon)." : `« ${name.trim() || model.name} » a été mis à jour et publié sur l'ensemble du site !` });
     } catch (e) {
       setMessage({ ok: false, text: e instanceof Error ? e.message : "Une erreur est survenue." });
     } finally {
       setBusy(null);
     }
   };
+
+  // Écoute des modifications transmises en direct depuis l'iframe interactive
+  useEffect(() => {
+    const handleMsg = (e: MessageEvent) => {
+      if (!e.data) return;
+      if (
+        e.data.type === 'evenium:content-change' ||
+        e.data.type === 'ev:content'
+      ) {
+        const updated = e.data.content || e.data.values || e.data.data;
+        if (updated && typeof updated === 'object') {
+          update(updated);
+        }
+      } else if (e.data.type === 'evenium:open-checkout') {
+        run('publish');
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, name, cover, fields]);
 
   const close = () => {
     if (dirty && !confirm("Quitter sans enregistrer vos modifications ?")) return;
@@ -96,8 +117,9 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
 
   const currentMessage = values.accompanimentMessage !== undefined ? values.accompanimentMessage : defaultCustomMessage;
 
-  const tabs: { id: Tab; label: string; icon: typeof PenLine }[] = [
-    { id: "contenu", label: "Contenu", icon: PenLine },
+  const tabs: { id: Tab; label: string; icon: typeof PenLine | typeof Sparkles }[] = [
+    { id: "contenu", label: "Édition en direct", icon: Sparkles },
+    { id: "champs", label: "Champs & Rubriques", icon: PenLine },
     { id: "message", label: "Message chic", icon: Mail },
     { id: "style", label: "Style & polices", icon: Palette },
     ...(isStatic ? [] : [{ id: "musique" as const, label: "Musique", icon: Music }]),
@@ -148,11 +170,21 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
           <button
             type="button"
             onClick={() => setCoverOpen(true)}
-            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:border-[#b8924a]"
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:border-[#b8924a] cursor-pointer"
           >
             <ImageIcon size={14} /> <span className="hidden sm:inline">Couverture</span>
           </button>
-          <button type="button" onClick={close} aria-label="Fermer" className="shrink-0 w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={() => run("publish")}
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#e2c77d] to-[#b8924a] text-black text-xs font-extrabold hover:brightness-105 active:scale-95 disabled:opacity-60 transition-all shadow-sm cursor-pointer"
+          >
+            {busy === "publish" ? <Loader2 size={14} className="animate-spin text-black" /> : <Globe size={14} />}
+            <span className="hidden sm:inline">Publier sur le site</span>
+            <span className="sm:hidden">Publier</span>
+          </button>
+          <button type="button" onClick={close} aria-label="Fermer" className="shrink-0 w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center cursor-pointer transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -165,8 +197,8 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-sm font-semibold border-b-2 ${
-                  tab === t.id ? "border-[#b8924a] text-gray-900" : "border-transparent text-gray-500"
+                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-sm font-semibold border-b-2 cursor-pointer transition-colors ${
+                  tab === t.id ? "border-[#b8924a] text-gray-900" : "border-transparent text-gray-500 hover:text-gray-900"
                 }`}
               >
                 <t.icon size={15} /> {t.label}
@@ -178,6 +210,17 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
         {/* Corps */}
         <div className="flex-1 min-h-0 overflow-hidden">
           {tab === "contenu" && (
+            <div className="h-full w-full bg-[#0e0a08] relative flex flex-col overflow-hidden">
+              <iframe
+                src={`${customModelUrl(model)}?preview=1&canEdit=1&autoEdit=1&hideCta=1&admin=1&v=${model.slug}`}
+                title={`Éditeur interactif de ${name}`}
+                className="w-full h-full border-0 bg-[#0e0a08] block"
+                allow="autoplay; fullscreen"
+              />
+            </div>
+          )}
+
+          {tab === "champs" && (
             <div className="h-full w-full max-w-[1680px] mx-auto p-2 sm:p-4 lg:p-6 flex flex-col">
               <div className="flex-1 min-h-0 flex flex-col">
                 <CustomSectionsEditor
@@ -353,9 +396,9 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
                 type="button"
                 disabled={!!busy}
                 onClick={() => run("publish")}
-                className="inline-flex items-center gap-1.5 px-3 sm:px-5 py-3 rounded-xl bg-[#2b2118] text-[#f5eee1] text-sm font-semibold disabled:opacity-60 whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-5 py-3 rounded-xl bg-gradient-to-r from-[#b8924a] via-[#e2c77d] to-[#b8924a] text-black text-sm font-extrabold hover:brightness-105 active:scale-95 disabled:opacity-60 whitespace-nowrap cursor-pointer shadow-md transition-all"
               >
-                {busy === "publish" ? <Loader2 size={16} className="animate-spin" /> : <Globe size={16} />} Publier
+                {busy === "publish" ? <Loader2 size={16} className="animate-spin text-black" /> : <Globe size={16} />} Publier sur le site
               </button>
             </div>
           </div>

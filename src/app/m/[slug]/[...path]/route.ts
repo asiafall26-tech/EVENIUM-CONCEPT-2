@@ -65,6 +65,42 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     const isEditMode = req.nextUrl.searchParams.get("canEdit") === "1" || req.nextUrl.searchParams.get("edit") === "1";
     const shouldHideEdit = !isEditMode || req.nextUrl.searchParams.get("guest") === "1" || req.nextUrl.searchParams.get("hideEdit") === "1" || req.nextUrl.searchParams.get("demo") === "1";
 
+    // Injecter les modifications enregistrées en base (content / draft_content) dans le modèle
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && serviceKey) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+        const { data: row } = await supabase
+          .from("custom_invitation_models")
+          .select("content, draft_content")
+          .eq("slug", slug)
+          .maybeSingle();
+
+        const modelData = isEditMode
+          ? (row?.draft_content && Object.keys(row.draft_content).length > 0 ? row.draft_content : row?.content)
+          : row?.content;
+
+        if (modelData && typeof modelData === "object" && Object.keys(modelData).length > 0) {
+          const jsonStr = JSON.stringify(modelData).replace(/</g, "\\u003c");
+          if (html.includes('id="inv-data"')) {
+            html = html.replace(
+              /<script\s+type="application\/json"\s+id="inv-data">[\s\S]*?<\/script>/i,
+              `<script type="application/json" id="inv-data">${jsonStr}</script>`
+            );
+          } else {
+            const dataScript = `<script type="application/json" id="inv-data">${jsonStr}</script>`;
+            html = /<\/head>/i.test(html)
+              ? html.replace(/<\/head>/i, `${dataScript}</head>`)
+              : dataScript + html;
+          }
+        }
+      }
+    } catch {
+      // Continuer si la base n'est pas joignable
+    }
+
     let injection = "";
     if (isSelfContained) {
       if (shouldHideEdit) {

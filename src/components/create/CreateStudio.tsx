@@ -1536,33 +1536,6 @@ function CreateExpressStudioContent({
                 </div>
               </div>
             </div>
-
-            {/* Barre d'action inférieure de secours pour mobile avec safe-area */}
-            <div
-              className="sm:hidden p-3 bg-[#13090C]/95 backdrop-blur-md border-t border-[#D4AF37]/30 flex items-center justify-between gap-3 shrink-0 z-50"
-              style={{
-                paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setDemoModelId(null)}
-                className="flex-1 py-2.5 rounded-full bg-white/10 text-white text-xs font-semibold border border-white/20 active:scale-95 transition-all text-center"
-              >
-                ← Autres modèles
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleChooseModel(demoModelId);
-                  setDemoModelId(null);
-                  window.scrollTo({ top: 0 });
-                }}
-                className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F3E5AB] text-black text-xs font-extrabold shadow-md active:scale-95 transition-all text-center"
-              >
-                ✨ Choisir
-              </button>
-            </div>
           </div>
         </InvitationCtaContext.Provider>
       )}

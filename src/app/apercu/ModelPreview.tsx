@@ -60,7 +60,14 @@ export default function ModelPreview({ src, name, cover, category, showBack }: P
       <div aria-hidden className="absolute inset-0 bg-black/60 pointer-events-none" />
 
       {/* Barre supérieure visible et cliquable sur TOUS les écrans (desktop ET mobile) */}
-      <header className="relative z-30 shrink-0 h-14 sm:h-16 px-3 sm:px-8 bg-[#0e0a08]/95 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
+      <header
+        className="relative z-30 shrink-0 px-3 sm:px-8 bg-[#0e0a08]/95 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none"
+        style={{
+          paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+          paddingBottom: "8px",
+          minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+        }}
+      >
         {showBack ? (
           <Link
             href={backUrl}
@@ -100,26 +107,6 @@ export default function ModelPreview({ src, name, cover, category, showBack }: P
             className="block h-full w-full border-0 bg-white"
           />
         </div>
-      </div>
-
-      {/* Barre d'action inférieure sur mobile pour accès immédiat au pouce */}
-      <div className="sm:hidden relative z-30 shrink-0 p-3 bg-[#0e0a08]/95 backdrop-blur-md border-t border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
-        {showBack && (
-          <Link
-            href={backUrl}
-            className="flex-1 py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <ArrowLeft size={13} className="text-[#f0d999]" />
-            <span>Autres modèles</span>
-          </Link>
-        )}
-        <Link
-          href={chooseUrl}
-          className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs font-extrabold shadow-md active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer border border-[#D4AF37]/60"
-        >
-          <Sparkles size={13} className="text-black" />
-          <span>Choisir ce modèle</span>
-        </Link>
       </div>
     </main>
   );
