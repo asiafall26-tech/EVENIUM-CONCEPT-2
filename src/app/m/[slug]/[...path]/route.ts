@@ -61,7 +61,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   if (isHtml) {
     let html = await res.text();
-    html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${RUNTIME}</body>`) : html + RUNTIME;
+    const shouldHideEdit = req.nextUrl.searchParams.get("guest") === "1" || req.nextUrl.searchParams.get("hideEdit") === "1";
+    const injection = shouldHideEdit
+      ? `${HIDE_INTERNAL_EDITS}<script src="/ev-runtime.js" defer></script>`
+      : `<script src="/ev-runtime.js" defer></script>`;
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${injection}</body>`) : html + injection;
     return new Response(html, { headers: { "Content-Type": type, "Cache-Control": "no-cache, must-revalidate" } });
   }
 
