@@ -1031,14 +1031,48 @@ function CreateExpressStudioContent({
   };
 
   return (
-    <div className="w-full max-w-[1680px] mx-auto px-2 sm:px-4 lg:px-6 flex flex-col gap-6 animate-in fade-in duration-300">
+    <div className="w-full relative min-h-screen">
 
       {!hasChosenModel ? (
         /* ─────────────── 1. GALERIE DES MODÈLES (POUR CEUX QUI CRÉENT SANS MODÈLE D'ABORD) ─────────────── */
-        <div className="w-full flex flex-col gap-8 animate-in fade-in duration-300">
-          {/* En-tête de prestige */}
-          <div className="text-center max-w-3xl mx-auto pt-4 sm:pt-6">
-            <Fleuron className="mx-auto w-40 sm:w-48 h-auto mb-3" />
+        <div className="w-full flex flex-col">
+          {/* En-tête minimal de la galerie (mode public) */}
+          {mode === 'public' && (
+            <header
+              className="sticky top-0 z-40 bg-[#faf3e8]/95 backdrop-blur-md border-b border-[#e4d8c4] transition-all"
+              style={{
+                paddingTop: "env(safe-area-inset-top, 0px)",
+                paddingLeft: "env(safe-area-inset-left, 0px)",
+                paddingRight: "env(safe-area-inset-right, 0px)",
+              }}
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+                <a href="/" className="flex items-center group">
+                  <Image
+                    src="/logo-horizontal-dark.png"
+                    alt="Evenium Logo"
+                    width={110}
+                    height={28}
+                    className="object-contain w-[90px] sm:w-[110px] h-auto transition-transform group-hover:scale-105"
+                    priority
+                  />
+                </a>
+                <a
+                  href="/"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-600 hover:text-black hover:bg-black/5 transition-all border border-gray-200/80 cursor-pointer"
+                >
+                  <span>Accueil</span>
+                  <X size={13} />
+                </a>
+              </div>
+            </header>
+          )}
+
+          <div className="w-full max-w-[1680px] mx-auto px-2 sm:px-4 lg:px-6 flex flex-col gap-6 animate-in fade-in duration-300">
+            <div className="w-full flex flex-col gap-8 animate-in fade-in duration-300">
+              {/* En-tête de prestige */}
+              <div className="text-center max-w-3xl mx-auto pt-4 sm:pt-6">
+                <Fleuron className="mx-auto w-40 sm:w-48 h-auto mb-3" />
             <p className="pl-[0.3em] text-[10.5px] sm:text-xs font-medium uppercase tracking-[0.3em] text-[#8f6f33] mb-3">
               Étape 1 · Choisissez votre modèle
             </p>
@@ -1149,27 +1183,38 @@ function CreateExpressStudioContent({
             </span>
           </div>
         </div>
+      </div>
+    </div>
       ) : (
         /* ─────────────── 2. TEST & PERSONNALISATION IMMERSIVE AVEC CRAYON (PUIS ACHAT) ─────────────── */
         <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
-          {/* Barre supérieure luxueuse */}
-          <header className="h-14 sm:h-16 bg-[#13090C] border-b border-black/40 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20">
+          {/* Barre supérieure luxueuse avec prise en compte de l'encoche mobile (Safe Area Insets) */}
+          <header
+            className="w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none transition-all"
+            style={{
+              paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+              paddingBottom: "8px",
+              minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+            }}
+          >
             {/* Bouton retour vers la galerie */}
             <button
               type="button"
               onClick={handleReturnToGallery}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/15 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/15 transition-all cursor-pointer shrink-0"
+              title="Changer de modèle"
             >
-              <ArrowLeft size={14} />
+              <ArrowLeft size={14} className="shrink-0" />
               <span className="hidden sm:inline">Changer de modèle</span>
+              <span className="sm:hidden text-[11px]">Modèles</span>
             </button>
 
             {/* Titre & Indication Crayon ✏️ */}
-            <div className="flex items-center gap-2">
-              <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-[150px] sm:max-w-xs">
+            <div className="flex items-center gap-1.5 min-w-0 px-1 justify-center">
+              <span className="font-serif text-xs sm:text-base font-bold text-white tracking-wide truncate max-w-[110px] sm:max-w-xs text-center">
                 {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
               </span>
-              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase">
+              <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
                 <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
               </span>
             </div>
@@ -1178,10 +1223,11 @@ function CreateExpressStudioContent({
             <button
               type="button"
               onClick={() => setIsCheckoutModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0"
             >
-              <Lock size={14} className="text-black shrink-0" />
-              <span>Valider &amp; Obtenir mon lien ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
+              <Lock size={13} className="text-black shrink-0" />
+              <span className="hidden sm:inline">Valider &amp; Obtenir mon lien ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
+              <span className="sm:hidden text-[11px] font-black">Valider ({currentActualPrice.toLocaleString('fr-FR')} F)</span>
             </button>
           </header>
 
@@ -1210,15 +1256,23 @@ function CreateExpressStudioContent({
             className="fixed inset-0 z-[100] h-dvh bg-black overflow-y-auto overscroll-contain select-none flex flex-col"
             onContextMenu={(e) => e.preventDefault()}
           >
-            {/* En-tête sur une ligne format très simple au clic */}
-            <header className="fixed top-0 left-0 right-0 z-[120] h-[52px] pt-[env(safe-area-inset-top,0px)] px-3 sm:px-6 bg-[#0e0a08]/94 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
+            {/* En-tête sur une ligne format très simple au clic avec safe-area */}
+            <header
+              className="fixed top-0 left-0 right-0 z-[120] bg-[#0e0a08]/94 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-2 px-2.5 sm:px-6 shadow-lg select-none"
+              style={{
+                paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+                paddingBottom: "8px",
+                minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setIsPreviewFullScreenOpen(false)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer shrink-0"
               >
                 <ArrowLeft size={14} className="shrink-0" />
-                <span>Revenir à la création</span>
+                <span className="hidden sm:inline">Revenir à la création</span>
+                <span className="sm:hidden text-[11px]">Modifier</span>
               </button>
 
               <div className="text-center min-w-0 max-w-md hidden sm:block">
@@ -1232,15 +1286,20 @@ function CreateExpressStudioContent({
                   setIsPreviewFullScreenOpen(false);
                   setIsCheckoutModalOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer shrink-0"
               >
-                <Sparkles size={14} className="text-black shrink-0" />
+                <Sparkles size={13} className="text-black shrink-0" />
                 <span>Valider l&apos;achat</span>
               </button>
             </header>
 
             {/* Corps de l'invitation en plein écran avec modifications */}
-            <div className="w-full relative min-h-dvh pt-[52px]">
+            <div
+              className="w-full relative min-h-dvh"
+              style={{
+                paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+              }}
+            >
               {selectedModelId === VELOURS_MODEL_ID && (
                 <VeloursInvitation
                   content={forInvitationKind(veloursContent, isStaticCard)}
@@ -1386,25 +1445,32 @@ function CreateExpressStudioContent({
             className="fixed inset-0 z-[100] w-full h-dvh bg-[#0c0a09] flex flex-col overflow-hidden select-none"
             onContextMenu={(e) => e.preventDefault()}
           >
-            {/* Barre de navigation supérieure claire & ergonomique */}
-            <header className="h-14 sm:h-16 bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-3 sm:px-6 flex items-center justify-between shrink-0 z-50">
+            {/* Barre de navigation supérieure claire & ergonomique avec safe-area */}
+            <header
+              className="w-full bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-50 select-none"
+              style={{
+                paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+                paddingBottom: "8px",
+                minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+              }}
+            >
               {/* Bouton retour vers la galerie des modèles */}
               <button
                 type="button"
                 onClick={() => setDemoModelId(null)}
-                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 hover:border-[#D4AF37]/50 transition-all cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-1 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 hover:border-[#D4AF37]/50 transition-all cursor-pointer shadow-sm shrink-0"
               >
                 <ArrowLeft size={14} className="shrink-0" />
                 <span className="hidden sm:inline">← Retourner voir les autres modèles</span>
-                <span className="sm:hidden">← Autres modèles</span>
+                <span className="sm:hidden text-[11px]">← Autres</span>
               </button>
 
               {/* Titre & Indication Démo */}
-              <div className="flex items-center gap-2 text-center min-w-0">
-                <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-[140px] sm:max-w-xs">
+              <div className="flex items-center gap-1.5 text-center min-w-0 px-1 justify-center">
+                <span className="font-serif text-xs sm:text-base font-bold text-white tracking-wide truncate max-w-[110px] sm:max-w-xs">
                   {modelNameOf(publishedModels[demoModelId], "Aperçu du modèle")}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase">
+                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
                   <Eye size={11} className="text-[#D4AF37]" /> Démo
                 </span>
               </div>
@@ -1417,10 +1483,11 @@ function CreateExpressStudioContent({
                   setDemoModelId(null);
                   window.scrollTo({ top: 0 });
                 }}
-                className="inline-flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0"
               >
-                <Sparkles size={14} className="text-black shrink-0" />
-                <span>Choisir ce modèle</span>
+                <Sparkles size={13} className="text-black shrink-0" />
+                <span className="hidden sm:inline">Choisir ce modèle</span>
+                <span className="sm:hidden text-[11px] font-black">Choisir</span>
               </button>
             </header>
 
@@ -1470,8 +1537,13 @@ function CreateExpressStudioContent({
               </div>
             </div>
 
-            {/* Barre d'action inférieure de secours pour mobile */}
-            <div className="sm:hidden p-3 bg-[#13090C]/95 backdrop-blur-md border-t border-[#D4AF37]/30 flex items-center justify-between gap-3 shrink-0 z-50">
+            {/* Barre d'action inférieure de secours pour mobile avec safe-area */}
+            <div
+              className="sm:hidden p-3 bg-[#13090C]/95 backdrop-blur-md border-t border-[#D4AF37]/30 flex items-center justify-between gap-3 shrink-0 z-50"
+              style={{
+                paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setDemoModelId(null)}
