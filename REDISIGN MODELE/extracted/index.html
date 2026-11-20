@@ -738,7 +738,7 @@ body.editing .music{left:auto;right:16px;bottom:16px}
   function save(){
     D.published=undefined;
     try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){toast("Mémoire du navigateur pleine : les dernières photos ne seront pas conservées.")}
-    try{if(window.parent&&window.parent!==window){window.parent.postMessage({type:'evenium:content-change',data:D},'*')}}catch(e){}
+    try{if(window.parent&&window.parent!==window){window.parent.postMessage({type:'evenium:content-change',content:D,values:D,data:D},'*')}}catch(e){}
   }
   let tT;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tT);tT=setTimeout(()=>t.hidden=true,3200)}
 
@@ -1154,6 +1154,13 @@ body.editing .music{left:auto;right:16px;bottom:16px}
       });
       ed.append(d);
     });
+    const btmBtn = h('button', {
+      type: 'button',
+      class: 'btn-validate-full',
+      style: 'margin-top:24px;margin-bottom:20px;width:100%;padding:14px 18px;border-radius:26px;border:none;background:linear-gradient(135deg,#c9a15b,#ecd49c,#c9a15b);color:#2b0b14;font-family:var(--caps);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 18px rgba(201,161,91,.35);display:flex;align-items:center;justify-content:center;gap:8px;',
+      onclick: () => $('doneEdit').click()
+    }, '✨ Valider & Terminer');
+    ed.append(btmBtn);
     built=true;
   }
   function setTab(prev){document.body.classList.toggle('tab-preview',prev);$('tabEdit').setAttribute('aria-pressed',!prev);$('tabPrev').setAttribute('aria-pressed',prev)}
@@ -1166,7 +1173,22 @@ body.editing .music{left:auto;right:16px;bottom:16px}
   };
   $('doneEdit').onclick=()=>{
     document.body.classList.remove('editing','tab-preview');$('ebar').hidden=true;ed.hidden=true;
-    applyLinks();applyDate();frame();if(!wasRevealed)relock();toast('Modifications enregistrées');
+    applyLinks();applyDate();frame();if(!wasRevealed)relock();
+    save();
+    toast('Modifications enregistrées');
+    try{
+      if(window.parent&&window.parent!==window){
+        window.parent.postMessage({
+          type:'evenium:content-change',
+          content:D,
+          values:D,
+          data:D
+        },'*');
+        window.parent.postMessage({
+          type:'evenium:open-checkout'
+        },'*');
+      }
+    }catch(err){}
   };
   function shrink(file){return new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const m=1600,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');
     c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.85))};im.onerror=ko;im.src=r.result};r.onerror=ko;r.readAsDataURL(file)})}

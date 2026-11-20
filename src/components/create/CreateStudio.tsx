@@ -534,6 +534,11 @@ function CreateExpressStudioContent({
   const [demoModelId, setDemoModelId] = useState<string | null>(null);
   const demoOpenRef = useRef(false);
   const demoModelIdRef = useRef<string | null>(null);
+  const selectedModelIdRef = useRef(selectedModelId);
+  useEffect(() => {
+    selectedModelIdRef.current = selectedModelId;
+  }, [selectedModelId]);
+
   useEffect(() => {
     demoOpenRef.current = !!demoModelId;
     demoModelIdRef.current = demoModelId;
@@ -583,15 +588,16 @@ function CreateExpressStudioContent({
         e.data?.type === 'velours:content' ||
         e.data?.type === 'ev:content'
       ) {
-        const updated = e.data.content || e.data.values;
+        const updated = e.data.content || e.data.values || e.data.data;
         if (updated) {
-          if (selectedModelId === VELOURS_MODEL_ID) setVeloursContent((prev: any) => ({ ...prev, ...updated }));
-          else if (selectedModelId === SCEAU_MODEL_ID) setSceauContent((prev: any) => ({ ...prev, ...updated }));
-          else if (selectedModelId === IVOIRE_MODEL_ID) setIvoireContent((prev: any) => ({ ...prev, ...updated }));
-          else if (selectedModelId === ROSE_OR_MODEL_ID) setRoseOrContent((prev: any) => ({ ...prev, ...updated }));
-          else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) setAnniversaireContent((prev: any) => ({ ...prev, ...updated }));
+          const currentId = selectedModelIdRef.current;
+          if (currentId === VELOURS_MODEL_ID) setVeloursContent((prev: any) => ({ ...prev, ...updated }));
+          else if (currentId === SCEAU_MODEL_ID) setSceauContent((prev: any) => ({ ...prev, ...updated }));
+          else if (currentId === IVOIRE_MODEL_ID) setIvoireContent((prev: any) => ({ ...prev, ...updated }));
+          else if (currentId === ROSE_OR_MODEL_ID) setRoseOrContent((prev: any) => ({ ...prev, ...updated }));
+          else if (currentId === ANNIVERSAIRE_MODEL_ID) setAnniversaireContent((prev: any) => ({ ...prev, ...updated }));
           else {
-            const m = customOf(selectedModelId);
+            const m = customOf(currentId);
             if (m) setCustomContents((all) => ({ ...all, [customModelId(m.slug)]: updated }));
           }
         }
@@ -731,10 +737,30 @@ function CreateExpressStudioContent({
     } else if (isCustomModelId(selectedModelId)) {
       const m = customOf(selectedModelId);
       if (m) {
-        const type = selectedEventCategory === "Tous" ? m.event_types[0] ?? "Événement" : selectedEventCategory;
-        name = `${type} · ${m.name}`;
+        const val: any = customContentOf(m) || {};
+        const txt = val.texts || {};
+        const pA = txt.pA || val.partnerA || '';
+        const pB = txt.pB || val.partnerB || '';
+        if (pA && pB) {
+          name = formatCoupleTitle(selectedEventCategory, pA, pB);
+        } else if (pA) {
+          name = formatCoupleTitle(selectedEventCategory, pA);
+        } else {
+          const type = selectedEventCategory === "Tous" ? m.event_types[0] ?? "Événement" : selectedEventCategory;
+          name = `${type} · ${m.name}`;
+        }
+        if (val.date) {
+          const parts = String(val.date).split('T');
+          if (parts[0]) date = parts[0];
+          if (parts[1]) time = parts[1].slice(0, 5);
+        }
+        const progVenue = Array.isArray(val.prog) ? val.prog[0]?.l : null;
+        if (txt.venue || progVenue || val.venue) {
+          location = [txt.venue || progVenue || val.venue, txt.city || val.city].filter(Boolean).join(", ");
+        }
         welcomeTitle = name;
-        contentJson = { values: customContentOf(m) };
+        welcomeText = txt.quote || txt.welcome || welcomeText;
+        contentJson = { values: val };
       }
     }
 
