@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CalendarDays, Clock, MapPin, Music, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, MapPin, Music, Volume2, VolumeX, Pencil, X, Sparkles } from "lucide-react";
 import s from "./velours.module.css";
 import { veloursFontVars } from "./fonts";
 import { bindSegment, cleanRange } from "@/utils/audioSegment";
@@ -34,6 +34,7 @@ interface Props {
   onRsvp?: (rsvp: RsvpPayload) => Promise<void>;
   /** Accept live content updates from a parent editor (iframe preview) */
   preview?: boolean;
+  canEdit?: boolean;
   onBackToEdit?: () => void;
   onFinalize?: () => void;
   hideCta?: boolean;
@@ -747,9 +748,10 @@ const STYLE_SELECTORS = modelSelectors({
   body: cls(s.body, s.bodyLeft, s.bodyLight, s.quote, s.scriptLight, s.infoMain, s.footerQuote),
 });
 
-export default function VeloursInvitation({ content, onRsvp, preview, onBackToEdit, onFinalize, hideCta }: Props) {
+export default function VeloursInvitation({ content, onRsvp, preview, canEdit = false, onBackToEdit, onFinalize, hideCta }: Props) {
   const [phase, setPhase] = useState<Phase>(preview ? "done" : "closed");
   const [live, setLive] = useState<Partial<VeloursContent> | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const mounted = useMounted();
   const timers = useRef<number[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -759,6 +761,16 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
   const dates = formatDates(c);
   const a = initial(c.partnerA);
   const b = initial(c.partnerB);
+
+  const handleQuickUpdate = (key: string, value: any) => {
+    const next = { ...c, [key]: value };
+    setLive(next);
+    if (typeof window !== "undefined" && window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({ type: "evenium:content-change", content: next, values: next }, "*");
+      } catch {}
+    }
+  };
 
   // Only the excerpt chosen in the editor is played, in a loop
   const audioRange = useRef(cleanRange(c.audioStart, c.audioEnd));
@@ -1035,6 +1047,147 @@ export default function VeloursInvitation({ content, onRsvp, preview, onBackToEd
             </span>
           </div>
         </button>
+      )}
+
+      {/* Floating Pencil Button (Mode Personnalisation intégré au modèle) */}
+      {canEdit && !hideCta && mounted && (
+        <button
+          type="button"
+          onClick={() => setIsEditModalOpen(true)}
+          className="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-2xl shadow-black/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all border-2 border-white/40 cursor-pointer animate-pulse"
+          title="Personnaliser l'invitation (Crayon)"
+          aria-label="Personnaliser l'invitation"
+        >
+          <Pencil size={22} className="text-black" />
+        </button>
+      )}
+
+      {/* Modale d'édition intégrée au modèle */}
+      {mounted && isEditModalOpen && createPortal(
+        <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in select-text">
+          <div className="bg-[#180C10] border border-[#D4AF37]/40 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh] text-white">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#D4AF37] text-black flex items-center justify-center font-bold">
+                  <Pencil size={16} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-[#EBD6B5]">Personnaliser l&apos;invitation</h3>
+                  <p className="text-[11px] text-white/60">Modifiez vos textes en direct</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-3.5 overflow-y-auto flex-1 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Prénom 1er marié</label>
+                  <input
+                    type="text"
+                    value={c.partnerA || ""}
+                    onChange={(e) => handleQuickUpdate("partnerA", e.target.value)}
+                    className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Prénom mariée</label>
+                  <input
+                    type="text"
+                    value={c.partnerB || ""}
+                    onChange={(e) => handleQuickUpdate("partnerB", e.target.value)}
+                    className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Bénédiction des familles</label>
+                <input
+                  type="text"
+                  value={c.familyBlessing || ""}
+                  onChange={(e) => handleQuickUpdate("familyBlessing", e.target.value)}
+                  className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={c.date || ""}
+                    onChange={(e) => handleQuickUpdate("date", e.target.value)}
+                    className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Heure</label>
+                  <input
+                    type="time"
+                    value={c.time || ""}
+                    onChange={(e) => handleQuickUpdate("time", e.target.value)}
+                    className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Salle de réception</label>
+                <input
+                  type="text"
+                  value={c.venue || ""}
+                  onChange={(e) => handleQuickUpdate("venue", e.target.value)}
+                  className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Ville</label>
+                <input
+                  type="text"
+                  value={c.city || ""}
+                  onChange={(e) => handleQuickUpdate("city", e.target.value)}
+                  className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#EBD6B5] mb-1">Consignes Dress Code</label>
+                <textarea
+                  rows={2}
+                  value={c.dressCodeText || ""}
+                  onChange={(e) => handleQuickUpdate("dressCodeText", e.target.value)}
+                  className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-xl text-white outline-none focus:border-[#D4AF37] resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs text-white/70 hover:text-white cursor-pointer"
+              >
+                Fermer
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-bold text-xs uppercase tracking-wider shadow-md hover:brightness-105 cursor-pointer"
+              >
+                Appliquer
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Ancestors may be transformed/filtered (page transitions, layouts), which breaks position:fixed —

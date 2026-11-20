@@ -581,6 +581,24 @@ function CreateExpressStudioContent({
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'evenium:close-preview') handleClose();
       if (e.data?.type === 'evenium:open-checkout') handleCheckout();
+      if (
+        e.data?.type === 'evenium:content-change' ||
+        e.data?.type === 'velours:content' ||
+        e.data?.type === 'ev:content'
+      ) {
+        const updated = e.data.content || e.data.values;
+        if (updated) {
+          if (selectedModelId === VELOURS_MODEL_ID) setVeloursContent((prev: any) => ({ ...prev, ...updated }));
+          else if (selectedModelId === SCEAU_MODEL_ID) setSceauContent((prev: any) => ({ ...prev, ...updated }));
+          else if (selectedModelId === IVOIRE_MODEL_ID) setIvoireContent((prev: any) => ({ ...prev, ...updated }));
+          else if (selectedModelId === ROSE_OR_MODEL_ID) setRoseOrContent((prev: any) => ({ ...prev, ...updated }));
+          else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) setAnniversaireContent((prev: any) => ({ ...prev, ...updated }));
+          else {
+            const m = customOf(selectedModelId);
+            if (m) setCustomContents((all) => ({ ...all, [customModelId(m.slug)]: updated }));
+          }
+        }
+      }
     };
     window.addEventListener('message', handleMessage);
 
@@ -621,6 +639,21 @@ function CreateExpressStudioContent({
       }
     });
   }, [supabase]);
+
+  // URL de l'iframe de prévisualisation et personnalisation avec crayon intégré
+  const previewIframeSrc = useMemo(() => {
+    let base = "/invitation-mariage";
+    if (selectedModelId === SCEAU_MODEL_ID) base = "/invitation-sceau-dor";
+    else if (selectedModelId === IVOIRE_MODEL_ID) base = "/invitation-ivoire";
+    else if (selectedModelId === ROSE_OR_MODEL_ID) base = "/invitation-rose-or";
+    else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) base = "/invitation-anniversaire";
+    else {
+      const custom = customOf(selectedModelId);
+      if (custom) base = customModelUrl(custom);
+    }
+    const delim = base.includes("?") ? "&" : "?";
+    return `${base}${delim}preview=1&canEdit=1&hideCta=1`;
+  }, [selectedModelId, customModels]);
 
   // Extraction automatique des métadonnées de l'événement depuis le contenu complet de l'invitation
   const eventMetadata = useMemo(() => {
@@ -1094,42 +1127,59 @@ function CreateExpressStudioContent({
           </div>
         </div>
       ) : (
-        /* ─────────────── 2. ÉDITEUR EN ÉCRAN PARTAGÉ (PANNEAU 420px + IFRAME EN DIRECT) ─────────────── */
-        <SplitStudioEditor
-          modelId={selectedModelId}
-          initialContent={
-            selectedModelId === VELOURS_MODEL_ID
-              ? veloursContent
-              : selectedModelId === SCEAU_MODEL_ID
-              ? sceauContent
-              : selectedModelId === IVOIRE_MODEL_ID
-              ? ivoireContent
-              : selectedModelId === ROSE_OR_MODEL_ID
-              ? roseOrContent
-              : selectedModelId === ANNIVERSAIRE_MODEL_ID
-              ? anniversaireContent
-              : (customOf(selectedModelId) ? customContentOf(customOf(selectedModelId)!) : {})
-          }
-          customModel={customOf(selectedModelId)}
-          eventName={eventMetadata.name}
-          eventType={selectedEventCategory}
-          shareUrl="https://evenium.com/invite/votre-lien-officiel"
-          isStatic={isStaticCard}
-          onClose={() => setHasChosenModel(false)}
-          onFinalize={() => setIsCheckoutModalOpen(true)}
-          finalizeLabel={`Valider (${currentActualPrice.toLocaleString('fr-FR')} FCFA)`}
-          onSave={(updated) => {
-            if (selectedModelId === VELOURS_MODEL_ID) setVeloursContent(updated as any);
-            else if (selectedModelId === SCEAU_MODEL_ID) setSceauContent(updated as any);
-            else if (selectedModelId === IVOIRE_MODEL_ID) setIvoireContent(updated as any);
-            else if (selectedModelId === ROSE_OR_MODEL_ID) setRoseOrContent(updated as any);
-            else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) setAnniversaireContent(updated as any);
-            else {
-              const m = customOf(selectedModelId);
-              if (m) setCustomContents((all) => ({ ...all, [customModelId(m.slug)]: updated }));
-            }
-          }}
-        />
+        /* ─────────────── 2. TEST & PERSONNALISATION IMMERSIVE AVEC CRAYON (PUIS ACHAT) ─────────────── */
+        <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
+          {/* Barre supérieure luxueuse */}
+          <header className="h-14 sm:h-16 bg-[#13090C] border-b border-black/40 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20">
+            {/* Bouton retour vers la galerie */}
+            <button
+              type="button"
+              onClick={handleReturnToGallery}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/15 transition-all cursor-pointer"
+            >
+              <ArrowLeft size={14} />
+              <span className="hidden sm:inline">Changer de modèle</span>
+            </button>
+
+            {/* Titre & Indication Crayon ✏️ */}
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-[150px] sm:max-w-xs">
+                {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
+              </span>
+              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase">
+                <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
+              </span>
+            </div>
+
+            {/* Bouton Doré d'Achat : Valider & Obtenir mon lien */}
+            <button
+              type="button"
+              onClick={() => setIsCheckoutModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer"
+            >
+              <Lock size={14} className="text-black shrink-0" />
+              <span>Valider &amp; Obtenir mon lien ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
+            </button>
+          </header>
+
+          {/* Corps : Affichage plein écran immersif de l'invitation */}
+          <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0 sm:p-4 lg:p-6">
+            <div className="w-full h-full sm:max-w-[430px] sm:max-h-[880px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#251219] overflow-hidden flex flex-col ring-0 sm:ring-1 sm:ring-white/10 relative">
+              {/* Encoche téléphone élégante visible uniquement sur grand écran */}
+              <div className="hidden sm:flex absolute top-0 left-1/2 -translate-x-1/2 w-32 h-4 bg-[#251219] rounded-b-xl z-30 items-center justify-center">
+                <span className="w-10 h-1 bg-black/40 rounded-full" />
+              </div>
+
+              {/* Iframe avec communication postMessage en temps réel */}
+              <iframe
+                src={previewIframeSrc}
+                title="Aperçu interactif du modèle Evenium"
+                className="w-full h-full border-0 bg-black"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            </div>
+          </main>
+        </div>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}

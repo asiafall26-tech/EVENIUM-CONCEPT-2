@@ -16,7 +16,7 @@ import * as roseOr from "@/components/invitations/rose-or/content";
 import AnniversaireEditorModal from "@/components/invitations/anniversaire/AnniversaireEditorModal";
 import CustomEditorModal from "@/components/invitations/custom/CustomEditorModal";
 import { createClient as createBrowserClient } from "@/utils/supabase/client";
-import { fetchCustomModel, isCustomModelId, slugOfModelId, type CustomModelRow } from "@/lib/customModels";
+import { fetchCustomModel, isCustomModelId, slugOfModelId, customModelUrl, type CustomModelRow } from "@/lib/customModels";
 import * as anniversaire from "@/components/invitations/anniversaire/content";
 import EventQRCode from "@/components/ui/EventQRCode";
 import { createClient } from "@/utils/supabase/client";
@@ -146,6 +146,27 @@ export default function InvitationsDashboardPage({
     if (!isCustomModelId(event?.invitationModelId)) return;
     fetchCustomModel(createBrowserClient(), slugOfModelId(event.invitationModelId)).then(setCustomModel);
   }, [event?.invitationModelId]);
+
+  // Écoute des modifications faites via le crayon intégré pour sauvegarde automatique en base
+  useEffect(() => {
+    const handleContentMessage = async (e: MessageEvent) => {
+      if (!e.data || typeof e.data !== "object") return;
+      if (
+        e.data.type === "evenium:content-change" ||
+        e.data.type === "velours:content" ||
+        e.data.type === "ev:content"
+      ) {
+        const updated = e.data.content || e.data.values;
+        if (updated && event?.id) {
+          const isCustomModel = isCustomModelId(event.invitationModelId);
+          const payload = isCustomModel ? { values: updated } : { ...updated };
+          await updateEventInvitationContent(event.id, payload);
+        }
+      }
+    };
+    window.addEventListener("message", handleContentMessage);
+    return () => window.removeEventListener("message", handleContentMessage);
+  }, [event?.id, event?.invitationModelId, updateEventInvitationContent]);
 
   const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
   const [waCopiedText, setWaCopiedText] = useState(false);
@@ -385,27 +406,58 @@ export default function InvitationsDashboardPage({
       </section>
 
       {isStudioOpen && (
-        <SplitStudioEditor
-          modelId={event.invitationModelId || VELOURS_MODEL_ID}
-          initialContent={
-            isCustom
-              ? ((event.invitationContent as { values?: Record<string, string> } | null)?.values ?? {})
-              : (event.invitationContent ? withDefaults(event.invitationContent) : seedFromEvent(event))
-          }
-          customModel={customModel}
-          eventName={event.name}
-          eventType={event.type}
-          shareUrl={shareUrl}
-          guests={guestsList}
-          isStatic={isStatic}
-          onClose={() => setIsStudioOpen(false)}
-          onSave={async (content) => {
-            const payload = isCustom ? { values: content } : { ...content };
-            await updateEventInvitationContent(event.id, payload);
-          }}
-          onFinalize={() => window.open(shareUrl, "_blank")}
-          finalizeLabel="Voir en direct"
-        />
+        <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
+          <header className="h-14 sm:h-16 bg-[#13090C] border-b border-black/40 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20">
+            <button
+              type="button"
+              onClick={() => setIsStudioOpen(false)}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/15 transition-all cursor-pointer"
+            >
+              <X size={16} />
+              <span>Fermer</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-[150px] sm:max-w-xs">
+                {getModelName()}
+              </span>
+              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase">
+                <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsStudioOpen(false)}
+              className="px-5 py-2 rounded-full bg-[#EBD6B5] hover:bg-[#F3E2C7] active:scale-95 text-[#3C0D16] font-bold text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer"
+            >
+              Terminer
+            </button>
+          </header>
+
+          <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0 sm:p-4 lg:p-6">
+            <div className="w-full h-full sm:max-w-[430px] sm:max-h-[880px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#251219] overflow-hidden flex flex-col ring-0 sm:ring-1 sm:ring-white/10 relative">
+              <iframe
+                src={`${
+                  isCustom && customModel
+                    ? customModelUrl(customModel)
+                    : isSceau
+                    ? "/invitation-sceau-dor"
+                    : isIvoire
+                    ? "/invitation-ivoire"
+                    : isRoseOr
+                    ? "/invitation-rose-or"
+                    : isAnniversaire
+                    ? "/invitation-anniversaire"
+                    : "/invitation-mariage"
+                }?preview=1&canEdit=1&hideCta=1`}
+                title="Personnalisation de l'invitation"
+                className="w-full h-full border-0 bg-black"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            </div>
+          </main>
+        </div>
       )}
 
       {/* Modal de rétablissement de la version originale */}
