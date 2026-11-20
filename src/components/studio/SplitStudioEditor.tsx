@@ -2,24 +2,18 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Sparkles,
-  ArrowLeft,
+  X,
   Check,
   Loader2,
-  Smartphone,
-  Eye,
   SlidersHorizontal,
   MessageSquare,
-  RotateCcw,
-  ExternalLink,
-  ShieldCheck,
-  CheckCircle2,
-  Maximize2
+  Sparkles,
+  Smartphone
 } from "lucide-react";
 import {
   getModelStudioConfig,
   type ModelStudioConfig,
-  type StudioSectionConfig
+  type CustomExtraField
 } from "@/lib/modelStudioConfigs";
 import { StudioSectionAccordion } from "./SplitStudioFields";
 import SendMessagesTab from "./SendMessagesTab";
@@ -48,7 +42,7 @@ export default function SplitStudioEditor({
   onSave,
   onClose,
   onFinalize,
-  finalizeLabel = "Valider l'achat",
+  finalizeLabel = "TERMINER",
   customModel,
   eventName,
   eventType = "Mariage",
@@ -64,15 +58,25 @@ export default function SplitStudioEditor({
     return { ...config.defaultValues, ...initialContent };
   });
 
+  // Champs masqués par l'utilisateur
+  const [hiddenFields, setHiddenFields] = useState<string[]>(() => {
+    return (initialContent?.__hidden_fields as string[]) || [];
+  });
+
+  // Champs personnalisés libres ajoutés par l'utilisateur
+  const [customFields, setCustomFields] = useState<CustomExtraField[]>(() => {
+    return (initialContent?.__custom_fields as CustomExtraField[]) || [];
+  });
+
   // Messages d'accompagnement sauvegardés
   const [savedMessages, setSavedMessages] = useState<string[]>(() => {
     return (initialContent?.__saved_messages as string[]) || [];
   });
 
-  // Onglet mobile : "edit" (Modifier) vs "preview" (Aperçu)
+  // Mode actif : "edit" (MODIFIER) vs "preview" (APERÇU)
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
 
-  // Onglet du panneau gauche : "content" (Champs) vs "messages" (Message d'envoi)
+  // Sous-onglet du panneau gauche : "content" (Champs) vs "messages" (Message d'envoi)
   const [activePanelTab, setActivePanelTab] = useState<"content" | "messages">("content");
 
   // Accordéons ouverts (par défaut, la première section est ouverte)
@@ -159,6 +163,42 @@ export default function SplitStudioEditor({
     });
   };
 
+  // Masquer / démasquer un champ
+  const handleToggleHideField = (fieldId: string) => {
+    setHiddenFields((prev) => {
+      const exists = prev.includes(fieldId);
+      const updated = exists ? prev.filter((id) => id !== fieldId) : [...prev, fieldId];
+      setContent((cPrev) => {
+        const next = { ...cPrev, __hidden_fields: updated };
+        pushUpdateToPreview(next);
+        triggerAutoSave(next);
+        return next;
+      });
+      return updated;
+    });
+  };
+
+  // Ajouter un champ personnalisé libre
+  const handleAddCustomField = (sectionId: string, label: string, value: string) => {
+    const newField: CustomExtraField = {
+      id: `custom_${Date.now()}`,
+      label,
+      value,
+    };
+    const updatedCustom = [...customFields, newField];
+    setCustomFields(updatedCustom);
+    setContent((cPrev) => {
+      const next = {
+        ...cPrev,
+        [newField.id]: newField.value,
+        __custom_fields: updatedCustom,
+      };
+      pushUpdateToPreview(next);
+      triggerAutoSave(next);
+      return next;
+    });
+  };
+
   // Focus sur un champ : défilement et surbrillance or 1,5s dans l'iframe
   const handleFieldFocus = (sectionId: string, fieldId: string) => {
     sendPostMessage({
@@ -193,143 +233,150 @@ export default function SplitStudioEditor({
     handleFieldChange("__saved_messages", updated);
   };
 
+  // Terminer / valider
+  const handleFinish = async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    if (onSave) {
+      try {
+        await onSave(content);
+      } catch (e) {
+        console.error("Erreur à la validation:", e);
+      }
+    }
+    if (onFinalize) {
+      onFinalize();
+    } else if (onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
+    <div className="fixed inset-0 z-50 bg-[#13090C] flex flex-col overflow-hidden font-sans select-none pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
       {/* ───────────────────────────────────────────────────────────────────── */}
-      {/* 1. BARRE SUPÉRIEURE (HEADER UNIFIÉ)                                 */}
+      {/* 1. BARRE SUPÉRIEURE UNIQUE & LUXUEUSE                               */}
+      {/* Exactement identique aux captures d'écran mobiles Evenium            */}
+      {/* [ (X) ]            [ MODIFIER | APERÇU ]               [ TERMINER ]   */}
       {/* ───────────────────────────────────────────────────────────────────── */}
-      <header className="h-14 bg-[#140e0a] border-b border-[#b8924a]/30 px-3 sm:px-5 flex items-center justify-between shrink-0 z-20">
+      <header className="h-14 sm:h-16 bg-[#13090C] border-b border-black/40 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20">
+        {/* Côté gauche : Bouton circulaire (X) + infos modèle sur desktop */}
         <div className="flex items-center gap-3 min-w-0">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/90 text-xs font-semibold border border-white/15 transition-all cursor-pointer"
-            >
-              <ArrowLeft size={14} />
-              <span className="hidden sm:inline">Retour</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onClose || handleFinish}
+            aria-label="Fermer"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-white/90 transition-all cursor-pointer shrink-0"
+          >
+            <X size={18} strokeWidth={2.2} />
+          </button>
 
-          <div className="min-w-0">
-            <h1 className="font-serif text-sm sm:text-base font-bold text-white truncate">
+          <div className="hidden min-[900px]:flex items-center gap-2.5 min-w-0">
+            <span className="font-serif text-sm font-bold text-white tracking-wide truncate">
               {config.modelName}
-            </h1>
-            <p className="text-[11px] text-[#b8924a] hidden md:block">
-              Éditeur en écran partagé · Aperçu interactif en direct
-            </p>
-          </div>
-        </div>
-
-        {/* Indicateur de sauvegarde automatique 800 ms */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs">
+            </span>
             {saveStatus === "saving" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-medium animate-pulse">
-                <Loader2 size={11} className="animate-spin text-amber-300" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-medium animate-pulse">
+                <Loader2 size={10} className="animate-spin text-amber-300" />
                 <span>Enregistrement…</span>
               </span>
             )}
             {saveStatus === "saved" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-medium">
-                <Check size={11} className="text-emerald-400" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-medium">
+                <Check size={10} className="text-emerald-400" />
                 <span>Enregistré</span>
               </span>
             )}
             {saveStatus === "error" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-[11px] font-medium">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-[10px] font-medium">
                 Erreur de sauvegarde
               </span>
             )}
           </div>
+        </div>
 
-          {onFinalize && (
+        {/* Centre : Sélecteur segmenté MODIFIER / APERÇU */}
+        <div className="flex items-center justify-center">
+          <div className="flex items-center bg-[#251219] p-1 rounded-full border border-white/10 shadow-inner">
             <button
               type="button"
-              onClick={onFinalize}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs font-extrabold shadow-md shadow-[#D4AF37]/20 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer"
+              onClick={() => setMobileTab("edit")}
+              className={`px-3.5 sm:px-5 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold tracking-widest uppercase transition-all cursor-pointer ${
+                mobileTab === "edit"
+                  ? "bg-white text-[#13090C] shadow-sm font-bold"
+                  : "text-white/60 hover:text-white"
+              }`}
             >
-              <Sparkles size={14} className="text-black shrink-0" />
-              <span>{finalizeLabel}</span>
+              MODIFIER
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setMobileTab("preview")}
+              className={`px-3.5 sm:px-5 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold tracking-widest uppercase transition-all cursor-pointer ${
+                mobileTab === "preview"
+                  ? "bg-white text-[#13090C] shadow-sm font-bold"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              APERÇU
+            </button>
+          </div>
+        </div>
+
+        {/* Côté droit : Bouton doré TERMINER */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleFinish}
+            className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#EBD6B5] hover:bg-[#F3E2C7] active:scale-95 text-[#3C0D16] font-bold text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer shrink-0"
+          >
+            {finalizeLabel}
+          </button>
         </div>
       </header>
 
       {/* ───────────────────────────────────────────────────────────────────── */}
-      {/* 2. SÉLECTEUR D'ONGLETS SUR TÉLÉPHONE (< 900 px)                      */}
+      {/* 2. CORPS : PANNEAU GAUCHE (MODIFIER) + APERÇU DIRECT (APERÇU)        */}
       {/* ───────────────────────────────────────────────────────────────────── */}
-      <div className="min-[900px]:hidden h-11 bg-[#1a130e] border-b border-[#b8924a]/25 px-2 flex items-center justify-center shrink-0">
-        <div className="grid grid-cols-2 gap-1 w-full max-w-xs bg-black/40 p-1 rounded-xl border border-white/10">
-          <button
-            type="button"
-            onClick={() => setMobileTab("edit")}
-            className={`py-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mobileTab === "edit"
-                ? "bg-[#D4AF37] text-black shadow-xs"
-                : "text-white/70 hover:text-white"
-            }`}
-          >
-            <SlidersHorizontal size={13} />
-            <span>Modifier</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab("preview")}
-            className={`py-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mobileTab === "preview"
-                ? "bg-[#D4AF37] text-black shadow-xs"
-                : "text-white/70 hover:text-white"
-            }`}
-          >
-            <Eye size={13} />
-            <span>Aperçu</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ───────────────────────────────────────────────────────────────────── */}
-      {/* 3. CORPS : PANNEAU 420 px À GAUCHE + APERÇU À DROITE                */}
-      {/* ───────────────────────────────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 flex flex-row overflow-hidden relative">
-        {/* PANNEAU DE CHAMPS (420 px sur ordi ≥ 900 px, pleine largeur sur mobile quand mobileTab === 'edit') */}
+      <div className="flex-1 min-h-0 flex flex-row overflow-hidden relative w-full">
+        {/* PANNEAU DE MODIFICATION (Pleine largeur sur mobile quand mobileTab === 'edit', 420 px sur ordi ≥ 900 px) */}
         <aside
-          className={`w-full min-[900px]:w-[420px] shrink-0 bg-[#fbf9f6] border-r border-[#e6ded5] flex flex-col h-full overflow-hidden z-10 transition-all ${
+          className={`w-full min-[900px]:w-[420px] shrink-0 bg-[#FAF7F2] border-r border-[#E8DFD5] flex flex-col h-full overflow-hidden z-10 transition-all ${
             mobileTab === "edit" ? "flex" : "hidden min-[900px]:flex"
           }`}
         >
-          {/* Onglets du panneau : Contenu vs Message d'envoi */}
-          <div className="p-2.5 bg-white border-b border-gray-200/80 flex items-center gap-1.5 shrink-0">
+          {/* Onglets secondaires du panneau : Contenu de l'invitation vs Messages d'envoi */}
+          <div className="px-4 py-2.5 bg-[#FAF7F2] border-b border-[#E8DFD5] flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setActivePanelTab("content")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-1.5 px-3 rounded-full text-xs font-serif font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 activePanelTab === "content"
-                  ? "bg-[#1b140e] text-white shadow-xs"
-                  : "bg-gray-100/80 text-gray-700 hover:bg-gray-200/80"
+                  ? "bg-[#4A0E1A] text-white shadow-xs"
+                  : "bg-white text-[#4A0E1A] border border-[#E8DFD5] hover:bg-black/[0.02]"
               }`}
             >
-              <SlidersHorizontal size={13} />
-              <span>Contenu de l&apos;invitation</span>
+              <SlidersHorizontal size={12} />
+              <span>Sections</span>
             </button>
             <button
               type="button"
               onClick={() => setActivePanelTab("messages")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-1.5 px-3 rounded-full text-xs font-serif font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 activePanelTab === "messages"
-                  ? "bg-[#1b140e] text-white shadow-xs"
-                  : "bg-gray-100/80 text-gray-700 hover:bg-gray-200/80"
+                  ? "bg-[#4A0E1A] text-white shadow-xs"
+                  : "bg-white text-[#4A0E1A] border border-[#E8DFD5] hover:bg-black/[0.02]"
               }`}
             >
-              <MessageSquare size={13} />
-              <span>Message d&apos;envoi</span>
+              <MessageSquare size={12} />
+              <span>Messages d&apos;envoi</span>
             </button>
           </div>
 
-          {/* Corps défilable du panneau */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
+          {/* Liste des sections en accordéon (COUPLE, DATE, PROGRAMME, DRESS CODE, ITINÉRAIRE, GALERIE, RÉPONSES, MOT DE LA FIN, DONNÉES) */}
+          <div className="flex-1 overflow-y-auto overscroll-contain bg-[#FAF7F2]">
             {activePanelTab === "content" ? (
-              <div className="space-y-2.5">
+              <div className="divide-y divide-[#E8DFD5] border-b border-[#E8DFD5]">
                 {config.sections.map((section) => (
                   <StudioSectionAccordion
                     key={section.id}
@@ -339,49 +386,54 @@ export default function SplitStudioEditor({
                     values={content}
                     onChangeField={handleFieldChange}
                     onFocusField={handleFieldFocus}
+                    hiddenFields={hiddenFields}
+                    onToggleHideField={handleToggleHideField}
+                    onAddCustomField={handleAddCustomField}
                   />
                 ))}
               </div>
             ) : (
-              <SendMessagesTab
-                eventType={eventType}
-                shareUrl={shareUrl}
-                partnerNames={
-                  content.partnerA && content.partnerB
-                    ? `${content.partnerA} & ${content.partnerB}`
-                    : eventName || "Alexandre & Marie"
-                }
-                eventDate={content.date || "15 mai"}
-                eventTime={content.time || "16:00"}
-                eventVenue={content.venue || content.city || "Domaine du Jardin Blanc"}
-                guests={guests}
-                savedMessages={savedMessages}
-                onSaveMessage={handleSaveMessage}
-                onDeleteSavedMessage={handleDeleteSavedMessage}
-              />
+              <div className="p-4">
+                <SendMessagesTab
+                  eventType={eventType}
+                  shareUrl={shareUrl}
+                  partnerNames={
+                    content.partnerA && content.partnerB
+                      ? `${content.partnerA} & ${content.partnerB}`
+                      : eventName || "Alexandre & Marie"
+                  }
+                  eventDate={content.date || "15 mai"}
+                  eventTime={content.time || "16:00"}
+                  eventVenue={content.venue || content.city || "Domaine du Jardin Blanc"}
+                  guests={guests}
+                  savedMessages={savedMessages}
+                  onSaveMessage={handleSaveMessage}
+                  onDeleteSavedMessage={handleDeleteSavedMessage}
+                />
+              </div>
             )}
           </div>
         </aside>
 
-        {/* APERÇU DE L'INVITATION À DROITE (IFRAME INTERACTIVE) */}
+        {/* APERÇU EN DIRECT (Plein écran sur mobile quand mobileTab === 'preview', ou volet droit sur desktop ≥ 900 px) */}
         <main
-          className={`flex-1 h-full bg-[#140e0a] relative flex items-center justify-center overflow-hidden p-0 sm:p-4 lg:p-6 ${
-            mobileTab === "preview" ? "flex" : "hidden min-[900px]:flex"
+          className={`flex-1 h-full bg-[#13090C] relative flex items-center justify-center overflow-hidden ${
+            mobileTab === "preview" ? "flex p-0" : "hidden min-[900px]:flex min-[900px]:p-6"
           }`}
         >
-          {/* Cadre de simulation téléphone élégant et luxueux */}
-          <div className="relative w-full h-full max-w-[430px] sm:max-h-[880px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#2b2118] overflow-hidden flex flex-col ring-1 ring-white/10">
-            {/* Encoche haut de téléphone sur desktop */}
-            <div className="hidden sm:flex absolute top-0 left-1/2 -translate-x-1/2 w-32 h-4 bg-[#2b2118] rounded-b-xl z-30 items-center justify-center">
+          {/* Sur mobile (< 900px) en mode aperçu : 100% de la largeur et hauteur sans bordures parasites */}
+          <div className="w-full h-full min-[900px]:max-w-[430px] min-[900px]:max-h-[880px] bg-black rounded-none min-[900px]:rounded-[40px] shadow-2xl border-0 min-[900px]:border-[8px] min-[900px]:border-[#251219] overflow-hidden flex flex-col ring-0 min-[900px]:ring-1 min-[900px]:ring-white/10 relative">
+            {/* Encoche téléphone élégante visible uniquement sur ordinateur */}
+            <div className="hidden min-[900px]:flex absolute top-0 left-1/2 -translate-x-1/2 w-32 h-4 bg-[#251219] rounded-b-xl z-30 items-center justify-center">
               <span className="w-10 h-1 bg-black/40 rounded-full" />
             </div>
 
-            {/* Iframe avec communication postMessage en temps réel */}
+            {/* Iframe avec communication postMessage en temps réel sans rechargement */}
             <iframe
               ref={frameRef}
               src={previewSrc}
               title="Aperçu interactif de l'invitation Evenium"
-              className="w-full h-full border-0 bg-black"
+              className="w-full h-full border-0 bg-[#13090C]"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
           </div>

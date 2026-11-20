@@ -2,17 +2,17 @@ export interface UploadResult {
   success: boolean;
   url?: string;
   path?: string;
-  type?: "image" | "audio";
+  type?: "image" | "audio" | "video";
   error?: string;
 }
 
 /**
- * Uploads an image or audio file to Supabase Storage via our secure /api/upload endpoint.
+ * Uploads an image, video or audio file to Supabase Storage via our secure /api/upload endpoint.
  * Returns the permanent public CDN URL.
  */
 export async function uploadMedia(
   file: File,
-  folder: "photos" | "music" | "avatars" | "library" = "photos"
+  folder: "photos" | "music" | "avatars" | "library" | "videos" = "photos"
 ): Promise<UploadResult> {
   try {
     const formData = new FormData();

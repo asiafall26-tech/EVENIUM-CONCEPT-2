@@ -14,13 +14,20 @@ export type StudioFieldType =
   | "photo"
   | "gallery"
   | "color"
-  | "programme";
+  | "programme"
+  | "video";
 
 export interface ProgrammeStep {
   time: string;
   label: string; // ou moment
   detail?: string;
   icon?: string;
+}
+
+export interface CustomExtraField {
+  id: string;
+  label: string;
+  value: string;
 }
 
 export interface StudioFieldConfig {
@@ -36,7 +43,7 @@ export interface StudioFieldConfig {
 export interface StudioSectionConfig {
   id: string;
   title: string;
-  icon: string; // nom lucide ou emoji
+  icon?: string;
   desc?: string;
   fields: StudioFieldConfig[];
 }
@@ -50,7 +57,9 @@ export interface ModelStudioConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. CONFIGURATION VELOURS BORDEAUX (Liste FIELDS fidèle au prototype)
+// 1. CONFIGURATION VELOURS BORDEAUX / MARIAGE
+// Sections et intitulés fidèles aux captures d'écran mobiles Evenium :
+// COUPLE, DATE, PROGRAMME, DRESS CODE, ITINÉRAIRE, GALERIE, RÉPONSES, MOT DE LA FIN, DONNÉES
 // ─────────────────────────────────────────────────────────────────────────────
 export const VELOURS_OR_CONFIG: ModelStudioConfig = {
   modelId: VELOURS_MODEL_ID,
@@ -59,132 +68,118 @@ export const VELOURS_OR_CONFIG: ModelStudioConfig = {
   defaultValues: {
     ...DEFAULT_VELOURS,
     familyParents: "Les familles Dupont et Traoré ont l'immense joie de vous annoncer le mariage de leurs enfants.",
-    familyBlessing: "Avec la bénédiction de nos parents et aînés",
+    familyBlessing: "Avec la bénédiction de leurs familles",
+    welcomeTitle: "Célébration de notre union",
+    welcomeText: "Ont l'immense joie de vous convier à la célébration de leur union.",
+    venue: "Le Pavillon des Roses",
+    city: "Dakar",
+    address: "Route de la Corniche Ouest, Dakar",
+    mapsUrl: "https://maps.google.com/?q=Corniche+Ouest+Dakar",
     dressCodeText: "Nous serions ravis que vos tenues s'accordent aux nuances de notre fête :",
     dressColors: ["#5e1622", "#7b5960", "#d4bfa4", "#f1e7da", "#D4AF37"],
-    mapsUrl: "https://maps.google.com",
     gallery: [
       "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80"
     ],
+    videoUrl: "",
     rsvpDeadline: "Avant le 15 mai",
+    rsvpText: "Merci de nous confirmer votre présence pour nous aider à préparer ce moment unique.",
     giftTitle: "Un mot sur les cadeaux",
     giftText: "Votre présence est notre plus beau cadeau. Une urne vous attendra à l'entrée pour vos enveloppes et mots doux.",
-    footerPhoto: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80"
+    closingQuote: "Nous avons hâte de célébrer ce moment inoubliable avec vous ♡",
+    footerPhoto: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80",
+    customNote: ""
   },
   sections: [
     {
       id: "couple",
-      title: "Couple",
-      icon: "HeartHandshake",
-      desc: "Prénoms des futurs époux et phrase d'accroche",
+      title: "COUPLE",
+      desc: "Noms des mariés, accroche et mot d'accueil",
       fields: [
-        { id: "partnerA", label: "Prénom du 1er marié", type: "text", placeholder: "Ex : Alexandre" },
-        { id: "partnerB", label: "Prénom de la mariée", type: "text", placeholder: "Ex : Marie" },
-        { id: "tagline", label: "Phrase d'accroche (Kicker)", type: "text", placeholder: "Deux cœurs, une histoire, pour toujours ♡" },
+        { id: "partnerA", label: "Prénom du 1er marié", type: "text", placeholder: "Ex : Fatou ou Alexandre" },
+        { id: "partnerB", label: "Prénom de la mariée", type: "text", placeholder: "Ex : Ibrahima ou Marie" },
+        { id: "familyBlessing", label: "Bénédiction des familles", type: "text", placeholder: "Avec la bénédiction de leurs familles" },
+        { id: "tagline", label: "Phrase d'accroche", type: "text", placeholder: "Deux cœurs, une histoire, pour toujours ♡" },
+        { id: "welcomeTitle", label: "Titre d'accueil", type: "text", placeholder: "Célébration de notre union" },
+        { id: "welcomeText", label: "Message d'invitation", type: "textarea", placeholder: "Ont l'immense joie de vous convier à la célébration..." },
       ],
     },
     {
       id: "date",
-      title: "Date",
-      icon: "Calendar",
-      desc: "Date du mariage et heure d'accueil des invités",
+      title: "DATE",
+      desc: "Date de célébration et heure d'accueil des invités",
       fields: [
         { id: "date", label: "Date de la cérémonie", type: "date" },
-        { id: "time", label: "Heure d'accueil", type: "time" },
-      ],
-    },
-    {
-      id: "familles",
-      title: "Familles",
-      icon: "Users",
-      desc: "Annonce au nom des familles et bénédiction",
-      fields: [
-        { id: "familyParents", label: "Annonce des familles", type: "textarea", placeholder: "Les familles Dupont et Traoré ont l'immense joie..." },
-        { id: "familyBlessing", label: "Bénédiction ou vœu", type: "text", placeholder: "Avec la bénédiction de nos parents et aînés" },
-      ],
-    },
-    {
-      id: "ceremonie",
-      title: "Cérémonie & soirée",
-      icon: "Sparkles",
-      desc: "Mot d'accueil et lieux de réception",
-      fields: [
-        { id: "welcomeTitle", label: "Titre d'accueil", type: "text", placeholder: "Chers amis & famille !" },
-        { id: "welcomeText", label: "Message de bienvenue", type: "textarea", placeholder: "Nous serions profondément heureux de vous compter parmi nous..." },
-        { id: "venue", label: "Lieu de réception", type: "text", placeholder: "Domaine du Jardin Blanc / Le Pavillon des Roses" },
-        { id: "city", label: "Ville", type: "text", placeholder: "Paris / Dakar" },
+        { id: "time", label: "Heure d'accueil des invités", type: "time" },
       ],
     },
     {
       id: "programme",
-      title: "Programme",
-      icon: "Clock",
+      title: "PROGRAMME",
       desc: "Déroulement chronologique heure par heure",
       fields: [
-        { id: "programme", label: "Étapes de la journée", type: "programme" },
+        { id: "programme", label: "Moments clés de la journée", type: "programme" },
         { id: "programmeQuote", label: "Phrase d'ambiance du programme", type: "text", placeholder: "Ce sera beau, délicieux et inoubliable ! ♡" },
-        { id: "photoProgramme", label: "Photo d'illustration du programme", type: "photo" },
+        { id: "photoProgramme", label: "Photo d'ambiance du programme", type: "photo" },
       ],
     },
     {
       id: "dresscode",
-      title: "Dress code",
-      icon: "Palette",
-      desc: "Consignes vestimentaires et palette de couleurs",
+      title: "DRESS CODE",
+      desc: "Consignes vestimentaires et palette de couleurs personnalisée",
       fields: [
         { id: "dressCodeText", label: "Consignes de tenue", type: "textarea", placeholder: "Nous serions ravis que vos tenues s'accordent aux nuances de notre fête :" },
-        { id: "dressColors", label: "Palette de couleurs recommandées", type: "color" },
+        { id: "dressColors", label: "Nuances & Couleurs du Dress Code", type: "color" },
       ],
     },
     {
       id: "itineraire",
-      title: "Itinéraire",
-      icon: "MapPin",
-      desc: "Adresse exacte et lien GPS pour les invités",
+      title: "ITINÉRAIRE",
+      desc: "Lieu de réception, adresse complète et lien GPS",
       fields: [
+        { id: "venue", label: "Salle de réception", type: "text", placeholder: "Le Pavillon des Roses / Domaine du Jardin Blanc" },
+        { id: "city", label: "Ville", type: "text", placeholder: "Dakar / Paris" },
         { id: "address", label: "Adresse complète", type: "text", placeholder: "Route de la Corniche Ouest, Dakar" },
         { id: "mapsUrl", label: "Lien Google Maps / GPS", type: "text", placeholder: "https://maps.google.com/..." },
       ],
     },
     {
       id: "galerie",
-      title: "Galerie",
-      icon: "Camera",
-      desc: "Jusqu'à 5 photos romantiques du couple",
+      title: "GALERIE",
+      desc: "Photos romantiques et vidéo intégrée",
       fields: [
         { id: "gallery", label: "Photos du couple (max 5)", type: "gallery", max: 5 },
+        { id: "videoUrl", label: "Lien ou fichier vidéo d'invitation (facultatif)", type: "video" },
       ],
     },
     {
       id: "reponses",
-      title: "Réponses",
-      icon: "Mail",
+      title: "RÉPONSES",
       desc: "Date limite de réponse et consignes RSVP",
       fields: [
         { id: "rsvpDeadline", label: "Date limite de confirmation", type: "text", placeholder: "Avant le 15 mai" },
-        { id: "rsvpText", label: "Consignes aux invités", type: "textarea", placeholder: "Merci de nous confirmer votre présence pour nous aider dans l'organisation." },
-      ],
-    },
-    {
-      id: "cadeau",
-      title: "Cadeau",
-      icon: "Gift",
-      desc: "Informations sur l'urne ou la liste de mariage",
-      fields: [
-        { id: "giftTitle", label: "Titre de la section cadeau", type: "text", placeholder: "Un mot sur les cadeaux" },
-        { id: "giftText", label: "Informations urne ou cagnotte", type: "textarea", placeholder: "Votre présence est notre plus beau cadeau. Une urne vous attendra à l'entrée..." },
+        { id: "rsvpText", label: "Consignes aux invités pour le RSVP", type: "textarea", placeholder: "Merci de nous confirmer votre présence pour nous aider dans l'organisation." },
       ],
     },
     {
       id: "fin",
-      title: "Mot de la fin",
-      icon: "Quote",
-      desc: "Citation de clôture et photo finale",
+      title: "MOT DE LA FIN",
+      desc: "Signature, mot de clôture et espace cadeaux",
       fields: [
-        { id: "closingQuote", label: "Citation ou mot de fin", type: "text", placeholder: "Les petits moments créent les grands souvenirs ♡" },
+        { id: "closingQuote", label: "Citation ou mot de clôture", type: "text", placeholder: "Les petits moments créent les grands souvenirs ♡" },
         { id: "footerPhoto", label: "Photo de fin", type: "photo" },
+        { id: "giftTitle", label: "Titre de l'espace cadeaux", type: "text", placeholder: "Un mot sur les cadeaux" },
+        { id: "giftText", label: "Informations urne ou cagnotte", type: "textarea", placeholder: "Votre présence est notre plus beau cadeau. Une urne vous attendra à l'entrée..." },
+      ],
+    },
+    {
+      id: "donnees",
+      title: "DONNÉES",
+      desc: "Musique d'ambiance et champs libres personnalisés",
+      fields: [
+        { id: "audioTitle", label: "Titre de la musique d'ouverture", type: "text", placeholder: "Bande sonore d'ouverture" },
+        { id: "customNote", label: "Informations pratiques supplémentaires", type: "textarea", placeholder: "Hébergement, navettes, parking, consignes particulières..." },
       ],
     },
   ],
@@ -201,8 +196,8 @@ export const SCEAU_DOR_CONFIG: ModelStudioConfig = {
   sections: [
     {
       id: "couple",
-      title: "Les Mariés",
-      icon: "HeartHandshake",
+      title: "COUPLE & SCEAU",
+      desc: "Prénoms et initiale du cachet de cire",
       fields: [
         { id: "partnerA", label: "Prénom du 1er hôte", type: "text" },
         { id: "partnerB", label: "Prénom du 2nd hôte", type: "text" },
@@ -211,17 +206,34 @@ export const SCEAU_DOR_CONFIG: ModelStudioConfig = {
     },
     {
       id: "date",
-      title: "Date & Horaires",
-      icon: "Calendar",
+      title: "DATE & HORAIRES",
+      desc: "Date et heure de la célébration",
       fields: [
-        { id: "date", label: "Date", type: "date" },
+        { id: "date", label: "Date de célébration", type: "date" },
         { id: "time", label: "Heure d'accueil", type: "time" },
       ],
     },
     {
-      id: "ceremonie",
-      title: "Lieux & Accès",
-      icon: "MapPin",
+      id: "programme",
+      title: "PROGRAMME",
+      desc: "Déroulement chronologique",
+      fields: [
+        { id: "programme", label: "Moments du jour", type: "programme" },
+      ],
+    },
+    {
+      id: "dresscode",
+      title: "DRESS CODE",
+      desc: "Palette de couleurs et style vestimentaire",
+      fields: [
+        { id: "dressCodeText", label: "Consignes de tenue", type: "textarea" },
+        { id: "dressColors", label: "Nuances recommandées", type: "color" },
+      ],
+    },
+    {
+      id: "itineraire",
+      title: "ITINÉRAIRE",
+      desc: "Lieu et itinéraire GPS",
       fields: [
         { id: "venue", label: "Lieu de réception", type: "text" },
         { id: "city", label: "Ville", type: "text" },
@@ -229,29 +241,20 @@ export const SCEAU_DOR_CONFIG: ModelStudioConfig = {
       ],
     },
     {
-      id: "programme",
-      title: "Programme",
-      icon: "Clock",
-      fields: [
-        { id: "programme", label: "Déroulement", type: "programme" },
-      ],
-    },
-    {
-      id: "dresscode",
-      title: "Dress Code",
-      icon: "Palette",
-      fields: [
-        { id: "dressCodeText", label: "Consignes de tenue", type: "textarea" },
-        { id: "dressColors", label: "Palette de couleurs", type: "color" },
-      ],
-    },
-    {
       id: "reponses",
-      title: "Confirmation RSVP",
-      icon: "Mail",
+      title: "RÉPONSES",
+      desc: "Confirmation RSVP des convives",
       fields: [
         { id: "rsvpDeadline", label: "Date limite", type: "text" },
-        { id: "rsvpText", label: "Message RSVP", type: "textarea" },
+        { id: "rsvpText", label: "Consignes de confirmation", type: "textarea" },
+      ],
+    },
+    {
+      id: "donnees",
+      title: "DONNÉES",
+      desc: "Informations additionnelles",
+      fields: [
+        { id: "customNote", label: "Note supplémentaire", type: "textarea" },
       ],
     },
   ],
@@ -268,8 +271,8 @@ export const IVOIRE_CONFIG: ModelStudioConfig = {
   sections: [
     {
       id: "couple",
-      title: "Hôtes & Titre",
-      icon: "HeartHandshake",
+      title: "COUPLE",
+      desc: "Noms des hôtes et phrase d'accueil",
       fields: [
         { id: "partnerA", label: "Prénom de l'époux", type: "text" },
         { id: "partnerB", label: "Prénom de l'épouse", type: "text" },
@@ -278,8 +281,8 @@ export const IVOIRE_CONFIG: ModelStudioConfig = {
     },
     {
       id: "date",
-      title: "Date & Cérémonie",
-      icon: "Calendar",
+      title: "DATE & LIEU",
+      desc: "Calendrier et adresse",
       fields: [
         { id: "date", label: "Date", type: "date" },
         { id: "time", label: "Heure", type: "time" },
@@ -289,25 +292,25 @@ export const IVOIRE_CONFIG: ModelStudioConfig = {
     },
     {
       id: "programme",
-      title: "Programme",
-      icon: "Clock",
+      title: "PROGRAMME",
+      desc: "Déroulement de la journée",
       fields: [
         { id: "programme", label: "Programme de la journée", type: "programme" },
       ],
     },
     {
       id: "dresscode",
-      title: "Dress Code & Couleurs",
-      icon: "Palette",
+      title: "DRESS CODE",
+      desc: "Nuances et style recommandés",
       fields: [
         { id: "dressCodeText", label: "Recommandations de tenues", type: "textarea" },
-        { id: "dressColors", label: "Couleurs suggérées", type: "color" },
+        { id: "dressColors", label: "Palette de couleurs", type: "color" },
       ],
     },
     {
       id: "reponses",
-      title: "Réponses",
-      icon: "Mail",
+      title: "RÉPONSES",
+      desc: "Confirmation RSVP",
       fields: [
         { id: "rsvpText", label: "Consignes RSVP", type: "textarea" },
       ],
@@ -326,8 +329,8 @@ export const ROSE_OR_CONFIG: ModelStudioConfig = {
   sections: [
     {
       id: "couple",
-      title: "Les Mariés",
-      icon: "HeartHandshake",
+      title: "COUPLE",
+      desc: "Les mariés et citation poétique",
       fields: [
         { id: "partnerA", label: "Prénom 1", type: "text" },
         { id: "partnerB", label: "Prénom 2", type: "text" },
@@ -336,8 +339,8 @@ export const ROSE_OR_CONFIG: ModelStudioConfig = {
     },
     {
       id: "date",
-      title: "Date & Lieux",
-      icon: "Calendar",
+      title: "DATE & LIEU",
+      desc: "Date, horaires et accès",
       fields: [
         { id: "date", label: "Date de célébration", type: "date" },
         { id: "time", label: "Heure", type: "time" },
@@ -348,16 +351,16 @@ export const ROSE_OR_CONFIG: ModelStudioConfig = {
     },
     {
       id: "programme",
-      title: "Programme",
-      icon: "Clock",
+      title: "PROGRAMME",
+      desc: "Moments clés de la fête",
       fields: [
         { id: "programme", label: "Moments clés", type: "programme" },
       ],
     },
     {
       id: "reponses",
-      title: "RSVP",
-      icon: "Mail",
+      title: "RÉPONSES",
+      desc: "Confirmation RSVP",
       fields: [
         { id: "rsvpText", label: "Message de confirmation", type: "textarea" },
       ],
@@ -376,8 +379,8 @@ export const ANNIVERSAIRE_CONFIG: ModelStudioConfig = {
   sections: [
     {
       id: "hero",
-      title: "Hôte & Âge",
-      icon: "Sparkles",
+      title: "HÔTE & FÊTE",
+      desc: "Prénom, âge et phrase de fête",
       fields: [
         { id: "name", label: "Prénom de l'hôte", type: "text" },
         { id: "age", label: "Âge célébré", type: "text" },
@@ -387,8 +390,8 @@ export const ANNIVERSAIRE_CONFIG: ModelStudioConfig = {
     },
     {
       id: "date",
-      title: "Date & Fête",
-      icon: "Calendar",
+      title: "DATE & HEURE",
+      desc: "Date et lieu de la fête",
       fields: [
         { id: "date", label: "Date", type: "date" },
         { id: "time", label: "Heure", type: "time" },
@@ -398,18 +401,26 @@ export const ANNIVERSAIRE_CONFIG: ModelStudioConfig = {
     },
     {
       id: "programme",
-      title: "Programme",
-      icon: "Clock",
+      title: "PROGRAMME",
+      desc: "Déroulement de la soirée",
       fields: [
         { id: "programme", label: "Déroulement de la soirée", type: "programme" },
       ],
     },
     {
       id: "reponses",
-      title: "RSVP",
-      icon: "Mail",
+      title: "RÉPONSES",
+      desc: "Confirmation des invités",
       fields: [
         { id: "rsvpText", label: "Consignes de confirmation", type: "textarea" },
+      ],
+    },
+    {
+      id: "donnees",
+      title: "DONNÉES",
+      desc: "Informations pratiques",
+      fields: [
+        { id: "customNote", label: "Note aux invités", type: "textarea" },
       ],
     },
   ],
@@ -433,14 +444,13 @@ export function getModelStudioConfig(
   // Si c'est un modèle importé (custom model)
   if (customModel) {
     const fields = customModel.fields || [];
-    // Regroupement intelligent par type ou sections
     const textFields: StudioFieldConfig[] = [];
     const mediaFields: StudioFieldConfig[] = [];
     const dateFields: StudioFieldConfig[] = [];
     const otherFields: StudioFieldConfig[] = [];
 
     fields.forEach((f) => {
-      const type = f.type === "image" ? "photo" : f.multiline ? "textarea" : "text";
+      const type: StudioFieldType = f.type === "image" ? "photo" : f.multiline ? "textarea" : "text";
       const config: StudioFieldConfig = {
         id: f.id,
         label: f.label || f.id,
@@ -464,9 +474,8 @@ export function getModelStudioConfig(
     const sections: StudioSectionConfig[] = [];
     if (otherFields.length) {
       sections.push({
-        id: "essentiel",
-        title: "Informations Clés",
-        icon: "HeartHandshake",
+        id: "couple",
+        title: "INFORMATIONS",
         desc: "Prénoms, titres et accroches",
         fields: otherFields,
       });
@@ -474,8 +483,7 @@ export function getModelStudioConfig(
     if (dateFields.length) {
       sections.push({
         id: "date",
-        title: "Date & Lieux",
-        icon: "Calendar",
+        title: "DATE & LIEU",
         desc: "Date, horaires et accès",
         fields: dateFields,
       });
@@ -483,18 +491,16 @@ export function getModelStudioConfig(
     if (textFields.length) {
       sections.push({
         id: "messages",
-        title: "Textes & Messages",
-        icon: "Quote",
+        title: "TEXTES & MESSAGES",
         desc: "Messages personnalisés et citations",
         fields: textFields,
       });
     }
     if (mediaFields.length) {
       sections.push({
-        id: "photos",
-        title: "Photos & Visuels",
-        icon: "Camera",
-        desc: "Images et arrière-plans",
+        id: "galerie",
+        title: "PHOTOS & VISUELS",
+        desc: "Images et médias",
         fields: mediaFields,
       });
     }
@@ -511,8 +517,7 @@ export function getModelStudioConfig(
       sections: sections.length ? sections : [
         {
           id: "general",
-          title: "Personnalisation",
-          icon: "Sparkles",
+          title: "PERSONNALISATION",
           fields: fields.map((f) => ({
             id: f.id,
             label: f.label || f.id,
