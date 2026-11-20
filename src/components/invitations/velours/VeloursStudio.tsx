@@ -1,6 +1,8 @@
 "use client";
 
 import StudioShell from "../StudioShell";
+import StudioSectionCard from "../StudioSectionCard";
+import ToneSelector from "../ToneSelector";
 import { builtInSections, sectionsOf } from "@/lib/invitationSections";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ImagePlus, Play, Plus, Trash2, Loader2, Music, UploadCloud, Pause, CheckCircle, HeartHandshake, BookHeart, Clock, Camera, MapPin, Quote, Sparkles } from "lucide-react";
@@ -335,32 +337,32 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
       value.programme.map((p, idx) => (idx === i ? { ...p, ...patch } : p)),
     );
 
-  type VeloursMenuKey = "general" | "texts" | "programme" | "media" | "rsvp" | "all";
-  const [activeMenu, setActiveMenu] = useState<VeloursMenuKey>("general");
+  type VeloursMenuKey = "hero" | "welcome" | "story" | "details" | "programme" | "rsvp" | "media" | "all";
+  const [activeMenu, setActiveMenu] = useState<VeloursMenuKey>("hero");
+
+  const hiddenSecs = value.__hidden ?? [];
+  const isHidden = (key: string) => hiddenSecs.includes(key);
+  const toggleSec = (key: string) => {
+    const next = isHidden(key) ? hiddenSecs.filter((k) => k !== key) : [...hiddenSecs, key];
+    onChange({ ...value, __hidden: next });
+  };
 
   const MENUS = [
-    { id: "general" as const, label: "Les Mariés & la Date", shortLabel: "Mariés & Date", icon: HeartHandshake, desc: "Prénoms, date, lieu et adresse" },
-    { id: "texts" as const, label: "Textes & Histoire", shortLabel: "Textes & Récit", icon: BookHeart, desc: "Messages d'accueil et récit de votre histoire" },
-    { id: "programme" as const, label: "Programme du Jour J", shortLabel: "Programme", icon: Clock, badge: value.programme.length, desc: "Étapes et horaires de la journée" },
-    {
-      id: "media" as const,
-      label: isStatic ? "Photos de l'invitation" : "Photos & Musique",
-      shortLabel: isStatic ? "Photos" : "Photos & Musique",
-      icon: Camera,
-      desc: isStatic ? "Photos des sections (sans musique sur carte statique)" : "Photos des sections et musique d'ambiance"
-    },
-    { id: "rsvp" as const, label: "Confirmation (RSVP)", shortLabel: "RSVP & Fin", icon: Quote, desc: "Consignes de réponse et mot de clôture" },
+    { id: "hero" as const, label: "1. Couverture & Mariés", shortLabel: "Couverture", icon: HeartHandshake, desc: "Prénoms des hôtes et phrase d'accroche", muted: isHidden("hero") },
+    { id: "welcome" as const, label: "2. Mot d'accueil", shortLabel: "Accueil", icon: Sparkles, desc: "Titre et message d'accueil avec tonalités en 1 clic", muted: isHidden("welcome") },
+    { id: "story" as const, label: "3. Notre Histoire", shortLabel: "Histoire", icon: BookHeart, desc: "Récit, citation d'amour et photo du couple", muted: isHidden("story") },
+    { id: "details" as const, label: "4. Date, Lieux & Accès", shortLabel: "Lieux & Date", icon: MapPin, desc: "Date, horaires, adresse et carte interactive", muted: isHidden("details") },
+    { id: "programme" as const, label: "5. Programme du Jour J", shortLabel: "Programme", icon: Clock, badge: value.programme.length, desc: "Déroulé heure par heure et photo du programme", muted: isHidden("programme") },
+    { id: "rsvp" as const, label: "6. Confirmation (RSVP)", shortLabel: "RSVP & Fin", icon: Quote, desc: "Consignes de réponse, date limite et mot de fin", muted: isHidden("rsvp") },
+    ...(!isStatic ? [{ id: "media" as const, label: "7. Musique d'ambiance", shortLabel: "Musique", icon: Music, desc: "Bande sonore d'ouverture" }] : []),
   ];
-
-  const currentMenuIndex = MENUS.findIndex((m) => m.id === activeMenu);
-
 
   return (
     <StudioShell
       title="Velours Bordeaux"
-      subtitle={"Renseignez et personnalisez les informations de votre événement ci-dessous."}
+      subtitle="Personnalisez chaque section et son intitulé ci-dessous pour composer votre invitation."
       demoUrl="/invitation-mariage"
-      menus={MENUS.map((m) => ({ id: m.id, label: String(("shortLabel" in m && m.shortLabel) || m.label), icon: m.icon, badge: "badge" in m ? m.badge : undefined }))}
+      menus={MENUS.map((m) => ({ id: m.id, label: String(("shortLabel" in m && m.shortLabel) || m.label), icon: m.icon, badge: "badge" in m ? m.badge : undefined, muted: m.muted }))}
       active={activeMenu}
       onActive={(id) => setActiveMenu(id as never)}
       onViewFullScreen={onViewFullScreen}
@@ -371,204 +373,229 @@ export default function VeloursStudio({ value, onChange, onViewFullScreen, onFin
         onChange: (st) => onChange({ ...value, __hidden: st.hidden, __rubriques: st.rubriques }),
       }}
     >
-            {/* 1. Mariés & Date */}
-            {(activeMenu === "general" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#5c0f21]/10 text-[#5c0f21] flex items-center justify-center font-bold text-xs">
-                      1
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Les Mariés &amp; la Date</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Prénoms affichés au cœur de l'invitation, date et lieu de réception.</p>
-                </div>
+      {/* 1. Couverture & Mariés */}
+      {(activeMenu === "hero" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={1}
+          icon={HeartHandshake}
+          title="Section 1 : Couverture & Les Mariés"
+          desc="Prénoms affichés au cœur de l'invitation et phrase d'accroche de bienvenue"
+          isHidden={isHidden("hero")}
+          onToggleHide={() => toggleSec("hero")}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+            <Field label="Prénom du 1er marié">
+              <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} placeholder="Ex : Alexandre" />
+            </Field>
+            <Field label="Prénom du 2nd marié">
+              <input className={inputCls} value={value.partnerB} onChange={(e) => set("partnerB", e.target.value)} placeholder="Ex : Marie" />
+            </Field>
+          </div>
+          <Field label="Intitulé de la couverture (Phrase d'accroche)" hint="S'affiche élégamment sur la couverture au-dessus des prénoms">
+            <input className={inputCls} value={value.tagline} onChange={(e) => set("tagline", e.target.value)} placeholder="Ex : Deux cœurs, une histoire, pour toujours ♡" />
+          </Field>
+        </StudioSectionCard>
+      )}
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
-                    <Field label="Prénom du 1er marié">
-                      <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
-                    </Field>
-                    <Field label="Prénom du 2nd marié">
-                      <input className={inputCls} value={value.partnerB} onChange={(e) => set("partnerB", e.target.value)} />
-                    </Field>
-                  </div>
-                  <Field label="Phrase d'accroche" hint="Ex : « Nous allons nous dire oui »">
-                    <input className={inputCls} value={value.tagline} onChange={(e) => set("tagline", e.target.value)} />
-                  </Field>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
-                    <Field label="Date de l'événement">
-                      <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
-                    </Field>
-                    <Field label="Heure d'accueil">
-                      <input type="time" className={inputCls} value={value.time} onChange={(e) => set("time", e.target.value)} />
-                    </Field>
-                  </div>
-                  <Field label="Ville">
-                    <input className={inputCls} value={value.city} onChange={(e) => set("city", e.target.value)} />
-                  </Field>
-                  <Field label="Lieu de réception">
-                    <input className={inputCls} value={value.venue} onChange={(e) => set("venue", e.target.value)} />
-                  </Field>
-                  <Field label="Adresse complète" hint="Utilisée pour le bouton « Voir sur la carte ».">
-                    <input className={inputCls} value={value.address} onChange={(e) => set("address", e.target.value)} />
-                  </Field>
-                </div>
-              </section>
-            )}
+      {/* 2. Mot d'accueil & Message */}
+      {(activeMenu === "welcome" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={2}
+          icon={Sparkles}
+          title="Section 2 : Mot d'accueil & Message"
+          desc="Titre de bienvenue et message chaleureux partagé avec vos convives"
+          isHidden={isHidden("welcome")}
+          onToggleHide={() => toggleSec("welcome")}
+        >
+          <Field label="Intitulé de la section (Titre d'accueil)" hint="Le titre affiché en grand pour introduire votre message">
+            <input className={inputCls} value={value.welcomeTitle} onChange={(e) => set("welcomeTitle", e.target.value)} placeholder="Ex : Chers amis & famille !" />
+          </Field>
 
-            {/* 2. Textes & Histoire */}
-            {(activeMenu === "texts" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#5c0f21]/10 text-[#5c0f21] flex items-center justify-center font-bold text-xs">
-                      2
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Textes d'Accueil &amp; Notre Histoire</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Mots de bienvenue et récit romantique partagés avec vos convives.</p>
-                </div>
+          {/* Tonalités d'inspirations prêtes à l'emploi */}
+          <ToneSelector
+            currentText={value.welcomeText}
+            onSelect={(t) => onChange({ ...value, welcomeTitle: t.welcomeTitle, welcomeText: t.welcomeText })}
+          />
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <Field label="Titre d'accueil">
-                    <input className={inputCls} value={value.welcomeTitle} onChange={(e) => set("welcomeTitle", e.target.value)} />
-                  </Field>
-                  <Field label="Message d'accueil">
-                    <textarea rows={4} className={`${inputCls} min-h-[110px] resize-y`} value={value.welcomeText} onChange={(e) => set("welcomeText", e.target.value)} />
-                  </Field>
-                  <Field label="Notre histoire">
-                    <textarea rows={5} className={`${inputCls} min-h-[140px] resize-y`} value={value.storyText} onChange={(e) => set("storyText", e.target.value)} />
-                  </Field>
-                  <Field label="Citation (histoire)">
-                    <input className={inputCls} value={value.storyQuote} onChange={(e) => set("storyQuote", e.target.value)} />
-                  </Field>
-                </div>
-              </section>
-            )}
+          <Field label="Message d'accueil (Corps de l'invitation)">
+            <textarea
+              rows={4}
+              className={`${inputCls} min-h-[110px] resize-y`}
+              value={value.welcomeText}
+              onChange={(e) => set("welcomeText", e.target.value)}
+              placeholder="Rédigez votre mot d'accueil ou choisissez une tonalité ci-dessus..."
+            />
+          </Field>
+        </StudioSectionCard>
+      )}
 
-            {/* 3. Programme */}
-            {(activeMenu === "programme" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#5c0f21]/10 text-[#5c0f21] flex items-center justify-center font-bold text-xs">
-                      3
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Programme du Jour J ({value.programme.length} étapes)</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Déroulé chronologique heure par heure pour rythmer votre journée.</p>
-                </div>
+      {/* 3. Notre Histoire & Récit */}
+      {(activeMenu === "story" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={3}
+          icon={BookHeart}
+          title="Section 3 : Notre Histoire & Récit"
+          desc="Votre histoire d'amour, citation poétique et photo d'illustration"
+          isHidden={isHidden("story")}
+          onToggleHide={() => toggleSec("story")}
+        >
+          <Field label="Intitulé de la section (Citation ou Titre)" hint="Personnalisable (ex: « Notre Histoire », « Notre Rencontre », ou une citation d'amour)">
+            <input className={inputCls} value={value.storyQuote} onChange={(e) => set("storyQuote", e.target.value)} placeholder="Ex : L'amour — notre plus belle aventure ♡" />
+          </Field>
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="space-y-2.5">
-                    {value.programme.map((p, i) => (
-                      <div key={i} className="flex gap-2 items-center bg-white p-3 rounded-xl border border-gray-200 shadow-xs">
-                        <input
-                          type="time"
-                          className={`${inputCls} !w-28 shrink-0`}
-                          value={p.time}
-                          onChange={(e) => updateProgramme(i, { time: e.target.value })}
-                        />
-                        <input
-                          className={inputCls}
-                          value={p.label}
-                          placeholder="Ex : Cérémonie"
-                          onChange={(e) => updateProgramme(i, { label: e.target.value })}
-                        />
-                        <button
-                          type="button"
-                          aria-label="Supprimer l'étape"
-                          onClick={() => set("programme", value.programme.filter((_, idx) => idx !== i))}
-                          className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+          <Field label="Récit de votre histoire">
+            <textarea
+              rows={4}
+              className={`${inputCls} min-h-[110px] resize-y`}
+              value={value.storyText}
+              onChange={(e) => set("storyText", e.target.value)}
+              placeholder="Partagez quelques lignes sur votre belle rencontre..."
+            />
+          </Field>
 
-                  <button
-                    type="button"
-                    onClick={() => set("programme", [...value.programme, { time: "", label: "" }])}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#5c0f21]/30 text-sm font-semibold text-[#5c0f21] hover:bg-[#5c0f21]/5 transition-colors"
-                  >
-                    <Plus size={16} /> Ajouter une étape au programme
-                  </button>
+          <PhotoField label="Photo « Notre Histoire »" value={value.photoStory} onChange={(v) => set("photoStory", v)} />
+        </StudioSectionCard>
+      )}
 
-                  <Field label="Citation du programme">
-                    <input className={inputCls} value={value.programmeQuote} onChange={(e) => set("programmeQuote", e.target.value)} />
-                  </Field>
-                </div>
-              </section>
-            )}
+      {/* 4. Date, Lieux & Accès */}
+      {(activeMenu === "details" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={4}
+          icon={MapPin}
+          title="Section 4 : Date, Lieux & Accès"
+          desc="Calendrier, horaires, lieu de réception et adresse avec bouton GPS"
+          isHidden={isHidden("details")}
+          onToggleHide={() => toggleSec("details")}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+            <Field label="Date de l'événement">
+              <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
+            </Field>
+            <Field label="Heure d'accueil">
+              <input type="time" className={inputCls} value={value.time} onChange={(e) => set("time", e.target.value)} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+            <Field label="Ville">
+              <input className={inputCls} value={value.city} onChange={(e) => set("city", e.target.value)} placeholder="Ex : Paris" />
+            </Field>
+            <Field label="Lieu de réception">
+              <input className={inputCls} value={value.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Ex : Domaine du Jardin Blanc" />
+            </Field>
+          </div>
+          <Field label="Adresse complète" hint="Utilisée directement pour le bouton GPS « Voir sur la carte »">
+            <input className={inputCls} value={value.address} onChange={(e) => set("address", e.target.value)} placeholder="Ex : 20 rue des Lilas, 75000 Paris" />
+          </Field>
+        </StudioSectionCard>
+      )}
 
-            {/* 4. Photos & Musique */}
-            {(activeMenu === "media" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#5c0f21]/10 text-[#5c0f21] flex items-center justify-center font-bold text-xs">
-                      4
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">
-                      {isStatic ? "Photos de l'Invitation" : "Photos & Musique d'Ambiance"}
-                    </h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {isStatic
-                      ? "Illustrations et photos des sections pour votre carte statique."
-                      : "Illustrations et bande sonore lancée automatiquement à l'ouverture."}
-                  </p>
-                </div>
+      {/* 5. Programme du Jour J */}
+      {(activeMenu === "programme" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={5}
+          icon={Clock}
+          title={`Section 5 : Programme du Jour J (${value.programme.length} étapes)`}
+          desc="Déroulement chronologique heure par heure pour rythmer votre journée"
+          badge={<span className="text-[11px] bg-[#5c0f21]/10 text-[#5c0f21] px-2.5 py-0.5 rounded-full font-bold">{value.programme.length} étape(s)</span>}
+          isHidden={isHidden("programme")}
+          onToggleHide={() => toggleSec("programme")}
+        >
+          <Field label="Intitulé du programme (Sous-titre ou Citation)" hint="Ex : « Déroulé de la journée », « Ce sera beau, délicieux et inoubliable ! »">
+            <input className={inputCls} value={value.programmeQuote} onChange={(e) => set("programmeQuote", e.target.value)} placeholder="Ex : Ce sera beau, délicieux et inoubliable ! ♡" />
+          </Field>
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <PhotoField label="Photo « Notre histoire »" value={value.photoStory} onChange={(v) => set("photoStory", v)} />
-                  <PhotoField label="Photo « Programme »" value={value.photoProgramme} onChange={(v) => set("photoProgramme", v)} />
-                  {isStatic ? (
-                    <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
-                      <span className="text-base">🔇</span>
-                      <div>
-                        <p className="font-bold text-amber-950">Option audio désactivée (Format Carte Statique)</p>
-                        <p className="mt-0.5 text-amber-800 leading-relaxed">
-                          Votre événement est configuré au format <strong>Carte statique classique</strong>. Les cartes statiques sont conçues pour être purement visuelles et ne comportent aucun lecteur audio ni son d&apos;ambiance.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <AudioField
-                      label="Musique d'ouverture (Fichier audio MP3/WAV)"
-                      value={{ url: value.audioUrl ?? "", title: value.audioTitle ?? "", start: value.audioStart ?? 0, end: value.audioEnd ?? 0 }}
-                      onChange={(a) => onChange({ ...value, audioUrl: a.url, audioTitle: a.title, audioStart: a.start, audioEnd: a.end })}
-                    />
-                  )}
-                </div>
-              </section>
-            )}
+          <div className="space-y-2.5">
+            <span className="block text-xs font-semibold text-gray-700">Étapes de la journée</span>
+            {value.programme.map((p, i) => (
+              <div key={i} className="flex gap-2 items-center bg-gray-50/80 p-3 rounded-xl border border-gray-200 shadow-2xs">
+                <input
+                  type="time"
+                  className={`${inputCls} !w-28 shrink-0 !bg-white`}
+                  value={p.time}
+                  onChange={(e) => updateProgramme(i, { time: e.target.value })}
+                />
+                <input
+                  className={`${inputCls} !bg-white`}
+                  value={p.label}
+                  placeholder="Ex : Cérémonie"
+                  onChange={(e) => updateProgramme(i, { label: e.target.value })}
+                />
+                <button
+                  type="button"
+                  aria-label="Supprimer l'étape"
+                  onClick={() => set("programme", value.programme.filter((_, idx) => idx !== i))}
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
 
-            {/* 5. RSVP & Clôture */}
-            {(activeMenu === "rsvp" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#5c0f21]/10 text-[#5c0f21] flex items-center justify-center font-bold text-xs">
-                      5
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Confirmation (RSVP) &amp; Mot de Clôture</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Consignes adressées à vos invités et signature finale.</p>
-                </div>
+          <button
+            type="button"
+            onClick={() => set("programme", [...value.programme, { time: "", label: "" }])}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#5c0f21]/30 text-xs font-semibold text-[#5c0f21] hover:bg-[#5c0f21]/5 transition-colors cursor-pointer"
+          >
+            <Plus size={15} /> Ajouter une étape au programme
+          </button>
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <Field label="Texte de confirmation (RSVP)">
-                    <textarea rows={2} className={`${inputCls} resize-none`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
-                  </Field>
-                  <Field label="Phrase de fin">
-                    <input className={inputCls} value={value.closingQuote} onChange={(e) => set("closingQuote", e.target.value)} />
-                  </Field>
-                </div>
-              </section>
-            )}
-          </StudioShell>
+          <PhotoField label="Photo d'ambiance « Programme »" value={value.photoProgramme} onChange={(v) => set("photoProgramme", v)} />
+        </StudioSectionCard>
+      )}
+
+      {/* 6. Confirmation (RSVP) & Mot de fin */}
+      {(activeMenu === "rsvp" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={6}
+          icon={Quote}
+          title="Section 6 : Confirmation (RSVP) & Mot de clôture"
+          desc="Consignes de réponse adressées aux invités et signature finale"
+          isHidden={isHidden("rsvp")}
+          onToggleHide={() => toggleSec("rsvp")}
+        >
+          <Field label="Consignes de réponse (RSVP)" hint="Précisez la date limite ou la façon dont vos convives doivent vous répondre">
+            <textarea
+              rows={2}
+              className={`${inputCls} resize-none`}
+              value={value.rsvpText}
+              onChange={(e) => set("rsvpText", e.target.value)}
+              placeholder="Ex : Merci de nous confirmer votre présence avant le 1er mai..."
+            />
+          </Field>
+          <Field label="Intitulé de fin (Signature ou Citation de clôture)">
+            <input className={inputCls} value={value.closingQuote} onChange={(e) => set("closingQuote", e.target.value)} placeholder="Ex : Les petits moments créent les grands souvenirs" />
+          </Field>
+        </StudioSectionCard>
+      )}
+
+      {/* 7. Musique d'ambiance */}
+      {(activeMenu === "media" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={7}
+          icon={Music}
+          title={isStatic ? "Section 7 : Mode Carte Statique" : "Section 7 : Musique d'Ambiance"}
+          desc={isStatic ? "Format visuel pur sans musique" : "Piste sonore lancée à l'ouverture avec découpe et volume"}
+        >
+          {isStatic ? (
+            <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
+              <span className="text-base">🔇</span>
+              <div>
+                <p className="font-bold text-amber-950">Option audio désactivée (Format Carte Statique)</p>
+                <p className="mt-0.5 text-amber-800 leading-relaxed">
+                  Votre invitation est configurée au format <strong>Carte statique classique</strong>. Ce format est conçu pour être purement visuel sans lecteur audio.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <AudioField
+              label="Musique d'ouverture (Fichier audio MP3/WAV)"
+              value={{ url: value.audioUrl ?? "", title: value.audioTitle ?? "", start: value.audioStart ?? 0, end: value.audioEnd ?? 0 }}
+              onChange={(a) => onChange({ ...value, audioUrl: a.url, audioTitle: a.title, audioStart: a.start, audioEnd: a.end })}
+            />
+          )}
+        </StudioSectionCard>
+      )}
+    </StudioShell>
   );
 }

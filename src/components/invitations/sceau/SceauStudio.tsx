@@ -1,6 +1,8 @@
 "use client";
 
 import StudioShell from "../StudioShell";
+import StudioSectionCard from "../StudioSectionCard";
+import ToneSelector from "../ToneSelector";
 import { builtInSections, sectionsOf } from "@/lib/invitationSections";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, Gift, HeartHandshake, MapPin, Palette, Play, Plus, Trash2, Clock, Camera, Music, X, Sparkles, ExternalLink } from "lucide-react";
@@ -242,9 +244,6 @@ export function DressCodeEditor({ value, onChange }: { value: SceauContent["dres
 }
 
 export default function SceauStudio({ value, onChange, onViewFullScreen, onFinalize, isStatic }: Props) {
-  type SceauMenuKey = "general" | "venue" | "programme" | "dresscode" | "gifts" | "rsvp" | "music" | "all";
-  const [activeMenu, setActiveMenu] = useState<SceauMenuKey>("general");
-
   const set = <K extends keyof SceauContent>(key: K, v: SceauContent[K]) => onChange({ ...value, [key]: v });
 
   const pages = value.programme;
@@ -255,31 +254,33 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
     set("programme", next);
   };
 
+  type SceauMenuKey = "hero" | "welcome" | "venue" | "programme" | "dresscode" | "gifts" | "rsvp" | "music" | "all";
+  const [activeMenu, setActiveMenu] = useState<SceauMenuKey>("hero");
+
+  const hiddenSecs = value.__hidden ?? [];
+  const isHidden = (key: string) => hiddenSecs.includes(key);
+  const toggleSec = (key: string) => {
+    const next = isHidden(key) ? hiddenSecs.filter((k) => k !== key) : [...hiddenSecs, key];
+    onChange({ ...value, __hidden: next });
+  };
+
   const MENUS = [
-    { id: "general" as const, label: "Les Mariés & l'Accueil", shortLabel: "Mariés & Accueil", icon: HeartHandshake, desc: "Prénoms, enveloppe, date, ville et mot de bienvenue" },
-    { id: "venue" as const, label: "Lieu & Google Maps", shortLabel: "Lieu & Maps", icon: MapPin, desc: "Lieu de réception, adresse et itinéraire GPS" },
-    { id: "programme" as const, label: "Programme Multi-Pages", shortLabel: "Programme", icon: Clock, badge: pages.length, desc: "Organisation par pages et moments clés" },
-    { id: "dresscode" as const, label: "Dress Code & Couleurs", shortLabel: "Dress Code", icon: Palette, desc: "Thème vestimentaire et palette de couleurs" },
-    { id: "gifts" as const, label: "Cadeaux & Attentions", shortLabel: "Cadeaux", icon: Gift, desc: "Message pour la liste de mariage ou cagnotte" },
-    { id: "rsvp" as const, label: "Fiche Invité & Fin", shortLabel: "RSVP & Boissons", icon: Camera, desc: "Boissons proposées et phrase de fin" },
-    {
-      id: "music" as const,
-      label: isStatic ? "Musique (Désactivée)" : "Musique d'ambiance",
-      shortLabel: "Musique",
-      icon: Music,
-      desc: isStatic ? "Option désactivée sur carte statique sans son" : "Votre propre son et la partie jouée à l'ouverture"
-    },
+    { id: "hero" as const, label: "1. Couverture & Mariés", shortLabel: "Couverture", icon: HeartHandshake, desc: "Prénoms, sceau royal et nom sur l'enveloppe" },
+    { id: "welcome" as const, label: "2. Mot d'accueil", shortLabel: "Accueil", icon: Sparkles, desc: "Titre et message d'accueil avec tonalités en 1 clic" },
+    { id: "venue" as const, label: "3. Date, Lieux & Maps", shortLabel: "Lieux & Maps", icon: MapPin, desc: "Date, horaires, lieu de réception et itinéraire GPS" },
+    { id: "programme" as const, label: "4. Programme Multi-Pages", shortLabel: "Programme", icon: Clock, badge: pages.length, desc: "Déroulement par pages et moments clés", muted: isHidden("programme") },
+    { id: "dresscode" as const, label: "5. Dress Code & Couleurs", shortLabel: "Dress Code", icon: Palette, desc: "Thème vestimentaire et palette de couleurs", muted: isHidden("dress") },
+    { id: "gifts" as const, label: "6. Cadeaux & Attentions", shortLabel: "Cadeaux", icon: Gift, desc: "Message pour la liste de mariage ou cagnotte" },
+    { id: "rsvp" as const, label: "7. Fiche Invité & Fin", shortLabel: "RSVP & Boissons", icon: Camera, desc: "Boissons proposées et mot de clôture", muted: isHidden("rsvp") },
+    ...(!isStatic ? [{ id: "music" as const, label: "8. Musique d'ambiance", shortLabel: "Musique", icon: Music, desc: "Bande sonore d'ouverture" }] : []),
   ];
-
-  const currentMenuIndex = MENUS.findIndex((m) => m.id === activeMenu);
-
 
   return (
     <StudioShell
       title="Sceau d'Or Impérial"
-      subtitle={"Renseignez et personnalisez les informations de votre événement ci-dessous."}
+      subtitle="Personnalisez chaque section et son intitulé ci-dessous pour composer votre invitation."
       demoUrl="/invitation-sceau-dor"
-      menus={MENUS.map((m) => ({ id: m.id, label: String(("shortLabel" in m && m.shortLabel) || m.label), icon: m.icon, badge: "badge" in m ? m.badge : undefined }))}
+      menus={MENUS.map((m) => ({ id: m.id, label: String(("shortLabel" in m && m.shortLabel) || m.label), icon: m.icon, badge: "badge" in m ? m.badge : undefined, muted: m.muted }))}
       active={activeMenu}
       onActive={(id) => setActiveMenu(id as never)}
       onViewFullScreen={onViewFullScreen}
@@ -290,278 +291,277 @@ export default function SceauStudio({ value, onChange, onViewFullScreen, onFinal
         onChange: (st) => onChange({ ...value, __hidden: st.hidden, __rubriques: st.rubriques }),
       }}
     >
-            {/* 1. Mariés & Accueil */}
-            {(activeMenu === "general" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">
-                      1
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Les Mariés, Enveloppe &amp; Accueil</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Prénoms gravés sous le sceau royal, date et message d'accueil.</p>
-                </div>
+      {/* 1. Couverture & Mariés */}
+      {(activeMenu === "hero" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={1}
+          icon={HeartHandshake}
+          title="Section 1 : Couverture, Sceau & Les Mariés"
+          desc="Prénoms gravés sous le sceau royal et nom inscrit sur l'enveloppe"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+            <Field label="Prénom du 1er marié">
+              <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} placeholder="Ex : Sarah" />
+            </Field>
+            <Field label="Prénom du 2nd marié">
+              <input className={inputCls} value={value.partnerB} onChange={(e) => set("partnerB", e.target.value)} placeholder="Ex : Alexandre" />
+            </Field>
+          </div>
+          <Field
+            label="Intitulé sur l'enveloppe"
+            hint="Pour personnaliser par invité, ajoutez #famille-diop à la fin du lien partagé : « Famille Diop » s'affichera automatiquement."
+          >
+            <input className={inputCls} value={value.guestLabel} onChange={(e) => set("guestLabel", e.target.value)} placeholder="Ex : Famille Diop" />
+          </Field>
+        </StudioSectionCard>
+      )}
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
-                    <Field label="Prénom du 1er marié">
-                      <input className={inputCls} value={value.partnerA} onChange={(e) => set("partnerA", e.target.value)} />
-                    </Field>
-                    <Field label="Prénom du 2nd marié">
-                      <input className={inputCls} value={value.partnerB} onChange={(e) => set("partnerB", e.target.value)} />
-                    </Field>
-                  </div>
-                  <Field
-                    label="Nom sur l'enveloppe"
-                    hint="Pour personnaliser par invité, ajoutez #famille-diop à la fin du lien partagé : « Famille Diop » s'affichera."
-                  >
-                    <input className={inputCls} value={value.guestLabel} onChange={(e) => set("guestLabel", e.target.value)} />
-                  </Field>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
-                    <Field label="Date de l'événement">
-                      <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
-                    </Field>
-                    <Field label="Heure d'accueil">
-                      <input type="time" className={inputCls} value={value.time} onChange={(e) => set("time", e.target.value)} />
-                    </Field>
-                  </div>
-                  <Field label="Ville">
-                    <input className={inputCls} value={value.city} onChange={(e) => set("city", e.target.value)} />
-                  </Field>
-                  <Field label="Titre d'accueil">
-                    <input className={inputCls} value={value.welcomeTitle} onChange={(e) => set("welcomeTitle", e.target.value)} />
-                  </Field>
-                  <Field label="Message d'accueil">
-                    <textarea rows={5} className={`${inputCls} min-h-[130px] resize-y`} value={value.welcomeText} onChange={(e) => set("welcomeText", e.target.value)} />
-                  </Field>
-                </div>
-              </section>
-            )}
+      {/* 2. Mot d'accueil & Message */}
+      {(activeMenu === "welcome" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={2}
+          icon={Sparkles}
+          title="Section 2 : Mot d'accueil & Message"
+          desc="Titre de bienvenue et message chaleureux d'invitation"
+        >
+          <Field label="Intitulé de la section (Titre d'accueil)" hint="Le titre gravé au cœur de l'invitation">
+            <input className={inputCls} value={value.welcomeTitle} onChange={(e) => set("welcomeTitle", e.target.value)} placeholder="Ex : Bienvenue à notre Mariage !" />
+          </Field>
 
-            {/* 2. Lieu & Google Maps */}
-            {(activeMenu === "venue" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">
-                      2
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Lieu &amp; Carte Google Maps</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Coordonnées du lieu de réception et carte interactive.</p>
-                </div>
+          {/* Tonalités d'inspirations prêtes à l'emploi */}
+          <ToneSelector
+            currentText={value.welcomeText}
+            onSelect={(t) => onChange({ ...value, welcomeTitle: t.welcomeTitle, welcomeText: t.welcomeText })}
+          />
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <Field label="Titre de la carte">
-                    <input className={inputCls} value={value.venueTitle} onChange={(e) => set("venueTitle", e.target.value)} />
-                  </Field>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Nom du lieu">
-                      <input className={inputCls} value={value.venue} onChange={(e) => set("venue", e.target.value)} />
-                    </Field>
-                    <Field label="Type de lieu">
-                      <input className={inputCls} value={value.venueKind} placeholder="salle de réception" onChange={(e) => set("venueKind", e.target.value)} />
-                    </Field>
-                  </div>
-                  <Field label="Adresse">
-                    <input className={inputCls} value={value.address} onChange={(e) => set("address", e.target.value)} />
-                  </Field>
-                  <MapsField label="Lien Google Maps" value={value.mapsUrl} query={venueQuery(value)} onChange={(v) => set("mapsUrl", v)} />
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 accent-[#7a1a2e]"
-                      checked={value.showMap}
-                      onChange={(e) => set("showMap", e.target.checked)}
-                    />
-                    <span className="text-sm text-gray-700 flex items-center gap-1.5">
-                      <MapPin size={14} /> Afficher la carte Google Maps dans l&apos;invitation
-                    </span>
-                  </label>
-                </div>
-              </section>
-            )}
+          <Field label="Message d'accueil (Corps du texte)">
+            <textarea
+              rows={4}
+              className={`${inputCls} min-h-[110px] resize-y`}
+              value={value.welcomeText}
+              onChange={(e) => set("welcomeText", e.target.value)}
+              placeholder="Rédigez votre mot d'accueil ou choisissez une tonalité ci-dessus..."
+            />
+          </Field>
+        </StudioSectionCard>
+      )}
 
-            {/* 3. Programme Multi-Pages */}
-            {(activeMenu === "programme" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">
-                      3
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Programme Multi-Pages ({pages.length} pages)</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Chaque page du livret correspond à un moment de la célébration.</p>
-                </div>
+      {/* 3. Date, Lieux & Google Maps */}
+      {(activeMenu === "venue" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={3}
+          icon={MapPin}
+          title="Section 3 : Date, Horaires & Lieux de Réception"
+          desc="Coordonnées complètes du lieu, horaires et itinéraire GPS Google Maps"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+            <Field label="Date de l'événement">
+              <input type="date" className={inputCls} value={value.date} onChange={(e) => set("date", e.target.value)} />
+            </Field>
+            <Field label="Heure d'accueil">
+              <input type="time" className={inputCls} value={value.time} onChange={(e) => set("time", e.target.value)} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+            <Field label="Ville">
+              <input className={inputCls} value={value.city} onChange={(e) => set("city", e.target.value)} placeholder="Ex : Dakar" />
+            </Field>
+            <Field label="Intitulé du lieu (Titre de la carte)">
+              <input className={inputCls} value={value.venueTitle} onChange={(e) => set("venueTitle", e.target.value)} placeholder="Ex : La Réception" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Nom de la salle ou du domaine">
+              <input className={inputCls} value={value.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Ex : Domaine des Palmiers" />
+            </Field>
+            <Field label="Type de lieu">
+              <input className={inputCls} value={value.venueKind} placeholder="salle de réception" onChange={(e) => set("venueKind", e.target.value)} />
+            </Field>
+          </div>
+          <Field label="Adresse complète">
+            <input className={inputCls} value={value.address} onChange={(e) => set("address", e.target.value)} placeholder="Ex : Route des Almadies, Dakar" />
+          </Field>
+          <MapsField label="Lien Google Maps" value={value.mapsUrl} query={venueQuery(value)} onChange={(v) => set("mapsUrl", v)} />
+          <label className="flex items-center gap-3 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              className="w-4 h-4 accent-[#7a1a2e]"
+              checked={value.showMap}
+              onChange={(e) => set("showMap", e.target.checked)}
+            />
+            <span className="text-xs sm:text-sm text-gray-700 flex items-center gap-1.5 font-medium">
+              <MapPin size={14} className="text-[#8f6f33]" /> Afficher la carte Google Maps interactive dans l&apos;invitation
+            </span>
+          </label>
+        </StudioSectionCard>
+      )}
 
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <div className="space-y-3.5">
-                    {pages.map((p, i) => (
-                      <ProgrammePageEditor
-                        key={i}
-                        page={p}
-                        index={i}
-                        total={pages.length}
-                        onChange={(np) => setPage(i, np)}
-                        onMove={(dir) => movePage(i, dir)}
-                        onRemove={() => set("programme", pages.filter((_, idx) => idx !== i))}
-                      />
-                    ))}
-                  </div>
+      {/* 4. Programme Multi-Pages */}
+      {(activeMenu === "programme" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={4}
+          icon={Clock}
+          title={`Section 4 : Programme Multi-Pages (${pages.length} pages)`}
+          desc="Chaque page du livret correspond à un moment clé de la célébration"
+          badge={<span className="text-[11px] bg-[#7a1a2e]/10 text-[#7a1a2e] px-2.5 py-0.5 rounded-full font-bold">{pages.length} page(s)</span>}
+          isHidden={isHidden("programme")}
+          onToggleHide={() => toggleSec("programme")}
+        >
+          <div className="space-y-3.5">
+            {pages.map((p, i) => (
+              <ProgrammePageEditor
+                key={i}
+                page={p}
+                index={i}
+                total={pages.length}
+                onChange={(np) => setPage(i, np)}
+                onMove={(dir) => movePage(i, dir)}
+                onRemove={() => set("programme", pages.filter((_, idx) => idx !== i))}
+              />
+            ))}
+          </div>
 
+          <button
+            type="button"
+            onClick={() =>
+              set("programme", [...pages, { ...EMPTY_PROGRAMME_PAGE, title: `Programme ${pages.length + 1}`, items: [{ time: "", label: "" }] }])
+            }
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#7a1a2e]/30 text-xs font-semibold text-[#7a1a2e] hover:bg-[#7a1a2e]/5 transition-colors cursor-pointer"
+          >
+            <Plus size={15} /> Ajouter une page de programme
+          </button>
+        </StudioSectionCard>
+      )}
+
+      {/* 5. Dress Code & Couleurs */}
+      {(activeMenu === "dresscode" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={5}
+          icon={Palette}
+          title="Section 5 : Dress Code & Palette de Couleurs"
+          desc="Guide vestimentaire et nuances d'honneur suggérées aux invités"
+          isHidden={isHidden("dress")}
+          onToggleHide={() => toggleSec("dress")}
+        >
+          <Field label="Consigne du dress code (Intitulé & Conseils)">
+            <textarea
+              rows={3}
+              className={`${inputCls} min-h-[85px] resize-y`}
+              value={value.dressCodeText}
+              onChange={(e) => set("dressCodeText", e.target.value)}
+              placeholder="Ex : Tenue de soirée élégante. Des touches dorées ou bordeaux sont les bienvenues."
+            />
+          </Field>
+          <DressCodeEditor value={value.dressColors} onChange={(v) => set("dressColors", v)} />
+        </StudioSectionCard>
+      )}
+
+      {/* 6. Cadeaux & Attentions */}
+      {(activeMenu === "gifts" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={6}
+          icon={Gift}
+          title="Section 6 : Cadeaux & Attentions"
+          desc="Facilitez les attentions de vos convives avec votre message ou liste de mariage"
+        >
+          <Field label="Intitulé de la section">
+            <input className={inputCls} value={value.giftsTitle} onChange={(e) => set("giftsTitle", e.target.value)} placeholder="Ex : Liste de Mariage & Cagnotte" />
+          </Field>
+          <Field label="Texte explicatif" hint="Laissez le texte vide si vous ne souhaitez pas afficher cette carte.">
+            <textarea
+              rows={4}
+              className={`${inputCls} min-h-[110px] resize-y`}
+              value={value.giftsText}
+              onChange={(e) => set("giftsText", e.target.value)}
+              placeholder="Ex : Votre présence est notre plus beau cadeau. Si vous souhaitez toutefois nous gâter, une urne sera disponible..."
+            />
+          </Field>
+        </StudioSectionCard>
+      )}
+
+      {/* 7. Fiche Invité & Fin */}
+      {(activeMenu === "rsvp" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={7}
+          icon={Camera}
+          title="Section 7 : Fiche Invité, Boissons & Mot de Clôture"
+          desc="Menu des rafraîchissements servis et signature de clôture"
+          isHidden={isHidden("rsvp")}
+          onToggleHide={() => toggleSec("rsvp")}
+        >
+          <Field label="Consignes au-dessus du formulaire (RSVP)">
+            <textarea
+              rows={2}
+              className={`${inputCls} resize-none`}
+              value={value.rsvpText}
+              onChange={(e) => set("rsvpText", e.target.value)}
+              placeholder="Ex : Merci de nous confirmer votre présence et de nous indiquer vos préférences :"
+            />
+          </Field>
+          <div>
+            <span className="block text-xs font-semibold text-gray-700 mb-1.5">Boissons proposées au bar</span>
+            <div className="space-y-2">
+              {value.drinks.map((d, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    className={inputCls}
+                    value={d}
+                    placeholder="Ex : Champagne & Cocktails signature"
+                    onChange={(e) => set("drinks", value.drinks.map((x, idx) => (idx === i ? e.target.value : x)))}
+                  />
                   <button
                     type="button"
-                    onClick={() =>
-                      set("programme", [...pages, { ...EMPTY_PROGRAMME_PAGE, title: `Programme ${pages.length + 1}`, items: [{ time: "", label: "" }] }])
-                    }
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#7a1a2e]/30 text-sm font-semibold text-[#7a1a2e] hover:bg-[#7a1a2e]/5 transition-colors"
+                    aria-label="Retirer la boisson"
+                    onClick={() => set("drinks", value.drinks.filter((_, idx) => idx !== i))}
+                    className={`${iconBtn} hover:!text-red-600 hover:!bg-red-50 cursor-pointer`}
                   >
-                    <Plus size={16} /> Ajouter une page de programme
+                    <Trash2 size={16} />
                   </button>
                 </div>
-              </section>
-            )}
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => set("drinks", [...value.drinks, ""])}
+              className="mt-2.5 flex items-center gap-2 text-xs font-semibold text-[#7a1a2e] hover:underline cursor-pointer"
+            >
+              <Plus size={14} /> Ajouter une boisson
+            </button>
+          </div>
+          <Field label="Intitulé de fin (Signature ou Phrase de clôture)">
+            <input className={inputCls} value={value.closingText} onChange={(e) => set("closingText", e.target.value)} placeholder="Ex : Avec tout notre amour, nous vous attendons !" />
+          </Field>
+        </StudioSectionCard>
+      )}
 
-            {/* 4. Dress Code & Couleurs */}
-            {(activeMenu === "dresscode" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">
-                      4
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Dress Code &amp; Palette de Couleurs</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Guide vestimentaire et nuances d'honneur suggérées aux invités.</p>
-                </div>
-
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <Field label="Consigne du dress code">
-                    <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={value.dressCodeText} onChange={(e) => set("dressCodeText", e.target.value)} />
-                  </Field>
-                  <DressCodeEditor value={value.dressColors} onChange={(v) => set("dressColors", v)} />
-                </div>
-              </section>
-            )}
-
-            {/* 5. Cadeaux & Attentions */}
-            {(activeMenu === "gifts" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">
-                      5
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Cadeaux &amp; Attentions</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Facilitez les attentions de vos convives avec votre message ou liste de mariage.</p>
-                </div>
-
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <Field label="Titre">
-                    <input className={inputCls} value={value.giftsTitle} onChange={(e) => set("giftsTitle", e.target.value)} />
-                  </Field>
-                  <Field label="Texte" hint="Laissez le titre et le texte vides pour masquer cette carte.">
-                    <textarea rows={5} className={`${inputCls} min-h-[130px] resize-y`} value={value.giftsText} onChange={(e) => set("giftsText", e.target.value)} />
-                  </Field>
-                </div>
-              </section>
-            )}
-
-            {/* 6. Fiche Invité & Fin */}
-            {(activeMenu === "rsvp" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">
-                      6
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Fiche Invité, Boissons &amp; Fin</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Menu des rafraîchissements servis et signature de clôture.</p>
-                </div>
-
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  <Field label="Texte au-dessus du formulaire">
-                    <textarea rows={3} className={`${inputCls} min-h-[85px] resize-y`} value={value.rsvpText} onChange={(e) => set("rsvpText", e.target.value)} />
-                  </Field>
-                  <div>
-                    <span className="block text-xs font-semibold text-gray-700 mb-1.5">Boissons proposées</span>
-                    <div className="space-y-2">
-                      {value.drinks.map((d, i) => (
-                        <div key={i} className="flex gap-2">
-                          <input
-                            className={inputCls}
-                            value={d}
-                            onChange={(e) => set("drinks", value.drinks.map((x, idx) => (idx === i ? e.target.value : x)))}
-                          />
-                          <button
-                            type="button"
-                            aria-label="Retirer la boisson"
-                            onClick={() => set("drinks", value.drinks.filter((_, idx) => idx !== i))}
-                            className={`${iconBtn} hover:!text-red-600 hover:!bg-red-50`}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => set("drinks", [...value.drinks, ""])}
-                      className="mt-2.5 flex items-center gap-2 text-xs font-semibold text-[#7a1a2e] hover:underline"
-                    >
-                      <Plus size={14} /> Ajouter une boisson
-                    </button>
-                  </div>
-                  <Field label="Phrase de fin">
-                    <input className={inputCls} value={value.closingText} onChange={(e) => set("closingText", e.target.value)} />
-                  </Field>
-                </div>
-              </section>
-            )}
-
-            {/* 7. Musique */}
-            {(activeMenu === "music" || activeMenu === "all") && (
-              <section className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-[#7a1a2e]/10 text-[#7a1a2e] flex items-center justify-center font-bold text-xs">
-                      7
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-gray-900">Musique d&apos;ambiance</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {isStatic
-                      ? "Option musicale désactivée sur les modèles au format carte statique."
-                      : "Importez votre propre son et choisissez la partie jouée à l'ouverture de l'invitation."}
-                  </p>
-                </div>
-
-                <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70 space-y-4">
-                  {isStatic ? (
-                    <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
-                      <span className="text-base">🔇</span>
-                      <div>
-                        <p className="font-bold text-amber-950">Option audio désactivée (Format Carte Statique)</p>
-                        <p className="mt-0.5 text-amber-800 leading-relaxed">
-                          Votre événement est configuré au format <strong>Carte statique classique</strong>. Les cartes statiques sont conçues pour être purement visuelles et ne comportent aucun lecteur audio ni son d&apos;ambiance.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <AudioField
-                      label="Musique de l'invitation"
-                      emptyHint="Sans musique choisie, la boîte à musique du modèle est jouée."
-                      value={{ url: value.audioUrl ?? "", title: value.audioTitle ?? "", start: value.audioStart ?? 0, end: value.audioEnd ?? 0 }}
-                      onChange={(a) => onChange({ ...value, audioUrl: a.url, audioTitle: a.title, audioStart: a.start, audioEnd: a.end })}
-                    />
-                  )}
-                </div>
-              </section>
-            )}
-          </StudioShell>
+      {/* 8. Musique */}
+      {(activeMenu === "music" || activeMenu === "all") && (
+        <StudioSectionCard
+          num={8}
+          icon={Music}
+          title={isStatic ? "Section 8 : Mode Carte Statique" : "Section 8 : Musique d'Ambiance"}
+          desc={isStatic ? "Format visuel pur sans musique" : "Piste sonore jouée à l'ouverture avec découpe et gestion"}
+        >
+          {isStatic ? (
+            <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
+              <span className="text-base">🔇</span>
+              <div>
+                <p className="font-bold text-amber-950">Option audio désactivée (Format Carte Statique)</p>
+                <p className="mt-0.5 text-amber-800 leading-relaxed">
+                  Votre invitation est configurée au format <strong>Carte statique classique</strong>. Ce format est conçu pour être purement visuel sans lecteur audio.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <AudioField
+              label="Musique de l'invitation"
+              emptyHint="Choisissez un morceau dans la bibliothèque Evenium ou importez le vôtre."
+              value={{ url: value.audioUrl ?? "", title: value.audioTitle ?? "", start: value.audioStart ?? 0, end: value.audioEnd ?? 0 }}
+              onChange={(a) => onChange({ ...value, audioUrl: a.url, audioTitle: a.title, audioStart: a.start, audioEnd: a.end })}
+            />
+          )}
+        </StudioSectionCard>
+      )}
+    </StudioShell>
   );
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import StudioShell from "../StudioShell";
+import StudioSectionCard from "../StudioSectionCard";
+import ToneSelector from "../ToneSelector";
+import { BIRTHDAY_TONES } from "@/lib/weddingToneInspirations";
 import { builtInSections, sectionsOf } from "@/lib/invitationSections";
 import { useState } from "react";
 import { ArrowDown, ArrowUp, BookOpen, CalendarDays, Heart, Image as ImageIcon, ListChecks, Music, Plus, Trash2 } from "lucide-react";
@@ -117,16 +120,24 @@ export default function AnniversaireStudio({ value, onChange, onViewFullScreen, 
           )}
 
           {show("card") && (
-            <Section n={2} title="Page 2 · Invitation" desc="Phrase d'accroche, titre et message à vos invités.">
+            <Section n={2} title="Page 2 · Invitation & Message" desc="Phrase d'accroche, titre manuscrit et message à vos invités avec tonalités en 1 clic.">
               <div className={box}>
                 <Field label="Phrase d'accroche (en haut)">
-                  <input className={inputCls} value={value.kicker} onChange={(e) => set("kicker", e.target.value)} />
+                  <input className={inputCls} value={value.kicker} onChange={(e) => set("kicker", e.target.value)} placeholder="Ex : Célébrons ensemble" />
                 </Field>
-                <Field label="Titre manuscrit">
-                  <input className={inputCls} value={value.title} onChange={(e) => set("title", e.target.value)} />
+                <Field label="Titre manuscrit de l'invitation">
+                  <input className={inputCls} value={value.title} onChange={(e) => set("title", e.target.value)} placeholder="Ex : Joyeux Anniversaire !" />
                 </Field>
-                <Field label="Message">
-                  <textarea rows={6} className={`${inputCls} min-h-[140px] resize-y`} value={value.message} onChange={(e) => set("message", e.target.value)} />
+
+                {/* Tonalités pour anniversaire en 1 clic */}
+                <ToneSelector
+                  tones={BIRTHDAY_TONES}
+                  currentText={value.message}
+                  onSelect={(t) => onChange({ ...value, kicker: t.subtitle, title: t.welcomeTitle, message: t.welcomeText })}
+                />
+
+                <Field label="Message pour vos invités">
+                  <textarea rows={5} className={`${inputCls} min-h-[120px] resize-y`} value={value.message} onChange={(e) => set("message", e.target.value)} placeholder="Rédigez votre message ou choisissez une tonalité ci-dessus..." />
                 </Field>
               </div>
             </Section>

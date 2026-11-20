@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { LayoutList, Loader2, Music, Upload } from "lucide-react";
 import StudioShell from "../StudioShell";
+import StudioSectionCard from "../StudioSectionCard";
 import { AudioField, PhotoField, inputCls } from "@/components/invitations/velours/VeloursStudio";
 import { modelAssetUrl, uploadModelFiles } from "@/lib/customModelImport";
 import {
@@ -313,27 +314,31 @@ export default function CustomSectionsEditor({ model, fields, values, onChange, 
       {sectionMenus.length === 0 && !showMusic && <p className="text-sm text-gray-500 text-center py-10">Aucun élément modifiable dans ce modèle.</p>}
       {sectionMenus.map((m, i) =>
         show(`s${m.section}`) ? (
-          <section key={m.section} className="space-y-3 sm:space-y-4">
-            {header(i + 1, m.label, `${m.fields.length} élément(s) à personnaliser dans cette rubrique.`)}
-            <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70">
-              {hidden.includes(m.section) ? (
-                <p className="text-sm text-gray-500">
-                  Cette rubrique est supprimée de l&apos;invitation. Vous pouvez la rétablir dans « Rubriques de l&apos;invitation ».
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">{m.fields.map(renderField)}</div>
-              )}
-            </div>
-          </section>
+          <StudioSectionCard
+            key={m.section}
+            num={i + 1}
+            icon={LayoutList}
+            title={m.label}
+            desc={`${m.fields.length} élément(s) à personnaliser dans cette rubrique`}
+            isHidden={hidden.includes(m.section)}
+            onToggleHide={() => {
+              const next = hidden.includes(m.section) ? hidden.filter((k) => k !== m.section) : [...hidden, m.section];
+              onChange({ ...values, [HIDDEN_KEY]: JSON.stringify(next) });
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">{m.fields.map(renderField)}</div>
+          </StudioSectionCard>
         ) : null
       )}
       {showMusic && show("music") && (
-        <section className="space-y-3 sm:space-y-4">
-          {header(sectionMenus.length + 1, "Musique", "Musique jouée à l'ouverture de l'invitation : banque de sons Evenium ou votre propre fichier.")}
-          <div className="p-3 sm:p-5 bg-gray-50/70 rounded-2xl border border-gray-200/70">
-            <CustomMusicFields model={model} fields={audios} values={values} onChange={onChange} />
-          </div>
-        </section>
+        <StudioSectionCard
+          num={sectionMenus.length + 1}
+          icon={Music}
+          title="Musique d'ambiance"
+          desc="Musique jouée à l'ouverture de l'invitation : banque de sons Evenium ou votre propre fichier"
+        >
+          <CustomMusicFields model={model} fields={audios} values={values} onChange={onChange} />
+        </StudioSectionCard>
       )}
     </StudioShell>
   );
