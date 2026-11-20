@@ -1383,7 +1383,7 @@ function CreateExpressStudioContent({
       {demoModelId && (
         <InvitationCtaContext.Provider value={{ force: true, variant: 'choose' }}>
           <div
-            className="fixed inset-0 z-[100] w-screen h-screen bg-[#0c0a09] flex flex-col overflow-hidden select-none"
+            className="fixed inset-0 z-[100] w-full h-dvh bg-[#0c0a09] flex flex-col overflow-hidden select-none"
             onContextMenu={(e) => e.preventDefault()}
           >
             {/* Barre de navigation supérieure claire & ergonomique */}

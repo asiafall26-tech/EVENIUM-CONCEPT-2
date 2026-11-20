@@ -1,16 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
-import { demoSrc } from "@/lib/modelPreview";
-
-const MOBILE = "(max-width: 767px)";
-const subscribeMobile = (cb: () => void) => {
-  const mq = window.matchMedia(MOBILE);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-};
 
 interface Props {
   src: string;
@@ -21,13 +13,13 @@ interface Props {
 }
 
 /**
- * Aperçu d'un modèle sur ordinateur : le modèle au centre, sur toute la hauteur, aux proportions d'un écran
- * de smartphone, devant sa couverture floutée. Sur mobile, le modèle s'ouvre directement en plein écran.
- * Le choix du modèle se fait avec le bloc de fin de l'invitation.
+ * Aperçu d'un modèle d'invitation avec en-tête et barre d'actions responsive :
+ * - Navigation fluide (« Retour aux modèles » / « Choisir ce modèle ») sur TOUS les écrans.
+ * - Aucune redirection qui piège le visiteur.
+ * - Sur mobile : en-tête compact + barre d'action inférieure au pouce.
+ * - Sur ordinateur : mockup smartphone centré devant l'arrière-plan flouté.
  */
 export default function ModelPreview({ src, name, cover, category, showBack }: Props) {
-  const desktop = useSyncExternalStore(subscribeMobile, () => !window.matchMedia(MOBILE).matches, () => false);
-
   const backUrl = category && category !== "Tous" ? `/invitations?cat=${encodeURIComponent(category)}` : "/invitations";
 
   const chooseUrl = (() => {
@@ -53,69 +45,82 @@ export default function ModelPreview({ src, name, cover, category, showBack }: P
     }
   }, [category]);
 
-  // Écran étroit : la page en plein écran (demo=1, pour ne pas être re-cadrée par le proxy)
-  useEffect(() => {
-    if (window.matchMedia(MOBILE).matches) window.location.replace(demoSrc(src, category));
-  }, [src, category]);
+  const frameSrc = `${src}${src.includes("?") ? "&" : "?"}hideCta=1&demo=1&hideEdit=1`;
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-[#1a120c]">
+    <main className="relative h-dvh w-full overflow-hidden bg-[#1a120c] flex flex-col select-none">
       {/* Arrière-plan : la couverture du modèle, floutée et assombrie */}
       {cover && (
         <div
           aria-hidden
-          className="absolute -inset-16 scale-110 bg-cover bg-center blur-2xl"
+          className="absolute -inset-16 scale-110 bg-cover bg-center blur-2xl opacity-60 pointer-events-none"
           style={{ backgroundImage: `url("${cover}")` }}
         />
       )}
-      <div aria-hidden className="absolute inset-0 bg-black/35" />
+      <div aria-hidden className="absolute inset-0 bg-black/60 pointer-events-none" />
 
-      {desktop && (
-        <div className="relative z-10 w-full h-full flex flex-col">
-          {/* En-tête sur une ligne format très simple au clic */}
-          <header className="shrink-0 h-14 px-4 sm:px-8 bg-[#0e0a08]/92 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg z-30 select-none">
-            {showBack ? (
-              <Link
-                href={backUrl}
-                aria-label="Retour aux modèles"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
-              >
-                <ArrowLeft size={14} className="text-[#f0d999]" /> <span>Retour aux modèles</span>
-              </Link>
-            ) : <div />}
+      {/* Barre supérieure visible et cliquable sur TOUS les écrans (desktop ET mobile) */}
+      <header className="relative z-30 shrink-0 h-14 sm:h-16 px-3 sm:px-8 bg-[#0e0a08]/95 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
+        {showBack ? (
+          <Link
+            href={backUrl}
+            aria-label="Retour aux modèles"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-[#D4AF37]/50 transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-sm"
+          >
+            <ArrowLeft size={14} className="text-[#f0d999] shrink-0" />
+            <span className="hidden sm:inline">Retour aux modèles</span>
+            <span className="sm:hidden">Autres modèles</span>
+          </Link>
+        ) : <div />}
 
-            <div className="text-center min-w-0 max-w-md hidden sm:block">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] font-extrabold block">Aperçu du modèle</span>
-              <p className="font-serif text-sm text-white/90 truncate font-medium">{name}</p>
-            </div>
-
-            <Link
-              href={chooseUrl}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
-            >
-              <Sparkles size={14} className="text-black shrink-0" /> <span>Choisir ce modèle</span>
-            </Link>
-          </header>
-
-          {/*
-            Largeur des modèles : 480 px, celle pour laquelle ils sont dessinés (au-delà, les pages d'ouverture laissent
-            des bandes vides sur les côtés), jamais moins de 430 px pour ne pas comprimer l'invitation sur un petit écran.
-          */}
-          <div className="flex-1 min-h-0 w-full flex items-center justify-center p-3 sm:p-5">
-            <div
-              className="relative mx-auto h-full max-h-[92vh] max-w-full overflow-hidden bg-white shadow-[0_0_80px_rgba(0,0,0,0.55)] border-x border-[#c9a45e]/60 sm:rounded-[36px] sm:border sm:border-[#c9a45e]/70"
-              style={{ width: "clamp(430px, 46dvh, 480px)" }}
-            >
-              <iframe
-                src={`${src}${src.includes("?") ? "&" : "?"}hideCta=1`}
-                title={name}
-                allow="autoplay; fullscreen"
-                className="block h-full w-full border-0"
-              />
-            </div>
-          </div>
+        <div className="text-center min-w-0 max-w-md">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] font-extrabold block">Aperçu du modèle</span>
+          <p className="font-serif text-xs sm:text-sm text-white/90 truncate font-medium">{name}</p>
         </div>
-      )}
+
+        <Link
+          href={chooseUrl}
+          className="inline-flex items-center gap-1.5 px-3.5 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-extrabold text-xs sm:text-sm shadow-md shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 whitespace-nowrap cursor-pointer"
+        >
+          <Sparkles size={14} className="text-black shrink-0" />
+          <span className="hidden sm:inline">Choisir ce modèle</span>
+          <span className="sm:hidden">Choisir</span>
+        </Link>
+      </header>
+
+      {/* Corps : centré dans mockup smartphone sur grand écran, plein écran fluide sur mobile */}
+      <div className="relative z-20 flex-1 min-h-0 w-full flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden">
+        <div
+          className="relative w-full h-full sm:w-[430px] sm:h-[min(90vh,880px)] sm:max-h-[880px] bg-white sm:rounded-[36px] sm:shadow-[0_0_80px_rgba(0,0,0,0.7)] sm:border sm:border-[#c9a45e]/70 overflow-hidden flex flex-col"
+        >
+          <iframe
+            src={frameSrc}
+            title={name}
+            allow="autoplay; fullscreen"
+            className="block h-full w-full border-0 bg-white"
+          />
+        </div>
+      </div>
+
+      {/* Barre d'action inférieure sur mobile pour accès immédiat au pouce */}
+      <div className="sm:hidden relative z-30 shrink-0 p-3 bg-[#0e0a08]/95 backdrop-blur-md border-t border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none">
+        {showBack && (
+          <Link
+            href={backUrl}
+            className="flex-1 py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <ArrowLeft size={13} className="text-[#f0d999]" />
+            <span>Autres modèles</span>
+          </Link>
+        )}
+        <Link
+          href={chooseUrl}
+          className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs font-extrabold shadow-md active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer border border-[#D4AF37]/60"
+        >
+          <Sparkles size={13} className="text-black" />
+          <span>Choisir ce modèle</span>
+        </Link>
+      </div>
     </main>
   );
 }

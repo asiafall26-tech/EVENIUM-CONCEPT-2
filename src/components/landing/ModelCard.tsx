@@ -140,13 +140,21 @@ export default function ModelCard({
   return (
     <article className={frame}>
       {onPreview ? (
-        <button type="button" onClick={onPreview} aria-label={`Voir le modèle ${name}`} className="block w-full text-left">
+        <button
+          type="button"
+          onClick={onPreview}
+          aria-label={`Voir le modèle ${name}`}
+          className="block w-full text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a45e] rounded-[1.1rem]"
+        >
           {visual}
+          {caption}
         </button>
       ) : (
-        visual
+        <>
+          {visual}
+          {caption}
+        </>
       )}
-      {caption}
       {actions && <div className="px-2 pb-2 sm:px-3 sm:pb-3">{actions}</div>}
     </article>
   );

@@ -12,9 +12,10 @@ const MOBILE_UA = /Mobi|Android|iPhone|iPad|iPod|Windows Phone|BlackBerry|Opera 
  */
 function stagedInvitation(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
-  if (request.method !== 'GET' || !STAGED_PAGE.test(pathname) || searchParams.get('demo') === '1') return null
+  if (request.method !== 'GET' || !STAGED_PAGE.test(pathname) || searchParams.get('demo') === '1' || searchParams.get('preview') === '1') return null
   if (request.headers.get('sec-fetch-dest') !== 'document') return null
-  if (MOBILE_UA.test(request.headers.get('user-agent') ?? '')) return null
+  // Liens officiels envoyés aux invités (/invite/[id]) : affichés directement sans barre démo
+  if (pathname.startsWith('/invite/')) return null
   const url = request.nextUrl.clone()
   url.pathname = '/apercu'
   url.search = `?${new URLSearchParams({ src: pathname })}`
