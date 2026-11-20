@@ -218,8 +218,8 @@ function CreateExpressStudioContent({
   // Modale de prévisualisation plein écran du résultat avec modifications
   const [isPreviewFullScreenOpen, setIsPreviewFullScreenOpen] = useState(false);
 
-  // État de sélection du modèle : par défaut, immerger l'utilisateur dans l'éditeur (avec bouton Changer de modèle)
-  const [hasChosenModel, setHasChosenModel] = useState<boolean>(true);
+  // État de sélection du modèle : afficher la galerie par défaut, sauf si un modèle est spécifié dans l'URL
+  const [hasChosenModel, setHasChosenModel] = useState<boolean>(() => Boolean(searchParams.get('model')));
 
   // Événement & Modèle sélectionné
   const categoryParam = searchParams.get('category') || searchParams.get('cat');
@@ -532,13 +532,11 @@ function CreateExpressStudioContent({
   }, [selectedEventCategory, filteredModels, selectedModelId]);
 
   const [demoModelId, setDemoModelId] = useState<string | null>(null);
-  const [showDemoExitModal, setShowDemoExitModal] = useState(false);
   const demoOpenRef = useRef(false);
   const demoModelIdRef = useRef<string | null>(null);
   useEffect(() => {
     demoOpenRef.current = !!demoModelId;
     demoModelIdRef.current = demoModelId;
-    if (!demoModelId) setShowDemoExitModal(false);
   }, [demoModelId]);
 
   // Aperçu plein écran : la page de création ne défile pas derrière
@@ -558,7 +556,7 @@ function CreateExpressStudioContent({
   useEffect(() => {
     const handleClose = () => {
       if (demoOpenRef.current) {
-        setShowDemoExitModal(true);
+        setDemoModelId(null);
       } else {
         setIsPreviewFullScreenOpen(false);
       }
@@ -567,7 +565,6 @@ function CreateExpressStudioContent({
       if (demoOpenRef.current && demoModelIdRef.current) {
         handleChooseModel(demoModelIdRef.current);
         setDemoModelId(null);
-        setShowDemoExitModal(false);
         window.scrollTo({ top: 0 });
       } else {
         setIsPreviewFullScreenOpen(false);
@@ -1356,71 +1353,50 @@ function CreateExpressStudioContent({
         </InvitationCtaContext.Provider>
       )}
 
-      {/* Aperçu d'un modèle de la galerie : immersion totale 100% pure (Proposition 2 Evenium Haute Couture) */}
+      {/* Aperçu d'un modèle de la galerie : immersion avec navigation claire (Choisir / Revenir) */}
       {demoModelId && (
         <InvitationCtaContext.Provider value={{ force: true, variant: 'choose' }}>
           <div
             className="fixed inset-0 z-[100] w-screen h-screen bg-[#0c0a09] flex flex-col overflow-hidden select-none"
             onContextMenu={(e) => e.preventDefault()}
           >
-            {/* Bouton de sortie discret Haute Joaillerie : zéro barre, zéro camouflage, le haut reste 100% libre */}
-            <button
-              type="button"
-              onClick={() => setShowDemoExitModal(true)}
-              aria-label="Fermer l'aperçu"
-              className="absolute top-3 left-3 sm:top-5 sm:left-5 z-50 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/85 text-white/90 hover:text-white border border-white/20 backdrop-blur-md flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer"
-            >
-              <X size={18} />
-            </button>
+            {/* Barre de navigation supérieure claire & ergonomique */}
+            <header className="h-14 sm:h-16 bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-3 sm:px-6 flex items-center justify-between shrink-0 z-50">
+              {/* Bouton retour vers la galerie des modèles */}
+              <button
+                type="button"
+                onClick={() => setDemoModelId(null)}
+                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 hover:border-[#D4AF37]/50 transition-all cursor-pointer shadow-sm"
+              >
+                <ArrowLeft size={14} className="shrink-0" />
+                <span className="hidden sm:inline">← Retourner voir les autres modèles</span>
+                <span className="sm:hidden">← Autres modèles</span>
+              </button>
 
-            {/* Modale de sortie Haute Couture : le client choisit sans jamais gâter la vue pendant l'aperçu */}
-            {showDemoExitModal && (
-              <div className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-                <div className="relative max-w-sm w-full p-6 sm:p-7 text-center rounded-3xl bg-[#15100c] border border-[#d4af37]/60 shadow-[0_25px_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-200">
-                  {/* Bouton pour fermer la modale et reprendre l'admiration du modèle */}
-                  <button
-                    type="button"
-                    onClick={() => setShowDemoExitModal(false)}
-                    className="absolute top-4 right-4 text-white/50 hover:text-white p-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                    aria-label="Fermer la modale"
-                  >
-                    <X size={16} />
-                  </button>
-
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37]/25 to-transparent border border-[#d4af37]/50 flex items-center justify-center">
-                    <Sparkles size={22} className="text-[#d4af37]" />
-                  </div>
-                  <h3 className="font-serif text-xl sm:text-2xl text-white font-semibold mb-2">Ce modèle vous plaît ?</h3>
-                  <p className="text-xs sm:text-[13px] text-[#f0e4d0]/80 leading-relaxed mb-6">
-                    Sélectionnez ce modèle pour le personnaliser avec vos propres textes, photos et musiques, ou continuez à explorer notre collection.
-                  </p>
-                  <div className="flex flex-col gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleChooseModel(demoModelId);
-                        setDemoModelId(null);
-                        setShowDemoExitModal(false);
-                        window.scrollTo({ top: 0 });
-                      }}
-                      className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#d4af37] via-[#f7e7b4] to-[#d4af37] text-black font-extrabold text-xs shadow-lg hover:brightness-105 active:scale-95 transition-all cursor-pointer border border-[#d4af37]/70"
-                    >
-                      ✨ Choisir ce modèle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDemoModelId(null);
-                        setShowDemoExitModal(false);
-                      }}
-                      className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer"
-                    >
-                      Explorer d&apos;autres modèles
-                    </button>
-                  </div>
-                </div>
+              {/* Titre & Indication Démo */}
+              <div className="flex items-center gap-2 text-center min-w-0">
+                <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-[140px] sm:max-w-xs">
+                  {modelNameOf(publishedModels[demoModelId], "Aperçu du modèle")}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase">
+                  <Eye size={11} className="text-[#D4AF37]" /> Démo
+                </span>
               </div>
-            )}
+
+              {/* Bouton Doré : Choisir ce modèle ✨ */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleChooseModel(demoModelId);
+                  setDemoModelId(null);
+                  window.scrollTo({ top: 0 });
+                }}
+                className="inline-flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer"
+              >
+                <Sparkles size={14} className="text-black shrink-0" />
+                <span>Choisir ce modèle</span>
+              </button>
+            </header>
 
             {/* Corps de l'aperçu : centré dans un châssis smartphone sur grand écran, pleine page sur mobile */}
             <div className="flex-1 min-h-0 w-full flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden relative">
@@ -1449,6 +1425,8 @@ function CreateExpressStudioContent({
                             model={custom}
                             values={custom.invitation_type === 'carte' ? withoutMusicValues(custom.fields, values) : values}
                             hideCta={true}
+                            canEdit={false}
+                            hideEdit={true}
                             className="w-full h-full border-0 block bg-white"
                             onBackToEdit={back}
                             onFinalize={choose}
@@ -1464,6 +1442,28 @@ function CreateExpressStudioContent({
                   })()}
                 </div>
               </div>
+            </div>
+
+            {/* Barre d'action inférieure de secours pour mobile */}
+            <div className="sm:hidden p-3 bg-[#13090C]/95 backdrop-blur-md border-t border-[#D4AF37]/30 flex items-center justify-between gap-3 shrink-0 z-50">
+              <button
+                type="button"
+                onClick={() => setDemoModelId(null)}
+                className="flex-1 py-2.5 rounded-full bg-white/10 text-white text-xs font-semibold border border-white/20 active:scale-95 transition-all text-center"
+              >
+                ← Autres modèles
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleChooseModel(demoModelId);
+                  setDemoModelId(null);
+                  window.scrollTo({ top: 0 });
+                }}
+                className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F3E5AB] text-black text-xs font-extrabold shadow-md active:scale-95 transition-all text-center"
+              >
+                ✨ Choisir
+              </button>
             </div>
           </div>
         </InvitationCtaContext.Provider>

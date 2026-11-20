@@ -26,6 +26,8 @@ interface Props {
   /** Bloc de fin : « Retour » */
   onBackToEdit?: () => void;
   hideCta?: boolean;
+  hideEdit?: boolean;
+  canEdit?: boolean;
   className?: string;
   /** Réponse envoyée par le formulaire du modèle lui-même (message ev:rsvp) : enregistrée par le site */
   onRsvp?: (rsvp: ModelRsvp) => Promise<void>;
@@ -40,7 +42,7 @@ export interface ModelRsvp {
 }
 
 /** Modèle importé affiché dans un cadre, alimenté par messages (public/ev-runtime.js). */
-export default function CustomInvitationFrame({ model, values, pick, onSelect, focusId, onFinalize, onBackToEdit, hideCta, className, onRsvp }: Props) {
+export default function CustomInvitationFrame({ model, values, pick, onSelect, focusId, onFinalize, onBackToEdit, hideCta, hideEdit, canEdit, className, onRsvp }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const readyRef = useRef(false);
   const ctx = useInvitationCta();
@@ -51,6 +53,13 @@ export default function CustomInvitationFrame({ model, values, pick, onSelect, f
   useEffect(() => {
     latest.current = { values, pick, cta, onSelect, onFinalize, onBackToEdit, onRsvp };
   });
+
+  const frameSrc = (() => {
+    const base = customModelUrl(model);
+    const delim = base.includes("?") ? "&" : "?";
+    if (canEdit) return `${base}${delim}canEdit=1`;
+    return `${base}${delim}guest=1&hideEdit=1`;
+  })();
 
   const post = (msg: object) => frameRef.current?.contentWindow?.postMessage(msg, window.location.origin);
   const send = () =>
@@ -100,7 +109,7 @@ export default function CustomInvitationFrame({ model, values, pick, onSelect, f
   return (
     <iframe
       ref={frameRef}
-      src={customModelUrl(model)}
+      src={frameSrc}
       title={model.name}
       className={className ?? "w-full h-full border-0 block bg-white"}
       allow="autoplay; fullscreen"

@@ -62,12 +62,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   if (isHtml) {
     let html = await res.text();
     const isSelfContained = html.includes('id="editor"') || html.includes('id="fab"');
-    const shouldHideEdit = req.nextUrl.searchParams.get("guest") === "1" || req.nextUrl.searchParams.get("hideEdit") === "1";
+    const isEditMode = req.nextUrl.searchParams.get("canEdit") === "1" || req.nextUrl.searchParams.get("edit") === "1";
+    const shouldHideEdit = !isEditMode || req.nextUrl.searchParams.get("guest") === "1" || req.nextUrl.searchParams.get("hideEdit") === "1" || req.nextUrl.searchParams.get("demo") === "1";
 
     let injection = "";
     if (isSelfContained) {
       if (shouldHideEdit) {
-        injection = `<style id="ev-guest-hide">#fab, #ebar, .fab, .ebar, #editor, .editor { display: none !important; visibility: hidden !important; }</style>`;
+        injection = `<style id="ev-guest-hide">#fab, #ebar, .fab, .ebar, #editor, .editor, button.fab, div.ebar, aside.editor { display: none !important; visibility: hidden !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }</style>`;
       }
     } else {
       injection = shouldHideEdit
