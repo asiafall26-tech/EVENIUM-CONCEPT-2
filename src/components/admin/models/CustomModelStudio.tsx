@@ -197,9 +197,8 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-sm font-semibold border-b-2 cursor-pointer transition-colors ${
-                  tab === t.id ? "border-[#b8924a] text-gray-900" : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-sm font-semibold border-b-2 cursor-pointer transition-colors ${tab === t.id ? "border-[#b8924a] text-gray-900" : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
               >
                 <t.icon size={15} /> {t.label}
               </button>

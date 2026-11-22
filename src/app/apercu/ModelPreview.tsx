@@ -41,7 +41,7 @@ export default function ModelPreview({ src, name, cover, category, showBack }: P
     if (category && category !== "Tous") {
       try {
         sessionStorage.setItem("evenium:last_category", category);
-      } catch {}
+      } catch { }
     }
   }, [category]);
 

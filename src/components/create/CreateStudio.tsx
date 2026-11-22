@@ -556,6 +556,8 @@ function CreateExpressStudioContent({
 
   // Modale de finalisation & paiement
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  // Mode d'édition interne actif dans l'iframe (pour adapter l'en-tête sur mobile et éviter les barres en double)
+  const [isIframeEditing, setIsIframeEditing] = useState(false);
 
   // Écouteurs globaux pour la communication avec les boutons de l'invitation
   useEffect(() => {
@@ -567,6 +569,7 @@ function CreateExpressStudioContent({
       }
     };
     const handleCheckout = () => {
+      setIsIframeEditing(false);
       if (demoOpenRef.current && demoModelIdRef.current) {
         handleChooseModel(demoModelIdRef.current);
         setDemoModelId(null);
@@ -583,6 +586,9 @@ function CreateExpressStudioContent({
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'evenium:close-preview') handleClose();
       if (e.data?.type === 'evenium:open-checkout') handleCheckout();
+      if (e.data?.type === 'evenium:edit-mode') {
+        setIsIframeEditing(Boolean(e.data.isEditing));
+      }
       if (
         e.data?.type === 'evenium:content-change' ||
         e.data?.type === 'velours:content' ||
@@ -945,7 +951,7 @@ function CreateExpressStudioContent({
               email: email,
               role: 'client'
             }, { onConflict: 'id' });
-        } catch {}
+        } catch { }
       }
 
       // 2. Insérer le nouvel événement dérivé des informations de l'invitation
@@ -1073,124 +1079,125 @@ function CreateExpressStudioContent({
               {/* En-tête de prestige */}
               <div className="text-center max-w-3xl mx-auto pt-4 sm:pt-6">
                 <Fleuron className="mx-auto w-40 sm:w-48 h-auto mb-3" />
-            <p className="pl-[0.3em] text-[10.5px] sm:text-xs font-medium uppercase tracking-[0.3em] text-[#8f6f33] mb-3">
-              Étape 1 · Choisissez votre modèle
-            </p>
-            <h1 className="text-3xl sm:text-5xl font-serif not-italic text-[#1d120a] leading-tight">
-              Votre faire-part <span className="italic text-gold-foil">de prestige</span>
-            </h1>
-            <DiamondRule className="mt-4" />
-            <p className="text-xs sm:text-sm text-[#3d3126] mt-4 max-w-2xl mx-auto leading-relaxed">
-              Chaque création Evenium propose une scénographie interactive unique (sceau de cire animé, velours précieux, rubans satinés, musique immersive et gestion des RSVP). Choisissez votre univers pour ouvrir son studio de personnalisation exclusif.
-            </p>
+                <p className="pl-[0.3em] text-[10.5px] sm:text-xs font-medium uppercase tracking-[0.3em] text-[#8f6f33] mb-3">
+                  Étape 1 · Choisissez votre modèle
+                </p>
+                <h1 className="text-3xl sm:text-5xl font-serif not-italic text-[#1d120a] leading-tight">
+                  Votre faire-part <span className="italic text-gold-foil">de prestige</span>
+                </h1>
+                <DiamondRule className="mt-4" />
+                <p className="text-xs sm:text-sm text-[#3d3126] mt-4 max-w-2xl mx-auto leading-relaxed">
+                  Chaque création Evenium propose une scénographie interactive unique (sceau de cire animé, velours précieux, rubans satinés, musique immersive et gestion des RSVP). Choisissez votre univers pour ouvrir son studio de personnalisation exclusif.
+                </p>
 
-            {/* Filtres de catégorie d'événement */}
-            <div className="flex items-center justify-center gap-2 flex-wrap mt-6">
-              {eventCategories.map(cat => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedEventCategory(cat.id);
-                    try { sessionStorage.setItem('evenium:last_category', cat.id); } catch {}
-                  }}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${selectedEventCategory === cat.id
-                      ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
-                      : "bg-[#fffbf5] text-gray-700 border border-[#e4d8c4] hover:border-[#c9a45e]"
-                    }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                  {cat.count > 0 ? (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      selectedEventCategory === cat.id ? "bg-[#b8924a]/30 text-[#f0d999]" : "bg-gray-200/80 text-gray-700"
-                    }`}>
-                      {cat.count}
-                    </span>
-                  ) : cat.isSoon ? (
-                    <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded-full">
-                      Bientôt
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {filteredModels.length === 0 && (
-            <div className="card-lux relative max-w-xl mx-auto w-full text-center px-6 py-12">
-              <LuxFrame className="inset-2.5" />
-              <p className="text-3xl mb-3">{eventCategories.find(c => c.id === selectedEventCategory)?.icon}</p>
-              <h3 className="font-serif not-italic text-2xl text-[#1d120a]">Les modèles « {selectedEventCategory} » arrivent bientôt</h3>
-              <p className="text-sm text-[#3d3126] mt-2">En attendant, nos modèles actuels peuvent être personnalisés pour votre événement.</p>
-              <button
-                type="button"
-                onClick={() => setSelectedEventCategory("Tous")}
-                className="btn-lux relative mt-7 px-7 py-3.5 text-[11px]"
-              >
-                Voir tous les modèles
-              </button>
-            </div>
-          )}
-
-          {/* Grille des modèles disponibles */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto w-full">
-            {filteredModels.map((model) => (
-              <ModelCard
-                key={model.id}
-                name={model.name}
-                image={model.image}
-                kind={model.kind}
-                badge={model.badge}
-                eyebrow={model.category}
-                description={model.subtitle}
-                onPreview={() => setDemoModelId(model.id)}
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                actions={
-                  <div className="grid grid-cols-2 gap-2.5">
+                {/* Filtres de catégorie d'événement */}
+                <div className="flex items-center justify-center gap-2 flex-wrap mt-6">
+                  {eventCategories.map(cat => (
                     <button
+                      key={cat.id}
                       type="button"
-                      onClick={() => setDemoModelId(model.id)}
-                      className="btn-lux-light !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
+                      onClick={() => {
+                        setSelectedEventCategory(cat.id);
+                        try { sessionStorage.setItem('evenium:last_category', cat.id); } catch { }
+                      }}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${selectedEventCategory === cat.id
+                        ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
+                        : "bg-[#fffbf5] text-gray-700 border border-[#e4d8c4] hover:border-[#c9a45e]"
+                        }`}
                     >
-                      <Eye size={14} className="text-[#8f6f33] shrink-0" />
-                      Voir
+                      <span>{cat.icon}</span>
+                      <span>{cat.label}</span>
+                      {cat.count > 0 ? (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${selectedEventCategory === cat.id ? "bg-[#b8924a]/30 text-[#f0d999]" : "bg-gray-200/80 text-gray-700"
+                          }`}>
+                          {cat.count}
+                        </span>
+                      ) : cat.isSoon ? (
+                        <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded-full">
+                          Bientôt
+                        </span>
+                      ) : null}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleChooseModel(model.id)}
-                      className="btn-lux !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
-                    >
-                      Choisir
-                      <ArrowRight size={14} className="text-[#f0d999] shrink-0" />
-                    </button>
-                  </div>
-                }
-              />
-            ))}
-          </div>
+                  ))}
+                </div>
+              </div>
 
-          {/* Rassurance */}
-          <div className="max-w-3xl mx-auto w-full pt-4 pb-8 flex items-center justify-center gap-6 flex-wrap text-xs text-gray-500 border-t border-[#c9a45e]/30">
-            <span className="flex items-center gap-1.5">
-              <Sparkles size={13} className="text-[#b8924a]" /> Personnalisation 100% en direct
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Lock size={13} className="text-[#b8924a]" /> Rendu plein écran avant paiement
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Smartphone size={13} className="text-[#b8924a]" /> Prêt pour WhatsApp &amp; tous écrans
-            </span>
+              {filteredModels.length === 0 && (
+                <div className="card-lux relative max-w-xl mx-auto w-full text-center px-6 py-12">
+                  <LuxFrame className="inset-2.5" />
+                  <p className="text-3xl mb-3">{eventCategories.find(c => c.id === selectedEventCategory)?.icon}</p>
+                  <h3 className="font-serif not-italic text-2xl text-[#1d120a]">Les modèles « {selectedEventCategory} » arrivent bientôt</h3>
+                  <p className="text-sm text-[#3d3126] mt-2">En attendant, nos modèles actuels peuvent être personnalisés pour votre événement.</p>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEventCategory("Tous")}
+                    className="btn-lux relative mt-7 px-7 py-3.5 text-[11px]"
+                  >
+                    Voir tous les modèles
+                  </button>
+                </div>
+              )}
+
+              {/* Grille des modèles disponibles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto w-full">
+                {filteredModels.map((model) => (
+                  <ModelCard
+                    key={model.id}
+                    name={model.name}
+                    image={model.image}
+                    kind={model.kind}
+                    badge={model.badge}
+                    eyebrow={model.category}
+                    description={model.subtitle}
+                    onPreview={() => setDemoModelId(model.id)}
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    actions={
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setDemoModelId(model.id)}
+                          className="btn-lux-light !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
+                        >
+                          <Eye size={14} className="text-[#8f6f33] shrink-0" />
+                          Voir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleChooseModel(model.id)}
+                          className="btn-lux !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
+                        >
+                          Choisir
+                          <ArrowRight size={14} className="text-[#f0d999] shrink-0" />
+                        </button>
+                      </div>
+                    }
+                  />
+                ))}
+              </div>
+
+              {/* Rassurance */}
+              <div className="max-w-3xl mx-auto w-full pt-4 pb-8 flex items-center justify-center gap-6 flex-wrap text-xs text-gray-500 border-t border-[#c9a45e]/30">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-[#b8924a]" /> Personnalisation 100% en direct
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Lock size={13} className="text-[#b8924a]" /> Rendu plein écran avant paiement
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Smartphone size={13} className="text-[#b8924a]" /> Prêt pour WhatsApp &amp; tous écrans
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
       ) : (
         /* ─────────────── 2. TEST & PERSONNALISATION IMMERSIVE AVEC CRAYON (PUIS ACHAT) ─────────────── */
         <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
           {/* Barre supérieure luxueuse avec prise en compte de l'encoche mobile (Safe Area Insets) */}
           <header
-            className="w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none transition-all"
+            className={`w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 items-center justify-between shrink-0 z-30 select-none transition-all ${
+              isIframeEditing ? "hidden md:flex" : "flex"
+            }`}
             style={{
               paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
               paddingBottom: "8px",
@@ -1226,8 +1233,8 @@ function CreateExpressStudioContent({
               className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0"
             >
               <Lock size={13} className="text-black shrink-0" />
-              <span className="hidden sm:inline">Valider &amp; Obtenir mon lien ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
-              <span className="sm:hidden text-[11px] font-black">Valider ({currentActualPrice.toLocaleString('fr-FR')} F)</span>
+              <span className="hidden md:inline">Valider &amp; Obtenir mon lien ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
+              <span className="md:hidden text-[11px] font-black">Valider ({currentActualPrice.toLocaleString('fr-FR')} F)</span>
             </button>
           </header>
 
@@ -1371,12 +1378,12 @@ function CreateExpressStudioContent({
                 <div className="min-h-screen bg-[#0d0603] text-[#fbf7ee] flex items-center justify-center p-4">
                   <div className="w-full max-w-xl mx-auto space-y-4 my-auto">
                     <div className={`p-8 sm:p-12 rounded-3xl ${cartesContent.paperTheme === "rose"
-                        ? "bg-[#fff5f6] text-[#2d1217]"
-                        : cartesContent.paperTheme === "parchment"
-                          ? "bg-[#f8f0de] text-[#28180c]"
-                          : cartesContent.paperTheme === "dark_velvet"
-                            ? "bg-[#160f0c] text-[#fbf7ee]"
-                            : "bg-[#fcf9f2] text-[#24170e]"
+                      ? "bg-[#fff5f6] text-[#2d1217]"
+                      : cartesContent.paperTheme === "parchment"
+                        ? "bg-[#f8f0de] text-[#28180c]"
+                        : cartesContent.paperTheme === "dark_velvet"
+                          ? "bg-[#160f0c] text-[#fbf7ee]"
+                          : "bg-[#fcf9f2] text-[#24170e]"
                       } border border-[#d9c08c] shadow-2xl text-center space-y-4 relative`}>
                       <div className="absolute inset-2 border border-[#d4af37]/30 rounded-2xl pointer-events-none" />
                       <span className="text-[10px] uppercase font-bold tracking-widest text-[#8f6f33]">
@@ -1587,8 +1594,8 @@ function CreateExpressStudioContent({
                   {standardSuccessEvent
                     ? "Paiement Validé · Lien Officiel Débloqué"
                     : isMicroService
-                    ? `${isMotDoux ? "💌 Service Mots doux" : isVoeu ? "🎁 Service Vœux & Célébrations" : "❤️ Service Espace Couple"} · ${microFixedPrice.toLocaleString('fr-FR')} FCFA`
-                    : "Étape finale · Formule & Organisation"}
+                      ? `${isMotDoux ? "💌 Service Mots doux" : isVoeu ? "🎁 Service Vœux & Célébrations" : "❤️ Service Espace Couple"} · ${microFixedPrice.toLocaleString('fr-FR')} FCFA`
+                      : "Étape finale · Formule & Organisation"}
                 </span>
                 <h3 className="font-serif text-lg sm:text-2xl font-bold text-gray-900 mt-1 leading-snug">
                   {standardSuccessEvent
@@ -1678,11 +1685,10 @@ function CreateExpressStudioContent({
                           setCopiedLink(true);
                           setTimeout(() => setCopiedLink(false), 2500);
                         }}
-                        className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
-                          copiedLink
+                        className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${copiedLink
                             ? "bg-emerald-600 text-white"
                             : "bg-black hover:bg-gray-800 text-[#b8924a] border border-[#b8924a]/30"
-                        }`}
+                          }`}
                       >
                         {copiedLink ? (
                           <>
@@ -1841,8 +1847,8 @@ function CreateExpressStudioContent({
                                 {isMotDoux
                                   ? "Lettre d'amour scellée interactive & confidentielle pour faire fondre son cœur."
                                   : isVoeu
-                                  ? "Vœux d'anniversaire et de félicitations féeriques en haute définition."
-                                  : "Invitation intime et romantique pour une soirée exclusive à deux."}
+                                    ? "Vœux d'anniversaire et de félicitations féeriques en haute définition."
+                                    : "Invitation intime et romantique pour une soirée exclusive à deux."}
                               </p>
                             </div>
                             <div className="text-right shrink-0 bg-white/85 px-3.5 py-2 rounded-xl border border-[#b8924a]/40 shadow-xs">
@@ -1934,8 +1940,8 @@ function CreateExpressStudioContent({
                             <div
                               onClick={() => choosePlan('Standard')}
                               className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Standard'
-                                  ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
-                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                                ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
+                                : "border-gray-200 hover:border-gray-300 bg-white"
                                 }`}
                             >
                               <div>
@@ -1975,8 +1981,8 @@ function CreateExpressStudioContent({
                             <div
                               onClick={() => choosePlan('Premium')}
                               className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Premium'
-                                  ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
-                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                                ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
+                                : "border-gray-200 hover:border-gray-300 bg-white"
                                 }`}
                             >
                               <div>
@@ -2012,8 +2018,8 @@ function CreateExpressStudioContent({
                             <div
                               onClick={() => choosePlan('Gold')}
                               className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${selectedPlan === 'Gold'
-                                  ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
-                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                                ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
+                                : "border-gray-200 hover:border-gray-300 bg-white"
                                 }`}
                             >
                               <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
@@ -2188,8 +2194,8 @@ function CreateExpressStudioContent({
                           type="button"
                           onClick={() => setPaymentMethod('wave')}
                           className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${paymentMethod === 'wave'
-                              ? "border-[#1DA1F2] bg-[#E8F5FD] text-[#1DA1F2] font-bold"
-                              : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
+                            ? "border-[#1DA1F2] bg-[#E8F5FD] text-[#1DA1F2] font-bold"
+                            : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                             }`}
                         >
                           <span className="text-base sm:text-lg">🌊</span>
@@ -2200,8 +2206,8 @@ function CreateExpressStudioContent({
                           type="button"
                           onClick={() => setPaymentMethod('om')}
                           className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${paymentMethod === 'om'
-                              ? "border-[#FF6600] bg-[#FFF2E8] text-[#FF6600] font-bold"
-                              : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
+                            ? "border-[#FF6600] bg-[#FFF2E8] text-[#FF6600] font-bold"
+                            : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                             }`}
                         >
                           <span className="text-base sm:text-lg">🟠</span>
@@ -2212,8 +2218,8 @@ function CreateExpressStudioContent({
                           type="button"
                           onClick={() => setPaymentMethod('card')}
                           className={`p-2 sm:p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all text-center min-w-0 ${paymentMethod === 'card'
-                              ? "border-black bg-gray-50 text-black font-bold"
-                              : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
+                            ? "border-black bg-gray-50 text-black font-bold"
+                            : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                             }`}
                         >
                           <CreditCard size={16} className="sm:w-[18px] sm:h-[18px]" />
