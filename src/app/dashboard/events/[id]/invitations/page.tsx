@@ -22,6 +22,7 @@ import EventQRCode from "@/components/ui/EventQRCode";
 import { createClient } from "@/utils/supabase/client";
 import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
 import SplitStudioEditor from "@/components/studio/SplitStudioEditor";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 export default function InvitationsDashboardPage({
   params,
@@ -272,8 +273,27 @@ export default function InvitationsDashboardPage({
     return event.invitationModelId || "Modèle Exclusif";
   };
 
+  // Fermeture des modales d'invitation avec la touche Échap
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") {
+        if (isStudioOpen) setIsStudioOpen(false);
+        else if (isEditModalOpen) setIsEditModalOpen(false);
+        else if (showResetPageModal) setShowResetPageModal(false);
+        else if (isShareModalOpen) setIsShareModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isStudioOpen, isEditModalOpen, showResetPageModal, isShareModalOpen]);
+
   return (
     <div className="max-w-5xl mx-auto w-full relative space-y-5 sm:space-y-6">
+      {/* Menu d'échappement & Fil d'Ariane */}
+      <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Invitations & Liens" />
+
       {/* En-tête */}
       <div>
         <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Invitation</p>

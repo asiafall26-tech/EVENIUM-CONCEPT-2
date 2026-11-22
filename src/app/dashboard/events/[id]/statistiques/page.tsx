@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
 import { BarChart3, Users, Wallet, CheckSquare, TrendingUp, Sparkles } from "lucide-react";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 export default function StatistiquesPage({
   params,
@@ -120,6 +121,9 @@ export default function StatistiquesPage({
 
   return (
     <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6 animate-in fade-in duration-500">
+      {/* Menu d'échappement & Fil d'Ariane */}
+      <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Statistiques" />
+
       <div>
         <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33] flex items-center gap-1.5">
           <BarChart3 size={13} /> Statistiques

@@ -375,6 +375,7 @@ function CreateExpressStudioContent({
     if (model && selectedEventCategory !== "Tous" && !model.compatibleEvents.includes(selectedEventCategory)) setSelectedEventCategory(model.category);
     setSelectedModelId(modelId);
     setHasChosenModel(true);
+    setIsIframeEditing(true);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('model', modelId);
@@ -385,6 +386,7 @@ function CreateExpressStudioContent({
   // Revenir à la galerie des modèles
   const handleReturnToGallery = () => {
     setHasChosenModel(false);
+    setIsIframeEditing(false);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('model');
@@ -570,7 +572,28 @@ function CreateExpressStudioContent({
   // Modale de finalisation & paiement
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   // Mode d'édition interne actif dans l'iframe (pour adapter l'en-tête sur mobile et éviter les barres en double)
-  const [isIframeEditing, setIsIframeEditing] = useState(false);
+  const [isIframeEditing, setIsIframeEditing] = useState(true);
+
+  // Raccourci clavier universel Échap pour fermer les modales et studios
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") {
+        if (isCheckoutModalOpen) {
+          setIsCheckoutModalOpen(false);
+        } else if (isPreviewFullScreenOpen) {
+          setIsPreviewFullScreenOpen(false);
+        } else if (demoModelId) {
+          setDemoModelId(null);
+        } else if (hasChosenModel) {
+          handleReturnToGallery();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isCheckoutModalOpen, isPreviewFullScreenOpen, demoModelId, hasChosenModel]);
 
   // Écouteurs globaux pour la communication avec les boutons de l'invitation
   useEffect(() => {

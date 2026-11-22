@@ -14,6 +14,7 @@ import { activityFromProfile, providerHeadline } from "@/lib/providerProfile";
 import { MAIN_COUNTRIES, WHOLE_COUNTRY, locationLabel, regionsOf, quartiersOf, zonesOf, getAllRegionsWithCountry, findCountryOfRegion, findHierarchyOfQuartier } from "@/lib/zones";
 import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
 import { PrivilegeOffersCarousel } from "@/components/dashboard/PrivilegeOffersCarousel";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 const ALL_EVENTS = "Tous événements";
 
@@ -263,13 +264,13 @@ export default function CataloguePrestatairesPage({
 
   return (
     <div className="p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
-      {/* Fil d'Ariane */}
-      <div className="text-xs text-gray-500 font-medium mb-4 sm:mb-6 flex items-center gap-2">
-        <span>Événement</span> <span className="text-gray-300">&gt;</span> 
-        <Link href={`/dashboard/events/${id}/prestataires`} className="hover:text-black">Mes Prestataires</Link> 
-        <span className="text-gray-300">&gt;</span> 
-        <span className="text-black font-semibold">Annuaire Evenium</span>
-      </div>
+      {/* Fil d'Ariane & Menu d'échappement */}
+      <EventBreadcrumb
+        eventId={event?.id || id}
+        eventName={event?.name || "Événement"}
+        parentPage={{ label: "Mes Prestataires", href: `/dashboard/events/${event?.id || id}/prestataires` }}
+        currentPage="Annuaire Evenium"
+      />
 
       {/* Titre & Description Aérée */}
       <div className="mb-6 sm:mb-8">

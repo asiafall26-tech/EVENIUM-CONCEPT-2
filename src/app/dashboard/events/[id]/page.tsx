@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 import { getInvitationModelName } from "@/data/mock/invitations";
 import { eventDetailsFromRow, hasExtraDetails, requiresEventDetails } from "@/lib/eventDetails";
 import { PrivilegeOffersCarousel } from "@/components/dashboard/PrivilegeOffersCarousel";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 const formatFrenchDate = (d?: string) => {
   if (!d || d === "À définir") return d || "Date à définir";
@@ -148,6 +149,9 @@ export default function EventDashboardPage({
 
   return (
     <div className="max-w-5xl mx-auto">
+      {/* Menu d'échappement & Fil d'Ariane */}
+      <EventBreadcrumb eventId={event.id} eventName={event.name} />
+
       {/* Event Header avec Message d'accueil clair & Présentation responsive aérée */}
       <div className="bg-white rounded-3xl p-5 sm:p-7 lg:p-8 border border-gray-200/90 shadow-sm mb-6 sm:mb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#b8924a]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
@@ -266,12 +270,12 @@ export default function EventDashboardPage({
 
       <div className={`grid grid-cols-1 md:grid-cols-2 ${event.plan === "Gold" ? "lg:grid-cols-4" : "lg:grid-cols-2 max-w-2xl"} gap-6 mb-8`}>
         {/* Formule Card */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col relative overflow-hidden">
+        <Link href={`/dashboard/events/${event.id}/settings`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col relative overflow-hidden hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
           <div className="absolute top-0 right-0 p-3 opacity-[0.03]">
             <Sparkles size={80} />
           </div>
           <div className="flex justify-between items-start mb-4 text-gray-600 font-medium relative z-10">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 group-hover:text-[#8f6f33] transition-colors">
               <Sparkles size={18} className="text-accent" /> Formule {event.plan}
             </div>
             <span className="bg-accent/10 text-accent px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
@@ -314,12 +318,12 @@ export default function EventDashboardPage({
               </>
             )}
           </ul>
-        </div>
+        </Link>
 
         {/* Budget Card */}
         {event.plan === "Gold" && (
-          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col">
-            <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
+          <Link href={`/dashboard/events/${event.id}/budget`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
+            <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
               <Wallet size={18} /> Budget
             </div>
             <div className="mb-2">
@@ -333,12 +337,12 @@ export default function EventDashboardPage({
                 style={{ width: `${budget.total > 0 ? (budget.spent / budget.total) * 100 : 0}%` }}
               />
             </div>
-          </div>
+          </Link>
         )}
 
         {/* Guests Card */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
+        <Link href={`/dashboard/events/${event.id}/participants`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
+          <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
             <Users size={18} /> Invités ({guests.total})
           </div>
           <div className="space-y-4">
@@ -351,12 +355,12 @@ export default function EventDashboardPage({
               <span className="font-semibold text-amber-600">{guests.pending}</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Tasks Card */}
         {event.plan === "Gold" && (
-          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium">
+          <Link href={`/dashboard/events/${event.id}/checklist`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
+            <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
               <CheckSquare size={18} /> To-do List
             </div>
             <div className="mb-2">
@@ -370,7 +374,7 @@ export default function EventDashboardPage({
                 style={{ width: `${tasks.total > 0 ? (tasks.completed / tasks.total) * 100 : 0}%` }}
               />
             </div>
-          </div>
+          </Link>
         )}
       </div>
 

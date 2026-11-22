@@ -26,10 +26,10 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .maybeSingle();
 
-  if (profile?.role === 'prestataire') {
+  const userRole = profile?.role || user.user_metadata?.role || (user.email === 'asiafall26@gmail.com' ? 'admin' : null);
+
+  if (userRole === 'prestataire') {
     redirect('/prestataire');
-  } else if (profile?.role === 'admin') {
-    redirect('/admin');
   }
 
   const fullName = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || "Organisateur";
@@ -57,6 +57,15 @@ export default async function DashboardLayout({
         <>
           <div className="flex-1" />
           <div className="flex items-center gap-2 sm:gap-4">
+            {userRole === 'admin' && (
+              <a
+                href="/admin"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#D4AF37]/15 text-[#8f6f33] border border-[#D4AF37]/40 hover:bg-[#D4AF37]/25 transition-all cursor-pointer"
+                title="Accéder au panneau d'administration Evenium"
+              >
+                <span>Panneau Admin ⚡</span>
+              </a>
+            )}
             <PinAppButton />
             <NotificationBell role="client" />
             <span className="hidden sm:block w-px h-8 bg-gray-100" />

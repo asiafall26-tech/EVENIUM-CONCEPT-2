@@ -252,6 +252,20 @@ export default function SplitStudioEditor({
     }
   };
 
+  // Raccourci clavier Échap pour fermer/valider le studio
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") {
+        if (onClose) onClose();
+        else handleFinish();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, content]);
+
   return (
     <div className="fixed inset-0 z-50 bg-[#13090C] flex flex-col overflow-hidden font-sans select-none pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
       {/* ───────────────────────────────────────────────────────────────────── */}

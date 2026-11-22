@@ -7,6 +7,7 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { EventDetailsFields } from "@/components/events/EventDetailsFields";
 import { eventDetailsFromRow, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from "@/lib/eventDetails";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 export default function EventSettingsPage({
   params,
@@ -63,19 +64,7 @@ export default function EventSettingsPage({
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full animate-in fade-in duration-300">
       {/* Fil d'ariane & Navigation */}
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <Link
-          href={`/dashboard/events/${event.id}`}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-[#b8924a] transition-colors"
-        >
-          <ArrowLeft size={14} /> Retour à l'aperçu
-        </Link>
-        <div className="text-[11px] font-bold text-stone-400 flex items-center gap-1.5 uppercase tracking-wider">
-          <span>{event.name}</span>
-          <ChevronRight size={12} />
-          <span className="text-[#8f6f33]">Paramètres</span>
-        </div>
-      </div>
+      <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Paramètres" />
 
       {/* En-tête de la page */}
       <div className="mb-8">

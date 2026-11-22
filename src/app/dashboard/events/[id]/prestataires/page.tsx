@@ -17,6 +17,7 @@ import { offerTagLine } from "@/lib/offres";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { sendQuoteAcceptedPushAction } from "@/app/actions/notify";
 import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 export default function PrestatairesDashboardPage({
   params,
@@ -62,6 +63,25 @@ export default function PrestatairesDashboardPage({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<any | null>(null);
+
+  // Fermeture des modales avec la touche Échap
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") {
+        if (isDevisOpen) setIsDevisOpen(false);
+        else if (isModifyModalOpen) setIsModifyModalOpen(false);
+        else if (isShareModalOpen) setIsShareModalOpen(false);
+        else if (isRevisionModalOpen) setIsRevisionModalOpen(false);
+        else if (reviewTarget) setReviewTarget(null);
+        else if (selectedServiceForDetails) setSelectedServiceForDetails(null);
+        else if (selectedProvider) setSelectedProvider(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isDevisOpen, isModifyModalOpen, isShareModalOpen, isRevisionModalOpen, reviewTarget, selectedServiceForDetails, selectedProvider]);
 
   const supabase = createClient();
 
@@ -371,22 +391,23 @@ export default function PrestatairesDashboardPage({
 
   if (event.plan !== "Gold") {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
-          <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock size={32} />
-          </div>
-          <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
-          <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-            La gestion des prestataires est exclusivement réservée aux événements utilisant la formule Gold. Retrouvez tous vos contacts professionnels au même endroit.
-          </p>
-          <button className="w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors">
-            Passer à la formule Gold
-          </button>
-          <div className="mt-4">
-             <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
-               Retour à l'aperçu
-             </Link>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+        <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Mes Prestataires" />
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
+            <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock size={32} />
+            </div>
+            <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
+            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+              La gestion des prestataires est exclusivement réservée aux événements utilisant la formule Gold. Retrouvez tous vos contacts professionnels au même endroit.
+            </p>
+            <Link
+              href={`/dashboard/events/${event.id}/settings`}
+              className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors text-center"
+            >
+              Évoluer vers la formule Gold
+            </Link>
           </div>
         </div>
       </div>
@@ -395,9 +416,7 @@ export default function PrestatairesDashboardPage({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
-      <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
-        <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Mes Prestataires</span>
-      </div>
+      <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Mes Prestataires" />
 
       <div className="mb-8">
         <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">

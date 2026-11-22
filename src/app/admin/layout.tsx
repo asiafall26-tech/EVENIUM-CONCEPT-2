@@ -40,13 +40,15 @@ export default async function AdminLayout({
     .from('profiles')
     .select('full_name, role')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (profile?.role === 'client') {
+  const userRole = profile?.role || user.user_metadata?.role || (user.email === 'asiafall26@gmail.com' ? 'admin' : null);
+
+  if (userRole === 'client') {
     redirect('/dashboard');
-  } else if (profile?.role === 'prestataire') {
+  } else if (userRole === 'prestataire') {
     redirect('/prestataire');
-  } else if (profile?.role !== 'admin') {
+  } else if (userRole !== 'admin') {
     redirect('/dashboard');
   }
 

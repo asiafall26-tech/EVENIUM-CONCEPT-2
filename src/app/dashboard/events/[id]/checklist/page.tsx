@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Circle, CheckCircle2, CheckSquare, Plus, Trash2, ArrowLeft, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useEvents } from "@/store/EventsContext";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 type Task = {
   id: string;
@@ -101,24 +102,22 @@ export default function ChecklistPage({
 
   if (event && event.plan !== "Gold") {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
-          <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock size={32} />
-          </div>
-          <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
-          <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-            La gestion de la to-do list et du planning Jour J est exclusivement réservée aux événements utilisant la formule Gold. Suivez chaque étape de vos préparatifs en toute sérénité.
-          </p>
-          <Link
-            href={`/dashboard/events/${event.id}`}
-            className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors text-center"
-          >
-            Retour à l&apos;aperçu ou Évoluer vers Gold
-          </Link>
-          <div className="mt-4">
-            <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
-              Retour à l&apos;aperçu
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+        <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="To-do List & Planning" />
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
+            <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock size={32} />
+            </div>
+            <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
+            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+              La gestion de la to-do list et du planning Jour J est exclusivement réservée aux événements utilisant la formule Gold. Suivez chaque étape de vos préparatifs en toute sérénité.
+            </p>
+            <Link
+              href={`/dashboard/events/${event.id}/settings`}
+              className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors text-center"
+            >
+              Évoluer vers la formule Gold
             </Link>
           </div>
         </div>
@@ -130,12 +129,8 @@ export default function ChecklistPage({
   const progressPercentage = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full">
-      <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
-        <Link href={`/dashboard/events/${id}`} className="hover:text-black transition-colors">Événement</Link>
-        <span className="text-gray-300">&gt;</span>
-        <span className="text-black font-semibold">Checklist</span>
-      </div>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+      <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="To-do List & Planning" />
 
       <div className="flex items-center justify-between mb-8">
         <div>

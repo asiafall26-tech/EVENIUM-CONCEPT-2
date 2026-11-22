@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
 
@@ -44,6 +45,19 @@ export default function ModelPreview({ src, name, cover, category, showBack }: P
       } catch { }
     }
   }, [category]);
+
+  const router = useRouter();
+
+  // Échappement clavier avec la touche Échap
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showBack) {
+        router.push(backUrl);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showBack, backUrl, router]);
 
   const frameSrc = `${src}${src.includes("?") ? "&" : "?"}hideCta=1&demo=1&hideEdit=1`;
 

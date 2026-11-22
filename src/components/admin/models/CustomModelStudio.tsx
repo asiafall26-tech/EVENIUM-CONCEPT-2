@@ -106,6 +106,16 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
     onClose();
   };
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dirty]);
+
   const defaultCustomMessage = generateAccompanimentMessage({
     serviceType: model.invitation_type,
     eventType: model.event_types?.[0],

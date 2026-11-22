@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { markRsvpSeen } from "@/store/BadgeStore";
 import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 export default function ParticipantsDashboardPage({
   params,
@@ -352,8 +353,26 @@ export default function ParticipantsDashboardPage({
     return matchesQuery && (statusFilter === "Tous" || p.status === statusFilter);
   });
 
+  // Fermeture des modales avec la touche Échap
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") {
+        if (isModalOpen) setIsModalOpen(false);
+        else if (isRelanceModalOpen) setIsRelanceModalOpen(false);
+        else if (isWhatsAppModalOpen) setIsWhatsAppModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isModalOpen, isRelanceModalOpen, isWhatsAppModalOpen]);
+
   return (
     <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6">
+      {/* Menu d'échappement & Fil d'Ariane */}
+      <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Invités & RSVP" />
+
       {/* En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>

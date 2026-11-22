@@ -125,6 +125,16 @@ export default function AdminModelEditor({
     onClose();
   };
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dirty]);
+
   const a = model.audio;
   const Studio = model.Studio;
   const Invitation = model.Invitation;

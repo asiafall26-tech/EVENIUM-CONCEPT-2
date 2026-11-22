@@ -162,6 +162,16 @@ export default function AdminPurchasesDashboard({
     | null
   >(null);
 
+  // Fermeture de la modale de dossier via la touche Échap
+  useEffect(() => {
+    if (!modalItem) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModalItem(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modalItem]);
+
   // Compute key metrics
   const totalClientRevenue = useMemo(
     () => clientPurchases.reduce((acc, c) => acc + c.amount, 0),

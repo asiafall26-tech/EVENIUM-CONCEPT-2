@@ -6,6 +6,7 @@ import Link from "next/link";
 import { use, useState, useEffect, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
+import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 export default function BudgetDashboardPage({
   params,
@@ -101,22 +102,23 @@ export default function BudgetDashboardPage({
 
   if (event.plan !== "Gold") {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
-          <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock size={32} />
-          </div>
-          <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
-          <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-            La gestion budgétaire avancée est exclusivement réservée aux événements utilisant la formule Gold. Gérez vos dépenses et maîtrisez vos coûts en toute simplicité.
-          </p>
-          <button className="w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors">
-            Passer à la formule Gold
-          </button>
-          <div className="mt-4">
-             <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
-               Retour à l'aperçu
-             </Link>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+        <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Budget & Finances" />
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
+            <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock size={32} />
+            </div>
+            <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
+            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+              La gestion budgétaire avancée est exclusivement réservée aux événements utilisant la formule Gold. Gérez vos dépenses et maîtrisez vos coûts en toute simplicité.
+            </p>
+            <Link
+              href={`/dashboard/events/${event.id}/settings`}
+              className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors text-center"
+            >
+              Évoluer vers la formule Gold
+            </Link>
           </div>
         </div>
       </div>
@@ -199,8 +201,24 @@ export default function BudgetDashboardPage({
     "Autre": "#9CA3AF"
   };
 
+  // Fermeture de la modale avec la touche Échap
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") {
+        if (isAddExpenseModalOpen) setIsAddExpenseModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isAddExpenseModalOpen]);
+
   return (
     <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6">
+      {/* Menu d'échappement & Fil d'Ariane */}
+      <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Budget & Finances" />
+
       {/* En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
