@@ -2,8 +2,9 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { Circle, CheckCircle2, CheckSquare, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Circle, CheckCircle2, CheckSquare, Plus, Trash2, ArrowLeft, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { useEvents } from "@/store/EventsContext";
 
 type Task = {
   id: string;
@@ -18,7 +19,35 @@ export default function ChecklistPage({
 }) {
   const { id } = use(params);
   const supabase = createClient();
-  
+  const { events, isLoaded } = useEvents();
+
+  const eventFromContext = events.find((e) => e.id === id);
+  const [directEvent, setDirectEvent] = useState<any>(null);
+  const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
+
+  const event = eventFromContext || directEvent;
+
+  useEffect(() => {
+    if (eventFromContext) {
+      setLoadingDirect(false);
+      return;
+    }
+
+    const fetchDirect = async () => {
+      try {
+        const { data } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          setDirectEvent(data);
+        }
+      } catch {
+        // Ignorer
+      } finally {
+        setLoadingDirect(false);
+      }
+    };
+    fetchDirect();
+  }, [id, eventFromContext, supabase]);
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTaskText, setNewTaskText] = useState("");
@@ -61,32 +90,67 @@ export default function ChecklistPage({
     }
   };
 
+  if (loadingDirect && !event) {
+    return (
+      <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
+        <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium text-gray-500 animate-pulse">Chargement de votre to-do list...</p>
+      </div>
+    );
+  }
+
+  if (event && event.plan !== "Gold") {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
+          <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock size={32} />
+          </div>
+          <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
+          <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+            La gestion de la to-do list et du planning Jour J est exclusivement réservée aux événements utilisant la formule Gold. Suivez chaque étape de vos préparatifs en toute sérénité.
+          </p>
+          <Link
+            href={`/dashboard/events/${event.id}`}
+            className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors text-center"
+          >
+            Retour à l&apos;aperçu ou Évoluer vers Gold
+          </Link>
+          <div className="mt-4">
+            <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
+              Retour à l&apos;aperçu
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const completedCount = tasks.filter(t => t.is_completed).length;
   const progressPercentage = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full">
       <div className="text-xs text-gray-500 font-medium mb-6 flex items-center gap-2">
-        <span>Événement</span> <span className="text-gray-300">&gt;</span> <span className="text-black">Checklist</span>
+        <Link href={`/dashboard/events/${id}`} className="hover:text-black transition-colors">Événement</Link>
+        <span className="text-gray-300">&gt;</span>
+        <span className="text-black font-semibold">Checklist</span>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <Link href={`/dashboard/events/${id}`} className="flex items-center gap-2 text-sm text-gray-500 hover:text-black mb-2">
-            <ArrowLeft size={16} /> Retour à l'aperçu
-          </Link>
-          <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-3">
-            <CheckSquare className="text-[#b8924a]" size={32} /> Checklist d'organisation
-          </h1>
-          <p className="text-gray-500 text-sm">Gérez toutes les tâches de votre événement pas à pas.</p>
+          <h1 className="font-serif text-3xl font-bold text-gray-900">To-do list &amp; Planning</h1>
+          <p className="text-gray-500 text-sm mt-1">Gérez vos préparatifs étape par étape pour le Jour J.</p>
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8">
-        <div className="flex justify-between items-end mb-4">
-          <div>
-            <div className="text-sm text-gray-500 font-semibold mb-1">Progression</div>
+      {/* Progress Card */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-[#f5eee1] text-[#8f6f33] rounded-xl">
+              <CheckSquare size={20} />
+            </div>
             <div className="text-3xl font-bold text-gray-900">{progressPercentage}%</div>
           </div>
           <div className="text-sm font-medium text-gray-500">
@@ -129,27 +193,34 @@ export default function ChecklistPage({
             <div className="text-center py-8 text-gray-500">Aucune tâche pour le moment. Ajoutez-en une ci-dessus !</div>
           ) : (
             <div className="space-y-3">
-              {tasks.map(task => (
+              {tasks.map((task) => (
                 <div 
                   key={task.id} 
-                  className={`flex items-center gap-4 p-4 rounded-xl border group transition-all ${task.is_completed ? 'bg-gray-50 border-transparent opacity-75' : 'bg-white border-gray-100 hover:border-[#b8924a]/50 hover:shadow-sm'}`}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                    task.is_completed 
+                      ? 'bg-gray-50/60 border-gray-100 opacity-60' 
+                      : 'bg-white border-gray-100 hover:border-gray-200 shadow-xs'
+                  }`}
                 >
-                  <button onClick={() => toggleTask(task.id, task.is_completed)} className="shrink-0 transition-transform active:scale-90">
+                  <button 
+                    onClick={() => toggleTask(task.id, task.is_completed)}
+                    className="flex items-center gap-3 text-left flex-1 cursor-pointer"
+                  >
                     {task.is_completed ? (
-                      <CheckCircle2 className="text-[#2E7D32]" size={24} />
+                      <CheckCircle2 size={20} className="text-[#b8924a] shrink-0" />
                     ) : (
-                      <Circle className="text-gray-300 group-hover:text-[#b8924a]" size={24} />
+                      <Circle size={20} className="text-gray-300 shrink-0 hover:text-gray-400" />
                     )}
+                    <span className={`text-sm ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-900 font-medium'}`}>
+                      {task.titre}
+                    </span>
                   </button>
-                  <span className={`flex-1 text-sm transition-all ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-800 font-medium'}`}>
-                    {task.titre}
-                  </span>
                   <button 
                     onClick={() => deleteTask(task.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    className="text-gray-300 hover:text-red-500 p-1.5 transition-colors cursor-pointer rounded-lg hover:bg-red-50"
                     title="Supprimer la tâche"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               ))}

@@ -28,7 +28,9 @@ import {
   ChevronRight,
   Download,
   ExternalLink,
-  LayoutDashboard
+  LayoutDashboard,
+  Search,
+  RotateCcw
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import EventQRCode from '@/components/ui/EventQRCode';
@@ -36,7 +38,7 @@ import ModelCard from '@/components/landing/ModelCard';
 import { Fleuron, DiamondRule, LuxFrame } from '@/components/landing/LuxOrnaments';
 import { EVENT_TYPES, EVENT_TYPE_ICONS as EVENT_ICONS } from '@/lib/eventTypes';
 import { defaultClassification } from '@/data/mock/invitations';
-import { subscribeToSync } from '@/lib/syncService';
+import { subscribeToSync, broadcastChange } from '@/lib/syncService';
 import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
 import { generateAccompanimentMessage, getAccompanimentSuggestions } from '@/lib/accompanimentMessages';
@@ -169,9 +171,8 @@ const CATALOG_MODELS: ModelItem[] = [
   }
 ];
 
-// Types d'événements
-// L'id est le type enregistré sur l'événement ; « Bientôt » tant qu'aucun modèle n'est compatible
-const buildEventCategories = (models: ModelItem[]): { id: string; label: string; icon: string; count: number; isSoon?: boolean }[] => {
+// Types d'événements adaptatifs (uniquement ceux qui ont des modèles disponibles > 0, aligné sur la galerie)
+const buildEventCategories = (models: ModelItem[]): { id: string; label: string; icon: string; count: number }[] => {
   const countFor = (catId: string) => {
     if (catId === "Tous") return models.length;
     if (catId === "Vœux") return models.filter((m) => m.kind === "voeu").length;
@@ -181,21 +182,20 @@ const buildEventCategories = (models: ModelItem[]): { id: string; label: string;
     return models.filter((m) => (m.compatibleEvents || []).includes(catId)).length;
   };
 
-  return [
-    { id: "Tous", label: "Tous les modèles", icon: "✨", count: countFor("Tous"), isSoon: false },
-    { id: "Vœux", label: "Vœux & Célébrations", icon: "🎁", count: countFor("Vœux"), isSoon: countFor("Vœux") === 0 },
-    { id: "Couple", label: "Mots doux & Espace Couple", icon: "💌", count: countFor("Couple"), isSoon: countFor("Couple") === 0 },
-    ...EVENT_TYPES.map((t) => {
-      const c = countFor(t);
-      return {
-        id: t,
-        label: t,
-        icon: EVENT_ICONS[t] || "🎉",
-        count: c,
-        isSoon: c === 0,
-      };
-    }),
+  const list = [
+    { id: "Tous", label: "Tous les modèles", icon: "✨", count: countFor("Tous") },
+    { id: "Vœux", label: "Vœux & Célébrations", icon: "🎁", count: countFor("Vœux") },
+    { id: "Couple", label: "Mots doux & Espace Couple", icon: "💌", count: countFor("Couple") },
+    ...EVENT_TYPES.map((t) => ({
+      id: t,
+      label: t,
+      icon: EVENT_ICONS[t] || "🎉",
+      count: countFor(t),
+    })),
   ];
+
+  // Filtrage adaptatif sans boutons à zéro
+  return list.filter((item) => item.id === "Tous" || item.count > 0);
 };
 
 interface CreateStudioProps {
@@ -239,6 +239,7 @@ function CreateExpressStudioContent({
     const p = searchParams.get('model');
     return p || "custom:fatou-ibrahima-v2";
   });
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     const cat = searchParams.get('category') || searchParams.get('cat');
@@ -488,18 +489,30 @@ function CreateExpressStudioContent({
   // Carte statique : pas de musique (à l'édition, à l'achat et après)
   const isStaticCard = currentModel?.kind === 'carte';
 
-  // Filtrage des modèles selon l'événement choisi
+  // Filtrage des modèles selon l'événement choisi et la recherche textuelle en temps réel
   const filteredModels = useMemo(() => {
-    // Modèles retirés du site par l'admin : absents de la galerie
-    if (selectedEventCategory === "Tous") return siteModels;
+    let result = siteModels;
+
     if (selectedEventCategory === "Vœux") {
-      return siteModels.filter((m) => m.kind === "voeu");
+      result = result.filter((m) => m.kind === "voeu");
+    } else if (selectedEventCategory === "Couple") {
+      result = result.filter((m) => m.kind === "couple" || m.kind === "mot_doux");
+    } else if (selectedEventCategory !== "Tous") {
+      result = result.filter((m) => (m.compatibleEvents || []).includes(selectedEventCategory));
     }
-    if (selectedEventCategory === "Couple") {
-      return siteModels.filter((m) => m.kind === "couple" || m.kind === "mot_doux");
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q) ||
+        (m.subtitle && m.subtitle.toLowerCase().includes(q)) ||
+        (m.compatibleEvents && m.compatibleEvents.some(e => e.toLowerCase().includes(q)))
+      );
     }
-    return siteModels.filter((m) => (m.compatibleEvents || []).includes(selectedEventCategory));
-  }, [selectedEventCategory, siteModels]);
+
+    return result;
+  }, [selectedEventCategory, searchQuery, siteModels]);
 
   // Chargement à la demande des champs complets d'un modèle importé lorsqu'il est sélectionné
   useEffect(() => {
@@ -910,45 +923,68 @@ function CreateExpressStudioContent({
           throw new Error("Veuillez renseigner votre nom et une adresse email pour recevoir votre lien.");
         }
 
-        const generatedPassword = password || `Evenium-${Date.now()}`;
+        if (!password || password.length < 6) {
+          throw new Error("Veuillez renseigner un mot de passe d'au moins 6 caractères pour sécuriser l'accès à votre tableau de bord.");
+        }
+
+        const generatedPassword = password;
 
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
+          email: email.trim().toLowerCase(),
           password: generatedPassword,
           options: {
             data: {
-              full_name: fullName,
+              full_name: fullName.trim(),
               role: 'client'
             }
           }
         });
 
-        if (authError && (authError.message.toLowerCase().includes('already') || authError.status === 400 || authError.status === 422)) {
-          if (password) {
+        if (authError) {
+          const isExisting = authError.message.toLowerCase().includes('already') || authError.status === 400 || authError.status === 422;
+          if (isExisting) {
+            // Tenter la connexion sur le compte existant avec le mot de passe fourni
             const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-              email,
-              password
+              email: email.trim().toLowerCase(),
+              password: generatedPassword
             });
             if (!signInError && signInData?.user) {
               user = signInData.user;
+            } else {
+              throw new Error("Cette adresse email est déjà enregistrée. Veuillez saisir le mot de passe associé à votre compte Evenium pour rattacher cet événement, ou vous connecter d'abord.");
             }
+          } else {
+            throw new Error(authError.message || "Erreur lors de la création de votre compte organisateur.");
           }
         } else if (authData?.user) {
           user = authData.user;
+          // Si le signUp n'a pas immédiatement établi la session active dans les cookies, connecter explicitement
+          if (!authData.session) {
+            try {
+              const { data: signInData } = await supabase.auth.signInWithPassword({
+                email: email.trim().toLowerCase(),
+                password: generatedPassword
+              });
+              if (signInData?.user) user = signInData.user;
+            } catch { }
+          }
         }
       }
 
-      // Si pas d'utilisateur Supabase auth (mode invité), créer un ID local pour ne jamais bloquer le client
-      const effectiveUserId = user?.id || `guest-${Date.now()}`;
+      if (!user?.id) {
+        throw new Error("Impossible d'authentifier votre compte organisateur. Veuillez vérifier votre adresse email et votre mot de passe.");
+      }
 
-      if (user?.id && fullName?.trim()) {
+      const effectiveUserId = user.id;
+
+      if (fullName?.trim()) {
         try {
           await supabase
             .from('profiles')
             .upsert({
               id: user.id,
               full_name: fullName.trim(),
-              email: email,
+              email: email ? email.trim().toLowerCase() : user.email,
               role: 'client'
             }, { onConflict: 'id' });
         } catch { }
@@ -1027,6 +1063,7 @@ function CreateExpressStudioContent({
       }
 
       // 4. Débloquer l'accès au Dashboard et afficher l'écran de confirmation & partage
+      broadcastChange("events");
       setStandardSuccessEvent(newEvent);
       setIsSubmitting(false);
 
@@ -1090,50 +1127,104 @@ function CreateExpressStudioContent({
                   Chaque création Evenium propose une scénographie interactive unique (sceau de cire animé, velours précieux, rubans satinés, musique immersive et gestion des RSVP). Choisissez votre univers pour ouvrir son studio de personnalisation exclusif.
                 </p>
 
-                {/* Filtres de catégorie d'événement */}
-                <div className="flex items-center justify-center gap-2 flex-wrap mt-6">
-                  {eventCategories.map(cat => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedEventCategory(cat.id);
-                        try { sessionStorage.setItem('evenium:last_category', cat.id); } catch { }
-                      }}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${selectedEventCategory === cat.id
-                        ? "bg-gradient-to-b from-[#3b2717] to-[#150d07] text-[#f0d999] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
-                        : "bg-[#fffbf5] text-gray-700 border border-[#e4d8c4] hover:border-[#c9a45e]"
+                {/* Barre de recherche en direct & filtres adaptatifs */}
+                <div className="max-w-md mx-auto w-full mt-5 px-2">
+                  <div className="relative">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8f6f33]/60 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Rechercher un faire-part, style ou événement..."
+                      className="w-full pl-10 pr-9 py-2.5 rounded-full bg-white/95 border border-[#e4d8c4] focus:border-[#c9a45e] focus:ring-2 focus:ring-[#c9a45e]/20 text-xs text-gray-800 placeholder-gray-400 outline-none transition-all shadow-xs"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 cursor-pointer"
+                        aria-label="Effacer la recherche"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Filtres de catégorie d'événement (adaptatifs, alignés sur la galerie) */}
+                <div className="flex items-center justify-center gap-2 flex-wrap mt-4">
+                  {eventCategories.map(cat => {
+                    const isSelected = selectedEventCategory.toLowerCase() === cat.id.toLowerCase();
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedEventCategory(cat.id);
+                          try { sessionStorage.setItem('evenium:last_category', cat.id); } catch { }
+                        }}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? "bg-gradient-to-b from-[#2e1d12] to-[#120a06] text-[#f5dfaa] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
+                            : "bg-[#fffbf5] text-[#3d3126] border border-[#e4d8c4] hover:border-[#c9a45e] hover:bg-[#fbf7f0]"
                         }`}
-                    >
-                      <span>{cat.icon}</span>
-                      <span>{cat.label}</span>
-                      {cat.count > 0 ? (
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${selectedEventCategory === cat.id ? "bg-[#b8924a]/30 text-[#f0d999]" : "bg-gray-200/80 text-gray-700"
-                          }`}>
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                            isSelected
+                              ? "bg-white/20 text-[#f5dfaa]"
+                              : "bg-[#f3e7d3] text-[#785b28]"
+                          }`}
+                        >
                           {cat.count}
                         </span>
-                      ) : cat.isSoon ? (
-                        <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded-full">
-                          Bientôt
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Puce d'information si un sous-filtre ou une recherche est actif */}
+                {(selectedEventCategory !== "Tous" || searchQuery) && (
+                  <div className="flex items-center justify-center gap-2 pt-2 animate-in fade-in duration-200">
+                    <span className="text-xs text-[#8f6f33]">
+                      Filtre actif : <strong className="text-[#2b2118]">{selectedEventCategory !== "Tous" ? selectedEventCategory : ""}{searchQuery ? ` « ${searchQuery} »` : ""}</strong> · {filteredModels.length} modèle{filteredModels.length > 1 ? "s" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedEventCategory("Tous");
+                        setSearchQuery("");
+                      }}
+                      className="text-[11px] font-bold text-[#8f6f33] hover:text-[#2b2118] underline cursor-pointer flex items-center gap-1 ml-1"
+                    >
+                      <RotateCcw size={11} /> Réinitialiser
+                    </button>
+                  </div>
+                )}
               </div>
 
               {filteredModels.length === 0 && (
                 <div className="card-lux relative max-w-xl mx-auto w-full text-center px-6 py-12">
                   <LuxFrame className="inset-2.5" />
-                  <p className="text-3xl mb-3">{eventCategories.find(c => c.id === selectedEventCategory)?.icon}</p>
-                  <h3 className="font-serif not-italic text-2xl text-[#1d120a]">Les modèles « {selectedEventCategory} » arrivent bientôt</h3>
-                  <p className="text-sm text-[#3d3126] mt-2">En attendant, nos modèles actuels peuvent être personnalisés pour votre événement.</p>
+                  <p className="text-3xl mb-3">✨</p>
+                  <h3 className="font-serif not-italic text-2xl text-[#1d120a]">Aucun modèle trouvé</h3>
+                  <p className="text-sm text-[#3d3126] mt-2">
+                    {searchQuery
+                      ? `Aucun modèle ne correspond à « ${searchQuery} ».`
+                      : `Aucun modèle disponible pour « ${selectedEventCategory} ».`}
+                  </p>
                   <button
                     type="button"
-                    onClick={() => setSelectedEventCategory("Tous")}
-                    className="btn-lux relative mt-7 px-7 py-3.5 text-[11px]"
+                    onClick={() => {
+                      setSelectedEventCategory("Tous");
+                      setSearchQuery("");
+                    }}
+                    className="btn-lux relative mt-6 px-7 py-3 text-xs flex items-center gap-2 mx-auto cursor-pointer"
                   >
-                    Voir tous les modèles
+                    <RotateCcw size={13} className="text-[#f0d999]" />
+                    <span>Réinitialiser les filtres ({siteModels.length} modèles)</span>
                   </button>
                 </div>
               )}
