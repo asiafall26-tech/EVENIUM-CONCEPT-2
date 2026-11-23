@@ -691,6 +691,7 @@ function CreateExpressStudioContent({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [customEventName, setCustomEventName] = useState<string>('');
 
   // États de soumission & succès standard
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -805,9 +806,14 @@ function CreateExpressStudioContent({
       if (m) {
         const val: any = customContentOf(m) || {};
         const txt = val.texts || {};
-        const pA = txt.pA || val.partnerA || '';
-        const pB = txt.pB || val.partnerB || '';
-        if (pA && pB) {
+        // Prénoms du couple : chercher n1/n2 (Redesign Fatou & Ibrahima), pA/pB, partnerA/partnerB, prenom1/prenom2, mariee/marie
+        const pA = txt.n1 || txt.pA || txt.partnerA || txt.prenom1 || txt.mariee || val.n1 || val.partnerA || val.celebrant || '';
+        const pB = txt.n2 || txt.pB || txt.partnerB || txt.prenom2 || txt.marie || val.n2 || val.partnerB || '';
+        const explicitTitle = txt.eventName || txt.nomEvenement || txt.title || txt.titre || val.title || val.name || '';
+
+        if (explicitTitle && explicitTitle.trim() && !explicitTitle.includes("{{")) {
+          name = explicitTitle.trim();
+        } else if (pA && pB) {
           name = formatCoupleTitle(selectedEventCategory, pA, pB);
         } else if (pA) {
           name = formatCoupleTitle(selectedEventCategory, pA);
@@ -830,11 +836,13 @@ function CreateExpressStudioContent({
       }
     }
 
+    const officialName = customEventName.trim() || name.trim() || "Mon Événement Evenium";
+
     return {
-      name: name.trim() || "Mon Événement Evenium",
+      name: officialName,
       date: date || new Date().toISOString().split('T')[0],
       time: time || "16:00",
-      location: location || "Dakar, Sénégal",
+      location: location || "",
       // Valeurs réellement saisies dans l'invitation (sans valeur par défaut)
       rawDate: date || "",
       rawTime: time || "",
@@ -844,7 +852,7 @@ function CreateExpressStudioContent({
       contentJson
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent, customModels, customContents]);
+  }, [selectedModelId, selectedEventCategory, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent, customModels, customContents, customEventName]);
 
   // Identification précise des 3 grands univers de services Evenium
   const isVoeu = useMemo(() => {
@@ -954,13 +962,9 @@ function CreateExpressStudioContent({
     setErrorMessage("");
 
     try {
-      if (!isMicroService && requiresEventDetails(selectedPlan)) {
-        const missing = missingEventDetails(detailsWithInvitation);
-        if (missing.length) {
-          setShowDetailsErrors(true);
-          throw new Error(`Formule ${selectedPlan} : merci de renseigner ${missing.join(", ")} de votre événement.`);
-        }
-      }
+      // Processus express : aucun blocage sur les détails organisationnels.
+      // Toutes les informations d'organisation (budget, invités, prestataires)
+      // sont complétées directement depuis le dashboard débloqué.
 
       let user = currentUser;
 
@@ -1045,7 +1049,7 @@ function CreateExpressStudioContent({
         type: isMotDoux ? "Mots Doux" : isVoeu ? "Vœux" : isCouple ? "Couple" : (selectedEventCategory === "Tous" ? currentModel.category : selectedEventCategory),
         date: eventMetadata.date,
         time: eventMetadata.time,
-        location: eventMetadata.location,
+        location: eventMetadata.location || "À définir",
         plan: isMotDoux ? "Mots Doux" : isVoeu ? "Vœux" : isCouple ? "Couple" : selectedPlan,
         format: isStaticCard ? 'Carte' : 'Animée',
         status: 'active',
@@ -1751,7 +1755,7 @@ function CreateExpressStudioContent({
 
       {isCheckoutModalOpen && (
         <div
-          className="fixed inset-0 z-[150] flex items-start justify-center p-3 sm:p-6 md:p-8 pt-[max(env(safe-area-inset-top,0px),40px)] pb-8 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
+          className="fixed inset-0 z-[150] flex items-start justify-center p-3 sm:p-6 md:p-8 pt-[max(env(safe-area-inset-top,0px),48px)] pb-8 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setIsCheckoutModalOpen(false);
@@ -1765,7 +1769,7 @@ function CreateExpressStudioContent({
             <div
               className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-gray-100 bg-[#fbf7f0] gap-3"
               style={{
-                paddingTop: "max(env(safe-area-inset-top, 0px), 20px)",
+                paddingTop: "max(env(safe-area-inset-top, 0px), 24px)",
               }}
             >
               <div className="min-w-0">
@@ -1838,7 +1842,7 @@ function CreateExpressStudioContent({
                         {eventMetadata.name}
                       </h4>
                       <p className="text-[11px] text-gray-500">
-                        {eventMetadata.date} · {eventMetadata.location || "Dakar"}
+                        {eventMetadata.date}
                       </p>
                     </div>
                   </div>
@@ -2234,22 +2238,20 @@ function CreateExpressStudioContent({
                           </div>
                         </div>
 
-                        {/* Détails de l'événement : obligatoires pour Premium et Gold */}
-                        {requiresEventDetails(selectedPlan) && (
-                          <div className="pt-2 border-t border-gray-100">
-                            <div className="mb-3">
-                              <label className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                                <Crown size={15} className="text-[#b8924a] shrink-0" /> Détails de votre événement
-                              </label>
-                              <p className="text-[11px] text-gray-500 mt-0.5">
-                                Inclus dans la formule {selectedPlan === "Gold" ? "Gold VIP" : selectedPlan} : ces informations sont reportées automatiquement dans votre dashboard, où vous pourrez les modifier.
+                        {/* Processus express : Réservons les détails de l'événement au dashboard organisateur */}
+                        <div className="pt-2 border-t border-gray-100">
+                          <div className="bg-gradient-to-r from-[#fbf7f0] to-[#f8f0e3] p-3.5 sm:p-4 rounded-2xl border border-[#b8924a]/30 flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#b8924a]/15 border border-[#b8924a]/40 flex items-center justify-center shrink-0 mt-0.5">
+                              <Sparkles size={16} className="text-[#b8924a]" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-gray-900">Processus d&apos;organisation express</p>
+                              <p className="text-[11px] text-gray-600 mt-0.5 leading-relaxed">
+                                Vos détails d&apos;organisation (budget prévisionnel, nombre d&apos;invités, prestataires) seront complétés en toute liberté directement depuis votre <strong>Dashboard Organisateur</strong> une fois votre compte activé.
                               </p>
                             </div>
-                            <div className="bg-[#fbf7f0] p-3 sm:p-4 rounded-2xl border border-[#b8924a]/30 overflow-hidden">
-                              <EventDetailsFields value={detailsWithInvitation} onChange={setEventDetails} showErrors={showDetailsErrors} compact />
-                            </div>
                           </div>
-                        )}
+                        </div>
 
                         {/* 2. Nom de l'Organisateur & Éléments d'Authentification */}
                         <div className={`pt-2 border-t border-gray-100 ${inDashboard && currentUser ? 'hidden' : ''}`}>
@@ -2452,13 +2454,20 @@ function CreateExpressStudioContent({
                     {/* Informations reprises automatiquement */}
                     {isMicroService ? (
                       <div className="space-y-2.5 text-xs">
-                        <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1 min-w-0">
-                          <p className="text-gray-500 text-[11px]">
-                            {isMotDoux ? "Titre / Destinataire du Mot Doux :" : isVoeu ? "Vœux destinés à :" : "Titre de l'Invitation :"}
-                          </p>
-                          <p className="font-serif font-bold text-gray-900 text-sm break-words">
-                            {eventMetadata.name}
-                          </p>
+                        <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1.5 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-500 text-[11px] font-medium">
+                              {isMotDoux ? "Titre / Destinataire du Mot Doux :" : isVoeu ? "Vœux destinés à :" : "Titre de l'Invitation :"}
+                            </p>
+                            <span className="text-[10px] text-[#b8924a] font-bold">Modifiable</span>
+                          </div>
+                          <input
+                            type="text"
+                            value={customEventName || eventMetadata.name}
+                            onChange={(e) => setCustomEventName(e.target.value)}
+                            placeholder="Ex: Mon Événement..."
+                            className="w-full text-xs sm:text-sm font-serif font-bold text-gray-900 bg-amber-50/40 border border-[#b8924a]/30 focus:border-[#b8924a] focus:ring-1 focus:ring-[#b8924a] rounded-lg px-2.5 py-1.5 outline-none transition-all"
+                          />
                         </div>
 
                         {/* Message chic d'accompagnement */}
@@ -2480,27 +2489,25 @@ function CreateExpressStudioContent({
                           Reprise automatique des données
                         </span>
 
-                        <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1 min-w-0">
-                          <p className="text-gray-500 text-[11px]">Nom officiel de l&apos;événement :</p>
-                          <p className="font-serif font-bold text-gray-900 text-sm break-words">
-                            {eventMetadata.name}
-                          </p>
+                        <div className="bg-white p-3 rounded-xl border border-gray-200/80 space-y-1.5 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-500 text-[11px] font-medium">Nom officiel de l&apos;événement :</p>
+                            <span className="text-[10px] text-[#b8924a] font-bold">Modifiable</span>
+                          </div>
+                          <input
+                            type="text"
+                            value={customEventName || eventMetadata.name}
+                            onChange={(e) => setCustomEventName(e.target.value)}
+                            placeholder="Ex: Mariage de Fatou & Ibrahima"
+                            className="w-full text-xs sm:text-sm font-serif font-bold text-gray-900 bg-amber-50/40 border border-[#b8924a]/30 focus:border-[#b8924a] focus:ring-1 focus:ring-[#b8924a] rounded-lg px-2.5 py-1.5 outline-none transition-all"
+                          />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
-                            <p className="text-gray-400 text-[10px]">Date &amp; Heure :</p>
-                            <p className="font-semibold text-gray-800 text-[11px] truncate">
-                              {eventMetadata.date} à {eventMetadata.time}
-                            </p>
-                          </div>
-
-                          <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
-                            <p className="text-gray-400 text-[10px]">Lieu :</p>
-                            <p className="font-semibold text-gray-800 text-[11px] truncate">
-                              {eventMetadata.location || "Non spécifié"}
-                            </p>
-                          </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 min-w-0">
+                          <p className="text-gray-400 text-[10px]">Date &amp; Heure :</p>
+                          <p className="font-semibold text-gray-800 text-[11px] truncate">
+                            {eventMetadata.date} à {eventMetadata.time}
+                          </p>
                         </div>
                       </div>
                     )}
