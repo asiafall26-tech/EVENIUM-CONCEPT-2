@@ -142,7 +142,12 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
     <div className="fixed inset-0 w-screen h-screen z-[60] bg-[#faf7f5] overflow-hidden">
       <div className="w-full h-full flex flex-col">
         {/* En-tête */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-gray-100 bg-white shrink-0">
+        <div
+          className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-gray-100 bg-white shrink-0"
+          style={{
+            paddingTop: "max(env(safe-area-inset-top, 0px), 10px)",
+          }}
+        >
           <div className="min-w-0 flex-1">
             <p className="text-[10px] uppercase tracking-[0.25em] text-[#8f6f33]">Studio des modèles · nom public de l&apos;invitation</p>
             {editingName ? (
@@ -221,7 +226,7 @@ export default function CustomModelStudio({ model, onClose, onSave, onPublish }:
           {tab === "contenu" && (
             <div className="h-full w-full bg-[#0e0a08] relative flex flex-col overflow-hidden">
               <iframe
-                src={`${customModelUrl(model)}?preview=1&canEdit=1&autoEdit=1&hideCta=1&admin=1&v=${model.slug}`}
+                src={`${customModelUrl(model)}?preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1&admin=1&v=${model.slug}`}
                 title={`Éditeur interactif de ${name}`}
                 className="w-full h-full border-0 bg-[#0e0a08] block"
                 allow="autoplay; fullscreen"

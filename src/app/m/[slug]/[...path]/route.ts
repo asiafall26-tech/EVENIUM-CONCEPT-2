@@ -63,24 +63,48 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     let html = await res.text();
     const isSelfContained = html.includes('id="editor"') || html.includes('id="fab"');
     const isEditMode = req.nextUrl.searchParams.get("canEdit") === "1" || req.nextUrl.searchParams.get("edit") === "1";
+    const eventId = req.nextUrl.searchParams.get("eventId") || req.nextUrl.searchParams.get("event");
     const shouldHideEdit = !isEditMode || req.nextUrl.searchParams.get("guest") === "1" || req.nextUrl.searchParams.get("hideEdit") === "1" || req.nextUrl.searchParams.get("demo") === "1";
 
-    // Injecter les modifications enregistrées en base (content / draft_content) dans le modèle
+    // Injecter les données réelles (de l'événement si invité ou client, sinon du modèle custom_invitation_models)
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       if (supabaseUrl && serviceKey) {
         const { createClient } = await import("@supabase/supabase-js");
         const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-        const { data: row } = await supabase
-          .from("custom_invitation_models")
-          .select("content, draft_content")
-          .eq("slug", slug)
-          .maybeSingle();
 
-        const modelData = isEditMode
-          ? (row?.draft_content && Object.keys(row.draft_content).length > 0 ? row.draft_content : row?.content)
-          : row?.content;
+        let modelData: any = null;
+
+        if (eventId) {
+          const { data: eventRow } = await supabase
+            .from("events")
+            .select("id, name, date, time, location, invitation_content, format")
+            .eq("id", eventId)
+            .maybeSingle();
+
+          if (eventRow?.invitation_content) {
+            const raw = eventRow.invitation_content;
+            modelData = raw?.values ?? raw;
+            if (modelData && typeof modelData === "object") {
+              if (eventRow.format === "Carte" || eventRow.format === "Statique") {
+                modelData = { ...modelData, audioUrl: "", music: "" };
+              }
+            }
+          }
+        }
+
+        if (!modelData) {
+          const { data: row } = await supabase
+            .from("custom_invitation_models")
+            .select("content, draft_content")
+            .eq("slug", slug)
+            .maybeSingle();
+
+          modelData = isEditMode
+            ? (row?.draft_content && Object.keys(row.draft_content).length > 0 ? row.draft_content : row?.content)
+            : row?.content;
+        }
 
         if (modelData && typeof modelData === "object" && Object.keys(modelData).length > 0) {
           const jsonStr = JSON.stringify(modelData).replace(/</g, "\\u003c");
@@ -104,7 +128,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     let injection = "";
     if (isSelfContained) {
       if (shouldHideEdit) {
-        injection = `<style id="ev-guest-hide">#fab, #ebar, .fab, .ebar, #editor, .editor, button.fab, div.ebar, aside.editor { display: none !important; visibility: hidden !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }</style>`;
+        injection = `<style id="ev-guest-hide">#fab, #ebar, .fab, .ebar, #editor, .editor, button.fab, div.ebar, aside.editor, .btn-validate-full, #ev-exit-btn, .evenium-cta, #ev-end-cta { display: none !important; visibility: hidden !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }</style>`;
       } else if (req.nextUrl.searchParams.get("hideEbar") === "1" || req.nextUrl.searchParams.get("preview") === "1") {
         injection = `<style id="ev-embedded-ebar">#ebar, .ebar, div.ebar { display: none !important; visibility: hidden !important; pointer-events: none !important; height: 0 !important; min-height: 0 !important; padding: 0 !important; } body.editing { padding-top: 0 !important; } .editor, aside.editor { top: 0 !important; }</style>`;
       }

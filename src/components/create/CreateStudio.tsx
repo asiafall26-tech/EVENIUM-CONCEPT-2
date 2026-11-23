@@ -1333,9 +1333,9 @@ function CreateExpressStudioContent({
           <header
             className="w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none shadow-md"
             style={{
-              paddingTop: "max(env(safe-area-inset-top, 0px), 10px)",
+              paddingTop: "max(env(safe-area-inset-top, 0px), 14px)",
               paddingBottom: "10px",
-              minHeight: "calc(3.6rem + env(safe-area-inset-top, 0px))",
+              minHeight: "calc(3.75rem + env(safe-area-inset-top, 0px))",
             }}
           >
             {/* Côté gauche : Bouton retour vers la galerie des modèles (Échappement direct) */}
@@ -1431,9 +1431,9 @@ function CreateExpressStudioContent({
             <header
               className="fixed top-0 left-0 right-0 z-[120] bg-[#0e0a08]/94 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-2 px-2.5 sm:px-6 shadow-lg select-none"
               style={{
-                paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
-                paddingBottom: "8px",
-                minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+                paddingTop: "max(env(safe-area-inset-top, 0px), 14px)",
+                paddingBottom: "10px",
+                minHeight: "calc(3.75rem + env(safe-area-inset-top, 0px))",
               }}
             >
               <button
@@ -1618,11 +1618,11 @@ function CreateExpressStudioContent({
           >
             {/* Barre de navigation supérieure claire & ergonomique avec safe-area */}
             <header
-              className="w-full bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-50 select-none"
+              className="w-full bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-50 select-none shadow-md"
               style={{
-                paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
-                paddingBottom: "8px",
-                minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+                paddingTop: "max(env(safe-area-inset-top, 0px), 14px)",
+                paddingBottom: "10px",
+                minHeight: "calc(3.75rem + env(safe-area-inset-top, 0px))",
               }}
             >
               {/* Bouton retour vers la galerie des modèles */}

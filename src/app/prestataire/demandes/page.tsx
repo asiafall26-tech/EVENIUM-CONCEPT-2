@@ -1,24 +1,24 @@
 "use client";
 
-import { 
-  FileText, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  Search, 
-  Mail, 
-  Eye, 
-  MessageCircle, 
-  Send, 
-  Calendar, 
-  Users, 
-  MapPin, 
-  Briefcase, 
-  Image as ImageIcon, 
-  Paperclip, 
+import {
+  FileText,
+  Plus,
+  Edit2,
+  Trash2,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Search,
+  Mail,
+  Eye,
+  MessageCircle,
+  Send,
+  Calendar,
+  Users,
+  MapPin,
+  Briefcase,
+  Image as ImageIcon,
+  Paperclip,
   RefreshCw,
   FolderOpen,
   Phone,
@@ -189,7 +189,7 @@ export default function PrestataireDemandesPage() {
     const eventDate = demande.event_date || demande.events?.date;
     const eventName = demande.events?.name || demande.event_type || 'Prestation Evenium';
     if (eventDate) {
-      const planningTitle = demande.event_time 
+      const planningTitle = demande.event_time
         ? `[${demande.event_time}] Prestation Evenium - ${eventName}`
         : `Prestation Evenium - ${eventName}`;
 
@@ -265,7 +265,7 @@ export default function PrestataireDemandesPage() {
       const eventName = selectedDemande.events?.name || selectedDemande.event_type || "votre événement";
 
       // 1. Mettre à jour la demande
-      const updatedNotes = selectedDemande.needs_description 
+      const updatedNotes = selectedDemande.needs_description
         ? `${selectedDemande.needs_description}\n\n=== CONTRE-PROPOSITION DU PRESTATAIRE ===\nBudget proposé : ${priceNum.toLocaleString('fr-FR')} FCFA\nRemarques : ${adjustNotes || 'Proposition ajustée'}`
         : `=== CONTRE-PROPOSITION DU PRESTATAIRE ===\nBudget proposé : ${priceNum.toLocaleString('fr-FR')} FCFA\nRemarques : ${adjustNotes || 'Proposition ajustée'}`;
 
@@ -419,7 +419,7 @@ export default function PrestataireDemandesPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500 space-y-8">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -438,25 +438,22 @@ export default function PrestataireDemandesPage() {
       {/* Onglets principaux */}
       <div className="flex space-x-2 sm:space-x-4 border-b border-gray-200 overflow-x-auto no-scrollbar">
         <button
-          className={`pb-3.5 px-3 font-bold text-xs sm:text-sm transition-colors border-b-2 flex items-center gap-2 cursor-pointer ${
-            activeTab === "demandes" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
-          }`}
+          className={`pb-3.5 px-3 font-bold text-xs sm:text-sm transition-colors border-b-2 flex items-center gap-2 cursor-pointer ${activeTab === "demandes" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
+            }`}
           onClick={() => setActiveTab("demandes")}
         >
           <Clock size={16} /> Demandes reçues ({demandes.length})
         </button>
         <button
-          className={`pb-3.5 px-3 font-bold text-xs sm:text-sm transition-colors border-b-2 flex items-center gap-2 cursor-pointer ${
-            activeTab === "devis" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
-          }`}
+          className={`pb-3.5 px-3 font-bold text-xs sm:text-sm transition-colors border-b-2 flex items-center gap-2 cursor-pointer ${activeTab === "devis" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
+            }`}
           onClick={() => setActiveTab("devis")}
         >
           <FileText size={16} /> Devis émis ({devis.length})
         </button>
         <button
-          className={`pb-3.5 px-3 font-bold text-xs sm:text-sm transition-colors border-b-2 flex items-center gap-2 cursor-pointer ${
-            activeTab === "dossiers" ? "border-[#b8924a] text-[#8f6f33]" : "border-transparent text-gray-400 hover:text-black"
-          }`}
+          className={`pb-3.5 px-3 font-bold text-xs sm:text-sm transition-colors border-b-2 flex items-center gap-2 cursor-pointer ${activeTab === "dossiers" ? "border-[#b8924a] text-[#8f6f33]" : "border-transparent text-gray-400 hover:text-black"
+            }`}
           onClick={() => setActiveTab("dossiers")}
         >
           <FolderOpen size={16} /> Dossiers par client ({clientFolders.length})
@@ -476,94 +473,94 @@ export default function PrestataireDemandesPage() {
             </div>
           ) : (
             <>
-            <ul className="md:hidden divide-y divide-gray-100">
-              {demandes.map((demande) => (
-                <li key={demande.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedDemande(demande);
-                      setIsAdjustMode(false);
-                      setIsViewModalOpen(true);
-                      if (demande.status === 'Nouvelle') {
-                        supabase.from('demandes_devis').update({ status: 'À traiter' }).eq('id', demande.id).then(() => fetchData());
-                      }
-                    }}
-                    className="w-full text-left px-4 py-4 flex items-start gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-gray-900 truncate">{demande.client_name || demande.events?.profiles?.full_name || 'Client Inconnu'}</p>
-                        {getStatusBadge(demande.status)}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {demande.event_type || demande.events?.type || 'Événement'} · {demande.event_date || 'Date non précisée'}
-                        {demande.event_location ? ` · ${demande.event_location}` : ''}
-                      </p>
-                      <p className="text-sm text-gray-800 mt-1.5">
-                        {demande.service_name || 'Service non spécifié'}
-                        <span className="text-[#8f6f33] font-semibold">
-                          {demande.budget_indicatif ? ` · ${Number(demande.budget_indicatif).toLocaleString()} FCFA` : ''}
-                        </span>
-                      </p>
-                    </div>
-                    <Eye size={18} className="shrink-0 mt-1 text-gray-400" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <table className="hidden md:table w-full min-w-[680px] text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
-                  <th className="p-4 font-medium">Client & Événement</th>
-                  <th className="p-4 font-medium">Date</th>
-                  <th className="p-4 font-medium">Service demandé</th>
-                  <th className="p-4 font-medium">Budget indicatif</th>
-                  <th className="p-4 font-medium">Statut</th>
-                  <th className="p-4 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
+              <ul className="md:hidden divide-y divide-gray-100">
                 {demandes.map((demande) => (
-                  <tr key={demande.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-bold text-gray-900">{demande.client_name || demande.events?.profiles?.full_name || 'Client Inconnu'}</div>
-                      <div className="text-xs text-gray-500">{demande.event_type || demande.events?.type || 'Événement'}</div>
-                    </td>
-                    <td className="p-4 text-gray-600">
-                      <div>{demande.event_date || 'Date non précisée'}</div>
-                      <div className="text-xs">{demande.event_location || ''}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-medium text-gray-900">{demande.service_name || 'Non spécifié'}</div>
-                      <div className="text-xs text-gray-500">Qte: {demande.needs_quantity || 1}</div>
-                    </td>
-                    <td className="p-4 font-medium text-[#b8924a]">
-                      {demande.budget_indicatif ? `${Number(demande.budget_indicatif).toLocaleString()} FCFA` : 'Non renseigné'}
-                    </td>
-                    <td className="p-4">
-                      {getStatusBadge(demande.status)}
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedDemande(demande);
-                          setIsAdjustMode(false);
-                          setIsViewModalOpen(true);
-                          if(demande.status === 'Nouvelle') {
-                            supabase.from('demandes_devis').update({ status: 'À traiter' }).eq('id', demande.id).then(() => fetchData());
-                          }
-                        }}
-                        className="px-3 py-1.5 bg-stone-100 hover:bg-[#b8924a] hover:text-white rounded-xl text-stone-700 font-bold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                        title="Voir la demande"
-                      >
-                        <Eye size={15} /> Voir détails
-                      </button>
-                    </td>
-                  </tr>
+                  <li key={demande.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDemande(demande);
+                        setIsAdjustMode(false);
+                        setIsViewModalOpen(true);
+                        if (demande.status === 'Nouvelle') {
+                          supabase.from('demandes_devis').update({ status: 'À traiter' }).eq('id', demande.id).then(() => fetchData());
+                        }
+                      }}
+                      className="w-full text-left px-4 py-4 flex items-start gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-gray-900 truncate">{demande.client_name || demande.events?.profiles?.full_name || 'Client Inconnu'}</p>
+                          {getStatusBadge(demande.status)}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {demande.event_type || demande.events?.type || 'Événement'} · {demande.event_date || 'Date non précisée'}
+                          {demande.event_location ? ` · ${demande.event_location}` : ''}
+                        </p>
+                        <p className="text-sm text-gray-800 mt-1.5">
+                          {demande.service_name || 'Service non spécifié'}
+                          <span className="text-[#8f6f33] font-semibold">
+                            {demande.budget_indicatif ? ` · ${Number(demande.budget_indicatif).toLocaleString()} FCFA` : ''}
+                          </span>
+                        </p>
+                      </div>
+                      <Eye size={18} className="shrink-0 mt-1 text-gray-400" />
+                    </button>
+                  </li>
                 ))}
-              </tbody>
-            </table>
+              </ul>
+              <table className="hidden md:table w-full min-w-[680px] text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
+                    <th className="p-4 font-medium">Client & Événement</th>
+                    <th className="p-4 font-medium">Date</th>
+                    <th className="p-4 font-medium">Service demandé</th>
+                    <th className="p-4 font-medium">Budget indicatif</th>
+                    <th className="p-4 font-medium">Statut</th>
+                    <th className="p-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {demandes.map((demande) => (
+                    <tr key={demande.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-bold text-gray-900">{demande.client_name || demande.events?.profiles?.full_name || 'Client Inconnu'}</div>
+                        <div className="text-xs text-gray-500">{demande.event_type || demande.events?.type || 'Événement'}</div>
+                      </td>
+                      <td className="p-4 text-gray-600">
+                        <div>{demande.event_date || 'Date non précisée'}</div>
+                        <div className="text-xs">{demande.event_location || ''}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-medium text-gray-900">{demande.service_name || 'Non spécifié'}</div>
+                        <div className="text-xs text-gray-500">Qte: {demande.needs_quantity || 1}</div>
+                      </td>
+                      <td className="p-4 font-medium text-[#b8924a]">
+                        {demande.budget_indicatif ? `${Number(demande.budget_indicatif).toLocaleString()} FCFA` : 'Non renseigné'}
+                      </td>
+                      <td className="p-4">
+                        {getStatusBadge(demande.status)}
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => {
+                            setSelectedDemande(demande);
+                            setIsAdjustMode(false);
+                            setIsViewModalOpen(true);
+                            if (demande.status === 'Nouvelle') {
+                              supabase.from('demandes_devis').update({ status: 'À traiter' }).eq('id', demande.id).then(() => fetchData());
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-stone-100 hover:bg-[#b8924a] hover:text-white rounded-xl text-stone-700 font-bold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                          title="Voir la demande"
+                        >
+                          <Eye size={15} /> Voir détails
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </>
           )}
         </div>
@@ -592,7 +589,7 @@ export default function PrestataireDemandesPage() {
                   {devis.map((d) => (
                     <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="p-4 font-mono font-medium text-gray-900">
-                        {d.reference || `DEV-${d.id.substring(0,8).toUpperCase()}`}
+                        {d.reference || `DEV-${d.id.substring(0, 8).toUpperCase()}`}
                       </td>
                       <td className="p-4">
                         <div className="font-bold text-gray-900">{d.demandes_devis?.client_name || d.client_name || 'Client Inconnu'}</div>
@@ -642,7 +639,7 @@ export default function PrestataireDemandesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {clientFolders.map((folder) => (
               <div key={folder.id} className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-                
+
                 {/* Header du dossier */}
                 <div>
                   <div className="flex items-start justify-between pb-4 border-b border-stone-100">
@@ -691,7 +688,7 @@ export default function PrestataireDemandesPage() {
                         {folder.devis.map((d) => (
                           <div key={d.id} className="flex items-center justify-between p-2.5 rounded-xl bg-stone-50/70 border border-stone-100 text-xs">
                             <div>
-                              <span className="font-mono font-bold text-stone-900">{d.reference || `DEV-${d.id.substring(0,6)}`}</span>
+                              <span className="font-mono font-bold text-stone-900">{d.reference || `DEV-${d.id.substring(0, 6)}`}</span>
                               <span className="text-stone-400 ml-2">{d.demandes_devis?.service_name || "Prestation"}</span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -746,17 +743,17 @@ export default function PrestataireDemandesPage() {
 
       {/* Modal View Demande & Ajustement */}
       {isViewModalOpen && selectedDemande && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsViewModalOpen(false);
           }}
         >
-          <div 
+          <div
             className="bg-white rounded-none sm:rounded-3xl w-full max-w-6xl h-dvh sm:h-auto max-h-dvh sm:max-h-[90vh] md:h-[90vh] flex flex-col md:flex-row shadow-2xl animate-in zoom-in-95 duration-300 overflow-y-auto md:overflow-hidden relative"
             onClick={(e) => e.stopPropagation()}
           >
-            
+
             {/* Colonne de gauche : Contexte Client & Événement */}
             <div className="w-full md:w-1/3 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col shrink-0 md:h-full md:overflow-y-auto hide-scrollbar">
               <div className="p-4 sm:p-6 lg:p-8 pb-6 border-b border-gray-200">
@@ -777,7 +774,7 @@ export default function PrestataireDemandesPage() {
               <div className="p-4 sm:p-6 lg:p-8 space-y-8 flex-1">
                 {/* Informations Client */}
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2"><Users size={16} className="text-[#b8924a]"/> Client</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2"><Users size={16} className="text-[#b8924a]" /> Client</h3>
                   <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Nom complet</p>
@@ -802,7 +799,7 @@ export default function PrestataireDemandesPage() {
 
                 {/* Informations Événement */}
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2"><Calendar size={16} className="text-[#b8924a]"/> Événement</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2"><Calendar size={16} className="text-[#b8924a]" /> Événement</h3>
                   <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
                     <div className="flex gap-4">
                       <div className="flex-1">
@@ -829,7 +826,7 @@ export default function PrestataireDemandesPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Colonne de droite : Détails techniques & Contre-proposition */}
             <div className="w-full md:w-2/3 bg-white flex flex-col shrink-0 md:h-full relative">
               <div className="absolute top-6 right-6 hidden md:block z-10">
@@ -839,7 +836,7 @@ export default function PrestataireDemandesPage() {
               </div>
 
               <div className="p-8 md:p-10 flex-1 min-h-0 md:overflow-y-auto hide-scrollbar space-y-6">
-                
+
                 {/* Formulaire Contre-proposition / Ajustement (SI ACTIF) */}
                 {isAdjustMode && (
                   <div className="p-6 bg-gradient-to-br from-amber-50 to-orange-50/40 rounded-3xl border-2 border-amber-300 shadow-sm animate-in fade-in duration-300 space-y-4">
@@ -923,13 +920,13 @@ export default function PrestataireDemandesPage() {
               <div className="p-6 md:px-10 border-t bg-white flex flex-col sm:flex-row gap-3 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.02)] sticky bottom-0 md:relative z-20">
                 {(selectedDemande.status === 'Nouvelle' || selectedDemande.status === 'À traiter' || selectedDemande.status === 'Devis en préparation') && (
                   <>
-                    <button 
-                      onClick={() => handleRefuse(selectedDemande.id)} 
+                    <button
+                      onClick={() => handleRefuse(selectedDemande.id)}
                       className="px-4 py-3 bg-white border-2 border-red-100 text-red-600 font-bold rounded-xl hover:bg-red-50 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs"
                     >
                       Décliner
                     </button>
-                    
+
                     {/* Bouton Proposer des ajustements */}
                     <button
                       onClick={() => {
@@ -941,15 +938,15 @@ export default function PrestataireDemandesPage() {
                       <RefreshCw size={15} className="text-[#8f6f33]" /> Proposer un ajustement
                     </button>
 
-                    <button 
-                      onClick={() => handleAcceptDemande(selectedDemande)} 
+                    <button
+                      onClick={() => handleAcceptDemande(selectedDemande)}
                       disabled={isAccepting}
                       className="px-5 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50 text-xs"
                     >
                       <CheckCircle size={16} /> {isAccepting ? 'Confirmation...' : 'Accepter la prestation'}
                     </button>
-                    
-                    <Link 
+
+                    <Link
                       href={`/prestataire/devis/builder/${selectedDemande.id}`}
                       className="flex-1 text-center py-3 bg-[#b8924a] text-white font-bold rounded-xl hover:bg-[#a17f3e] transition-all shadow-md flex items-center justify-center gap-2 text-xs"
                     >
@@ -963,14 +960,14 @@ export default function PrestataireDemandesPage() {
                   return (
                     <div className="flex-1 flex flex-col sm:flex-row gap-3">
                       {linkedDev ? (
-                        <Link 
+                        <Link
                           href={`/prestataire/devis/${linkedDev.id}/edit`}
                           className="flex-1 py-3 bg-[#8f6f33] text-white font-bold rounded-xl hover:bg-[#725725] transition-all flex items-center justify-center gap-2 shadow-lg text-xs"
                         >
                           <Edit2 size={16} /> Modifier et transmettre une nouvelle version
                         </Link>
                       ) : (
-                        <Link 
+                        <Link
                           href={`/prestataire/devis/builder/${selectedDemande.id}`}
                           className="flex-1 py-3 bg-[#8f6f33] text-white font-bold rounded-xl hover:bg-[#725725] transition-all flex items-center justify-center gap-2 shadow-lg text-xs"
                         >
@@ -989,7 +986,7 @@ export default function PrestataireDemandesPage() {
 
                 {selectedDemande.status === 'Refusé' && (
                   <button onClick={() => handleDeleteDemande(selectedDemande.id)} className="w-full py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2 text-xs">
-                    <Trash2 size={16}/> Supprimer définitivement cette demande
+                    <Trash2 size={16} /> Supprimer définitivement cette demande
                   </button>
                 )}
               </div>

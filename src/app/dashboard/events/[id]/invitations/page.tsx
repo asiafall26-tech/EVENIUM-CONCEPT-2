@@ -1,7 +1,7 @@
 "use client";
 
 import { Send, Edit3, Eye, Sparkles, X, CheckCircle, Copy, MessageCircle, RotateCcw } from "lucide-react";
-import { useState, use, useEffect } from "react";
+import { useState, use, useEffect, useRef } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -86,12 +86,66 @@ export default function InvitationsDashboardPage({
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
+  const studioIframeRef = useRef<HTMLIFrameElement>(null);
+  const [mobileEditorTab, setMobileEditorTab] = useState<'edit' | 'preview'>('edit');
+  const [studioContent, setStudioContent] = useState<any>(null);
+  const [isSavingStudio, setIsSavingStudio] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showResetPageModal, setShowResetPageModal] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleSetMobileEditorTab = (tab: 'edit' | 'preview') => {
+    setMobileEditorTab(tab);
+    studioIframeRef.current?.contentWindow?.postMessage({
+      type: 'evenium:set-tab',
+      tab,
+    }, '*');
+  };
+
+  // Écouter les messages émis par l'iframe du studio
+  useEffect(() => {
+    if (!isStudioOpen) return;
+    const handleStudioMessage = (e: MessageEvent) => {
+      if (!e.data) return;
+      if (e.data.type === 'evenium:content-change' || e.data.type === 'ev:content') {
+        const updated = e.data.content || e.data.values || e.data.data;
+        if (updated && typeof updated === 'object') {
+          setStudioContent(updated);
+        }
+      } else if (e.data.type === 'evenium:tab-changed') {
+        if (e.data.tab === 'preview' || e.data.tab === 'edit') {
+          setMobileEditorTab(e.data.tab);
+        }
+      } else if (e.data.type === 'evenium:open-checkout' || e.data.type === 'evenium:finish') {
+        handleFinishStudio();
+      }
+    };
+    window.addEventListener('message', handleStudioMessage);
+    return () => window.removeEventListener('message', handleStudioMessage);
+  }, [isStudioOpen, studioContent, event]);
+
+  const handleFinishStudio = async () => {
+    if (!event) return;
+    setIsSavingStudio(true);
+    try {
+      const toSave = studioContent || event.invitationContent || event.invitation_content;
+      if (toSave) {
+        await updateEventInvitationContent(event.id, toSave);
+        setDirectEvent((prev: any) => (prev ? { ...prev, invitationContent: toSave } : null));
+        refreshEvents();
+      }
+      setResetSuccessMessage("Vos modifications ont été enregistrées avec succès et sont visibles en direct pour vos invités !");
+      setTimeout(() => setResetSuccessMessage(null), 5000);
+    } catch (err) {
+      console.error("Erreur enregistrement studio :", err);
+    } finally {
+      setIsSavingStudio(false);
+      setIsStudioOpen(false);
+    }
+  };
   
   const [invitationData, setInvitationData] = useState({
     title: "",
@@ -427,37 +481,82 @@ export default function InvitationsDashboardPage({
 
       {isStudioOpen && (
         <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
-          <header className="h-14 sm:h-16 bg-[#13090C] border-b border-black/40 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20">
+          <header
+            className="w-full bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-3 sm:px-6 flex items-center justify-between shrink-0 z-50 select-none shadow-lg"
+            style={{
+              paddingTop: "max(env(safe-area-inset-top, 0px), 12px)",
+              paddingBottom: "10px",
+              minHeight: "calc(3.75rem + env(safe-area-inset-top, 0px))",
+            }}
+          >
+            {/* Côté gauche : Fermer sans enregistrer / Quitter */}
             <button
               type="button"
               onClick={() => setIsStudioOpen(false)}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/15 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer shrink-0"
+              title="Fermer"
             >
-              <X size={16} />
+              <X size={15} className="text-[#f0d999] shrink-0" />
               <span>Fermer</span>
             </button>
 
-            <div className="flex items-center gap-2">
-              <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-[150px] sm:max-w-xs">
-                {getModelName()}
-              </span>
-              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase">
-                <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
-              </span>
+            {/* Centre : Sélecteur segmenté MODIFIER / APERÇU sur mobile, Titre & Crayon sur desktop */}
+            <div className="flex items-center justify-center min-w-0 px-1">
+              <div className="flex md:hidden items-center bg-[#251219] p-1 rounded-full border border-white/10 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => handleSetMobileEditorTab('edit')}
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
+                    mobileEditorTab === 'edit'
+                      ? "bg-white text-[#13090C] font-bold shadow-xs"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  MODIFIER
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetMobileEditorTab('preview')}
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
+                    mobileEditorTab === 'preview'
+                      ? "bg-white text-[#13090C] font-bold shadow-xs"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  APERÇU
+                </button>
+              </div>
+
+              <div className="hidden md:flex items-center gap-2">
+                <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-xs text-center">
+                  {getModelName()}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
+                  <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
+                </span>
+              </div>
             </div>
 
+            {/* Côté droit : Bouton Enregistrer & Terminer */}
             <button
               type="button"
-              onClick={() => setIsStudioOpen(false)}
-              className="px-5 py-2 rounded-full bg-[#EBD6B5] hover:bg-[#F3E2C7] active:scale-95 text-[#3C0D16] font-bold text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer"
+              disabled={isSavingStudio}
+              onClick={handleFinishStudio}
+              className="inline-flex items-center gap-1.5 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0 disabled:opacity-60"
             >
-              Terminer
+              {isSavingStudio ? (
+                <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <CheckCircle size={14} className="text-black shrink-0" />
+              )}
+              <span>{isSavingStudio ? "Enregistrement..." : "Terminer"}</span>
             </button>
           </header>
 
           <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0 sm:p-4 lg:p-6">
-            <div className="w-full h-full sm:max-w-[430px] sm:max-h-[880px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#251219] overflow-hidden flex flex-col ring-0 sm:ring-1 sm:ring-white/10 relative">
+            <div className="w-full h-full sm:max-w-[440px] sm:max-h-[890px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#251219] overflow-hidden flex flex-col ring-0 sm:ring-1 sm:ring-white/10 relative">
               <iframe
+                ref={studioIframeRef}
                 src={`${
                   isCustom && customModel
                     ? customModelUrl(customModel)
@@ -470,10 +569,38 @@ export default function InvitationsDashboardPage({
                     : isAnniversaire
                     ? "/invitation-anniversaire"
                     : "/invitation-mariage"
-                }?preview=1&canEdit=1&hideCta=1`}
+                }?preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1&eventId=${event.id}`}
                 title="Personnalisation de l'invitation"
-                className="w-full h-full border-0 bg-black"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                className="w-full h-full border-0 bg-black block"
+                allow="autoplay; fullscreen"
+                onLoad={() => {
+                  const v = event.invitationContent ?? event.invitation_content;
+                  if (v) {
+                    const postData = () => {
+                      studioIframeRef.current?.contentWindow?.postMessage({
+                        type: 'evenium:set-values',
+                        values: v,
+                        content: v,
+                        data: v,
+                      }, '*');
+                      studioIframeRef.current?.contentWindow?.postMessage({
+                        type: 'evenium:init-data',
+                        values: v,
+                        content: v,
+                        data: v,
+                      }, '*');
+                      studioIframeRef.current?.contentWindow?.postMessage({
+                        type: 'ev:content',
+                        values: v,
+                        content: v,
+                      }, '*');
+                    };
+                    postData();
+                    setTimeout(postData, 150);
+                    setTimeout(postData, 500);
+                    setTimeout(postData, 1200);
+                  }
+                }}
               />
             </div>
           </main>

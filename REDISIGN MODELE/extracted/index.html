@@ -3756,10 +3756,17 @@
         try { localStorage.setItem(KEY, JSON.stringify(D)) } catch (e) { toast("Mémoire du navigateur pleine : les dernières photos ne seront pas conservées.") }
         try { if (window.parent && window.parent !== window) { window.parent.postMessage({ type: 'evenium:content-change', content: D, values: D, data: D }, '*') } } catch (e) { }
       }
-      const inFrame = (window.parent && window.parent !== window) || location.search.indexOf('embedded=1') !== -1 || location.search.indexOf('preview=1') !== -1;
+      const inFrame = (window.parent && window.parent !== window) || location.search.indexOf('embedded=1') !== -1 || location.search.indexOf('preview=1') !== -1 || location.search.indexOf('hideEbar=1') !== -1;
       if (inFrame) {
         document.body.classList.add('in-frame');
+        if ($('ebar')) $('ebar').hidden = true;
       }
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'ev:ready' }, '*');
+          window.parent.postMessage({ type: 'evenium:ready' }, '*');
+        }
+      } catch (err) { }
 
       window.addEventListener('message', function (e) {
         if (!e || !e.data) return;
@@ -3788,7 +3795,9 @@
               if (typeof applyDate === 'function') applyDate();
               if (typeof applyHero === 'function') applyHero();
               if (typeof applyColors === 'function') applyColors();
+              if (typeof applyDress === 'function') applyDress();
               if (typeof galImgs === 'function') galImgs();
+              if (typeof renderProg === 'function') renderProg();
               if (typeof FIELDS !== 'undefined') {
                 FIELDS.forEach(([, fs]) => fs.forEach(f => {
                   if (f[0][0] !== '@' && D.texts[f[0]] != null) {
@@ -4308,7 +4317,7 @@
       $('tabEdit').onclick = () => setTab(false); $('tabPrev').onclick = () => setTab(true);
       $('fab').onclick = () => {
         if (!built) build(); wasRevealed = revealed;
-        document.body.classList.add('editing'); $('ebar').hidden = false; ed.hidden = false; setTab(false);
+        document.body.classList.add('editing'); $('ebar').hidden = !!inFrame; ed.hidden = false; setTab(false);
         if (!revealed) { $('after').hidden = false; watch($('after')); startCountdown(); $('dateFull').hidden = false; $('revealHelp').hidden = true; $('lockedNote').hidden = true }
         $('dateText').textContent = dateLine(); qa('.rv').forEach(el => el.classList.add('in')); frame(); requestAnimationFrame(fitNames);
         try {

@@ -74,7 +74,10 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
   const isStatic = event.format === "Carte" || event.format === "Statique";
 
   if (event.invitation_model_id === VELOURS_MODEL_ID) {
-    const rawContent = event.invitation_content ?? seedFromEvent(event);
+    const customContent = event.invitation_content?.values ?? event.invitation_content;
+    const rawContent = customContent && typeof customContent === "object" && Object.keys(customContent).length > 0
+      ? customContent
+      : seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
     return (
       <VeloursInvitation
@@ -116,29 +119,44 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
   };
 
   if (event.invitation_model_id === sceau.SCEAU_MODEL_ID) {
-    const rawContent = event.invitation_content ?? sceau.seedFromEvent(event);
+    const customContent = event.invitation_content?.values ?? event.invitation_content;
+    const rawContent = customContent && typeof customContent === "object" && Object.keys(customContent).length > 0
+      ? customContent
+      : sceau.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
     return <SceauInvitation content={content} onRsvp={saveRsvp} hideCta />;
   }
 
   if (event.invitation_model_id === ivoire.IVOIRE_MODEL_ID) {
-    const rawContent = event.invitation_content ?? ivoire.seedFromEvent(event);
+    const customContent = event.invitation_content?.values ?? event.invitation_content;
+    const rawContent = customContent && typeof customContent === "object" && Object.keys(customContent).length > 0
+      ? customContent
+      : ivoire.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
     return <IvoireInvitation content={content} onRsvp={saveRsvp} hideCta />;
   }
 
   if (event.invitation_model_id === anniversaire.ANNIVERSAIRE_MODEL_ID) {
-    const rawContent = event.invitation_content ? anniversaire.withDefaults(event.invitation_content) : anniversaire.seedFromEvent(event);
+    const customContent = event.invitation_content?.values ?? event.invitation_content;
+    const rawContent = customContent && typeof customContent === "object" && Object.keys(customContent).length > 0
+      ? anniversaire.withDefaults(customContent)
+      : anniversaire.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, audioUrl: "" } : rawContent;
     return <AnniversaireInvitation content={content} onRsvp={saveRsvp} hideCta />;
   }
 
   // Modèle importé par l'admin (ZIP / HTML)
   if (isCustomModelId(event.invitation_model_id)) {
+    const customVals =
+      event.invitation_content?.values ??
+      (event.invitation_content && typeof event.invitation_content === "object"
+        ? event.invitation_content
+        : null);
     return (
       <CustomGuestInvitation
         modelId={event.invitation_model_id}
-        values={event.invitation_content?.values ?? null}
+        eventId={event.id}
+        values={customVals}
         isStatic={isStatic}
         onRsvp={saveRsvp}
       />
@@ -146,7 +164,10 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
   }
 
   if (event.invitation_model_id === roseOr.ROSE_OR_MODEL_ID) {
-    const rawContent = event.invitation_content ?? roseOr.seedFromEvent(event);
+    const customContent = event.invitation_content?.values ?? event.invitation_content;
+    const rawContent = customContent && typeof customContent === "object" && Object.keys(customContent).length > 0
+      ? customContent
+      : roseOr.seedFromEvent(event);
     const content = isStatic ? { ...rawContent, music: "" } : rawContent;
     return (
       <RoseOrInvitation

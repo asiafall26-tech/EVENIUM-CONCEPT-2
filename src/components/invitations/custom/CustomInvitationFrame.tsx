@@ -16,6 +16,7 @@ const CHECKOUT_CTA: CtaText = {
 interface Props {
   model: Pick<CustomModelRow, "slug" | "entry" | "name">;
   values: CustomValues;
+  eventId?: string;
   /** Studio : clic sur un élément de l'aperçu pour le retrouver dans la liste */
   pick?: boolean;
   onSelect?: (id: string) => void;
@@ -42,7 +43,7 @@ export interface ModelRsvp {
 }
 
 /** Modèle importé affiché dans un cadre, alimenté par messages (public/ev-runtime.js). */
-export default function CustomInvitationFrame({ model, values, pick, onSelect, focusId, onFinalize, onBackToEdit, hideCta, hideEdit, canEdit, className, onRsvp }: Props) {
+export default function CustomInvitationFrame({ model, values, eventId, pick, onSelect, focusId, onFinalize, onBackToEdit, hideCta, hideEdit, canEdit, className, onRsvp }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const readyRef = useRef(false);
   const ctx = useInvitationCta();
@@ -57,19 +58,47 @@ export default function CustomInvitationFrame({ model, values, pick, onSelect, f
   const frameSrc = (() => {
     const base = customModelUrl(model);
     const delim = base.includes("?") ? "&" : "?";
-    if (canEdit) return `${base}${delim}canEdit=1`;
-    return `${base}${delim}guest=1&hideEdit=1`;
+    const evParam = eventId ? `&eventId=${encodeURIComponent(eventId)}` : "";
+    if (canEdit) return `${base}${delim}canEdit=1${evParam}`;
+    return `${base}${delim}guest=1&hideEdit=1&hideCta=1${evParam}`;
   })();
 
-  const post = (msg: object) => frameRef.current?.contentWindow?.postMessage(msg, window.location.origin);
-  const send = () =>
-    post({ type: "ev:content", values: latest.current.values, style: styleMessage(latest.current.values), pick: !!latest.current.pick, cta: latest.current.cta });
+  const post = (msg: object) => {
+    try {
+      frameRef.current?.contentWindow?.postMessage(msg, "*");
+    } catch {}
+  };
+
+  const send = () => {
+    const v = latest.current.values;
+    post({
+      type: "ev:content",
+      values: v,
+      content: v,
+      data: v,
+      style: styleMessage(v),
+      pick: !!latest.current.pick,
+      cta: latest.current.cta,
+    });
+    post({
+      type: "evenium:set-values",
+      values: v,
+      content: v,
+      data: v,
+    });
+    post({
+      type: "evenium:init-data",
+      values: v,
+      content: v,
+      data: v,
+    });
+  };
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin || e.source !== frameRef.current?.contentWindow || !e.data) return;
+      if (e.source !== frameRef.current?.contentWindow || !e.data) return;
       const m = e.data;
-      if (m.type === "ev:ready") {
+      if (m.type === "ev:ready" || m.type === "evenium:ready") {
         readyRef.current = true;
         send();
       } else if (m.type === "ev:select") latest.current.onSelect?.(m.id);
@@ -113,6 +142,13 @@ export default function CustomInvitationFrame({ model, values, pick, onSelect, f
       title={model.name}
       className={className ?? "w-full h-full border-0 block bg-white"}
       allow="autoplay; fullscreen"
+      onLoad={() => {
+        readyRef.current = true;
+        send();
+        setTimeout(send, 80);
+        setTimeout(send, 300);
+        setTimeout(send, 1000);
+      }}
     />
   );
 }

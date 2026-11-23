@@ -9,6 +9,7 @@ import type { RsvpPayload } from "@/components/invitations/velours/VeloursInvita
 
 interface Props {
   modelId: string;
+  eventId?: string;
   /** Valeurs enregistrées par l'organisateur */
   values?: CustomValues | null;
   isStatic?: boolean;
@@ -16,7 +17,7 @@ interface Props {
 }
 
 /** Invitation d'un modèle importé, vue par un invité : la page du modèle avec son propre RSVP natif. */
-export default function CustomGuestInvitation({ modelId, values, isStatic, onRsvp }: Props) {
+export default function CustomGuestInvitation({ modelId, eventId, values, isStatic, onRsvp }: Props) {
   const [model, setModel] = useState<CustomModelRow | null | undefined>(undefined);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function CustomGuestInvitation({ modelId, values, isStatic, onRsv
     <div className="relative h-dvh w-full bg-white overflow-hidden">
       <CustomInvitationFrame
         model={model}
+        eventId={eventId}
         values={shown}
         hideCta
         className="w-full h-full border-0 block"

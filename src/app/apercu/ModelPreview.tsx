@@ -77,9 +77,9 @@ export default function ModelPreview({ src, name, cover, category, showBack }: P
       <header
         className="relative z-30 shrink-0 px-3 sm:px-8 bg-[#0e0a08]/95 backdrop-blur-md border-b border-[#D4AF37]/35 flex items-center justify-between gap-3 shadow-lg select-none"
         style={{
-          paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
-          paddingBottom: "8px",
-          minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+          paddingTop: "max(env(safe-area-inset-top, 0px), 14px)",
+          paddingBottom: "10px",
+          minHeight: "calc(3.75rem + env(safe-area-inset-top, 0px))",
         }}
       >
         {showBack ? (
