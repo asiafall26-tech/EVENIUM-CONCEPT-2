@@ -1,7 +1,7 @@
 "use client";
 
-import { Send, Edit3, Eye, Sparkles, X, CheckCircle, Copy, MessageCircle, RotateCcw } from "lucide-react";
-import { useState, use, useEffect, useRef } from "react";
+import { Send, Edit3, Eye, Sparkles, X, CheckCircle, Copy, MessageCircle, RotateCcw, MessageSquare, Users } from "lucide-react";
+import { useState, use, useEffect, useRef, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -87,6 +87,7 @@ export default function InvitationsDashboardPage({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const studioIframeRef = useRef<HTMLIFrameElement>(null);
+  const studioContentRef = useRef<any>(null);
   const [mobileEditorTab, setMobileEditorTab] = useState<'edit' | 'preview'>('edit');
   const [studioContent, setStudioContent] = useState<any>(null);
   const [isSavingStudio, setIsSavingStudio] = useState(false);
@@ -96,6 +97,17 @@ export default function InvitationsDashboardPage({
   const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [accompanimentMsg, setAccompanimentMsg] = useState<string>("");
+  const [guestStats, setGuestStats] = useState({ total: 0, confirmed: 0, declined: 0 });
+
+  useEffect(() => {
+    if (event?.name && !accompanimentMsg) {
+      setAccompanimentMsg(
+        `✨ Nous avons l'immense honneur de vous convier à notre événement "${event.name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :`
+      );
+    }
+  }, [event?.name, accompanimentMsg]);
 
   const handleSetMobileEditorTab = (tab: 'edit' | 'preview') => {
     setMobileEditorTab(tab);
@@ -113,7 +125,7 @@ export default function InvitationsDashboardPage({
       if (e.data.type === 'evenium:content-change' || e.data.type === 'ev:content') {
         const updated = e.data.content || e.data.values || e.data.data;
         if (updated && typeof updated === 'object') {
-          setStudioContent(updated);
+          studioContentRef.current = updated;
         }
       } else if (e.data.type === 'evenium:tab-changed') {
         if (e.data.tab === 'preview' || e.data.tab === 'edit') {
@@ -125,16 +137,17 @@ export default function InvitationsDashboardPage({
     };
     window.addEventListener('message', handleStudioMessage);
     return () => window.removeEventListener('message', handleStudioMessage);
-  }, [isStudioOpen, studioContent, event]);
+  }, [isStudioOpen]);
 
   const handleFinishStudio = async () => {
     if (!event) return;
     setIsSavingStudio(true);
     try {
-      const toSave = studioContent || event.invitationContent || event.invitation_content;
+      const toSave = studioContentRef.current || studioContent || event.invitationContent || event.invitation_content;
       if (toSave) {
         await updateEventInvitationContent(event.id, toSave);
-        setDirectEvent((prev: any) => (prev ? { ...prev, invitationContent: toSave } : null));
+        await supabase.from('events').update({ invitation_content: toSave }).eq('id', event.id);
+        setDirectEvent((prev: any) => (prev ? { ...prev, invitationContent: toSave, invitation_content: toSave } : null));
         refreshEvents();
       }
       setResetSuccessMessage("Vos modifications ont été enregistrées avec succès et sont visibles en direct pour vos invités !");
@@ -157,10 +170,15 @@ export default function InvitationsDashboardPage({
   useEffect(() => {
     supabase
       .from('guests')
-      .select('id, nom, telephone')
+      .select('id, nom, telephone, statut_rsvp')
       .eq('event_id', id)
       .then(({ data }) => {
-        if (data) setGuestsList(data);
+        if (data) {
+          setGuestsList(data);
+          const conf = data.filter((g: any) => g.statut_rsvp === "Confirmé").length;
+          const decl = data.filter((g: any) => g.statut_rsvp === "Refusé").length;
+          setGuestStats({ total: data.length, confirmed: conf, declined: decl });
+        }
       });
   }, [id, supabase]);
 
@@ -327,6 +345,22 @@ export default function InvitationsDashboardPage({
     return event.invitationModelId || "Modèle Exclusif";
   };
 
+  const studioIframeSrc = useMemo(() => {
+    if (!event?.id) return '';
+    const base = isCustom && customModel
+      ? customModelUrl(customModel)
+      : isSceau
+      ? "/invitation-sceau-dor"
+      : isIvoire
+      ? "/invitation-ivoire"
+      : isRoseOr
+      ? "/invitation-rose-or"
+      : isAnniversaire
+      ? "/invitation-anniversaire"
+      : "/invitation-mariage";
+    return `${base}?preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1&eventId=${event.id}`;
+  }, [event?.id, isCustom, customModel?.slug, isSceau, isIvoire, isRoseOr, isAnniversaire]);
+
   // Fermeture des modales d'invitation avec la touche Échap
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -434,34 +468,108 @@ export default function InvitationsDashboardPage({
         )}
       </section>
 
-      {/* 2. QR CODE & LIEN OFFICIEL */}
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
-        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 md:gap-8 items-center">
-          <div className="flex justify-center">
-            <EventQRCode url={shareUrl} eventName={event.name} date={event.date} size={150} />
+      {/* 2. PARTAGE DIRECT & MESSAGE D'ACCOMPAGNEMENT */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33] font-bold">Partage &amp; Diffusion</p>
+            <h3 className="font-serif text-xl sm:text-2xl text-gray-900 mt-0.5">Partagez votre invitation officielle</h3>
           </div>
-          <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33]">Lien officiel & QR code</p>
-            <h3 className="font-serif text-2xl text-gray-900 mt-1">Partagez votre invitation</h3>
-            <p className="text-sm text-gray-500 mt-1.5">Le QR code ouvre l&apos;invitation sur n&apos;importe quel téléphone. Téléchargez-le pour vos cartons imprimés.</p>
-            <div className="mt-4 flex items-stretch gap-2">
-              <input
-                type="text"
-                readOnly
-                value={shareUrl}
-                onFocus={(e) => e.currentTarget.select()}
-                className="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-gray-700 outline-none"
-                aria-label="Lien officiel de l'invitation"
-              />
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className={`shrink-0 px-4 rounded-xl font-semibold text-xs flex items-center gap-1.5 ${copied ? "bg-emerald-600 text-white" : "bg-[#b8924a] text-black"}`}
-              >
-                {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
-                {copied ? "Copié" : "Copier"}
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Lien direct actif
+            </span>
+          </div>
+        </div>
+
+        {/* Lien officiel direct avec bouton copier */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-gray-700">Lien direct de l&apos;invitation (copiable en 1 clic) :</label>
+          <div className="flex items-stretch gap-2">
+            <input
+              type="text"
+              readOnly
+              value={shareUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              className="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-gray-700 outline-none select-all"
+              aria-label="Lien officiel de l'invitation"
+            />
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className={`shrink-0 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
+                copied ? "bg-emerald-600 text-white" : "bg-[#b8924a] hover:bg-[#a37f3a] text-black"
+              }`}
+            >
+              {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
+              {copied ? "Copié !" : "Copier le lien"}
+            </button>
+          </div>
+        </div>
+
+        {/* Message d'accompagnement éditable directement avant partage WhatsApp */}
+        <div className="space-y-1.5 pt-1">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+              <MessageCircle size={14} className="text-[#25D366]" />
+              Message d&apos;accompagnement WhatsApp (personnalisable) :
+            </label>
+            <span className="text-[10px] text-gray-400 font-normal">
+              {accompanimentMsg.length} caractères
+            </span>
+          </div>
+          <textarea
+            rows={3}
+            value={accompanimentMsg}
+            onChange={(e) => setAccompanimentMsg(e.target.value)}
+            placeholder="Personnalisez le message qui accompagnera votre lien officiel..."
+            className="w-full bg-gray-50/70 border border-gray-200 rounded-xl p-3 text-xs text-gray-800 focus:bg-white focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none transition-all leading-relaxed shadow-inner"
+          />
+        </div>
+
+        {/* Boutons d'action : Partager sur WhatsApp + Copier le message complet */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(
+              `${accompanimentMsg.trim()}\n\n${shareUrl}`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-98 cursor-pointer"
+          >
+            <MessageCircle size={18} />
+            <span>Partager sur WhatsApp</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={() => {
+              const fullMsg = `${accompanimentMsg.trim()}\n\n${shareUrl}`;
+              navigator.clipboard.writeText(fullMsg);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 3000);
+            }}
+            className="w-full py-3.5 px-4 rounded-xl bg-[#fbf7f0] hover:bg-[#f3ebd9] text-[#6f5527] border border-[#b8924a]/30 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 cursor-pointer"
+          >
+            <Copy size={16} />
+            <span>Copier le message complet + lien</span>
+          </button>
+        </div>
+
+        {/* Synthèse rapide des confirmations RSVP */}
+        <div className="pt-2 grid grid-cols-3 gap-2 text-center">
+          <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-100">
+            <span className="text-[10px] uppercase font-bold text-emerald-700 block">Confirmés</span>
+            <span className="font-serif text-lg font-bold text-emerald-800">{guestStats.confirmed}</span>
+          </div>
+          <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-200/70">
+            <span className="text-[10px] uppercase font-bold text-gray-500 block">Total réponses</span>
+            <span className="font-serif text-lg font-bold text-gray-800">{guestStats.total}</span>
+          </div>
+          <div className="p-2.5 bg-rose-50/80 rounded-xl border border-rose-100">
+            <span className="text-[10px] uppercase font-bold text-rose-700 block">Déclinés</span>
+            <span className="font-serif text-lg font-bold text-rose-800">{guestStats.declined}</span>
           </div>
         </div>
       </section>
@@ -484,9 +592,9 @@ export default function InvitationsDashboardPage({
           <header
             className="w-full bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-3 sm:px-6 flex items-center justify-between shrink-0 z-50 select-none shadow-lg"
             style={{
-              paddingTop: "max(env(safe-area-inset-top, 0px), 12px)",
+              paddingTop: "max(env(safe-area-inset-top, 0px), 32px)",
               paddingBottom: "10px",
-              minHeight: "calc(3.75rem + env(safe-area-inset-top, 0px))",
+              minHeight: "calc(4.25rem + env(safe-area-inset-top, 0px))",
             }}
           >
             {/* Côté gauche : Fermer sans enregistrer / Quitter */}
@@ -557,50 +665,10 @@ export default function InvitationsDashboardPage({
             <div className="w-full h-full sm:max-w-[440px] sm:max-h-[890px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#251219] overflow-hidden flex flex-col ring-0 sm:ring-1 sm:ring-white/10 relative">
               <iframe
                 ref={studioIframeRef}
-                src={`${
-                  isCustom && customModel
-                    ? customModelUrl(customModel)
-                    : isSceau
-                    ? "/invitation-sceau-dor"
-                    : isIvoire
-                    ? "/invitation-ivoire"
-                    : isRoseOr
-                    ? "/invitation-rose-or"
-                    : isAnniversaire
-                    ? "/invitation-anniversaire"
-                    : "/invitation-mariage"
-                }?preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1&eventId=${event.id}`}
+                src={studioIframeSrc}
                 title="Personnalisation de l'invitation"
                 className="w-full h-full border-0 bg-black block"
                 allow="autoplay; fullscreen"
-                onLoad={() => {
-                  const v = event.invitationContent ?? event.invitation_content;
-                  if (v) {
-                    const postData = () => {
-                      studioIframeRef.current?.contentWindow?.postMessage({
-                        type: 'evenium:set-values',
-                        values: v,
-                        content: v,
-                        data: v,
-                      }, '*');
-                      studioIframeRef.current?.contentWindow?.postMessage({
-                        type: 'evenium:init-data',
-                        values: v,
-                        content: v,
-                        data: v,
-                      }, '*');
-                      studioIframeRef.current?.contentWindow?.postMessage({
-                        type: 'ev:content',
-                        values: v,
-                        content: v,
-                      }, '*');
-                    };
-                    postData();
-                    setTimeout(postData, 150);
-                    setTimeout(postData, 500);
-                    setTimeout(postData, 1200);
-                  }
-                }}
               />
             </div>
           </main>

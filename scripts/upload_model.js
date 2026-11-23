@@ -14,12 +14,21 @@ async function main() {
   const supabase = createClient(url, key);
 
   const html = fs.readFileSync(path.join(__dirname, '..', 'REDISIGN MODELE', 'extracted', 'index.html'));
-  const res = await supabase.storage.from('evenium_assets').upload(
+  
+  // Upload to BOTH custom-models and custom_models just to be 100% sure!
+  const res1 = await supabase.storage.from('evenium_assets').upload(
+    'custom-models/fatou-ibrahima-v2/index.html',
+    html,
+    { contentType: 'text/html; charset=utf-8', upsert: true }
+  );
+  console.log('Upload result custom-models (with hyphen):', res1);
+
+  const res2 = await supabase.storage.from('evenium_assets').upload(
     'custom_models/fatou-ibrahima-v2/index.html',
     html,
     { contentType: 'text/html; charset=utf-8', upsert: true }
   );
-  console.log('Upload result:', res);
+  console.log('Upload result custom_models (with underscore):', res2);
 }
 
 main().catch(console.error);

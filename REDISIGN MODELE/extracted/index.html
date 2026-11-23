@@ -3751,22 +3751,24 @@
         location.pathname.indexOf('/invite') !== -1 ||
         PRESET.published === true;
       const canEdit = !isHiddenMode && (location.search.indexOf('canEdit=1') !== -1 || location.hash === '#edit');
+
+      if (isHiddenMode) {
+        try {
+          if ($('fab')) $('fab').remove();
+          if ($('ebar')) $('ebar').remove();
+          if ($('editor')) $('editor').remove();
+        } catch (e) { }
+      }
+
       function save() {
         D.published = undefined;
         try { localStorage.setItem(KEY, JSON.stringify(D)) } catch (e) { toast("Mémoire du navigateur pleine : les dernières photos ne seront pas conservées.") }
         try { if (window.parent && window.parent !== window) { window.parent.postMessage({ type: 'evenium:content-change', content: D, values: D, data: D }, '*') } } catch (e) { }
       }
-      const inFrame = (window.parent && window.parent !== window) || location.search.indexOf('embedded=1') !== -1 || location.search.indexOf('preview=1') !== -1 || location.search.indexOf('hideEbar=1') !== -1;
+      const inFrame = (window.parent && window.parent !== window) || location.search.indexOf('embedded=1') !== -1 || location.search.indexOf('preview=1') !== -1;
       if (inFrame) {
         document.body.classList.add('in-frame');
-        if ($('ebar')) $('ebar').hidden = true;
       }
-      try {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'ev:ready' }, '*');
-          window.parent.postMessage({ type: 'evenium:ready' }, '*');
-        }
-      } catch (err) { }
 
       window.addEventListener('message', function (e) {
         if (!e || !e.data) return;
@@ -3789,25 +3791,50 @@
         if (e.data.type === 'evenium:set-values' || e.data.type === 'evenium:init-data' || e.data.type === 'ev:content') {
           const incoming = e.data.content || e.data.values || e.data.data;
           if (incoming && typeof incoming === 'object') {
-            Object.assign(D, incoming);
-            if (incoming.texts) Object.assign(D.texts, incoming.texts);
+            const activeEl = document.activeElement;
+            const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+            if (isTyping) return; // Ne jamais écraser la saisie active de l'utilisateur !
+            
+            // Ne fusionner que si des valeurs existent et ne jamais effacer des saisies déjà faites
+            for (const k in incoming) {
+              if (k !== 'texts') {
+                if (D[k] === undefined || D[k] === null || D[k] === '') {
+                  D[k] = incoming[k];
+                }
+              }
+            }
+            if (incoming.texts && typeof incoming.texts === 'object') {
+              for (const tk in incoming.texts) {
+                if (D.texts[tk] === undefined || D.texts[tk] === null || D.texts[tk] === '') {
+                  D.texts[tk] = incoming.texts[tk];
+                }
+              }
+            }
             try {
               if (typeof applyDate === 'function') applyDate();
               if (typeof applyHero === 'function') applyHero();
               if (typeof applyColors === 'function') applyColors();
-              if (typeof applyDress === 'function') applyDress();
               if (typeof galImgs === 'function') galImgs();
-              if (typeof renderProg === 'function') renderProg();
               if (typeof FIELDS !== 'undefined') {
                 FIELDS.forEach(([, fs]) => fs.forEach(f => {
                   if (f[0][0] !== '@' && D.texts[f[0]] != null) {
                     const el = f[2]();
                     if (el) {
-                      if (f[3] && f[3][0] === 'l') el.textContent = D.texts[f[0]];
+                      if (f[3] && f[3][0] === 'l') { el.textContent = D.texts[f[0]]; el.setAttribute('aria-label', D.texts[f[0]]); }
                       else setTxt(el, D.texts[f[0]]);
                     }
                   }
                 }));
+                // Synchroniser également les champs de saisie de l'éditeur s'ils existent
+                const edEl = $('editor');
+                if (edEl) {
+                  edEl.querySelectorAll('input[data-field-id], textarea[data-field-id]').forEach(inp => {
+                    const fid = inp.dataset.fieldId;
+                    if (fid && D.texts[fid] !== undefined && document.activeElement !== inp) {
+                      inp.value = D.texts[fid];
+                    }
+                  });
+                }
               }
             } catch (err) { }
           }
@@ -3980,13 +4007,14 @@
         const n = $('rName').value.trim();
         const att = $('attYes').checked;
         const countVal = att ? cnt : 0;
+        const msg = $('rMsg') ? $('rMsg').value.trim() : '';
         $('thanksText').textContent = att ? `Merci ${n} ! Votre présence (${cnt} pers.) est bien notée. À très bientôt.` : `Merci ${n} de nous avoir prévenus. Vous nous manquerez.`;
         $('rsvp').hidden = true; $('thanks').hidden = false;
         try {
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({
               type: 'ev:rsvp',
-              rsvp: { name: n, attending: att, guests: countVal, message: '' }
+              rsvp: { name: n, attending: att, guests: countVal, message: msg }
             }, '*');
           }
         } catch (err) { }
@@ -4124,11 +4152,14 @@
       function textField(f) {
         const [id, label, get, type] = f; let el = null; try { el = get() } catch (e) { }
         if (!el) return h('div');
-        const cur = type && type[0] === 'l' ? (el.getAttribute('aria-label') || el.textContent) : el.innerText || el.textContent;
-        const inp = type && type.includes('t') ? h('textarea', { rows: '3' }) : h('input', { type: 'text' }); inp.value = (cur || '').trim();
+        const savedVal = D.texts && D.texts[id] != null ? D.texts[id] : null;
+        const cur = savedVal != null ? savedVal : (type && type[0] === 'l' ? (el.getAttribute('aria-label') || el.textContent) : el.innerText || el.textContent);
+        const inp = type && type.includes('t') ? h('textarea', { rows: '3' }) : h('input', { type: 'text' });
+        inp.value = (cur || '').trim();
+        inp.dataset.fieldId = id;
         inp.oninput = () => {
           const v = inp.value; D.texts[id] = v;
-          if (type && type[0] === 'l') { el.textContent = v; splitLetters(el, 0, .006); el.classList.add('go') } else setTxt(el, v);
+          if (type && type[0] === 'l') { el.textContent = v; el.setAttribute('aria-label', v); splitLetters(el, 0, .006); el.classList.add('go') } else setTxt(el, v);
           if (/^(n1|n2)/.test(id)) later(() => { applyLinks(); buildCal() }); save()
         };
         inp.onfocus = () => showEl(el);
@@ -4317,7 +4348,7 @@
       $('tabEdit').onclick = () => setTab(false); $('tabPrev').onclick = () => setTab(true);
       $('fab').onclick = () => {
         if (!built) build(); wasRevealed = revealed;
-        document.body.classList.add('editing'); $('ebar').hidden = !!inFrame; ed.hidden = false; setTab(false);
+        document.body.classList.add('editing'); $('ebar').hidden = false; ed.hidden = false; setTab(false);
         if (!revealed) { $('after').hidden = false; watch($('after')); startCountdown(); $('dateFull').hidden = false; $('revealHelp').hidden = true; $('lockedNote').hidden = true }
         $('dateText').textContent = dateLine(); qa('.rv').forEach(el => el.classList.add('in')); frame(); requestAnimationFrame(fitNames);
         try {

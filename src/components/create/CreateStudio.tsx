@@ -30,7 +30,9 @@ import {
   ExternalLink,
   LayoutDashboard,
   Search,
-  RotateCcw
+  RotateCcw,
+  MessageSquare,
+  MessageCircle
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import EventQRCode from '@/components/ui/EventQRCode';
@@ -1333,9 +1335,9 @@ function CreateExpressStudioContent({
           <header
             className="w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none shadow-md"
             style={{
-              paddingTop: "max(env(safe-area-inset-top, 0px), 14px)",
+              paddingTop: "max(env(safe-area-inset-top, 0px), 32px)",
               paddingBottom: "10px",
-              minHeight: "calc(3.75rem + env(safe-area-inset-top, 0px))",
+              minHeight: "calc(4.25rem + env(safe-area-inset-top, 0px))",
             }}
           >
             {/* Côté gauche : Bouton retour vers la galerie des modèles (Échappement direct) */}
@@ -1749,7 +1751,7 @@ function CreateExpressStudioContent({
 
       {isCheckoutModalOpen && (
         <div
-          className="fixed inset-0 z-[150] flex items-start justify-center p-3 sm:p-6 md:p-8 py-6 sm:py-10 md:py-14 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
+          className="fixed inset-0 z-[150] flex items-start justify-center p-3 sm:p-6 md:p-8 pt-[max(env(safe-area-inset-top,0px),40px)] pb-8 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setIsCheckoutModalOpen(false);
@@ -1760,9 +1762,14 @@ function CreateExpressStudioContent({
           <div className="w-full max-w-4xl lg:max-w-5xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
 
             {/* Header Modal */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-gray-100 bg-[#fbf7f0] gap-3">
+            <div
+              className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-gray-100 bg-[#fbf7f0] gap-3"
+              style={{
+                paddingTop: "max(env(safe-area-inset-top, 0px), 20px)",
+              }}
+            >
               <div className="min-w-0">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33] bg-white px-2.5 py-0.5 rounded-full border border-[#b8924a]/30">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8f6f33] bg-white px-2.5 py-0.5 rounded-full border border-[#b8924a]/30">
                   {standardSuccessEvent
                     ? "Paiement Validé · Lien Officiel Débloqué"
                     : isMicroService
@@ -1877,6 +1884,26 @@ function CreateExpressStudioContent({
                     </div>
                   </div>
 
+                  {/* Message d'accompagnement éditable directement avant partage WhatsApp */}
+                  <div className="pt-2 text-left space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                        <MessageSquare size={13} className="text-[#b8924a]" />
+                        Message d&apos;accompagnement WhatsApp (éditable) :
+                      </label>
+                      <span className="text-[10px] text-gray-400 font-normal">
+                        {accompanimentMessage.length} caractères
+                      </span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={accompanimentMessage}
+                      onChange={(e) => setAccompanimentMessage(e.target.value)}
+                      placeholder="Personnalisez le message qui accompagnera votre lien officiel..."
+                      className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-800 focus:bg-white focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none transition-all leading-relaxed shadow-inner"
+                    />
+                  </div>
+
                   {/* Boutons d'action : WhatsApp + Tester l'invitation */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     <a
@@ -1885,9 +1912,9 @@ function CreateExpressStudioContent({
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                      className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-98 cursor-pointer"
                     >
-                      <span>📱</span>
+                      <MessageCircle size={18} />
                       <span>Partager sur WhatsApp</span>
                     </a>
 
@@ -1895,9 +1922,9 @@ function CreateExpressStudioContent({
                       href={`/invite/${standardSuccessEvent.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
+                      className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 cursor-pointer"
                     >
-                      <Eye size={15} className="text-[#b8924a]" />
+                      <Eye size={16} className="text-[#b8924a]" />
                       <span>Tester / Voir mon lien</span>
                     </a>
                   </div>
@@ -1916,27 +1943,6 @@ function CreateExpressStudioContent({
                     <span>📋</span>
                     <span>Copier le message complet d&apos;accompagnement + lien</span>
                   </button>
-
-                  {/* QR Code Actif & Téléchargements */}
-                  <div className="pt-2">
-                    <EventQRCode
-                      url={typeof window !== 'undefined' ? `${window.location.origin}/invite/${standardSuccessEvent.id}` : `/invite/${standardSuccessEvent.id}`}
-                      eventName={eventMetadata.name}
-                      date={eventMetadata.date}
-                      size={140}
-                    />
-                  </div>
-
-                  {!isMicroService && (
-                    <div className="p-4 bg-gradient-to-r from-[#fbf7f0] via-[#f7f0e4] to-[#fbf7f0] rounded-2xl border border-[#b8924a]/35 text-[11px] text-gray-800 space-y-1.5">
-                      <p className="font-bold flex items-center gap-1.5 text-xs text-[#8f6f33]">
-                        <Crown size={14} className="text-[#b8924a]" /> Espace Dashboard Organisateur Débloqué !
-                      </p>
-                      <p className="text-[11px] leading-relaxed text-gray-600">
-                        Félicitations ! Vous pouvez désormais piloter votre organisation, suivre vos confirmations, télécharger vos cartons numériques et personnaliser vos contenus en toute liberté depuis votre tableau de bord.
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 {/* Boutons de navigation post-activation */}
