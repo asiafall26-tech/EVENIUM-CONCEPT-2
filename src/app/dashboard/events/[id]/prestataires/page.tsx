@@ -638,7 +638,12 @@ export default function PrestatairesDashboardPage({
 
       {/* Modal du Profil Prestataire (identique au catalogue) */}
       {selectedProvider && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedProvider(null);
+          }}
+        >
           <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="h-64 bg-gray-200 relative">
               <button 
@@ -784,7 +789,12 @@ export default function PrestatairesDashboardPage({
 
       {/* DETAILED CATALOGUE MODAL */}
       {selectedServiceForDetails && (
-        <div className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedServiceForDetails(null);
+          }}
+        >
           <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative">
             <button 
               onClick={() => setSelectedServiceForDetails(null)}
@@ -929,7 +939,12 @@ export default function PrestatairesDashboardPage({
         };
 
         return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsDevisOpen(false);
+          }}
+        >
           <div className="bg-[#fbf7f0] rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-6 md:p-8 border-b border-[#e4d8c4]/50 shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative bg-white">

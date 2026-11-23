@@ -2269,6 +2269,25 @@
       pointer-events: none !important
     }
 
+    /* En mode iframe intégré (Evenium Studio client & admin) : masquer la barre interne doublon */
+    body.in-frame .ebar,
+    body.in-frame #ebar,
+    body.in-frame div.ebar {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+    }
+    body.in-frame.editing {
+      padding-top: 0 !important;
+    }
+    body.in-frame .editor,
+    body.in-frame aside.editor {
+      top: 0 !important;
+    }
+
     .ebar {
       position: fixed;
       top: 0;
@@ -3737,8 +3756,29 @@
         try { localStorage.setItem(KEY, JSON.stringify(D)) } catch (e) { toast("Mémoire du navigateur pleine : les dernières photos ne seront pas conservées.") }
         try { if (window.parent && window.parent !== window) { window.parent.postMessage({ type: 'evenium:content-change', content: D, values: D, data: D }, '*') } } catch (e) { }
       }
+      const inFrame = (window.parent && window.parent !== window) || location.search.indexOf('embedded=1') !== -1 || location.search.indexOf('preview=1') !== -1;
+      if (inFrame) {
+        document.body.classList.add('in-frame');
+      }
+
       window.addEventListener('message', function (e) {
         if (!e || !e.data) return;
+        if (e.data.type === 'evenium:set-tab') {
+          if (typeof setTab === 'function') setTab(e.data.tab === 'preview');
+        }
+        if (e.data.type === 'evenium:trigger-save' || e.data.type === 'evenium:finish' || e.data.type === 'evenium:save') {
+          if (typeof save === 'function') save();
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({
+                type: 'evenium:content-change',
+                content: D,
+                values: D,
+                data: D
+              }, '*');
+            }
+          } catch (err) { }
+        }
         if (e.data.type === 'evenium:set-values' || e.data.type === 'evenium:init-data' || e.data.type === 'ev:content') {
           const incoming = e.data.content || e.data.values || e.data.data;
           if (incoming && typeof incoming === 'object') {
@@ -4236,12 +4276,35 @@
           type: 'button',
           class: 'btn-validate-full',
           style: 'margin-top:24px;margin-bottom:20px;width:100%;padding:14px 18px;border-radius:26px;border:none;background:linear-gradient(135deg,#c9a15b,#ecd49c,#c9a15b);color:#2b0b14;font-family:var(--caps);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 18px rgba(201,161,91,.35);display:flex;align-items:center;justify-content:center;gap:8px;',
-          onclick: () => $('doneEdit').click()
+          onclick: () => {
+            save();
+            toast('Modifications enregistrées');
+            try {
+              if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'evenium:content-change', content: D, values: D, data: D }, '*');
+                window.parent.postMessage({ type: 'evenium:open-checkout' }, '*');
+              } else {
+                $('doneEdit').click();
+              }
+            } catch (err) { }
+          }
         }, '✨ Valider & Terminer');
         ed.append(btmBtn);
         built = true;
       }
-      function setTab(prev) { document.body.classList.toggle('tab-preview', prev); $('tabEdit').setAttribute('aria-pressed', !prev); $('tabPrev').setAttribute('aria-pressed', prev) }
+      function setTab(prev) {
+        document.body.classList.toggle('tab-preview', prev);
+        $('tabEdit').setAttribute('aria-pressed', !prev);
+        $('tabPrev').setAttribute('aria-pressed', prev);
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              type: 'evenium:tab-changed',
+              tab: prev ? 'preview' : 'edit'
+            }, '*');
+          }
+        } catch (e) { }
+      }
       $('tabEdit').onclick = () => setTab(false); $('tabPrev').onclick = () => setTab(true);
       $('fab').onclick = () => {
         if (!built) build(); wasRevealed = revealed;

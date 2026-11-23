@@ -911,6 +911,18 @@ export default function CataloguePrestatairesPage({
                     )}
                   </div>
                 )}
+
+                {/* Bouton d'échappement explicite en bas de fiche */}
+                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProvider(null)}
+                    className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Fermer la fiche prestataire</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -921,7 +933,12 @@ export default function CataloguePrestatairesPage({
 
       {/* DETAILED CATALOGUE MODAL */}
       {selectedServiceForDetails && (
-        <div className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedServiceForDetails(null);
+          }}
+        >
           <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative">
             <button 
               onClick={() => setSelectedServiceForDetails(null)}

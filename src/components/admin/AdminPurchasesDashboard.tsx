@@ -1240,8 +1240,13 @@ export default function AdminPurchasesDashboard({
 
       {/* DETAIL MODAL / FACTURETTE */}
       {modalItem && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-200">
+        <div 
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setModalItem(null);
+          }}
+        >
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="p-6 bg-gradient-to-r from-gray-900 to-black text-white flex items-center justify-between">
               <div>

@@ -105,6 +105,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     if (isSelfContained) {
       if (shouldHideEdit) {
         injection = `<style id="ev-guest-hide">#fab, #ebar, .fab, .ebar, #editor, .editor, button.fab, div.ebar, aside.editor { display: none !important; visibility: hidden !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }</style>`;
+      } else if (req.nextUrl.searchParams.get("hideEbar") === "1" || req.nextUrl.searchParams.get("preview") === "1") {
+        injection = `<style id="ev-embedded-ebar">#ebar, .ebar, div.ebar { display: none !important; visibility: hidden !important; pointer-events: none !important; height: 0 !important; min-height: 0 !important; padding: 0 !important; } body.editing { padding-top: 0 !important; } .editor, aside.editor { top: 0 !important; }</style>`;
       }
     } else {
       injection = shouldHideEdit

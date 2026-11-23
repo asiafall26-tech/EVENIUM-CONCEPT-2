@@ -746,8 +746,16 @@ export default function PrestataireDemandesPage() {
 
       {/* Modal View Demande & Ajustement */}
       {isViewModalOpen && selectedDemande && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4">
-          <div className="bg-white rounded-none sm:rounded-3xl w-full max-w-6xl h-dvh sm:h-auto max-h-dvh sm:max-h-[90vh] md:h-[90vh] flex flex-col md:flex-row shadow-2xl animate-in zoom-in-95 duration-300 overflow-y-auto md:overflow-hidden relative">
+        <div 
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsViewModalOpen(false);
+          }}
+        >
+          <div 
+            className="bg-white rounded-none sm:rounded-3xl w-full max-w-6xl h-dvh sm:h-auto max-h-dvh sm:max-h-[90vh] md:h-[90vh] flex flex-col md:flex-row shadow-2xl animate-in zoom-in-95 duration-300 overflow-y-auto md:overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* Colonne de gauche : Contexte Client & Événement */}
             <div className="w-full md:w-1/3 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col shrink-0 md:h-full md:overflow-y-auto hide-scrollbar">

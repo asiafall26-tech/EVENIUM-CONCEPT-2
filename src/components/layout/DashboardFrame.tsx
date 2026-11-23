@@ -2,10 +2,69 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, X, ArrowLeft } from "lucide-react";
 import { EveniumLogo } from "@/components/ui/EveniumLogo";
 import { MobileTabBar, type MobileTab } from "./MobileTabBar";
+
+function getParentRoute(path: string): { href: string; label: string } | null {
+  if (!path) return null;
+  // Pages d'accueil racines (pas de retour nécessaire)
+  if (path === "/dashboard" || path === "/prestataire" || path === "/admin") return null;
+
+  // 1. Sous-pages d'un événement (/dashboard/events/[id]/...)
+  const eventSubMatch = path.match(/^\/dashboard\/events\/([^/]+)\/(.+)$/);
+  if (eventSubMatch) {
+    const eventId = eventSubMatch[1];
+    const sub = eventSubMatch[2];
+    if (sub.startsWith("prestataires/catalogue")) {
+      return { href: `/dashboard/events/${eventId}/prestataires`, label: "Mes Prestataires" };
+    }
+    return { href: `/dashboard/events/${eventId}`, label: "Événement" };
+  }
+
+  // 2. Vue globale d'un événement (/dashboard/events/[id])
+  const eventOverviewMatch = path.match(/^\/dashboard\/events\/([^/]+)$/);
+  if (eventOverviewMatch) {
+    return { href: "/dashboard", label: "Mes événements" };
+  }
+
+  // 3. Devis client (/dashboard/devis/[id])
+  if (path.match(/^\/dashboard\/devis\/[^/]+$/)) {
+    return { href: "/dashboard/devis", label: "Mes devis" };
+  }
+
+  // 4. Autres sections client (/dashboard/...)
+  if (path.startsWith("/dashboard/")) {
+    return { href: "/dashboard", label: "Mon Espace" };
+  }
+
+  // 5. Sous-pages devis prestataire
+  if (path.includes("/prestataire/devis/builder") || path.match(/^\/prestataire\/devis\/[^/]+$/)) {
+    return { href: "/prestataire/demandes", label: "Demandes" };
+  }
+
+  // 6. Autres sections prestataire (/prestataire/...)
+  if (path.startsWith("/prestataire/")) {
+    return { href: "/prestataire", label: "Tableau de bord" };
+  }
+
+  // 7. Sous-pages administration
+  if (path.match(/^\/admin\/evenements\/[^/]+$/)) {
+    return { href: "/admin/evenements", label: "Événements" };
+  }
+  if (path.match(/^\/admin\/prestataires\/[^/]+$/)) {
+    return { href: "/admin/prestataires", label: "Prestataires" };
+  }
+  if (path.match(/^\/admin\/utilisateurs\/[^/]+$/)) {
+    return { href: "/admin/utilisateurs", label: "Utilisateurs" };
+  }
+  if (path.startsWith("/admin/")) {
+    return { href: "/admin", label: "Accueil Admin" };
+  }
+
+  return null;
+}
 
 export interface DashboardFrameProps {
   children: React.ReactNode;
@@ -33,12 +92,29 @@ export function DashboardFrame({
 }: DashboardFrameProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const parentRoute = getParentRoute(pathname);
+
   // Le menu mobile se referme quand on change de page
   const [openedOn, setOpenedOn] = useState(pathname);
   if (mobileOpen && openedOn !== pathname) {
     setMobileOpen(false);
     setOpenedOn(pathname);
   }
+
+  // Échappement universel au clavier avec la touche Échap
+  useEffect(() => {
+    if (!parentRoute) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") return;
+      if (e.key === "Escape") {
+        router.push(parentRoute.href);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [parentRoute, router]);
   // Pas de défilement de la page derrière le menu ouvert
   useEffect(() => {
     if (!mobileOpen) return;
@@ -152,23 +228,43 @@ export function DashboardFrame({
             minHeight: "calc(4rem + env(safe-area-inset-top, 0px))",
           }}
         >
-          {/* Mobile open drawer button */}
-          <button
-            type="button"
-            onClick={() => {
-              setOpenedOn(pathname);
-              setMobileOpen(true);
-            }}
-            aria-label="Ouvrir le menu"
-            aria-expanded={mobileOpen}
-            className={`lg:hidden p-2 rounded-xl transition-colors ${
-              isDark
-                ? "text-stone-300 hover:bg-white/10 hover:text-white"
-                : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
-            }`}
-          >
-            <Menu size={22} />
-          </button>
+          {/* Section gauche : Bouton Menu mobile + Bouton Retour Échappement universel */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Mobile open drawer button */}
+            <button
+              type="button"
+              onClick={() => {
+                setOpenedOn(pathname);
+                setMobileOpen(true);
+              }}
+              aria-label="Ouvrir le menu"
+              aria-expanded={mobileOpen}
+              className={`lg:hidden p-2 rounded-xl transition-colors ${
+                isDark
+                  ? "text-stone-300 hover:bg-white/10 hover:text-white"
+                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+              }`}
+            >
+              <Menu size={22} />
+            </button>
+
+            {/* Bouton d'échappement / Retour universel fixé en haut pour ne jamais être bloqué */}
+            {parentRoute && (
+              <Link
+                href={parentRoute.href}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 shrink-0 border cursor-pointer ${
+                  isDark
+                    ? "bg-[#b8924a]/15 hover:bg-[#b8924a]/25 text-[#f5eee1] border-[#b8924a]/30 shadow-xs"
+                    : "bg-[#fbf7f0] hover:bg-[#f5eee1] text-[#7a5e2b] border-[#b8924a]/30 shadow-xs"
+                }`}
+                title={`Revenir à : ${parentRoute.label} (Raccourci : Échap)`}
+              >
+                <ArrowLeft size={13} className="text-[#b8924a] shrink-0" strokeWidth={2.2} />
+                <span className="hidden sm:inline">Retour : {parentRoute.label}</span>
+                <span className="sm:hidden font-bold">Retour</span>
+              </Link>
+            )}
+          </div>
 
           {/* Header custom content (search, notifications, profile menu) */}
           <div className="flex-1 flex items-center justify-between gap-2 sm:gap-4 min-w-0">

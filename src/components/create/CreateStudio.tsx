@@ -573,6 +573,23 @@ function CreateExpressStudioContent({
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   // Mode d'édition interne actif dans l'iframe (pour adapter l'en-tête sur mobile et éviter les barres en double)
   const [isIframeEditing, setIsIframeEditing] = useState(true);
+  // Onglet d'édition actif sur mobile ("edit" pour modifier les champs, "preview" pour tester l'invitation)
+  const [mobileEditorTab, setMobileEditorTab] = useState<'edit' | 'preview'>('edit');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const handleSetMobileEditorTab = (tab: 'edit' | 'preview') => {
+    setMobileEditorTab(tab);
+    try {
+      iframeRef.current?.contentWindow?.postMessage({ type: 'evenium:set-tab', tab }, '*');
+    } catch { }
+  };
+
+  const handleFinalizeFromEditor = () => {
+    try {
+      iframeRef.current?.contentWindow?.postMessage({ type: 'evenium:trigger-save' }, '*');
+    } catch { }
+    setIsCheckoutModalOpen(true);
+  };
 
   // Raccourci clavier universel Échap pour fermer les modales et studios
   useEffect(() => {
@@ -622,6 +639,11 @@ function CreateExpressStudioContent({
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'evenium:close-preview') handleClose();
       if (e.data?.type === 'evenium:open-checkout') handleCheckout();
+      if (e.data?.type === 'evenium:tab-changed') {
+        if (e.data.tab === 'preview' || e.data.tab === 'edit') {
+          setMobileEditorTab(e.data.tab);
+        }
+      }
       if (e.data?.type === 'evenium:edit-mode') {
         setIsIframeEditing(Boolean(e.data.isEditing));
       }
@@ -697,7 +719,7 @@ function CreateExpressStudioContent({
       base = custom ? customModelUrl(custom) : `/m/${selectedModelId.slice(7)}/index.html`;
     }
     const delim = base.includes("?") ? "&" : "?";
-    return `${base}${delim}preview=1&canEdit=1&autoEdit=1&hideCta=1`;
+    return `${base}${delim}preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1`;
   }, [selectedModelId, customModels]);
 
   // Extraction automatique des métadonnées de l'événement depuis le contenu complet de l'invitation
@@ -1113,7 +1135,7 @@ function CreateExpressStudioContent({
               }}
             >
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
-                <a href="/" className="flex items-center group">
+                <a href={inDashboard ? "/dashboard" : "/"} className="flex items-center group">
                   <Image
                     src="/logo-horizontal-dark.png"
                     alt="Evenium Logo"
@@ -1124,10 +1146,10 @@ function CreateExpressStudioContent({
                   />
                 </a>
                 <a
-                  href="/"
+                  href={inDashboard ? "/dashboard" : "/"}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-gray-600 hover:text-black hover:bg-black/5 transition-all border border-gray-200/80 cursor-pointer"
                 >
-                  <span>Accueil</span>
+                  <span>{inDashboard ? "Tableau de bord" : "Accueil"}</span>
                   <X size={13} />
                 </a>
               </div>
@@ -1307,43 +1329,70 @@ function CreateExpressStudioContent({
       ) : (
         /* ─────────────── 2. TEST & PERSONNALISATION IMMERSIVE AVEC CRAYON (PUIS ACHAT) ─────────────── */
         <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
-          {/* Barre supérieure luxueuse avec prise en compte de l'encoche mobile (Safe Area Insets) */}
+          {/* Barre supérieure unique & ergonomique : aucun doublon sur mobile, prise en compte stricte de l'encoche */}
           <header
-            className={`w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 items-center justify-between shrink-0 z-30 select-none transition-all ${
-              isIframeEditing ? "hidden md:flex" : "flex"
-            }`}
+            className="w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none shadow-md"
             style={{
-              paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
-              paddingBottom: "8px",
-              minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+              paddingTop: "max(env(safe-area-inset-top, 0px), 10px)",
+              paddingBottom: "10px",
+              minHeight: "calc(3.6rem + env(safe-area-inset-top, 0px))",
             }}
           >
-            {/* Bouton retour vers la galerie */}
+            {/* Côté gauche : Bouton retour vers la galerie des modèles (Échappement direct) */}
             <button
               type="button"
               onClick={handleReturnToGallery}
-              className="inline-flex items-center gap-1 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/15 transition-all cursor-pointer shrink-0"
-              title="Changer de modèle"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer shrink-0"
+              title="Changer de modèle (Raccourci : Échap)"
             >
-              <ArrowLeft size={14} className="shrink-0" />
+              <ArrowLeft size={14} className="text-[#f0d999] shrink-0" />
               <span className="hidden sm:inline">Changer de modèle</span>
-              <span className="sm:hidden text-[11px]">Modèles</span>
+              <span className="sm:hidden text-[11px] font-bold">← Modèles</span>
             </button>
 
-            {/* Titre & Indication Crayon ✏️ */}
-            <div className="flex items-center gap-1.5 min-w-0 px-1 justify-center">
-              <span className="font-serif text-xs sm:text-base font-bold text-white tracking-wide truncate max-w-[110px] sm:max-w-xs text-center">
-                {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
-              </span>
-              <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
-                <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
-              </span>
+            {/* Centre : Sélecteur segmenté MODIFIER / APERÇU sur mobile, Titre & Crayon sur desktop */}
+            <div className="flex items-center justify-center min-w-0 px-1">
+              {/* Sélecteur mobile exclusif (zéro doublon avec l'iframe) */}
+              <div className="flex md:hidden items-center bg-[#251219] p-1 rounded-full border border-white/10 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => handleSetMobileEditorTab('edit')}
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
+                    mobileEditorTab === 'edit'
+                      ? "bg-white text-[#13090C] font-bold shadow-xs"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  MODIFIER
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetMobileEditorTab('preview')}
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
+                    mobileEditorTab === 'preview'
+                      ? "bg-white text-[#13090C] font-bold shadow-xs"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  APERÇU
+                </button>
+              </div>
+
+              {/* Titre & Indication Crayon sur grand écran */}
+              <div className="hidden md:flex items-center gap-2">
+                <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-xs text-center">
+                  {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
+                  <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
+                </span>
+              </div>
             </div>
 
-            {/* Bouton Doré d'Achat : Valider & Obtenir mon lien */}
+            {/* Côté droit : Bouton Doré Unique d'Achat & Validation */}
             <button
               type="button"
-              onClick={() => setIsCheckoutModalOpen(true)}
+              onClick={handleFinalizeFromEditor}
               className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0"
             >
               <Lock size={13} className="text-black shrink-0" />
@@ -1357,6 +1406,7 @@ function CreateExpressStudioContent({
             <div className="w-full h-full bg-black overflow-hidden flex flex-col relative">
               {/* Iframe avec communication postMessage en temps réel */}
               <iframe
+                ref={iframeRef}
                 src={previewIframeSrc}
                 title="Aperçu interactif du modèle Evenium"
                 className="w-full h-full border-0 bg-black block"
@@ -1698,7 +1748,15 @@ function CreateExpressStudioContent({
       )}
 
       {isCheckoutModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-start justify-center p-3 sm:p-6 md:p-8 py-6 sm:py-10 md:py-14 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+        <div
+          className="fixed inset-0 z-[150] flex items-start justify-center p-3 sm:p-6 md:p-8 py-6 sm:py-10 md:py-14 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsCheckoutModalOpen(false);
+              if (standardSuccessEvent) setStandardSuccessEvent(null);
+            }
+          }}
+        >
           <div className="w-full max-w-4xl lg:max-w-5xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
 
             {/* Header Modal */}
