@@ -81,3 +81,42 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Erreur serveur." }, { status: 500 });
   }
 }
+
+/**
+ * PATCH { slug, patch } : met à jour le modèle ou son contenu (sans limite de sérialisation React Flight)
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    if (!(await isAdmin())) return NextResponse.json({ error: "Réservé à l'administrateur." }, { status: 403 });
+    const { slug, patch } = (await req.json()) as { slug?: string; patch?: any };
+    if (!slug || !SLUG.test(slug) || !patch || typeof patch !== "object") {
+      return NextResponse.json({ error: "Données du modèle invalides." }, { status: 400 });
+    }
+    const { error } = await admin()
+      .from(CUSTOM_MODELS_TABLE)
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq("slug", slug);
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Erreur serveur." }, { status: 500 });
+  }
+}
+
+/**
+ * PUT { ...row } : enregistre un nouveau modèle importé
+ */
+export async function PUT(req: NextRequest) {
+  try {
+    if (!(await isAdmin())) return NextResponse.json({ error: "Réservé à l'administrateur." }, { status: 403 });
+    const row = (await req.json()) as any;
+    if (!row || !row.slug || !SLUG.test(row.slug)) {
+      return NextResponse.json({ error: "Données du modèle invalides." }, { status: 400 });
+    }
+    const { error } = await admin().from(CUSTOM_MODELS_TABLE).insert(row);
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Erreur serveur." }, { status: 500 });
+  }
+}

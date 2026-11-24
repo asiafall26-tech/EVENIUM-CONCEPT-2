@@ -45,17 +45,23 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
           : ["Mariage"];
 
       setStep("Enregistrement du modèle…");
-      await insertCustomModelAction(JSON.stringify({
-        slug,
-        name: modelName,
-        entry,
-        fields,
-        content: {},
-        cover_url: cover ? modelAssetUrl(slug, entry, cover) : null,
-        invitation_type: invitationType,
-        event_types: eventTypes,
-        status: "draft",
-      }));
+      const res = await fetch("/api/admin/custom-models", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          name: modelName,
+          entry,
+          fields,
+          content: {},
+          cover_url: cover ? modelAssetUrl(slug, entry, cover) : null,
+          invitation_type: invitationType,
+          event_types: eventTypes,
+          status: "draft",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Import impossible.");
       onImported(slug);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import impossible.");

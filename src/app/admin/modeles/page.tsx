@@ -529,7 +529,20 @@ export default function AdminModelsStudioPage() {
                         onRename={() => setRenamingModel(model)}
                         onClassify={() => setClassifyingId(model.id)}
                         onCover={() => setCoverModel(model)}
-                        onPublish={async () => act(model, async () => { await publishModelAction(model.id, JSON.stringify(classOf(model).type === "carte" ? withoutMusic(workingContent(model)) : workingContent(model)), name); }, `« ${name} » est publié sur le site.`)}
+                        onPublish={async () => act(model, async () => {
+                          const res = await fetch("/api/admin/model-defaults", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "publish",
+                              modelId: model.id,
+                              content: classOf(model).type === "carte" ? withoutMusic(workingContent(model)) : workingContent(model),
+                              customName: name,
+                            }),
+                          });
+                          const d = await res.json().catch(() => ({}));
+                          if (!res.ok) throw new Error(d.error || "Publication impossible.");
+                        }, `« ${name} » est publié sur le site.`)}
                         onShow={async () => act(model, async () => { await setModelHiddenAction(model.id, false); }, `« ${name} » est de retour sur le site.`)}
                         onHide={async () => {
                           if (!confirm(`Retirer « ${name} » du site ? Il n'apparaîtra plus dans les galeries ni à la création d'événement. Les invitations déjà achetées restent intactes.`)) return;
@@ -660,11 +673,28 @@ export default function AdminModelsStudioPage() {
           initial={workingContent(editing)}
           onClose={() => setEditingId(null)}
           onSave={async (content: ModelContent, newName?: string) => {
-            await saveModelDraftAction(editing.id, JSON.stringify(content), newName);
+            const res = await fetch("/api/admin/model-defaults", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "draft", modelId: editing.id, content, customName: newName }),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || "Sauvegarde impossible.");
             await load(true);
           }}
           onPublish={async (content: ModelContent, newName?: string) => {
-            await publishModelAction(editing.id, JSON.stringify(classOf(editing).type === "carte" ? withoutMusic(content) : content), newName);
+            const res = await fetch("/api/admin/model-defaults", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "publish",
+                modelId: editing.id,
+                content: classOf(editing).type === "carte" ? withoutMusic(content) : content,
+                customName: newName,
+              }),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || "Publication impossible.");
             await load(true);
           }}
         />

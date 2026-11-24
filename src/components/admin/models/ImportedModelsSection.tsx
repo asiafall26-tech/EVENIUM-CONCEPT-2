@@ -31,6 +31,16 @@ interface Props {
   onReload?: () => Promise<void> | void;
 }
 
+async function updateCustomModel(slug: string, patch: any) {
+  const res = await fetch("/api/admin/custom-models", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slug, patch }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Mise à jour impossible.");
+}
+
 /** Modèles importés (ZIP / HTML) : import, studio, publication, retrait, classement, suppression. */
 export default function ImportedModelsSection({ kindFilter, eventFilter, searchQuery = "", onNotice, onReload }: Props) {
   const [supabase] = useState(() => createClient());
@@ -76,12 +86,12 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
   };
 
   const publish = (m: CustomModelRow, patch: Partial<CustomModelRow> = {}) =>
-    saveCustomModelAction(m.slug, JSON.stringify({
+    updateCustomModel(m.slug, {
       ...patch,
       content: patch.content ?? m.draft_content ?? m.content,
       status: "published",
       published_at: new Date().toISOString(),
-    }));
+    });
 
   const remove = async (m: CustomModelRow) => {
     if (!confirm(`Supprimer définitivement « ${m.name} » et ses fichiers ? Les invitations déjà achetées avec ce modèle ne s'afficheront plus.`)) return;
@@ -168,10 +178,10 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
               onClassify={() => setClassifyingSlug(m.slug)}
               onCover={() => setCoverSlug(m.slug)}
               onPublish={() => act(m, () => publish(m), `« ${m.name} » est publié sur le site.`)}
-              onShow={() => act(m, () => saveCustomModelAction(m.slug, { status: "published" }), `« ${m.name} » est de retour sur le site.`)}
+              onShow={() => act(m, () => updateCustomModel(m.slug, { status: "published" }), `« ${m.name} » est de retour sur le site.`)}
               onHide={() => {
                 if (!confirm(`Retirer « ${m.name} » du site ? Les invitations déjà achetées restent intactes.`)) return;
-                act(m, () => saveCustomModelAction(m.slug, { status: "hidden" }), `« ${m.name} » est retiré du site.`);
+                act(m, () => updateCustomModel(m.slug, { status: "hidden" }), `« ${m.name} » est retiré du site.`);
               }}
               onDelete={() => remove(m)}
               extra={[
@@ -218,7 +228,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
           model={editingModel}
           onClose={() => setEditingModel(null)}
           onSave={async (patch) => {
-            await saveCustomModelAction(editingModel.slug, JSON.stringify(patch));
+            await updateCustomModel(editingModel.slug, patch);
             await load();
             await onReload?.();
           }}
@@ -239,7 +249,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
             current={m.cover_url ?? ""}
             onClose={() => setCoverSlug(null)}
             onSave={async (url) => {
-              await saveCustomModelAction(m.slug, { cover_url: url || null });
+              await updateCustomModel(m.slug, { cover_url: url || null });
               setCoverSlug(null);
               onNotice({ ok: true, text: `La photo de couverture de « ${m.name} » est à jour sur le site.` });
               await load();
@@ -255,7 +265,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
           modelImage={renaming.cover_url}
           onClose={() => setRenamingSlug(null)}
           onSave={async (newName) => {
-            await saveCustomModelAction(renaming.slug, { name: newName });
+            await updateCustomModel(renaming.slug, { name: newName });
             setRenamingSlug(null);
             onNotice({ ok: true, text: `Le modèle s'appelle désormais « ${newName} » sur l'ensemble du site.` });
             await load();
@@ -270,7 +280,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
           initial={{ type: classifying.invitation_type, events: classifying.event_types }}
           onClose={() => setClassifyingSlug(null)}
           onSave={async (c) => {
-            await saveCustomModelAction(classifying.slug, { invitation_type: c.type, event_types: c.events });
+            await updateCustomModel(classifying.slug, { invitation_type: c.type, event_types: c.events });
             setClassifyingSlug(null);
             onNotice({ ok: true, text: `« ${classifying.name} » est classé.` });
             await load();
