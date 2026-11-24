@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Edit3, Eye, Sparkles, X, CheckCircle, Copy, MessageCircle, RotateCcw, MessageSquare, Users } from "lucide-react";
+import { Send, Edit3, Eye, Sparkles, X, CheckCircle, CheckCircle2, Copy, MessageCircle, RotateCcw, MessageSquare, Users } from "lucide-react";
 import { useState, use, useEffect, useRef, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
@@ -23,6 +23,8 @@ import { createClient } from "@/utils/supabase/client";
 import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
 import SplitStudioEditor from "@/components/studio/SplitStudioEditor";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
+import WishReplyModal, { WishReplyGuest } from "@/components/dashboard/WishReplyModal";
+import { getWishRepliesAction } from "@/app/actions/wishReplies";
 
 export default function InvitationsDashboardPage({
   params,
@@ -96,26 +98,59 @@ export default function InvitationsDashboardPage({
   const [accompanimentMsg, setAccompanimentMsg] = useState<string>("");
   const [guestStats, setGuestStats] = useState({ total: 0, confirmed: 0, declined: 0 });
 
-  const [guestsList, setGuestsList] = useState<Array<{ id: string; nom: string; telephone?: string; statut_rsvp?: string; message?: string; created_at?: string }>>([]);
+  const [guestsList, setGuestsList] = useState<Array<{ id: string; nom: string; telephone?: string; email?: string; statut_rsvp?: string; message?: string; reply?: string; repliedAt?: string; channel?: string; created_at?: string }>>([]);
 
   const guestsWithMessages = useMemo(() => {
     return guestsList.filter((g: any) => g.message && String(g.message).trim().length > 0);
   }, [guestsList]);
 
+  // Modal de réponse aux vœux
+  const [isWishReplyModalOpen, setIsWishReplyModalOpen] = useState(false);
+  const [selectedWishGuest, setSelectedWishGuest] = useState<WishReplyGuest | null>(null);
+
+  const openWishReplyModal = (guest: any) => {
+    setSelectedWishGuest({
+      id: guest.id,
+      name: guest.nom,
+      phone: guest.telephone,
+      email: guest.email,
+      message: guest.message,
+      status: guest.statut_rsvp,
+      reply: guest.reply,
+      repliedAt: guest.repliedAt,
+      channel: guest.channel,
+    });
+    setIsWishReplyModalOpen(true);
+  };
+
+  const handleWishReplySaved = (guestId: string, reply: string, repliedAt: string, channel: string) => {
+    setGuestsList((prev) =>
+      prev.map((g) => (g.id === guestId ? { ...g, reply, repliedAt, channel } : g))
+    );
+  };
+
   useEffect(() => {
-    supabase
-      .from('guests')
-      .select('id, nom, telephone, statut_rsvp, message, created_at')
-      .eq('event_id', id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) {
-          setGuestsList(data);
-          const conf = data.filter((g: any) => g.statut_rsvp === "Confirmé").length;
-          const decl = data.filter((g: any) => g.statut_rsvp === "Refusé").length;
-          setGuestStats({ total: data.length, confirmed: conf, declined: decl });
-        }
-      });
+    Promise.all([
+      supabase
+        .from('guests')
+        .select('id, nom, telephone, email, statut_rsvp, message, created_at')
+        .eq('event_id', id)
+        .order('created_at', { ascending: false }),
+      getWishRepliesAction(id),
+    ]).then(([{ data }, repliesMap]) => {
+      if (data) {
+        const enriched = data.map((g: any) => ({
+          ...g,
+          reply: g.reponse || repliesMap[g.id]?.reply || "",
+          repliedAt: g.reponse_envoyee_le || repliesMap[g.id]?.repliedAt || "",
+          channel: repliesMap[g.id]?.channel || "whatsapp",
+        }));
+        setGuestsList(enriched);
+        const conf = data.filter((g: any) => g.statut_rsvp === "Confirmé").length;
+        const decl = data.filter((g: any) => g.statut_rsvp === "Refusé").length;
+        setGuestStats({ total: data.length, confirmed: conf, declined: decl });
+      }
+    });
   }, [id, supabase]);
 
   const [invitationData, setInvitationData] = useState({
@@ -523,11 +558,11 @@ export default function InvitationsDashboardPage({
                 Tout voir &rarr;
               </Link>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {guestsWithMessages.slice(0, 3).map((g: any) => (
                 <div
                   key={g.id}
-                  className="p-3 bg-amber-50/70 border border-[#b8924a]/25 rounded-xl text-xs flex flex-col gap-1"
+                  className="p-3 bg-amber-50/70 border border-[#b8924a]/25 rounded-xl text-xs flex flex-col gap-1.5"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-gray-900">{g.nom}</span>
@@ -536,6 +571,33 @@ export default function InvitationsDashboardPage({
                     </span>
                   </div>
                   <p className="font-serif italic text-gray-700 leading-relaxed">« {g.message} »</p>
+
+                  {g.reply && (
+                    <div className="p-2 bg-white/90 rounded-lg border border-[#b8924a]/20 text-[11px] text-emerald-800 space-y-0.5">
+                      <strong className="text-emerald-800 flex items-center gap-1">
+                        <CheckCircle2 size={11} /> Votre réponse envoyée :
+                      </strong>
+                      <span className="italic text-gray-700">« {g.reply} »</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-1 border-t border-[#b8924a]/15">
+                    {g.reply ? (
+                      <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                        <CheckCircle2 size={11} /> Répondu
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-700">Non répondu</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => openWishReplyModal(g)}
+                      className="px-2.5 py-1 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white text-[10px] font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer ml-auto"
+                    >
+                      <MessageCircle size={11} />
+                      <span>{g.reply ? "Modifier réponse" : "Répondre"}</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -849,6 +911,19 @@ export default function InvitationsDashboardPage({
           </div>
         </div>
       )}
+
+      {/* Modal de Réponse aux Vœux */}
+      <WishReplyModal
+        isOpen={isWishReplyModalOpen}
+        onClose={() => setIsWishReplyModalOpen(false)}
+        guest={selectedWishGuest}
+        event={{
+          id,
+          name: event?.name,
+          type: event?.type,
+        }}
+        onReplySaved={handleWishReplySaved}
+      />
     </div>
   );
 }

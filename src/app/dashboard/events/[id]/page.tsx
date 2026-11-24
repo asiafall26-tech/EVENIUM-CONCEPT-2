@@ -2,7 +2,7 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Users, CheckCircle, Clock, Wallet, CheckSquare, Sparkles, MapPin, Calendar, Share2, MessageCircle, Eye, Edit3, Copy, Check } from "lucide-react";
+import { Users, CheckCircle, CheckCircle2, Clock, Wallet, CheckSquare, Sparkles, MapPin, Calendar, Share2, MessageCircle, Eye, Edit3, Copy, Check } from "lucide-react";
 import { use, useState, useEffect } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
@@ -10,6 +10,8 @@ import { getInvitationModelName } from "@/data/mock/invitations";
 import { eventDetailsFromRow, hasExtraDetails, requiresEventDetails } from "@/lib/eventDetails";
 import { PrivilegeOffersCarousel } from "@/components/dashboard/PrivilegeOffersCarousel";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
+import WishReplyModal, { WishReplyGuest } from "@/components/dashboard/WishReplyModal";
+import { getWishRepliesAction } from "@/app/actions/wishReplies";
 
 const formatFrenchDate = (d?: string) => {
   if (!d || d === "À définir") return d || "Date à définir";
@@ -114,6 +116,31 @@ export default function EventDashboardPage({
   const [tasks, setTasks] = useState({ total: 0, completed: 0 });
   const [recentGuestMessages, setRecentGuestMessages] = useState<any[]>([]);
 
+  // Modal de réponse aux vœux
+  const [isWishReplyModalOpen, setIsWishReplyModalOpen] = useState(false);
+  const [selectedWishGuest, setSelectedWishGuest] = useState<WishReplyGuest | null>(null);
+
+  const openWishReplyModal = (guest: any) => {
+    setSelectedWishGuest({
+      id: guest.id,
+      name: guest.nom,
+      phone: guest.telephone,
+      email: guest.email,
+      message: guest.message,
+      status: guest.statut_rsvp,
+      reply: guest.reply,
+      repliedAt: guest.repliedAt,
+      channel: guest.channel,
+    });
+    setIsWishReplyModalOpen(true);
+  };
+
+  const handleWishReplySaved = (guestId: string, reply: string, repliedAt: string, channel: string) => {
+    setRecentGuestMessages(prev =>
+      prev.map(g => (g.id === guestId ? { ...g, reply, repliedAt, channel } : g))
+    );
+  };
+
   useEffect(() => {
     if (!event) return;
     
@@ -128,18 +155,30 @@ export default function EventDashboardPage({
         setBudget(prev => ({ ...prev, spent: txs.reduce((sum, t) => sum + Number(t.montant), 0) }));
       }
 
-      // Fetch guests stats and messages
-      const { data: gst } = await supabase
-        .from('guests')
-        .select('id, nom, statut_rsvp, message, created_at')
-        .eq('event_id', id)
-        .order('created_at', { ascending: false });
+      // Fetch guests stats, messages and saved replies
+      const [{ data: gst }, repliesMap] = await Promise.all([
+        supabase
+          .from('guests')
+          .select('id, nom, telephone, email, statut_rsvp, message, created_at')
+          .eq('event_id', id)
+          .order('created_at', { ascending: false }),
+        getWishRepliesAction(id),
+      ]);
 
       if (gst) {
         const confirmed = gst.filter(g => g.statut_rsvp === 'Confirmé').length;
         const pending = gst.filter(g => g.statut_rsvp === 'En attente').length;
         setGuests(prev => ({ ...prev, total: Math.max(prev.total, gst.length), confirmed, pending }));
-        setRecentGuestMessages(gst.filter(g => g.message && String(g.message).trim().length > 0));
+        setRecentGuestMessages(
+          gst
+            .filter(g => g.message && String(g.message).trim().length > 0)
+            .map((g: any) => ({
+              ...g,
+              reply: (g as any).reponse || repliesMap[g.id]?.reply || "",
+              repliedAt: (g as any).reponse_envoyee_le || repliesMap[g.id]?.repliedAt || "",
+              channel: repliesMap[g.id]?.channel || "whatsapp",
+            }))
+        );
       }
 
       // Fetch tasks stats
@@ -497,7 +536,7 @@ export default function EventDashboardPage({
             {recentGuestMessages.slice(0, 4).map((g) => (
               <div
                 key={g.id}
-                className="bg-black/40 border border-[#c9a45e]/30 rounded-2xl p-4 flex flex-col justify-between"
+                className="bg-black/40 border border-[#c9a45e]/30 hover:border-[#c9a45e]/60 rounded-2xl p-4 flex flex-col justify-between transition-colors shadow-sm"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
@@ -509,6 +548,33 @@ export default function EventDashboardPage({
                   <p className="font-serif italic text-sm text-[#f5dfaa] leading-relaxed bg-[#140c06]/60 p-3 rounded-xl border border-[#c9a45e]/20">
                     « {g.message} »
                   </p>
+
+                  {g.reply && (
+                    <div className="mt-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 size={11} /> Votre réponse envoyée :
+                      </span>
+                      <p className="text-gray-300 italic text-[11px] leading-relaxed">« {g.reply} »</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between gap-2">
+                  {g.reply ? (
+                    <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                      <CheckCircle2 size={11} /> Répondu
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-amber-400/80">Non répondu</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openWishReplyModal(g)}
+                    className="px-2.5 py-1 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white text-[11px] font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer ml-auto"
+                  >
+                    <MessageCircle size={12} />
+                    <span>{g.reply ? "Modifier réponse" : "Répondre"}</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -524,6 +590,19 @@ export default function EventDashboardPage({
           title={`Sélection Privilège pour votre ${event.type || "événement"}`}
         />
       </div>
+
+      {/* Modal de Réponse aux Vœux */}
+      <WishReplyModal
+        isOpen={isWishReplyModalOpen}
+        onClose={() => setIsWishReplyModalOpen(false)}
+        guest={selectedWishGuest}
+        event={{
+          id,
+          name: event?.name,
+          type: event?.type,
+        }}
+        onReplySaved={handleWishReplySaved}
+      />
     </div>
   );
 }

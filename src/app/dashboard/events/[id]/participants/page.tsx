@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Plus, Search, MoreHorizontal, Mail, CheckCircle, Clock, XCircle, ChevronDown, ArrowRight, Edit2, Trash2, X, FileText, User, MessageCircle, Copy, Share2, Sparkles, Send, Lock, Bell } from "lucide-react";
+import { Users, Plus, Search, MoreHorizontal, Mail, CheckCircle, CheckCircle2, Clock, XCircle, ChevronDown, ArrowRight, Edit2, Trash2, X, FileText, User, MessageCircle, Copy, Share2, Sparkles, Send, Lock, Bell } from "lucide-react";
 import Link from "next/link";
 import { use, useState, useEffect, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
@@ -9,6 +9,8 @@ import { createClient } from "@/utils/supabase/client";
 import { markRsvpSeen } from "@/store/BadgeStore";
 import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
+import WishReplyModal, { WishReplyGuest } from "@/components/dashboard/WishReplyModal";
+import { getWishRepliesAction } from "@/app/actions/wishReplies";
 
 export default function ParticipantsDashboardPage({
   params,
@@ -162,12 +164,40 @@ export default function ParticipantsDashboardPage({
     setTimeout(() => setWaCopied(false), 2500);
   };
 
+  // Modal de réponse aux vœux
+  const [isWishReplyModalOpen, setIsWishReplyModalOpen] = useState(false);
+  const [selectedWishGuest, setSelectedWishGuest] = useState<WishReplyGuest | null>(null);
+
+  const openWishReplyModal = (guest: any) => {
+    setSelectedWishGuest({
+      id: guest.id,
+      name: guest.name,
+      phone: guest.phone,
+      email: guest.email,
+      message: guest.message,
+      status: guest.status,
+      reply: guest.reply,
+      repliedAt: guest.repliedAt,
+      channel: guest.channel,
+    });
+    setIsWishReplyModalOpen(true);
+  };
+
+  const handleWishReplySaved = (guestId: string, reply: string, repliedAt: string, channel: string) => {
+    setParticipants((prev) =>
+      prev.map((p) => (p.id === guestId ? { ...p, reply, repliedAt, channel } : p))
+    );
+  };
+
   const fetchGuests = async () => {
-    const { data } = await supabase
-      .from('guests')
-      .select('*')
-      .eq('event_id', id)
-      .order('created_at', { ascending: false });
+    const [{ data }, repliesMap] = await Promise.all([
+      supabase
+        .from('guests')
+        .select('*')
+        .eq('event_id', id)
+        .order('created_at', { ascending: false }),
+      getWishRepliesAction(id),
+    ]);
 
     if (data) {
       setParticipants(data.map(g => ({
@@ -178,6 +208,9 @@ export default function ParticipantsDashboardPage({
         group: "Famille", // Fallback local since we didn't add it in DB
         status: g.statut_rsvp || "En attente",
         message: g.message || "",
+        reply: (g as any).reponse || repliesMap[g.id]?.reply || "",
+        repliedAt: (g as any).reponse_envoyee_le || repliesMap[g.id]?.repliedAt || "",
+        channel: repliesMap[g.id]?.channel || "whatsapp",
         companions: g.nombre_accompagnants || 0,
         dateSent: new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
       })));
@@ -487,20 +520,38 @@ export default function ParticipantsDashboardPage({
                   <p className="font-serif italic text-sm text-[#f5dfaa] leading-relaxed bg-[#140c06]/60 p-3 rounded-xl border border-[#c9a45e]/20">
                     « {guest.message} »
                   </p>
+
+                  {/* Réponse déjà envoyée */}
+                  {guest.reply && (
+                    <div className="mt-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs">
+                      <span className="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1 mb-1">
+                        <CheckCircle2 size={11} /> Votre réponse envoyée {guest.repliedAt ? `(${new Date(guest.repliedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})` : ""} :
+                      </span>
+                      <p className="text-gray-300 italic text-[11px] leading-relaxed">« {guest.reply} »</p>
+                    </div>
+                  )}
                 </div>
 
-                {guest.phone && (
-                  <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => openWhatsAppModalForGuest(guest)}
-                      className="text-[11px] text-[#25D366] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
-                    >
-                      <MessageCircle size={13} />
-                      <span>Répondre à {guest.name.split(" ")[0]} sur WhatsApp</span>
-                    </button>
-                  </div>
-                )}
+                <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between gap-2 flex-wrap">
+                  {guest.reply ? (
+                    <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                      <CheckCircle2 size={11} /> Répondu
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-amber-400/80 font-medium flex items-center gap-1">
+                      <Clock size={11} /> En attente de votre réponse
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => openWishReplyModal(guest)}
+                    className="text-[11px] px-3 py-1.5 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer ml-auto"
+                  >
+                    <MessageCircle size={13} />
+                    <span>{guest.reply ? "Modifier la réponse" : `Répondre à ${guest.name.split(" ")[0]}`}</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -571,11 +622,29 @@ export default function ParticipantsDashboardPage({
                     {[p.phone, p.email, p.group, p.dateSent].filter(Boolean).join(" · ")}
                   </p>
                   {p.message && (
-                    <div className="mt-2 p-2.5 rounded-xl bg-amber-50/90 border border-[#b8924a]/30 text-xs text-gray-900 font-serif italic max-w-xl shadow-2xs">
-                      <span className="font-sans font-bold text-[#8f6f33] not-italic text-[10px] uppercase tracking-wider block mb-0.5">
-                        💌 Mot de l&apos;invité :
-                      </span>
-                      « {p.message} »
+                    <div className="mt-2 p-2.5 rounded-xl bg-amber-50/90 border border-[#b8924a]/30 text-xs text-gray-900 font-serif italic max-w-xl shadow-2xs space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-sans font-bold text-[#8f6f33] not-italic text-[10px] uppercase tracking-wider block">
+                          💌 Vœu de l&apos;invité :
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => openWishReplyModal(p)}
+                          className="font-sans not-italic text-[10px] px-2.5 py-1 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <MessageCircle size={11} />
+                          <span>{p.reply ? "Modifier réponse" : "Répondre"}</span>
+                        </button>
+                      </div>
+                      <p className="leading-relaxed">« {p.message} »</p>
+                      {p.reply && (
+                        <div className="mt-1.5 pt-1.5 border-t border-[#b8924a]/20 font-sans not-italic text-[11px] text-emerald-900 bg-emerald-50/60 p-2 rounded-lg">
+                          <strong className="text-emerald-800 flex items-center gap-1 mb-0.5">
+                            <CheckCircle2 size={11} /> Votre réponse envoyée :
+                          </strong>
+                          <span className="italic text-gray-700">« {p.reply} »</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1072,6 +1141,19 @@ export default function ParticipantsDashboardPage({
           </div>
         </div>
       )}
+
+      {/* Modal de Réponse aux Vœux */}
+      <WishReplyModal
+        isOpen={isWishReplyModalOpen}
+        onClose={() => setIsWishReplyModalOpen(false)}
+        guest={selectedWishGuest}
+        event={{
+          id,
+          name: event?.name,
+          type: event?.type,
+        }}
+        onReplySaved={handleWishReplySaved}
+      />
 
     </div>
   );
