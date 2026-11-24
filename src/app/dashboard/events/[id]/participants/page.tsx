@@ -104,7 +104,7 @@ export default function ParticipantsDashboardPage({
   // WhatsApp Share State
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [whatsAppGuest, setWhatsAppGuest] = useState<{ id?: string; name: string; phone?: string } | null>(null);
-  const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
+  const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court" | "religieux">("chaleureux");
   const [waPhoneInput, setWaPhoneInput] = useState("");
   const [waCopied, setWaCopied] = useState(false);
 
@@ -115,7 +115,7 @@ export default function ParticipantsDashboardPage({
     return `/invite/${id}`;
   };
 
-  const generateWhatsAppMessage = (guestName?: string, tone: "chaleureux" | "prestige" | "court" = "chaleureux") => {
+  const generateWhatsAppMessage = (guestName?: string, tone: "chaleureux" | "prestige" | "court" | "religieux" = "chaleureux") => {
     return generateAccompanimentMessage({
       serviceType: (event as any).invitation_model_type || (event as any).type,
       eventType: event.type,
@@ -177,6 +177,8 @@ export default function ParticipantsDashboardPage({
         email: g.email || "",
         group: "Famille", // Fallback local since we didn't add it in DB
         status: g.statut_rsvp || "En attente",
+        message: g.message || "",
+        companions: g.nombre_accompagnants || 0,
         dateSent: new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
       })));
     }
@@ -200,6 +202,10 @@ export default function ParticipantsDashboardPage({
     const refusedPct = total > 0 ? Math.round((refused / total) * 100) : 0;
 
     return { total, confirmed, pending, refused, confirmedPct, pendingPct, refusedPct };
+  }, [participants]);
+
+  const guestsWithMessages = useMemo(() => {
+    return participants.filter((p) => p.message && String(p.message).trim().length > 0);
   }, [participants]);
 
   const getStatusStyle = (status: string) => {
@@ -439,6 +445,68 @@ export default function ParticipantsDashboardPage({
         )}
       </section>
 
+      {/* Vœux & Mots doux envoyés aux mariés / Livre d'or */}
+      {guestsWithMessages.length > 0 && (
+        <section className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-3xl border border-[#c9a45e]/40 shadow-xl p-5 sm:p-7 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-[#c9a45e]/15 to-transparent rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-bold flex items-center gap-1.5">
+                <Sparkles size={12} className="text-[#d4af37]" /> Livre d&apos;or &amp; Vœux reçus
+              </p>
+              <h2 className="font-serif text-xl sm:text-2xl text-white mt-0.5">
+                Mots envoyés aux mariés ({guestsWithMessages.length})
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Les vœux et attentions laissés par vos invités lors de leur confirmation RSVP.
+              </p>
+            </div>
+            <span className="text-3xl">💌</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 relative z-10">
+            {guestsWithMessages.map((guest) => (
+              <div
+                key={guest.id}
+                className="bg-black/35 border border-[#c9a45e]/30 hover:border-[#c9a45e]/60 rounded-2xl p-4 transition-all shadow-md flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-[#c9a45e]/25 text-[#f5dfaa] flex items-center justify-center text-xs font-bold border border-[#c9a45e]/40">
+                        {String(guest.name || "?").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-sm text-white block leading-tight">{guest.name}</span>
+                        <span className="text-[10px] text-emerald-400 font-medium">Présence {guest.status.toLowerCase()}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-mono">{guest.dateSent}</span>
+                  </div>
+
+                  <p className="font-serif italic text-sm text-[#f5dfaa] leading-relaxed bg-[#140c06]/60 p-3 rounded-xl border border-[#c9a45e]/20">
+                    « {guest.message} »
+                  </p>
+                </div>
+
+                {guest.phone && (
+                  <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => openWhatsAppModalForGuest(guest)}
+                      className="text-[11px] text-[#25D366] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                    >
+                      <MessageCircle size={13} />
+                      <span>Répondre à {guest.name.split(" ")[0]} sur WhatsApp</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Liste */}
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm">
         <div className="p-4 sm:p-5 border-b border-gray-100 space-y-3">
@@ -502,6 +570,14 @@ export default function ParticipantsDashboardPage({
                   <p className="text-xs text-gray-500 mt-0.5 truncate">
                     {[p.phone, p.email, p.group, p.dateSent].filter(Boolean).join(" · ")}
                   </p>
+                  {p.message && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-amber-50/90 border border-[#b8924a]/30 text-xs text-gray-900 font-serif italic max-w-xl shadow-2xs">
+                      <span className="font-sans font-bold text-[#8f6f33] not-italic text-[10px] uppercase tracking-wider block mb-0.5">
+                        💌 Mot de l&apos;invité :
+                      </span>
+                      « {p.message} »
+                    </div>
+                  )}
                 </div>
                 <div className="shrink-0 flex items-center gap-1">
                   {p.status === "En attente" && (
@@ -707,11 +783,22 @@ export default function ParticipantsDashboardPage({
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                   Style du message
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWaTone("religieux")}
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-bold border transition-all text-center ${
+                      waTone === "religieux"
+                        ? "bg-[#25D366]/15 border-[#25D366] text-[#128C7E]"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    🕌 Bénédiction
+                  </button>
                   <button
                     type="button"
                     onClick={() => setWaTone("chaleureux")}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-bold border transition-all text-center ${
                       waTone === "chaleureux"
                         ? "bg-[#25D366]/10 border-[#25D366] text-[#128C7E]"
                         : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
@@ -722,7 +809,7 @@ export default function ParticipantsDashboardPage({
                   <button
                     type="button"
                     onClick={() => setWaTone("prestige")}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-bold border transition-all text-center ${
                       waTone === "prestige"
                         ? "bg-[#b8924a]/10 border-[#b8924a] text-[#8f6f33]"
                         : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
@@ -733,7 +820,7 @@ export default function ParticipantsDashboardPage({
                   <button
                     type="button"
                     onClick={() => setWaTone("court")}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                    className={`py-2.5 px-2.5 rounded-xl text-xs font-bold border transition-all text-center ${
                       waTone === "court"
                         ? "bg-black text-white border-black"
                         : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"

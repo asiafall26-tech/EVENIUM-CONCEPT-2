@@ -1307,21 +1307,21 @@ function CreateExpressStudioContent({
                     onPreview={() => setDemoModelId(model.id)}
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     actions={
-                      <div className="grid grid-cols-2 gap-2.5">
+                      <div className="grid grid-cols-2 gap-2 pt-1">
                         <button
                           type="button"
                           onClick={() => setDemoModelId(model.id)}
-                          className="btn-lux-light !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
+                          className="py-2.5 px-3 rounded-xl bg-white hover:bg-[#faf6ee] text-[#1d120a] border border-[#c9a45e]/40 hover:border-[#b8924a] text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
                         >
                           <Eye size={14} className="text-[#8f6f33] shrink-0" />
-                          Voir
+                          <span>Aperçu</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleChooseModel(model.id)}
-                          className="btn-lux !gap-1.5 !tracking-[0.1em] px-3 py-3 text-[10px] sm:text-[10.5px]"
+                          className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#1c1209] to-[#2e1d12] hover:brightness-110 text-[#f5dfaa] border border-[#c9a45e]/60 text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-black/10 transition-all active:scale-95 cursor-pointer"
                         >
-                          Choisir
+                          <span>Choisir</span>
                           <ArrowRight size={14} className="text-[#f0d999] shrink-0" />
                         </button>
                       </div>

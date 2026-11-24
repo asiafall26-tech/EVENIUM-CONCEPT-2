@@ -61,10 +61,10 @@ export default function ModelCard({
 
       {/* Pastilles */}
       <div className={`absolute flex items-start justify-between gap-2 z-10 pointer-events-none ${compact ? "top-2.5 left-2.5 right-2.5" : "top-4 left-4 right-4"}`}>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#c9a45e]/60 bg-[#150d07]/75 backdrop-blur-md px-2.5 py-1 text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.18em] text-[#f0d999]">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#c9a45e]/70 bg-[#150d07]/85 backdrop-blur-md px-2.5 py-1 text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.16em] text-[#f0d999] shadow-sm">
           {kind === "voeu" ? (
             <>
-              <Sparkles size={11} className="text-[#f5d77f]" /> Vœux
+              <Sparkles size={11} className="text-[#f5d77f]" /> Vœux d&apos;Or
             </>
           ) : kind === "mot_doux" ? (
             <>
@@ -76,47 +76,47 @@ export default function ModelCard({
             </>
           ) : kind === "animée" ? (
             <>
-              <PlayCircle size={11} /> Animée
+              <PlayCircle size={11} className="text-[#f5dfaa]" /> 3D Animée
             </>
           ) : (
             <>
-              <FileImage size={11} /> Statique
+              <FileImage size={11} className="text-[#f5dfaa]" /> Haute Couture
             </>
           )}
         </span>
         {badge && !compact && (
-          <span className="rounded-full bg-gradient-to-r from-[#b8924a] via-[#f0d999] to-[#b8924a] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#241509] shadow-[0_4px_14px_-4px_rgba(233,196,120,0.8)] truncate max-w-[60%]">
+          <span className="rounded-full bg-gradient-to-r from-[#b8924a] via-[#f0d999] to-[#b8924a] px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#241509] shadow-[0_4px_14px_-4px_rgba(233,196,120,0.8)] truncate max-w-[60%]">
             {badge}
           </span>
         )}
       </div>
 
       {/* Survol : invitation à découvrir */}
-      <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#140c06]/35 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none">
-        <span className="btn-lux-light px-5 py-2.5 text-[10px] sm:text-[11px] translate-y-2 transition-transform duration-500 group-hover:translate-y-0">
-          <Eye size={14} className="text-[#8f6f33]" /> Voir le modèle
+      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/35 backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover:opacity-100 pointer-events-none">
+        <span className="px-4 py-2 rounded-full bg-black/85 border border-[#f0d999]/70 text-[#f0d999] text-[10px] sm:text-[11px] font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-xl translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
+          <Eye size={13} className="text-[#f0d999]" /> Aperçu interactif
         </span>
       </div>
     </div>
   );
 
   const caption = (
-    <div className={`flex-1 flex flex-col text-center ${compact ? "px-1.5 pt-3 pb-2" : "px-3 pt-5 pb-3"}`}>
+    <div className={`flex-1 flex flex-col text-center ${compact ? "px-1.5 pt-3 pb-2" : "px-3 pt-4 pb-3"}`}>
       {eyebrow && (
-        <p className={`pl-[0.3em] font-medium uppercase text-[#8f6f33] ${compact ? "text-[8.5px] tracking-[0.22em]" : "text-[10px] tracking-[0.3em]"}`}>
+        <p className={`font-medium uppercase text-[#8f6f33] ${compact ? "text-[8.5px] tracking-[0.2em]" : "text-[9.5px] tracking-[0.25em]"}`}>
           {eyebrow}
         </p>
       )}
-      <h3 className={`font-serif not-italic text-[#1d120a] leading-tight transition-colors group-hover:text-[#8f6f33] ${compact ? "mt-1 text-base sm:text-lg" : "mt-1.5 text-xl sm:text-2xl"}`}>
+      <h3 className={`font-serif not-italic text-[#1d120a] leading-tight transition-colors duration-300 group-hover:text-[#8f6f33] font-bold ${compact ? "mt-1 text-base sm:text-lg" : "mt-1.5 text-lg sm:text-xl"}`}>
         {name}
       </h3>
-      <div aria-hidden className={`flex items-center justify-center gap-2 ${compact ? "mt-2" : "mt-3"}`}>
-        <span className="h-px w-8 bg-gradient-to-l from-[#c9a45e] to-transparent" />
+      <div aria-hidden className={`flex items-center justify-center gap-2 ${compact ? "mt-1.5" : "mt-2.5"}`}>
+        <span className="h-px w-8 bg-gradient-to-l from-[#c9a45e]/70 to-transparent" />
         <span className="w-1.5 h-1.5 rotate-45 bg-[#c9a45e]" />
-        <span className="h-px w-8 bg-gradient-to-r from-[#c9a45e] to-transparent" />
+        <span className="h-px w-8 bg-gradient-to-r from-[#c9a45e]/70 to-transparent" />
       </div>
       {description && !compact && (
-        <p className="mt-3 text-[13px] leading-relaxed text-[#3d3126] line-clamp-2 max-w-sm mx-auto">{description}</p>
+        <p className="mt-2.5 text-[12.5px] leading-relaxed text-[#3d3126] line-clamp-2 max-w-sm mx-auto">{description}</p>
       )}
       {href && !compact && (
         <span className="mt-auto pt-3 self-center">
@@ -126,7 +126,7 @@ export default function ModelCard({
     </div>
   );
 
-  const frame = `card-lux group relative flex flex-col p-2 sm:p-2.5 transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-[0_30px_60px_-28px_rgba(90,60,25,0.6),0_0_30px_-14px_rgba(233,196,120,0.7)] ${className}`;
+  const frame = `card-lux group relative flex flex-col p-2 sm:p-2.5 rounded-[1.3rem] border border-[#c9a45e]/30 hover:border-[#b8924a] bg-gradient-to-b from-[#fdfbf7] via-white to-[#faf6ee] transition-[transform,box-shadow,border-color] duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(184,146,74,0.35),0_0_25px_-10px_rgba(233,196,120,0.6)] ${className}`;
 
   if (href) {
     return (

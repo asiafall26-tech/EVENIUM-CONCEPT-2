@@ -3,7 +3,7 @@
  * Adaptés sur-mesure à chaque type d'invitation événementielle, vœux, mots doux et espace couple.
  */
 
-export type AccompanimentTone = "chaleureux" | "prestige" | "court" | "poetique";
+export type AccompanimentTone = "chaleureux" | "prestige" | "court" | "poetique" | "religieux";
 
 export interface AccompanimentParams {
   /** Service ou format principal : animée, carte, voeu, mot_doux, couple */
@@ -323,6 +323,20 @@ export function generateAccompanimentMessage(params: AccompanimentParams): strin
 
   // B. Mariage, Fiançailles, Demande en mariage
   if (eType === "mariage" || eType === "fiançailles" || eType === "demande en mariage") {
+    if (tone === "religieux") {
+      const cleanEventName = eventName.replace(/^mariage\s*[·:\-]?\s*(de\s*)?/i, "").trim();
+      return (
+        `As-salam Aleykoum wa rahmatoullah 🤍\n\n` +
+        `C’est avec une immense joie que nous avons l’honneur de vous annoncer notre mariage religieux 🕌` +
+        (whenText ? `, qui aura lieu le *${whenText}*` : "") +
+        (whereText ? ` à *${whereText}*` : "") +
+        `.\n\n` +
+        `Nous serions très heureux de vous compter parmi nous pour partager ce jour béni. Votre présence et vos duas / prières seront pour nous un précieux cadeau. 🤍\n\n` +
+        `Voici votre invitation virtuelle pour découvrir tous les détails de cette belle journée :\n` +
+        (link ? `👉 ${link}\n\n` : "") +
+        `*${cleanEventName || eventName}* 💍`
+      );
+    }
     if (tone === "prestige") {
       return (
         `⚜️ *INVITATION OFFICIELLE D'HONNEUR · UNION ROYALE* ⚜️\n\n` +
@@ -687,6 +701,7 @@ export function generateAccompanimentMessage(params: AccompanimentParams): strin
  */
 export function getAccompanimentSuggestions(params: AccompanimentParams): AccompanimentSuggestion[] {
   const sType = (params.serviceType || "").toLowerCase().trim();
+  const eType = normalizeEvent(params.eventType);
   const isMotDoux = params.isMotDoux || sType === "mot_doux" || sType === "mots_doux";
   const isCouple = params.isCouple || sType === "couple";
   const isVoeu = params.isVoeu || sType === "voeu" || sType === "voeux";
@@ -770,26 +785,39 @@ export function getAccompanimentSuggestions(params: AccompanimentParams): Accomp
   }
 
   // Par défaut : Invitations événementielles
+  const isMarriage = eType === "mariage" || eType.includes("mariage") || eType.includes("noce");
+
   return [
+    ...(isMarriage
+      ? [
+          {
+            id: "religieux",
+            label: "Bénédiction & Mariage Religieux",
+            icon: "🕌",
+            tone: "religieux" as const,
+            text: generateAccompanimentMessage({ ...params, tone: "religieux" }),
+          },
+        ]
+      : []),
     {
       id: "prestige",
       label: "Ton Prestige & Cérémonie",
       icon: "⚜️",
-      tone: "prestige",
+      tone: "prestige" as const,
       text: generateAccompanimentMessage({ ...params, tone: "prestige" }),
     },
     {
       id: "chaleureux",
       label: "Ton Chaleureux & Festif",
       icon: "🥂",
-      tone: "chaleureux",
+      tone: "chaleureux" as const,
       text: generateAccompanimentMessage({ ...params, tone: "chaleureux" }),
     },
     {
       id: "court",
       label: "Ton Express & Moderne",
       icon: "⚡",
-      tone: "court",
+      tone: "court" as const,
       text: generateAccompanimentMessage({ ...params, tone: "court" }),
     },
   ];

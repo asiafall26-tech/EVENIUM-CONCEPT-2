@@ -19,6 +19,7 @@ import type { RsvpPayload } from "@/components/invitations/velours/VeloursInvita
 import CustomGuestInvitation from "@/components/invitations/custom/CustomGuestInvitation";
 import { isCustomModelId } from "@/lib/customModels";
 import { sendRsvpPushAction } from "@/app/actions/notify";
+import { submitGuestRsvpAction } from "@/app/actions/rsvp";
 import { CheckCircle, XCircle, Users, Phone, Mail, User, Loader2, Music, MapPin, Clock, Camera, Navigation, Gift, Car, Hotel, Info } from "lucide-react";
 
 const FadeInScroll = ({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) => (
@@ -73,6 +74,21 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
 
   const isStatic = event.format === "Carte" || event.format === "Statique";
 
+  const saveRsvp = async (rsvp: RsvpPayload & { email?: string }) => {
+    const res = await submitGuestRsvpAction({
+      eventId: event.id,
+      nom: rsvp.name,
+      email: rsvp.email,
+      telephone: rsvp.phone,
+      nombre_accompagnants: rsvp.attending ? Math.max(0, rsvp.guests - 1) : 0,
+      statut_rsvp: rsvp.attending ? "Confirmé" : "Refusé",
+      message: rsvp.message || null,
+    });
+    if (!res.success) {
+      console.error("submitGuestRsvpAction error:", res.error);
+    }
+  };
+
   if (event.invitation_model_id === VELOURS_MODEL_ID) {
     const customContent = event.invitation_content?.values ?? event.invitation_content;
     const rawContent = customContent && typeof customContent === "object" && Object.keys(customContent).length > 0
@@ -83,40 +99,10 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
       <VeloursInvitation
         content={content}
         hideCta
-        onRsvp={async (rsvp) => {
-          const { error } = await supabase.from('guests').insert([{
-            event_id: event.id,
-            nom: rsvp.name,
-            telephone: rsvp.phone || null,
-            nombre_accompagnants: rsvp.attending ? Math.max(0, rsvp.guests - 1) : 0,
-            statut_rsvp: rsvp.attending ? "Confirmé" : "Refusé",
-          }]);
-          if (error) throw error;
-          sendRsvpPushAction(event.id, rsvp.name).catch(() => {});
-        }}
+        onRsvp={saveRsvp}
       />
     );
   }
-
-  const saveRsvp = async (rsvp: RsvpPayload & { email?: string }) => {
-    const row: Record<string, unknown> = {
-      event_id: event.id,
-      nom: rsvp.name,
-      ...(rsvp.email ? { email: rsvp.email } : {}),
-      ...(rsvp.phone ? { telephone: rsvp.phone } : {}),
-      nombre_accompagnants: rsvp.attending ? Math.max(0, rsvp.guests - 1) : 0,
-      statut_rsvp: rsvp.attending ? "Confirmé" : "Refusé",
-    };
-    // Drink choices / guest note go in "message" when that column exists
-    if (rsvp.message) row.message = rsvp.message;
-    let { error } = await supabase.from('guests').insert([row]);
-    if (error && row.message && error.message?.includes('message')) {
-      delete row.message;
-      ({ error } = await supabase.from('guests').insert([row]));
-    }
-    if (error) throw error;
-    sendRsvpPushAction(event.id, rsvp.name).catch(() => {});
-  };
 
   if (event.invitation_model_id === sceau.SCEAU_MODEL_ID) {
     const customContent = event.invitation_content?.values ?? event.invitation_content;
@@ -182,15 +168,16 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('guests').insert([{
-        event_id: event.id,
+      const res = await submitGuestRsvpAction({
+        eventId: event.id,
         nom: formData.nom,
         email: formData.email,
         telephone: formData.telephone,
         nombre_accompagnants: Number(formData.nombre_accompagnants),
-        statut_rsvp: formData.statut_rsvp
-      }]);
-      if (error) throw error;
+        statut_rsvp: formData.statut_rsvp as "Confirmé" | "Refusé",
+        message: formData.message || null,
+      });
+      if (!res.success) throw new Error(res.error);
       setRsvpSuccess(true);
     } catch (err) {
       alert("Une erreur est survenue lors de la confirmation.");
@@ -213,14 +200,13 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
         
         {/* Page 1 - Accueil */}
         <section className="relative min-h-[90vh] bg-[#FDFBF7] flex flex-col items-center justify-center pt-10 pb-20 px-6 overflow-hidden">
-          {/* Décoration florale (simulée via CSS pour l'exemple) */}
+          {/* Décoration florale */}
           <div className="absolute top-0 left-0 w-48 h-48 bg-gradient-to-br from-[#FFD1B3]/30 to-transparent rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-0 w-64 h-64 bg-gradient-to-tl from-[#D4AF37]/20 to-transparent rounded-full blur-3xl" />
           
           <FadeInScroll>
             <div className="text-center mb-8">
-              <h2 className="text-[#D4AF37] font-serif text-2xl">Evenium</h2>
-              <p className="text-[10px] tracking-[0.3em] uppercase text-gray-400 mt-1">L'ÉLÉGANCE DE VOS ÉVÉNEMENTS</p>
+              <span className="text-[#D4AF37] font-serif text-xs tracking-[0.3em] uppercase">Invitation Officielle</span>
             </div>
           </FadeInScroll>
 

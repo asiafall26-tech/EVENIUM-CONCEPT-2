@@ -5,6 +5,7 @@ import { useState, use, useEffect, useRef, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import VeloursEditorModal from "@/components/invitations/velours/VeloursEditorModal";
 import { VELOURS_MODEL_ID, seedFromEvent, withDefaults } from "@/components/invitations/velours/content";
 import SceauEditorModal from "@/components/invitations/sceau/SceauEditorModal";
@@ -18,7 +19,6 @@ import CustomEditorModal from "@/components/invitations/custom/CustomEditorModal
 import { createClient as createBrowserClient } from "@/utils/supabase/client";
 import { fetchCustomModel, isCustomModelId, slugOfModelId, customModelUrl, type CustomModelRow } from "@/lib/customModels";
 import * as anniversaire from "@/components/invitations/anniversaire/content";
-import EventQRCode from "@/components/ui/EventQRCode";
 import { createClient } from "@/utils/supabase/client";
 import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
 import SplitStudioEditor from "@/components/studio/SplitStudioEditor";
@@ -96,26 +96,18 @@ export default function InvitationsDashboardPage({
   const [accompanimentMsg, setAccompanimentMsg] = useState<string>("");
   const [guestStats, setGuestStats] = useState({ total: 0, confirmed: 0, declined: 0 });
 
-  useEffect(() => {
-    if (event?.name && !accompanimentMsg) {
-      setAccompanimentMsg(
-        `✨ Nous avons l'immense honneur de vous convier à notre événement "${event.name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :`
-      );
-    }
-  }, [event?.name, accompanimentMsg]);
-  
-  const [invitationData, setInvitationData] = useState({
-    title: "",
-    message: ""
-  });
+  const [guestsList, setGuestsList] = useState<Array<{ id: string; nom: string; telephone?: string; statut_rsvp?: string; message?: string; created_at?: string }>>([]);
 
-  const [guestsList, setGuestsList] = useState<Array<{ id: string; nom: string; telephone?: string }>>([]);
+  const guestsWithMessages = useMemo(() => {
+    return guestsList.filter((g: any) => g.message && String(g.message).trim().length > 0);
+  }, [guestsList]);
 
   useEffect(() => {
     supabase
       .from('guests')
-      .select('id, nom, telephone, statut_rsvp')
+      .select('id, nom, telephone, statut_rsvp, message, created_at')
       .eq('event_id', id)
+      .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (data) {
           setGuestsList(data);
@@ -125,6 +117,11 @@ export default function InvitationsDashboardPage({
         }
       });
   }, [id, supabase]);
+
+  const [invitationData, setInvitationData] = useState({
+    title: "",
+    message: ""
+  });
 
   // Sync state with event data
   useEffect(() => {
@@ -164,7 +161,7 @@ export default function InvitationsDashboardPage({
     fetchCustomModel(createBrowserClient(), slugOfModelId(event.invitationModelId)).then(setCustomModel);
   }, [event?.invitationModelId]);
 
-  const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
+  const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court" | "religieux">("chaleureux");
   const [waCopiedText, setWaCopiedText] = useState(false);
 
   const formatEventDate = (dateStr?: string) => {
@@ -183,7 +180,7 @@ export default function InvitationsDashboardPage({
     return dateStr;
   };
 
-  const generateWhatsAppMessage = (tone: "chaleureux" | "prestige" | "court" = "chaleureux") => {
+  const generateWhatsAppMessage = (tone: "chaleureux" | "prestige" | "court" | "religieux" = "chaleureux") => {
     return generateAccompanimentMessage({
       serviceType: (event as any).invitation_model_type || (event as any).type,
       eventType: event.type,
@@ -195,6 +192,14 @@ export default function InvitationsDashboardPage({
       tone,
     });
   };
+
+  useEffect(() => {
+    if (event?.name && !accompanimentMsg) {
+      const defaultTone = event.type?.toLowerCase().includes("mariage") ? "religieux" : "chaleureux";
+      setWaTone(defaultTone);
+      setAccompanimentMsg(generateWhatsAppMessage(defaultTone));
+    }
+  }, [event?.name, event?.type, shareUrl]);
 
   const handleCopyFullMessage = () => {
     navigator.clipboard.writeText(generateWhatsAppMessage(waTone));
@@ -416,7 +421,7 @@ export default function InvitationsDashboardPage({
         </div>
 
         {/* Message d'accompagnement éditable directement avant partage WhatsApp */}
-        <div className="space-y-1.5 pt-1">
+        <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
               <MessageCircle size={14} className="text-[#25D366]" />
@@ -426,8 +431,31 @@ export default function InvitationsDashboardPage({
               {accompanimentMsg.length} caractères
             </span>
           </div>
+
+          {/* Sélecteur de style rapide */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] uppercase font-bold text-gray-400 mr-1">Style :</span>
+            {(["religieux", "chaleureux", "prestige", "court"] as const).map((tone) => (
+              <button
+                key={tone}
+                type="button"
+                onClick={() => {
+                  setWaTone(tone);
+                  setAccompanimentMsg(generateWhatsAppMessage(tone));
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                  waTone === tone
+                    ? "bg-[#140c06] text-[#f5dfaa] border-[#b8924a]"
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                {tone === "religieux" ? "🕌 Bénédiction" : tone === "chaleureux" ? "✨ Chaleureux" : tone === "prestige" ? "🎩 Prestige" : "⚡ Express"}
+              </button>
+            ))}
+          </div>
+
           <textarea
-            rows={3}
+            rows={4}
             value={accompanimentMsg}
             onChange={(e) => setAccompanimentMsg(e.target.value)}
             placeholder="Personnalisez le message qui accompagnera votre lien officiel..."
@@ -479,6 +507,40 @@ export default function InvitationsDashboardPage({
             <span className="font-serif text-lg font-bold text-rose-800">{guestStats.declined}</span>
           </div>
         </div>
+
+        {/* Derniers mots doux et vœux reçus */}
+        {guestsWithMessages.length > 0 && (
+          <div className="pt-3 border-t border-gray-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                <Sparkles size={13} className="text-[#b8924a]" />
+                Mots envoyés aux mariés ({guestsWithMessages.length}) :
+              </span>
+              <Link
+                href={`/dashboard/events/${event.id}/participants`}
+                className="text-[11px] font-semibold text-[#8f6f33] hover:underline"
+              >
+                Tout voir &rarr;
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {guestsWithMessages.slice(0, 3).map((g: any) => (
+                <div
+                  key={g.id}
+                  className="p-3 bg-amber-50/70 border border-[#b8924a]/25 rounded-xl text-xs flex flex-col gap-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-gray-900">{g.nom}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {g.created_at ? new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
+                    </span>
+                  </div>
+                  <p className="font-serif italic text-gray-700 leading-relaxed">« {g.message} »</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* 3. TEXTE DE L'INVITATION */}

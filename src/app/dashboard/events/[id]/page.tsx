@@ -112,6 +112,7 @@ export default function EventDashboardPage({
   const [budget, setBudget] = useState({ total: 0, spent: 0 });
   const [guests, setGuests] = useState({ total: 0, confirmed: 0, pending: 0 });
   const [tasks, setTasks] = useState({ total: 0, completed: 0 });
+  const [recentGuestMessages, setRecentGuestMessages] = useState<any[]>([]);
 
   useEffect(() => {
     if (!event) return;
@@ -127,12 +128,18 @@ export default function EventDashboardPage({
         setBudget(prev => ({ ...prev, spent: txs.reduce((sum, t) => sum + Number(t.montant), 0) }));
       }
 
-      // Fetch guests stats
-      const { data: gst } = await supabase.from('guests').select('statut_rsvp').eq('event_id', id);
+      // Fetch guests stats and messages
+      const { data: gst } = await supabase
+        .from('guests')
+        .select('id, nom, statut_rsvp, message, created_at')
+        .eq('event_id', id)
+        .order('created_at', { ascending: false });
+
       if (gst) {
         const confirmed = gst.filter(g => g.statut_rsvp === 'Confirmé').length;
         const pending = gst.filter(g => g.statut_rsvp === 'En attente').length;
         setGuests(prev => ({ ...prev, total: Math.max(prev.total, gst.length), confirmed, pending }));
+        setRecentGuestMessages(gst.filter(g => g.message && String(g.message).trim().length > 0));
       }
 
       // Fetch tasks stats
@@ -464,6 +471,50 @@ export default function EventDashboardPage({
           </Link>
         )}
       </div>
+
+      {/* VŒUX & MOTS DOUX REÇUS DES INVITÉS */}
+      {recentGuestMessages.length > 0 && (
+        <div className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-3xl border border-[#c9a45e]/40 shadow-xl p-5 sm:p-7 relative overflow-hidden mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-bold flex items-center gap-1.5">
+                <Sparkles size={12} className="text-[#d4af37]" /> Livre d&apos;or en direct
+              </p>
+              <h3 className="font-serif text-xl sm:text-2xl text-white mt-0.5">
+                Mots envoyés aux mariés ({recentGuestMessages.length})
+              </h3>
+            </div>
+            <Link
+              href={`/dashboard/events/${event.id}/participants`}
+              className="text-xs text-[#f0d999] hover:underline flex items-center gap-1 font-semibold"
+            >
+              <span>Tous les invités ({guests.total})</span>
+              <span>&rarr;</span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {recentGuestMessages.slice(0, 4).map((g) => (
+              <div
+                key={g.id}
+                className="bg-black/40 border border-[#c9a45e]/30 rounded-2xl p-4 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="font-semibold text-sm text-white">{g.nom}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {g.created_at ? new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
+                    </span>
+                  </div>
+                  <p className="font-serif italic text-sm text-[#f5dfaa] leading-relaxed bg-[#140c06]/60 p-3 rounded-xl border border-[#c9a45e]/20">
+                    « {g.message} »
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* SÉLECTION PRIVILÈGE & RECOMMANDATIONS POUR CET ÉVÉNEMENT */}
       <div className="mt-8">
