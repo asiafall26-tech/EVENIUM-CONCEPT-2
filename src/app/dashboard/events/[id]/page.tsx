@@ -86,8 +86,40 @@ export default function EventDashboardPage({
             providersCount: 0
           });
           refreshEvents();
-        } else if (isLoaded) {
-          setNotFoundTriggered(true);
+        } else {
+          // Si non trouvé immédiatement, vérifier l'utilisateur et retenter une fois (évite faux 404 lors des redirections après achat)
+          const { data: authData } = await supabase.auth.getUser();
+          if (authData?.user) {
+            const { data: retryData } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+            if (retryData) {
+              setDirectEvent({
+                id: retryData.id,
+                name: retryData.name,
+                type: retryData.type,
+                date: retryData.date || "À définir",
+                time: retryData.time || "À définir",
+                location: retryData.location || "À définir",
+                guestsCount: retryData.guests_count || 0,
+                plan: retryData.plan,
+                format: retryData.format,
+                status: retryData.status,
+                invitationModelId: retryData.invitation_model_id,
+                invitationTitle: retryData.invitation_title,
+                invitationMessage: retryData.invitation_message,
+                invitationContent: retryData.invitation_content ?? null,
+                eventDetails: retryData.event_details ?? null,
+                budget: { total: Number(retryData.budget_total) || 0, spent: 0 },
+                guests: { total: retryData.guests_count || 0, confirmed: 0, pending: 0, declined: 0 },
+                tasks: { total: 0, completed: 0 },
+                providersCount: 0
+              });
+              refreshEvents();
+              return;
+            }
+          }
+          if (isLoaded) {
+            setNotFoundTriggered(true);
+          }
         }
       } catch {
         if (isLoaded) setNotFoundTriggered(true);
@@ -294,7 +326,14 @@ export default function EventDashboardPage({
           time={event.time}
           location={event.location}
           modelId={event.invitationModelId}
-          coverImage={event.cover_url || event.image}
+          coverImage={
+            (event.invitationContent as any)?.values?.photo ||
+            (event.invitationContent as any)?.values?.couple_photo ||
+            (event.invitationContent as any)?.photo ||
+            (event.invitationContent as any)?.couple_photo ||
+            (event as any).cover_url ||
+            (event as any).image
+          }
           shareUrl={typeof window !== 'undefined' ? `${window.location.origin}/invite/${event.id}` : `/invite/${event.id}`}
         />
       </div>
@@ -463,26 +502,26 @@ export default function EventDashboardPage({
       </div>
 
       {/* VŒUX & MOTS DOUX REÇUS DES INVITÉS */}
-      {recentGuestMessages.length > 0 && (
-        <div className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-3xl border border-[#c9a45e]/40 shadow-xl p-5 sm:p-7 relative overflow-hidden mb-6 sm:mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-bold flex items-center gap-1.5">
-                <Sparkles size={12} className="text-[#d4af37]" /> Livre d&apos;or en direct
-              </p>
-              <h3 className="font-serif text-xl sm:text-2xl text-white mt-0.5">
-                Mots envoyés aux mariés ({recentGuestMessages.length})
-              </h3>
-            </div>
-            <Link
-              href={`/dashboard/events/${event.id}/participants`}
-              className="text-xs text-[#f0d999] hover:underline flex items-center gap-1 font-semibold"
-            >
-              <span>Tous les invités ({guests.total})</span>
-              <span>&rarr;</span>
-            </Link>
+      <div className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-3xl border border-[#c9a45e]/40 shadow-xl p-5 sm:p-7 relative overflow-hidden mb-6 sm:mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-bold flex items-center gap-1.5">
+              <Sparkles size={12} className="text-[#d4af37]" /> Livre d&apos;or en direct
+            </p>
+            <h3 className="font-serif text-xl sm:text-2xl text-white mt-0.5">
+              Mots envoyés aux mariés {recentGuestMessages.length > 0 ? `(${recentGuestMessages.length})` : ""}
+            </h3>
           </div>
+          <Link
+            href={`/dashboard/events/${event.id}/participants`}
+            className="text-xs text-[#f0d999] hover:underline flex items-center gap-1 font-semibold"
+          >
+            <span>Tous les invités ({guests.total})</span>
+            <span>&rarr;</span>
+          </Link>
+        </div>
 
+        {recentGuestMessages.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {recentGuestMessages.slice(0, 4).map((g) => (
               <div
@@ -530,8 +569,18 @@ export default function EventDashboardPage({
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="bg-black/30 border border-[#c9a45e]/20 rounded-2xl p-6 text-center max-w-lg mx-auto">
+            <span className="text-2xl mb-2 block">💌</span>
+            <p className="text-sm font-semibold text-[#f5dfaa] mb-1">
+              En attente des premiers mots de vos convives
+            </p>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              Dès qu&apos;un invité confirme sa présence sur votre lien d&apos;invitation et vous laisse un mot doux, il apparaîtra ici en temps réel et vous pourrez lui répondre directement sur WhatsApp en 1 clic.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* SÉLECTION PRIVILÈGE & RECOMMANDATIONS POUR CET ÉVÉNEMENT */}
       <div className="mt-8">

@@ -14,7 +14,8 @@ export function PublicFooter() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
       if (!data?.user?.id) {
         setUser(null);
         return;
@@ -26,15 +27,23 @@ export function PublicFooter() {
           .eq("id", data.user.id)
           .maybeSingle();
 
-        if (profile?.id) {
-          setUser({ id: data.user.id, role: profile.role });
-        } else {
-          setUser(null);
-        }
+        const role = profile?.role || data.user.user_metadata?.role || (data.user.email === "asiafall26@gmail.com" ? "admin" : "client");
+        setUser({ id: data.user.id, role });
       } catch {
-        setUser(null);
+        const role = data.user.user_metadata?.role || "client";
+        setUser({ id: data.user.id, role });
       }
+    };
+
+    checkUser();
+
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
+      checkUser();
     });
+
+    return () => {
+      authSub.subscription?.unsubscribe();
+    };
   }, []);
 
   // Hide the marketing footer during the creation funnel

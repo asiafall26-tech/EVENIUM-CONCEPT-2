@@ -67,7 +67,7 @@ export function generateAccompanimentMessage(params: AccompanimentParams): strin
 
   const sType = serviceType.toLowerCase().trim();
   const eType = normalizeEvent(eventType);
-  const linkSuffix = link ? `\n\n👉 ${link}` : "";
+  const linkSuffix = link ? `\n\n${link}` : "";
   const whenText = dateFormatted ? (time && time !== "À définir" ? `${dateFormatted} à ${time}` : dateFormatted) : "";
   const whereText = location && location !== "À définir" ? location : "";
 
@@ -323,18 +323,24 @@ export function generateAccompanimentMessage(params: AccompanimentParams): strin
 
   // B. Mariage, Fiançailles, Demande en mariage
   if (eType === "mariage" || eType === "fiançailles" || eType === "demande en mariage") {
+    const cleanEventName = eventName.replace(/^mariage\s*[·:\-]?\s*(de\s*)?/i, "").trim();
+    const hostsSign = cleanEventName || eventName;
+    const datePhrase = whenText
+      ? whenText.toLowerCase().startsWith("ce ") || whenText.toLowerCase().startsWith("le ")
+        ? `qui aura lieu ${whenText}`
+        : `qui aura lieu ce ${whenText}`
+      : "";
+    const placePhrase = whereText ? ` à ${whereText}` : "";
+    const timeAndPlace = datePhrase ? `, ${datePhrase}${placePhrase}` : placePhrase ? ` à ${whereText}` : "";
+
     if (tone === "religieux") {
-      const cleanEventName = eventName.replace(/^mariage\s*[·:\-]?\s*(de\s*)?/i, "").trim();
       return (
         `As-salam Aleykoum wa rahmatoullah 🤍\n\n` +
-        `C’est avec une immense joie que nous avons l’honneur de vous annoncer notre mariage religieux 🕌` +
-        (whenText ? `, qui aura lieu le *${whenText}*` : "") +
-        (whereText ? ` à *${whereText}*` : "") +
-        `.\n\n` +
-        `Nous serions très heureux de vous compter parmi nous pour partager ce jour béni. Votre présence et vos duas / prières seront pour nous un précieux cadeau. 🤍\n\n` +
-        `Voici votre invitation virtuelle pour découvrir tous les détails de cette belle journée :\n` +
-        (link ? `👉 ${link}\n\n` : "") +
-        `*${cleanEventName || eventName}* 💍`
+        `C’est avec une immense joie que nous avons l’honneur de vous annoncer notre mariage religieux 🕌${timeAndPlace}.\n\n` +
+        `Nous serions très heureux de vous compter parmi nous pour partager ce jour béni. Votre présence et vos duas seront pour nous un précieux cadeau. 🤍\n\n` +
+        `Voici votre invitation virtuelle pour découvrir les détails de cette belle journée :\n` +
+        (link ? `${link}\n\n` : "\n") +
+        `${hostsSign} 💍`
       );
     }
     if (tone === "prestige") {
@@ -342,33 +348,32 @@ export function generateAccompanimentMessage(params: AccompanimentParams): strin
         `⚜️ *INVITATION OFFICIELLE D'HONNEUR · UNION ROYALE* ⚜️\n\n` +
         `${salutationPrestige}\n\n` +
         `À l'occasion de la célébration des noces de :\n` +
-        `👑 *${eventName}*\n` +
+        `👑 *${hostsSign}*\n` +
         (whenText ? `📅 *${whenText}*\n` : "") +
         (whereText ? `🏛️ *${whereText}*\n` : "") +
         `\nNous avons l'insigne privilège de solliciter l'honneur de votre présence pour célébrer cet instant solennel et mémorable.\n` +
-        `Veuillez accéder à votre faire-part scénarisé de haute couture digitale et enregistrer votre confirmation nominative :` +
-        linkSuffix
+        `Voici votre faire-part officiel pour découvrir le programme et enregistrer votre confirmation :` +
+        linkSuffix +
+        `\n\n${hostsSign} ⚜️`
       );
     }
     if (tone === "court") {
       return (
         `💍 *ON SE DIT OUI ! · SAVE THE DATE* ✨\n\n` +
-        `Grande nouvelle : *${eventName}* approche à grands pas !\n` +
-        (whenText ? `📅 *${whenText}*\n` : "") +
-        (whereText ? `📍 *${whereText}*\n` : "") +
-        `\nRetrouvez tous les détails, le programme et votre carton interactif ici :` +
-        linkSuffix
+        `C’est officiel : nous célébrons le mariage de *${hostsSign}*${timeAndPlace ? ` ${timeAndPlace}` : ""} !\n\n` +
+        `Découvrez votre invitation interactive et confirmez votre venue en 1 clic ici :` +
+        linkSuffix +
+        `\n\n${hostsSign} 💍`
       );
     }
     return (
       `✨ *UNE HISTOIRE D'AMOUR S'ÉCRIT... ET VOUS EN FAITES PARTIE !* 💍\n\n` +
       `${salutation}\n\n` +
-      `C'est le cœur rempli d'émotion et d'allégresse que nous vous convions à célébrer notre union :\n` +
-      `🕊️ *${eventName}*\n` +
-      (whenText ? `📅 *${whenText}*\n` : "") +
-      (whereText ? `📍 *${whereText}*\n` : "") +
-      `\nNous avons imaginé pour vous une invitation interactive d'exception. Découvrez notre univers, notre programme et partagez ce grand bonheur avec nous :` +
-      linkSuffix
+      `C’est avec une immense joie et beaucoup d’émotion que nous vous convions à célébrer notre mariage 🥂${timeAndPlace}.\n\n` +
+      `Votre présence à nos côtés pour partager ce grand moment de bonheur sera pour nous le plus précieux des cadeaux. ✨\n\n` +
+      `Voici votre invitation virtuelle pour découvrir tous les détails et nous confirmer votre présence :` +
+      linkSuffix +
+      `\n\n${hostsSign} 💍`
     );
   }
 

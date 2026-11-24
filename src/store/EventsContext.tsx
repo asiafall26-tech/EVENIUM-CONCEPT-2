@@ -32,10 +32,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const isDashboardRoute = Boolean(pathname && (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')));
 
   const fetchEvents = useCallback(async (force = false) => {
-    if (typeof window !== 'undefined') {
+    // Sur les pages publiques, ne pas lancer de requête automatique si ce n'est pas un appel forcé (ex: après ajout d'événement)
+    if (!force && typeof window !== 'undefined') {
       const p = window.location.pathname;
       if (!p.startsWith('/dashboard') && !p.startsWith('/admin')) {
-        // Sur les routes publiques, ne pas écraser l'état ni prétendre être chargé avec un tableau vide
         return;
       }
     }
@@ -43,12 +43,8 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     if (isFetchingRef.current) return;
 
     const now = Date.now();
-    // Cache de 15 secondes pour éviter le spam de requêtes simultanées lors des navigations rapides
-    if (!force && now - lastFetchTime.current < 15000) {
-      return;
-    }
-    // Protection anti-spam même sur les demandes forcées (minimum 4s entre deux appels)
-    if (force && now - lastFetchTime.current < 4000) {
+    // Cache de 10s uniquement si non forcé et si des événements sont déjà chargés en mémoire
+    if (!force && events.length > 0 && now - lastFetchTime.current < 10000) {
       return;
     }
 
@@ -141,7 +137,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isDashboardRoute) return;
 
-    fetchEvents();
+    fetchEvents(true);
 
     const unsubSync = subscribeToSync("events", () => fetchEvents(true));
 
@@ -161,14 +157,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        if (typeof window !== 'undefined') {
-          const p = window.location.pathname;
-          if (p.startsWith('/dashboard') || p.startsWith('/admin')) {
-            fetchEvents(true);
-          }
-        }
+        fetchEvents(true);
       } else {
         setEvents([]);
+        setIsLoaded(true);
       }
     });
 

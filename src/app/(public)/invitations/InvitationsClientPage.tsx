@@ -328,12 +328,12 @@ export default function InvitationsClientPage({
   // Responsive grid layout harmonisé et centré selon le nombre de modèles (cartes réduites et compactes)
   const gridClass = (count: number) =>
     count === 1
-      ? "grid grid-cols-1 max-w-xs mx-auto gap-2.5"
+      ? "grid grid-cols-1 max-w-[180px] mx-auto gap-2.5"
       : count === 2
-        ? "grid grid-cols-2 max-w-sm mx-auto gap-2 sm:gap-3"
+        ? "grid grid-cols-2 max-w-[360px] mx-auto gap-2 sm:gap-3"
         : count === 3
-          ? "grid grid-cols-2 sm:grid-cols-3 max-w-xl mx-auto gap-2 sm:gap-3"
-          : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 max-w-7xl mx-auto";
+          ? "grid grid-cols-2 sm:grid-cols-3 max-w-[540px] mx-auto gap-2 sm:gap-3"
+          : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 max-w-6xl mx-auto";
 
   return (
     <div className="bg-[#FAF9F6] min-h-screen text-neutral-900">

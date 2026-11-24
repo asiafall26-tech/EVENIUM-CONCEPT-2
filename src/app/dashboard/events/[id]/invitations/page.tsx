@@ -75,8 +75,40 @@ export default function InvitationsDashboardPage({
             providersCount: 0
           });
           refreshEvents();
-        } else if (isLoaded) {
-          setNotFoundTriggered(true);
+        } else {
+          // Si non trouvé immédiatement, vérifier l'utilisateur et retenter une fois (évite faux 404 lors des redirections après achat)
+          const { data: authData } = await supabase.auth.getUser();
+          if (authData?.user) {
+            const { data: retryData } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+            if (retryData) {
+              setDirectEvent({
+                id: retryData.id,
+                name: retryData.name,
+                type: retryData.type,
+                date: retryData.date || "À définir",
+                time: retryData.time || "À définir",
+                location: retryData.location || "À définir",
+                guestsCount: retryData.guests_count || 0,
+                plan: retryData.plan,
+                format: retryData.format,
+                status: retryData.status,
+                invitationModelId: retryData.invitation_model_id,
+                invitationTitle: retryData.invitation_title,
+                invitationMessage: retryData.invitation_message,
+                invitationContent: retryData.invitation_content ?? null,
+                eventDetails: retryData.event_details ?? null,
+                budget: { total: Number(retryData.budget_total) || 0, spent: 0 },
+                guests: { total: retryData.guests_count || 0, confirmed: 0, pending: 0, declined: 0 },
+                tasks: { total: 0, completed: 0 },
+                providersCount: 0
+              });
+              refreshEvents();
+              return;
+            }
+          }
+          if (isLoaded) {
+            setNotFoundTriggered(true);
+          }
         }
       } catch {
         if (isLoaded) setNotFoundTriggered(true);
@@ -425,7 +457,14 @@ export default function InvitationsDashboardPage({
         time={event.time}
         location={event.location}
         modelId={event.invitationModelId}
-        coverImage={event.cover_url || event.image}
+        coverImage={
+          (event.invitationContent as any)?.values?.photo ||
+          (event.invitationContent as any)?.values?.couple_photo ||
+          (event.invitationContent as any)?.photo ||
+          (event.invitationContent as any)?.couple_photo ||
+          (event as any).cover_url ||
+          (event as any).image
+        }
         shareUrl={shareUrl}
       />
 
@@ -463,22 +502,23 @@ export default function InvitationsDashboardPage({
         </div>
 
         {/* Derniers mots doux et vœux reçus */}
-        {guestsWithMessages.length > 0 && (
-          <div className="pt-3 border-t border-gray-100 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                <Sparkles size={13} className="text-[#b8924a]" />
-                Mots envoyés aux mariés ({guestsWithMessages.length}) :
-              </span>
-              <Link
-                href={`/dashboard/events/${event.id}/participants`}
-                className="text-[11px] font-semibold text-[#8f6f33] hover:underline"
-              >
-                Tout voir &rarr;
-              </Link>
-            </div>
+        <div className="pt-3 border-t border-gray-100 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+              <Sparkles size={13} className="text-[#b8924a]" />
+              Mots envoyés aux mariés {guestsWithMessages.length > 0 ? `(${guestsWithMessages.length})` : ""} :
+            </span>
+            <Link
+              href={`/dashboard/events/${event.id}/participants`}
+              className="text-[11px] font-semibold text-[#8f6f33] hover:underline"
+            >
+              Tout voir &rarr;
+            </Link>
+          </div>
+
+          {guestsWithMessages.length > 0 ? (
             <div className="space-y-2.5">
-              {guestsWithMessages.slice(0, 3).map((g: any) => (
+              {guestsWithMessages.slice(0, 5).map((g: any) => (
                 <div
                   key={g.id}
                   className="p-3 bg-amber-50/70 border border-[#b8924a]/25 rounded-xl text-xs flex flex-col gap-1.5"
@@ -520,8 +560,15 @@ export default function InvitationsDashboardPage({
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-center">
+              <p className="text-xs font-semibold text-amber-900 mb-0.5">Aucun mot reçu pour le moment</p>
+              <p className="text-[11px] text-amber-700/80 leading-relaxed">
+                Les vœux et félicitations laissés par vos invités s&apos;afficheront ici dès qu&apos;ils confirmeront leur présence. Vous pourrez leur répondre individuellement.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* 3. TEXTE DE L'INVITATION */}

@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const admin = getSupabaseAdmin();
     const { data: event } = await admin
       .from("events")
-      .select("id, name, type, date, time, location, invitation_model_id, invitation_title, format")
+      .select("id, name, type, date, time, location, invitation_model_id, invitation_title, format, invitation_content")
       .eq("id", id)
       .maybeSingle();
 
@@ -73,10 +73,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     descParts.push("Ouvrez votre invitation officielle et confirmez votre présence.");
     const description = descParts.join(" · ");
 
-    // Image de prévisualisation : photo du modèle ou couverture de l'invitation
+    // Image de prévisualisation : photo personnalisée des hôtes, ou couverture du modèle
+    const content = (event.invitation_content as any)?.values ?? (event.invitation_content as any) ?? {};
+    const customPhoto = content.photo || content.couple_photo || content.cover_image || content.hero_image || content.image_principale;
+
     let imageUrl = `${baseUrl}/invit-velours-cover.jpg`;
 
-    if (isCustomModelId(event.invitation_model_id)) {
+    if (customPhoto && typeof customPhoto === "string" && customPhoto.trim().length > 0) {
+      imageUrl = customPhoto.trim();
+    } else if (isCustomModelId(event.invitation_model_id)) {
       const slug = slugOfModelId(event.invitation_model_id);
       const { data: customModel } = await admin
         .from("custom_invitation_models")
@@ -105,6 +110,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     }
 
     const shareUrl = `${baseUrl}/invite/${id}`;
+    const cleanSiteName = eventName.replace(/^mariage\s*[·:\-]?\s*(de\s*)?/i, "").trim() || eventName;
 
     return {
       title,
@@ -113,7 +119,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         title,
         description,
         url: shareUrl,
-        siteName: eventName,
+        siteName: cleanSiteName,
         images: [
           {
             url: imageUrl,

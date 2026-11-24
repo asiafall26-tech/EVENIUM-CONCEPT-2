@@ -118,7 +118,7 @@ export default function ModelCard({
     </div>
   );
 
-  const cardStyle = `group relative flex flex-col p-1 sm:p-1.5 rounded-xl bg-white border border-neutral-200/80 hover:border-neutral-400 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 ${className}`;
+  const cardStyle = `group relative flex flex-col p-1 sm:p-1.5 rounded-xl bg-white border border-neutral-200/80 hover:border-[#b8924a]/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(184,146,74,0.12)] transition-all duration-300 hover:-translate-y-0.5 ${className}`;
 
   if (href) {
     return (

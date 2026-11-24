@@ -245,7 +245,7 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
                 className={
                   displayedModels.length >= 4
                     ? "w-full"
-                    : "w-[calc(50%-0.5rem)] max-w-[190px] md:w-48"
+                    : "w-[calc(50%-0.5rem)] max-w-[165px] md:w-44"
                 }
               />
             ))}
