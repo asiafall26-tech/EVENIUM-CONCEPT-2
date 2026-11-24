@@ -36,14 +36,17 @@ import {
 } from "@/lib/serviceCategories";
 import { EVENT_TYPES, EVENT_TYPE_ICONS } from "@/lib/eventTypes";
 
-/** Titre de rubrique de la galerie : sur-titre doré, titre Playfair, filet. */
+/** Titre de rubrique de la galerie : sobre, élégant et moderne. */
 function GallerySectionTitle({ eyebrow, title, lead }: { eyebrow: string; title: React.ReactNode; lead?: string | null }) {
   return (
-    <div className="text-center max-w-2xl mx-auto mb-10">
-      <p className="pl-[0.3em] text-[10.5px] font-medium uppercase tracking-[0.3em] text-[#8f6f33]">{eyebrow}</p>
-      <h2 className="mt-2 font-serif not-italic text-3xl sm:text-4xl text-[#1d120a]">{title}</h2>
-      <DiamondRule className="mt-4" />
-      {lead && <p className="mt-4 text-sm text-[#3d3126] leading-relaxed">{lead}</p>}
+    <div className="text-center max-w-xl mx-auto mb-8 sm:mb-10">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8f6f33] block mb-1">
+        {eyebrow}
+      </span>
+      <h2 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">
+        {title}
+      </h2>
+      {lead && <p className="mt-2 text-xs sm:text-sm text-neutral-500 leading-relaxed font-sans">{lead}</p>}
     </div>
   );
 }
@@ -322,37 +325,35 @@ export default function InvitationsClientPage({
     };
   }, [selectedCategory, selectedEvent, searchQuery, categories, filteredModels.length]);
 
-  // Responsive grid layout harmonisé et centré selon le nombre de modèles
+  // Responsive grid layout harmonisé et centré selon le nombre de modèles (2 colonnes sur mobile comme un lookbook)
   const gridClass = (count: number) =>
     count === 1
-      ? "grid grid-cols-1 max-w-sm mx-auto gap-8 sm:gap-10"
+      ? "grid grid-cols-1 max-w-sm mx-auto gap-4 sm:gap-6"
       : count === 2
-        ? "grid grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto gap-8 sm:gap-10"
+        ? "grid grid-cols-2 max-w-2xl mx-auto gap-3.5 sm:gap-6"
         : count === 3
-          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto gap-8"
-          : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8";
+          ? "grid grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto gap-3.5 sm:gap-6"
+          : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-5 lg:gap-6";
 
   return (
-    <div className="bg-[#faf3e8] min-h-screen">
-      <main className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* En-tête Collection */}
-        <div className="text-center mb-8 sm:mb-12">
-          <Fleuron className="mx-auto w-40 md:w-48 h-auto mb-3" />
-          <p className="pl-[0.35em] text-[10.5px] md:text-xs font-semibold tracking-[0.35em] uppercase text-[#8f6f33] mb-2.5">
-            La collection exclusive
-          </p>
-          <h1 className="font-serif not-italic text-3xl sm:text-5xl md:text-6xl mb-3 text-[#1d120a] tracking-tight">
-            Nos <span className="italic text-gold-foil">Créations</span> &amp; Modèles
+    <div className="bg-[#FAF9F6] min-h-screen text-neutral-900">
+      <main className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* En-tête Collection simple & esthétique */}
+        <div className="text-center mb-8 sm:mb-12 max-w-2xl mx-auto">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-neutral-200/90 text-neutral-800 text-[11px] font-semibold tracking-wider uppercase shadow-2xs mb-3">
+            <Sparkles size={12} className="text-[#b8924a]" /> Collection Exclusive
+          </span>
+          <h1 className="font-serif text-3xl sm:text-5xl text-neutral-900 font-bold tracking-tight">
+            Nos Modèles d&apos;Invitations
           </h1>
-          <DiamondRule className="mt-3 mb-4" />
-          <p className="text-[#3d3126] max-w-2xl mx-auto font-sans text-sm sm:text-base leading-relaxed">
-            Faites sensation avec nos invitations digitales interactives. Touchez n&apos;importe quel modèle pour explorer son univers immersif et tester les fonctionnalités.
+          <p className="text-neutral-500 text-sm sm:text-base mt-2.5 leading-relaxed font-sans">
+            Touchez un modèle pour explorer son univers immersif, tester les animations et écouter sa musique d&apos;ambiance.
           </p>
         </div>
 
-        {/* 1. Barre des 4 Services (+ Tous les modèles) — Design Prestige */}
-        <div className="max-w-4xl mx-auto mb-8 sm:mb-10">
-          <div className="bg-white/90 backdrop-blur-md border border-[#c9a45e]/35 rounded-2xl sm:rounded-full p-1.5 sm:p-2 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-[0_4px_24px_-6px_rgba(43,33,24,0.08)]">
+        {/* 1. Barre des Catégories en pilules sobres */}
+        <div className="max-w-4xl mx-auto mb-6">
+          <div className="flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1">
             {filterCategories.map((cat) => {
               const isActive = selectedCategory === cat.slug;
               const isEmpty = cat.count === 0 && cat.slug !== "all" && cat.slug !== "tous";
@@ -361,21 +362,21 @@ export default function InvitationsClientPage({
                   key={cat.slug}
                   type="button"
                   onClick={() => handleSelectCategory(cat.slug)}
-                  className={`px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                     isActive
-                      ? "bg-gradient-to-b from-[#2e1d12] via-[#1f130b] to-[#120a06] text-[#f5dfaa] shadow-[0_4px_16px_-2px_rgba(201,164,94,0.4)] border border-[#c9a45e]"
-                      : "bg-transparent hover:bg-[#f6ebd9]/80 text-[#3d3126] border border-transparent"
+                      ? "bg-neutral-900 text-white font-semibold shadow-xs"
+                      : "bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200/80"
                   }`}
                 >
-                  <span className="text-base sm:text-sm">{cat.icon}</span>
+                  <span>{cat.icon}</span>
                   <span>{cat.label}</span>
                   <span
-                    className={`text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                    className={`text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
                       isActive
-                        ? "bg-[#c9a45e]/30 text-[#fcf4e3]"
+                        ? "bg-white/20 text-white"
                         : isEmpty
-                        ? "bg-[#efe5d4] text-[#8c7864] font-normal"
-                        : "bg-black/5 text-[#544638]"
+                        ? "bg-neutral-100 text-neutral-400 font-normal"
+                        : "bg-neutral-100 text-neutral-500"
                     }`}
                   >
                     {isEmpty ? "Bientôt" : cat.count}
@@ -386,51 +387,50 @@ export default function InvitationsClientPage({
           </div>
         </div>
 
-        {/* 2. Barre de Contrôle Contextuelle (Format, Recherche, Événements Disponibles) */}
-        <div className="max-w-5xl mx-auto mb-10 sm:mb-12 space-y-3.5">
-          {/* Rangée supérieure : Sélecteur de formats + Recherche rapide */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/70 backdrop-blur-sm border border-[#c9a45e]/25 rounded-2xl p-2 sm:p-2.5 shadow-2xs">
+        {/* 2. Contrôles secondaires : Recherche & Sous-filtres */}
+        <div className="max-w-5xl mx-auto mb-10 space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             {/* Formats : uniquement si Invitations ou Tous */}
             {(selectedCategory === "invitations" || selectedCategory === "evenementielles" || selectedCategory === "tous") ? (
-              <div className="flex items-center gap-1 bg-[#f5eee1] p-1 rounded-xl w-full sm:w-auto shrink-0 justify-center">
+              <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-full w-full sm:w-auto shrink-0 justify-center">
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("all")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     selectedFormat === "all"
-                      ? "bg-[#2b2118] text-[#f5eee1] shadow-2xs"
-                      : "text-[#6e6255] hover:text-[#2b2118]"
+                      ? "bg-white text-neutral-900 shadow-2xs"
+                      : "text-neutral-500 hover:text-neutral-900"
                   }`}
                 >
-                  Tous les formats ({formatCounts.all})
+                  Tous ({formatCounts.all})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("animée")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
                     selectedFormat === "animée"
-                      ? "bg-[#2b2118] text-[#f5eee1] shadow-2xs"
-                      : "text-[#6e6255] hover:text-[#2b2118]"
+                      ? "bg-white text-neutral-900 shadow-2xs"
+                      : "text-neutral-500 hover:text-neutral-900"
                   }`}
                 >
-                  <span>🎬 Animée</span>
-                  <span className="text-[10px] opacity-80">({formatCounts.animee})</span>
+                  <span>🎬 3D Animée</span>
+                  <span className="text-[10px] opacity-75">({formatCounts.animee})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("statique")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
                     selectedFormat === "statique"
-                      ? "bg-[#2b2118] text-[#f5eee1] shadow-2xs"
-                      : "text-[#6e6255] hover:text-[#2b2118]"
+                      ? "bg-white text-neutral-900 shadow-2xs"
+                      : "text-neutral-500 hover:text-neutral-900"
                   }`}
                 >
-                  <span>📜 Statique</span>
-                  <span className="text-[10px] opacity-80">({formatCounts.statique})</span>
+                  <span>📜 Haute Couture</span>
+                  <span className="text-[10px] opacity-75">({formatCounts.statique})</span>
                 </button>
               </div>
             ) : (
-              <div className="hidden sm:flex items-center gap-2 pl-2">
+              <div className="hidden sm:flex items-center gap-2 pl-1">
                 <span className="text-xs text-[#8f6f33] font-semibold flex items-center gap-1">
                   <Sparkles size={13} /> {activeCategoryInfo.label}
                 </span>
@@ -438,20 +438,20 @@ export default function InvitationsClientPage({
             )}
 
             {/* Champ de recherche rapide */}
-            <div className="relative w-full sm:w-72 shrink-0">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8f6f33]" />
+            <div className="relative w-full sm:w-64 shrink-0">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un modèle, univers..."
-                className="w-full pl-9 pr-8 py-2 bg-white/90 border border-[#c9a45e]/30 rounded-xl text-xs text-[#2b2118] placeholder-[#948473] focus:outline-none focus:ring-2 focus:ring-[#b8924a]/40 focus:border-[#b8924a] transition-all"
+                placeholder="Rechercher un modèle..."
+                className="w-full pl-9 pr-8 py-2 bg-white border border-neutral-200/90 rounded-full text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all shadow-2xs"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5 cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
                   title="Effacer la recherche"
                 >
                   <X size={13} />
@@ -460,24 +460,19 @@ export default function InvitationsClientPage({
             </div>
           </div>
 
-          {/* Rangée inférieure : Événements réellement disponibles (compte > 0 uniquement) */}
+          {/* Événements disponibles (si applicable) */}
           {availableEvents.list.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-0.5 scroll-smooth justify-start sm:justify-center flex-nowrap sm:flex-wrap">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 scroll-smooth justify-start sm:justify-center flex-nowrap sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => setSelectedEvent("all")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                   selectedEvent === "all" || selectedEvent === "Tous"
-                    ? "bg-gradient-to-b from-[#2e1d12] to-[#120a06] text-[#f5dfaa] shadow-xs border border-[#c9a45e]"
-                    : "bg-white/80 border border-[#c9a45e]/25 text-[#3d3126] hover:border-[#b8924a] hover:bg-white"
+                    ? "bg-neutral-800 text-[#f5dfaa] font-semibold"
+                    : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200/80"
                 }`}
               >
-                <span>Tous les événements</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  selectedEvent === "all" || selectedEvent === "Tous" ? "bg-white/20 text-[#f5dfaa]" : "bg-[#f5eee1] text-[#6e6255]"
-                }`}>
-                  {availableEvents.total}
-                </span>
+                Tous ({availableEvents.total})
               </button>
 
               {availableEvents.list.map((evt) => {
@@ -487,25 +482,19 @@ export default function InvitationsClientPage({
                     key={evt.name}
                     type="button"
                     onClick={() => setSelectedEvent(isSelected ? "all" : evt.name)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
                       isSelected
-                        ? "bg-gradient-to-b from-[#2e1d12] to-[#120a06] text-[#f5dfaa] shadow-xs border border-[#c9a45e]"
-                        : "bg-white/85 border border-[#c9a45e]/25 text-[#3d3126] hover:border-[#b8924a] hover:bg-[#fbf7f0]"
+                        ? "bg-neutral-800 text-[#f5dfaa] font-semibold"
+                        : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200/80"
                     }`}
                   >
                     <span>{evt.icon}</span>
                     <span>{evt.name}</span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                        isSelected
-                          ? "bg-white/20 text-[#f5dfaa]"
-                          : "bg-[#f3e7d3] text-[#785b28]"
-                      }`}
-                    >
+                    <span className="text-[10px] opacity-75 font-bold">
                       {evt.count}
                     </span>
                     {isSelected && (
-                      <X size={12} className="ml-0.5 text-[#f5dfaa] hover:opacity-80" />
+                      <X size={11} className="ml-0.5 text-[#f5dfaa]" />
                     )}
                   </button>
                 );
@@ -513,18 +502,11 @@ export default function InvitationsClientPage({
             </div>
           )}
 
-          {/* Puce d'information si un sous-filtre ou une recherche est actif */}
+          {/* Filtre actif indicator */}
           {(selectedEvent !== "all" || searchQuery || selectedFormat !== "all") && (
-            <div className="flex items-center justify-center gap-2 pt-1 animate-in fade-in duration-200">
-              <span className="text-xs text-[#8f6f33]">
-                Filtre actif :{" "}
-                <strong className="text-[#2b2118]">
-                  {selectedEvent !== "all" ? selectedEvent : ""}
-                  {selectedEvent !== "all" && selectedFormat !== "all" ? " · " : ""}
-                  {selectedFormat !== "all" ? (selectedFormat === "animée" ? "Format animé" : "Format statique") : ""}
-                  {searchQuery ? ` « ${searchQuery} »` : ""}
-                </strong>
-                {" "}· {filteredModels.length} {filteredModels.length > 1 ? "créations" : "création"}
+            <div className="flex items-center justify-center gap-2 pt-1 animate-in fade-in duration-200 text-xs text-[#8f6f33]">
+              <span>
+                Filtre : <strong className="text-neutral-900">{selectedEvent !== "all" ? selectedEvent : ""}{searchQuery ? ` « ${searchQuery} »` : ""}</strong> · {filteredModels.length} modèle{filteredModels.length > 1 ? "s" : ""}
               </span>
               <button
                 type="button"
@@ -533,7 +515,7 @@ export default function InvitationsClientPage({
                   setSelectedFormat("all");
                   setSearchQuery("");
                 }}
-                className="text-[11px] font-bold text-[#8f6f33] hover:text-[#2b2118] underline cursor-pointer flex items-center gap-1 ml-1"
+                className="text-[11px] font-bold text-[#8f6f33] hover:text-neutral-900 underline cursor-pointer flex items-center gap-1 ml-1"
               >
                 <RotateCcw size={11} /> Réinitialiser
               </button>
@@ -542,7 +524,7 @@ export default function InvitationsClientPage({
         </div>
 
         {/* Titre de la section filtrée */}
-        <div className="max-w-6xl mx-auto mb-12">
+        <div className="max-w-7xl mx-auto mb-10">
           <GallerySectionTitle
             eyebrow={`${activeCategoryInfo.count} ${activeCategoryInfo.count > 1 ? "modèles disponibles" : "modèle disponible"}`}
             title={<>{activeCategoryInfo.label}</>}
@@ -566,11 +548,10 @@ export default function InvitationsClientPage({
               ))}
             </div>
           ) : (
-            <div className="card-lux relative p-8 sm:p-12 text-center max-w-lg mx-auto bg-white/80 rounded-3xl border border-[#c9a45e]/30 shadow-md">
-              <LuxFrame className="inset-2.5" />
-              <Fleuron className="mx-auto w-36 h-auto mb-4" />
-              <h3 className="font-serif not-italic text-2xl text-[#1d120a] mb-2">Collection en renouvellement</h3>
-              <p className="text-sm text-[#3d3126] mb-6">
+            <div className="bg-white rounded-3xl border border-neutral-200 p-8 sm:p-12 text-center max-w-md mx-auto shadow-sm">
+              <p className="text-3xl mb-3">✨</p>
+              <h3 className="font-serif text-xl font-bold text-neutral-900 mb-2">Collection en renouvellement</h3>
+              <p className="text-xs sm:text-sm text-neutral-500 mb-6 leading-relaxed">
                 Aucun modèle n&apos;est actuellement visible dans la catégorie <strong>{activeCategoryInfo.label}</strong>.
               </p>
               <button
@@ -581,35 +562,36 @@ export default function InvitationsClientPage({
                   setSelectedFormat("all");
                   setSearchQuery("");
                 }}
-                className="btn-lux relative px-7 py-3 text-xs flex items-center gap-2 mx-auto cursor-pointer"
+                className="px-5 py-2.5 rounded-full bg-neutral-900 text-white text-xs font-semibold hover:bg-black transition-colors cursor-pointer"
               >
-                <Sparkles size={14} className="text-[#f0d999]" />
-                <span>Réinitialiser les filtres ({siteModels.length} modèles)</span>
+                Voir tous les modèles ({siteModels.length})
               </button>
             </div>
           )}
         </div>
 
-        {/* CTA final en bas de page pour créer son événement */}
-        <div className="card-lux max-w-4xl mx-auto mt-20 px-6 py-12 sm:p-14 text-center relative overflow-hidden bg-white/70 rounded-3xl border border-[#c9a45e]/35 shadow-lg">
-          <LuxFrame className="inset-3" />
-          <div className="relative z-10">
-            <Fleuron className="mx-auto w-40 h-auto mb-4" />
-            <h2 className="font-serif not-italic text-3xl sm:text-4xl text-[#1d120a] mb-3">
-              Vous avez trouvé l&apos;<span className="italic text-gold-foil">inspiration</span> ?
-            </h2>
-            <p className="text-sm text-[#3d3126] max-w-xl mx-auto mb-8 leading-relaxed">
-              Créez votre événement en quelques minutes, configurez votre invitation d&apos;exception et commencez à inviter vos proches sans attendre.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-8">
-              <Link href="/create" className="btn-lux group px-8 py-4 text-xs sm:text-[13px]">
-                Créer mon événement
-                <ArrowRight size={16} strokeWidth={1.5} className="text-[#f0d999] transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link href="/" className="link-lux text-xs">
-                Retour à l&apos;accueil
-              </Link>
-            </div>
+        {/* CTA final simple et esthétique */}
+        <div className="max-w-3xl mx-auto mt-16 sm:mt-20 p-8 sm:p-12 text-center bg-white rounded-3xl border border-neutral-200/90 shadow-sm">
+          <h2 className="font-serif text-2xl sm:text-3xl text-neutral-900 font-bold mb-3 tracking-tight">
+            Vous avez trouvé votre inspiration ?
+          </h2>
+          <p className="text-xs sm:text-sm text-neutral-500 max-w-lg mx-auto mb-7 leading-relaxed">
+            Créez votre événement en quelques minutes, personnalisez vos textes en direct et commencez à inviter vos proches.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <Link
+              href="/create"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-neutral-900 hover:bg-black text-[#f5dfaa] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+            >
+              <span>Personnaliser mon invitation</span>
+              <ArrowRight size={15} className="text-[#f5dfaa]" />
+            </Link>
+            <Link
+              href="/"
+              className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors py-2 px-4"
+            >
+              Retour à l&apos;accueil
+            </Link>
           </div>
         </div>
       </main>

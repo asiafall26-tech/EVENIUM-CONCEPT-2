@@ -1176,37 +1176,35 @@ function CreateExpressStudioContent({
           )}
 
           <div className="w-full max-w-[1680px] mx-auto px-2 sm:px-4 lg:px-6 flex flex-col gap-6 animate-in fade-in duration-300">
-            <div className="w-full flex flex-col gap-8 animate-in fade-in duration-300">
-              {/* En-tête de prestige */}
-              <div className="text-center max-w-3xl mx-auto pt-4 sm:pt-6">
-                <Fleuron className="mx-auto w-40 sm:w-48 h-auto mb-3" />
-                <p className="pl-[0.3em] text-[10.5px] sm:text-xs font-medium uppercase tracking-[0.3em] text-[#8f6f33] mb-3">
-                  Étape 1 · Choisissez votre modèle
-                </p>
-                <h1 className="text-3xl sm:text-5xl font-serif not-italic text-[#1d120a] leading-tight">
-                  Votre faire-part <span className="italic text-gold-foil">de prestige</span>
+            <div className="w-full flex flex-col gap-6 animate-in fade-in duration-300">
+              {/* En-tête simple et esthétique */}
+              <div className="text-center max-w-2xl mx-auto pt-2 sm:pt-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-neutral-200 text-neutral-800 text-[10.5px] font-semibold tracking-wider uppercase shadow-2xs mb-2.5">
+                  <Sparkles size={12} className="text-[#b8924a]" /> Étape 1 · Sélection du modèle
+                </span>
+                <h1 className="text-2xl sm:text-4xl font-serif text-neutral-900 font-bold tracking-tight">
+                  Choisissez votre invitation
                 </h1>
-                <DiamondRule className="mt-4" />
-                <p className="text-xs sm:text-sm text-[#3d3126] mt-4 max-w-2xl mx-auto leading-relaxed">
-                  Chaque création Evenium propose une scénographie interactive unique (sceau de cire animé, velours précieux, rubans satinés, musique immersive et gestion des RSVP). Choisissez votre univers pour ouvrir son studio de personnalisation exclusif.
+                <p className="text-xs sm:text-sm text-neutral-500 mt-2 max-w-lg mx-auto leading-relaxed">
+                  Explorez nos créations interactives d&apos;exception avec leur univers sonore et leurs animations, puis personnalisez votre modèle en direct.
                 </p>
 
-                {/* Barre de recherche en direct & filtres adaptatifs */}
-                <div className="max-w-md mx-auto w-full mt-5 px-2">
+                {/* Barre de recherche & filtres simples */}
+                <div className="max-w-md mx-auto w-full mt-4 px-2">
                   <div className="relative">
-                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8f6f33]/60 pointer-events-none" />
+                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Rechercher un faire-part, style ou événement..."
-                      className="w-full pl-10 pr-9 py-2.5 rounded-full bg-white/95 border border-[#e4d8c4] focus:border-[#c9a45e] focus:ring-2 focus:ring-[#c9a45e]/20 text-xs text-gray-800 placeholder-gray-400 outline-none transition-all shadow-xs"
+                      placeholder="Rechercher un modèle ou un univers..."
+                      className="w-full pl-9 pr-9 py-2.5 rounded-full bg-white border border-neutral-200 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 text-xs text-neutral-900 placeholder-neutral-400 outline-none transition-all shadow-2xs"
                     />
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 cursor-pointer"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
                         aria-label="Effacer la recherche"
                       >
                         <X size={13} />
@@ -1215,8 +1213,8 @@ function CreateExpressStudioContent({
                   </div>
                 </div>
 
-                {/* Filtres de catégorie d'événement (adaptatifs, alignés sur la galerie) */}
-                <div className="flex items-center justify-center gap-2 flex-wrap mt-4">
+                {/* Filtres de catégorie d'événement en pilules épurées */}
+                <div className="flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto no-scrollbar py-1 mt-3">
                   {eventCategories.map(cat => {
                     const isSelected = selectedEventCategory.toLowerCase() === cat.id.toLowerCase();
                     return (
@@ -1227,10 +1225,10 @@ function CreateExpressStudioContent({
                           setSelectedEventCategory(cat.id);
                           try { sessionStorage.setItem('evenium:last_category', cat.id); } catch { }
                         }}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                           isSelected
-                            ? "bg-gradient-to-b from-[#2e1d12] to-[#120a06] text-[#f5dfaa] border border-[#c9a45e] shadow-[0_0_18px_-6px_rgba(233,196,120,0.75)]"
-                            : "bg-[#fffbf5] text-[#3d3126] border border-[#e4d8c4] hover:border-[#c9a45e] hover:bg-[#fbf7f0]"
+                            ? "bg-neutral-900 text-white font-semibold shadow-xs"
+                            : "bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200/80"
                         }`}
                       >
                         <span>{cat.icon}</span>
@@ -1238,8 +1236,8 @@ function CreateExpressStudioContent({
                         <span
                           className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                             isSelected
-                              ? "bg-white/20 text-[#f5dfaa]"
-                              : "bg-[#f3e7d3] text-[#785b28]"
+                              ? "bg-white/20 text-white"
+                              : "bg-neutral-100 text-neutral-500"
                           }`}
                         >
                           {cat.count}
@@ -1253,7 +1251,7 @@ function CreateExpressStudioContent({
                 {(selectedEventCategory !== "Tous" || searchQuery) && (
                   <div className="flex items-center justify-center gap-2 pt-2 animate-in fade-in duration-200">
                     <span className="text-xs text-[#8f6f33]">
-                      Filtre actif : <strong className="text-[#2b2118]">{selectedEventCategory !== "Tous" ? selectedEventCategory : ""}{searchQuery ? ` « ${searchQuery} »` : ""}</strong> · {filteredModels.length} modèle{filteredModels.length > 1 ? "s" : ""}
+                      Filtre actif : <strong className="text-neutral-900">{selectedEventCategory !== "Tous" ? selectedEventCategory : ""}{searchQuery ? ` « ${searchQuery} »` : ""}</strong> · {filteredModels.length} modèle{filteredModels.length > 1 ? "s" : ""}
                     </span>
                     <button
                       type="button"
@@ -1261,7 +1259,7 @@ function CreateExpressStudioContent({
                         setSelectedEventCategory("Tous");
                         setSearchQuery("");
                       }}
-                      className="text-[11px] font-bold text-[#8f6f33] hover:text-[#2b2118] underline cursor-pointer flex items-center gap-1 ml-1"
+                      className="text-[11px] font-bold text-[#8f6f33] hover:text-neutral-900 underline cursor-pointer flex items-center gap-1 ml-1"
                     >
                       <RotateCcw size={11} /> Réinitialiser
                     </button>
@@ -1270,11 +1268,10 @@ function CreateExpressStudioContent({
               </div>
 
               {filteredModels.length === 0 && (
-                <div className="card-lux relative max-w-xl mx-auto w-full text-center px-6 py-12">
-                  <LuxFrame className="inset-2.5" />
+                <div className="bg-white rounded-3xl border border-neutral-200 p-8 sm:p-12 text-center max-w-lg mx-auto shadow-sm">
                   <p className="text-3xl mb-3">✨</p>
-                  <h3 className="font-serif not-italic text-2xl text-[#1d120a]">Aucun modèle trouvé</h3>
-                  <p className="text-sm text-[#3d3126] mt-2">
+                  <h3 className="font-serif text-xl font-bold text-neutral-900">Aucun modèle trouvé</h3>
+                  <p className="text-xs text-neutral-500 mt-2">
                     {searchQuery
                       ? `Aucun modèle ne correspond à « ${searchQuery} ».`
                       : `Aucun modèle disponible pour « ${selectedEventCategory} ».`}
@@ -1285,16 +1282,16 @@ function CreateExpressStudioContent({
                       setSelectedEventCategory("Tous");
                       setSearchQuery("");
                     }}
-                    className="btn-lux relative mt-6 px-7 py-3 text-xs flex items-center gap-2 mx-auto cursor-pointer"
+                    className="mt-5 px-5 py-2.5 rounded-full bg-neutral-900 text-white text-xs font-semibold flex items-center gap-2 mx-auto cursor-pointer hover:bg-black transition-colors"
                   >
-                    <RotateCcw size={13} className="text-[#f0d999]" />
+                    <RotateCcw size={13} className="text-[#f5dfaa]" />
                     <span>Réinitialiser les filtres ({siteModels.length} modèles)</span>
                   </button>
                 </div>
               )}
 
               {/* Grille des modèles disponibles */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 max-w-6xl mx-auto w-full">
                 {filteredModels.map((model) => (
                   <ModelCard
                     key={model.id}
@@ -1304,25 +1301,26 @@ function CreateExpressStudioContent({
                     badge={model.badge}
                     eyebrow={model.category}
                     description={model.subtitle}
+                    compact
                     onPreview={() => setDemoModelId(model.id)}
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    sizes="(min-width: 1024px) 33vw, 50vw"
                     actions={
-                      <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-2 border-t border-neutral-100">
                         <button
                           type="button"
                           onClick={() => setDemoModelId(model.id)}
-                          className="py-2.5 px-3 rounded-xl bg-white hover:bg-[#faf6ee] text-[#1d120a] border border-[#c9a45e]/40 hover:border-[#b8924a] text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                          className="py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg sm:rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 transition-colors cursor-pointer"
                         >
-                          <Eye size={14} className="text-[#8f6f33] shrink-0" />
+                          <Eye size={12} className="text-neutral-600 shrink-0" />
                           <span>Aperçu</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleChooseModel(model.id)}
-                          className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#1c1209] to-[#2e1d12] hover:brightness-110 text-[#f5dfaa] border border-[#c9a45e]/60 text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-black/10 transition-all active:scale-95 cursor-pointer"
+                          className="py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg sm:rounded-xl bg-neutral-900 hover:bg-black text-[#f5dfaa] text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 shadow-2xs transition-all active:scale-98 cursor-pointer"
                         >
                           <span>Choisir</span>
-                          <ArrowRight size={14} className="text-[#f0d999] shrink-0" />
+                          <ArrowRight size={12} className="text-[#f5dfaa] shrink-0" />
                         </button>
                       </div>
                     }
@@ -1330,16 +1328,16 @@ function CreateExpressStudioContent({
                 ))}
               </div>
 
-              {/* Rassurance */}
-              <div className="max-w-3xl mx-auto w-full pt-4 pb-8 flex items-center justify-center gap-6 flex-wrap text-xs text-gray-500 border-t border-[#c9a45e]/30">
+              {/* Rassurance discrète */}
+              <div className="max-w-xl mx-auto w-full pt-4 pb-8 flex items-center justify-center gap-6 flex-wrap text-xs text-neutral-400">
                 <span className="flex items-center gap-1.5">
-                  <Sparkles size={13} className="text-[#b8924a]" /> Personnalisation 100% en direct
+                  <Sparkles size={12} className="text-[#b8924a]" /> Test en direct
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Lock size={13} className="text-[#b8924a]" /> Rendu plein écran avant paiement
+                  <Lock size={12} className="text-[#b8924a]" /> Sans engagement avant achat
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Smartphone size={13} className="text-[#b8924a]" /> Prêt pour WhatsApp &amp; tous écrans
+                  <Smartphone size={12} className="text-[#b8924a]" /> Prêt pour WhatsApp
                 </span>
               </div>
             </div>
@@ -1866,12 +1864,12 @@ function CreateExpressStudioContent({
                       <Share2 size={13} className="text-[#b8924a]" />
                       Lien officiel direct de votre création (copiable en 1 clic) :
                     </label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
                         type="text"
                         readOnly
                         value={typeof window !== 'undefined' ? `${window.location.origin}/invite/${standardSuccessEvent.id}` : `/invite/${standardSuccessEvent.id}`}
-                        className="flex-1 min-w-0 bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-mono font-bold text-gray-900 outline-none select-all"
+                        className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-gray-900 outline-none select-all truncate"
                       />
                       <button
                         type="button"
@@ -1881,7 +1879,7 @@ function CreateExpressStudioContent({
                           setCopiedLink(true);
                           setTimeout(() => setCopiedLink(false), 2500);
                         }}
-                        className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${copiedLink
+                        className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${copiedLink
                             ? "bg-emerald-600 text-white"
                             : "bg-black hover:bg-gray-800 text-[#b8924a] border border-[#b8924a]/30"
                           }`}

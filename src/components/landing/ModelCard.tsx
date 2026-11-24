@@ -8,17 +8,17 @@ interface ModelCardProps {
   name: string;
   image: string;
   kind: Kind;
-  /** Petit sur-titre doré (catégorie ou collection) */
+  /** Petit sur-titre (catégorie ou collection) */
   eyebrow?: string;
   description?: string;
-  /** Pastille dorée en haut à droite (« Signature », « Prestige Impérial »…) */
+  /** Pastille en haut à droite (« Signature », « Nouveau »…) */
   badge?: string;
   /** Lien de toute la carte ; sans lien, `onPreview` rend l'image cliquable */
   href?: string;
   onPreview?: () => void;
   /** Boutons placés sous la carte (tunnel de création) */
   actions?: React.ReactNode;
-  /** Version resserrée pour les grilles 2 colonnes sur téléphone */
+  /** Version resserrée pour les grilles compactes */
   compact?: boolean;
   sizes?: string;
   priority?: boolean;
@@ -26,8 +26,8 @@ interface ModelCardProps {
 }
 
 /**
- * Présentation d'un modèle d'invitation, façon faire-part encadré :
- * passe-partout ivoire, filet doré intérieur, pastilles dorées et titre Playfair.
+ * Présentation simple, moderne et esthétique d'un modèle d'invitation :
+ * Image plein format épurée, badge flottant discret, typographie sobre et soignée.
  */
 export default function ModelCard({
   name,
@@ -45,92 +45,89 @@ export default function ModelCard({
   className = "",
 }: ModelCardProps) {
   const visual = (
-    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[1.1rem] bg-[#1d120a]">
+    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-neutral-100 shadow-2xs">
       <Image
         src={image}
         alt={`Modèle d'invitation ${name}`}
         fill
         sizes={sizes}
         priority={priority}
-        className="object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.06]"
+        className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
       />
-      {/* Voile bas pour la lisibilité des pastilles et du survol */}
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#140c06]/70 via-transparent to-[#140c06]/25" />
-      {/* Filet doré intérieur */}
-      <div aria-hidden className={`absolute rounded-[0.8rem] border border-[#e7c97f]/55 pointer-events-none ${compact ? "inset-1.5" : "inset-2.5"}`} />
 
-      {/* Pastilles */}
-      <div className={`absolute flex items-start justify-between gap-2 z-10 pointer-events-none ${compact ? "top-2.5 left-2.5 right-2.5" : "top-4 left-4 right-4"}`}>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#c9a45e]/70 bg-[#150d07]/85 backdrop-blur-md px-2.5 py-1 text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.16em] text-[#f0d999] shadow-sm">
+      {/* Badges discrets et élégants */}
+      <div className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 right-2 sm:right-2.5 flex items-center justify-between gap-1 z-10 pointer-events-none">
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-md px-2 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-medium text-neutral-800 shadow-2xs border border-white/70">
           {kind === "voeu" ? (
             <>
-              <Sparkles size={11} className="text-[#f5d77f]" /> Vœux d&apos;Or
+              <Sparkles size={10} className="text-amber-500" />
+              <span>Vœux</span>
             </>
           ) : kind === "mot_doux" ? (
             <>
-              <Heart size={11} className="text-[#f87171]" /> Mots doux
+              <Heart size={10} className="text-rose-500 fill-rose-500" />
+              <span>Mot doux</span>
             </>
           ) : kind === "couple" ? (
             <>
-              <Heart size={11} className="text-[#e879f9]" /> Espace Couple
+              <Heart size={10} className="text-purple-500" />
+              <span>Couple</span>
             </>
           ) : kind === "animée" ? (
             <>
-              <PlayCircle size={11} className="text-[#f5dfaa]" /> 3D Animée
+              <PlayCircle size={10} className="text-[#b8924a]" />
+              <span>3D Animé</span>
             </>
           ) : (
             <>
-              <FileImage size={11} className="text-[#f5dfaa]" /> Haute Couture
+              <FileImage size={10} className="text-gray-600" />
+              <span>Prestige</span>
             </>
           )}
         </span>
-        {badge && !compact && (
-          <span className="rounded-full bg-gradient-to-r from-[#b8924a] via-[#f0d999] to-[#b8924a] px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#241509] shadow-[0_4px_14px_-4px_rgba(233,196,120,0.8)] truncate max-w-[60%]">
+
+        {badge && (
+          <span className="rounded-full bg-neutral-900/90 backdrop-blur-md px-2 py-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-[#f5dfaa] shadow-2xs">
             {badge}
           </span>
         )}
       </div>
 
-      {/* Survol : invitation à découvrir */}
-      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/35 backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover:opacity-100 pointer-events-none">
-        <span className="px-4 py-2 rounded-full bg-black/85 border border-[#f0d999]/70 text-[#f0d999] text-[10px] sm:text-[11px] font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-xl translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
-          <Eye size={13} className="text-[#f0d999]" /> Aperçu interactif
+      {/* Survol élégant avec bouton Aperçu rapide */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/25 backdrop-blur-[1px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none">
+        <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white text-neutral-900 text-[11px] sm:text-xs font-semibold shadow-xl flex items-center gap-1.5 transform scale-95 group-hover:scale-100 transition-transform duration-300">
+          <Eye size={12} className="text-[#b8924a]" />
+          <span>Aperçu</span>
         </span>
       </div>
     </div>
   );
 
   const caption = (
-    <div className={`flex-1 flex flex-col text-center ${compact ? "px-1.5 pt-3 pb-2" : "px-3 pt-4 pb-3"}`}>
-      {eyebrow && (
-        <p className={`font-medium uppercase text-[#8f6f33] ${compact ? "text-[8.5px] tracking-[0.2em]" : "text-[9.5px] tracking-[0.25em]"}`}>
-          {eyebrow}
-        </p>
-      )}
-      <h3 className={`font-serif not-italic text-[#1d120a] leading-tight transition-colors duration-300 group-hover:text-[#8f6f33] font-bold ${compact ? "mt-1 text-base sm:text-lg" : "mt-1.5 text-lg sm:text-xl"}`}>
-        {name}
-      </h3>
-      <div aria-hidden className={`flex items-center justify-center gap-2 ${compact ? "mt-1.5" : "mt-2.5"}`}>
-        <span className="h-px w-8 bg-gradient-to-l from-[#c9a45e]/70 to-transparent" />
-        <span className="w-1.5 h-1.5 rotate-45 bg-[#c9a45e]" />
-        <span className="h-px w-8 bg-gradient-to-r from-[#c9a45e]/70 to-transparent" />
+    <div className={`flex-1 flex flex-col justify-between ${compact ? "px-0.5 pt-2 pb-0.5" : "px-1 pt-2.5 pb-1"}`}>
+      <div>
+        {eyebrow && (
+          <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-[#9a7b38] mb-0.5 truncate">
+            {eyebrow}
+          </p>
+        )}
+        <h3 className={`font-serif text-neutral-900 font-bold leading-tight transition-colors duration-200 group-hover:text-[#b8924a] text-xs sm:text-sm md:text-base truncate`}>
+          {name}
+        </h3>
+        {description && !compact && (
+          <p className="hidden sm:block mt-1 text-[11px] text-neutral-500 leading-snug line-clamp-1">
+            {description}
+          </p>
+        )}
       </div>
-      {description && !compact && (
-        <p className="mt-2.5 text-[12.5px] leading-relaxed text-[#3d3126] line-clamp-2 max-w-sm mx-auto">{description}</p>
-      )}
-      {href && !compact && (
-        <span className="mt-auto pt-3 self-center">
-          <span className="link-lux inline-block text-[10.5px]">Découvrir l&apos;invitation</span>
-        </span>
-      )}
     </div>
   );
 
-  const frame = `card-lux group relative flex flex-col p-2 sm:p-2.5 rounded-[1.3rem] border border-[#c9a45e]/30 hover:border-[#b8924a] bg-gradient-to-b from-[#fdfbf7] via-white to-[#faf6ee] transition-[transform,box-shadow,border-color] duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(184,146,74,0.35),0_0_25px_-10px_rgba(233,196,120,0.6)] ${className}`;
+  const cardStyle = `group relative flex flex-col p-2 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-white border border-neutral-200/80 hover:border-neutral-400 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] transition-all duration-300 hover:-translate-y-0.5 ${className}`;
 
   if (href) {
     return (
-      <Link href={href} className={`${frame} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a45e]`}>
+      <Link href={href} className={`${cardStyle} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b8924a]`}>
         {visual}
         {caption}
       </Link>
@@ -138,13 +135,13 @@ export default function ModelCard({
   }
 
   return (
-    <article className={frame}>
+    <article className={cardStyle}>
       {onPreview ? (
         <button
           type="button"
           onClick={onPreview}
           aria-label={`Voir le modèle ${name}`}
-          className="block w-full text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a45e] rounded-[1.1rem]"
+          className="block w-full text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b8924a] rounded-2xl"
         >
           {visual}
           {caption}
@@ -155,7 +152,7 @@ export default function ModelCard({
           {caption}
         </>
       )}
-      {actions && <div className="px-2 pb-2 sm:px-3 sm:pb-3">{actions}</div>}
+      {actions && <div className="pt-2">{actions}</div>}
     </article>
   );
 }
