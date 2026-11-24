@@ -325,15 +325,15 @@ export default function InvitationsClientPage({
     };
   }, [selectedCategory, selectedEvent, searchQuery, categories, filteredModels.length]);
 
-  // Responsive grid layout harmonisé et centré selon le nombre de modèles (2 colonnes sur mobile comme un lookbook)
+  // Responsive grid layout harmonisé et centré selon le nombre de modèles (cartes réduites et compactes)
   const gridClass = (count: number) =>
     count === 1
-      ? "grid grid-cols-1 max-w-sm mx-auto gap-4 sm:gap-6"
+      ? "grid grid-cols-1 max-w-xs mx-auto gap-3"
       : count === 2
-        ? "grid grid-cols-2 max-w-2xl mx-auto gap-3.5 sm:gap-6"
+        ? "grid grid-cols-2 max-w-md mx-auto gap-2.5 sm:gap-3.5"
         : count === 3
-          ? "grid grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto gap-3.5 sm:gap-6"
-          : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-5 lg:gap-6";
+          ? "grid grid-cols-2 sm:grid-cols-3 max-w-2xl mx-auto gap-2.5 sm:gap-3.5"
+          : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5 max-w-6xl mx-auto";
 
   return (
     <div className="bg-[#FAF9F6] min-h-screen text-neutral-900">
@@ -544,6 +544,8 @@ export default function InvitationsClientPage({
                   eyebrow={model.category ? `Modèle ${model.category}` : "Création Haute Couture"}
                   description={model.description}
                   badge={model.isPremium ? "Signature" : undefined}
+                  compact
+                  sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                 />
               ))}
             </div>

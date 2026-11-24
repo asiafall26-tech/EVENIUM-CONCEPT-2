@@ -34,7 +34,7 @@ export default function InvitationsDashboardPage({
   const { id } = use(params);
   const { events, isLoaded, updateEventInvitation, updateEventInvitationContent, refreshEvents } = useEvents();
   const supabase = createClient();
-  
+
   const eventFromContext = events.find((e) => e.id === id);
   const [directEvent, setDirectEvent] = useState<any>(null);
   const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
@@ -211,7 +211,7 @@ export default function InvitationsDashboardPage({
           year: "numeric",
         });
       }
-    } catch {}
+    } catch { }
     return dateStr;
   };
 
@@ -287,16 +287,16 @@ export default function InvitationsDashboardPage({
   const cover = isCustom
     ? customModel?.cover_url ?? null
     : isVelours
-    ? "/invit-velours-cover.jpg"
-    : isSceau
-      ? "/invit-sceau-dor-cover.jpg"
-      : isIvoire
-        ? "/invit-ivoire-cover.jpg"
-        : isRoseOr
-          ? "/invit-rose-or-cover.jpg"
-          : isAnniversaire
-            ? "/invit-anniversaire-cover.jpg"
-            : null;
+      ? "/invit-velours-cover.jpg"
+      : isSceau
+        ? "/invit-sceau-dor-cover.jpg"
+        : isIvoire
+          ? "/invit-ivoire-cover.jpg"
+          : isRoseOr
+            ? "/invit-rose-or-cover.jpg"
+            : isAnniversaire
+              ? "/invit-anniversaire-cover.jpg"
+              : null;
 
   const getModelName = () => {
     if (isVelours) return "Velours Bordeaux";
@@ -445,9 +445,8 @@ export default function InvitationsDashboardPage({
             <button
               type="button"
               onClick={handleCopyLink}
-              className={`shrink-0 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
-                copied ? "bg-emerald-600 text-white" : "bg-[#b8924a] hover:bg-[#a37f3a] text-black"
-              }`}
+              className={`shrink-0 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${copied ? "bg-emerald-600 text-white" : "bg-[#b8924a] hover:bg-[#a37f3a] text-black"
+                }`}
             >
               {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
               {copied ? "Copié !" : "Copier le lien"}
@@ -478,11 +477,10 @@ export default function InvitationsDashboardPage({
                   setWaTone(tone);
                   setAccompanimentMsg(generateWhatsAppMessage(tone));
                 }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
-                  waTone === tone
-                    ? "bg-[#140c06] text-[#f5dfaa] border-[#b8924a]"
-                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                }`}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${waTone === tone
+                  ? "bg-[#140c06] text-[#f5dfaa] border-[#b8924a]"
+                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                  }`}
               >
                 {tone === "religieux" ? "🕌 Bénédiction" : tone === "chaleureux" ? "✨ Chaleureux" : tone === "prestige" ? "🎩 Prestige" : "⚡ Express"}
               </button>
@@ -657,7 +655,7 @@ export default function InvitationsDashboardPage({
 
       {/* Modal de rétablissement de la version originale */}
       {showResetPageModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowResetPageModal(false);
@@ -707,7 +705,7 @@ export default function InvitationsDashboardPage({
 
       {/* Edit Modal */}
       {isEditModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsEditModalOpen(false);
@@ -723,27 +721,27 @@ export default function InvitationsDashboardPage({
             <div className="p-6 space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-2">Titre de l'invitation</label>
-                <input 
+                <input
                   type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]"
-                  value={invitationData.title} onChange={e => setInvitationData({...invitationData, title: e.target.value})}
+                  value={invitationData.title} onChange={e => setInvitationData({ ...invitationData, title: e.target.value })}
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-2">Message</label>
-                <textarea 
+                <textarea
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32 focus:outline-none focus:ring-2 focus:ring-[#b8924a] resize-none"
-                  value={invitationData.message} onChange={e => setInvitationData({...invitationData, message: e.target.value})}
+                  value={invitationData.message} onChange={e => setInvitationData({ ...invitationData, message: e.target.value })}
                 />
               </div>
             </div>
             <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3">
-              <button 
+              <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50"
               >
                 Annuler
               </button>
-              <button 
+              <button
                 onClick={handleSaveEdit}
                 disabled={isSaving}
                 className="flex-1 bg-black text-[#b8924a] py-3 rounded-xl font-bold disabled:opacity-50 flex items-center justify-center"
@@ -757,14 +755,14 @@ export default function InvitationsDashboardPage({
 
       {/* Share Modal (Option A : Clic-to-Chat Direct) */}
       {isShareModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsShareModalOpen(false);
           }}
         >
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            
+
             {/* Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#25D366]/10 to-transparent">
               <div className="flex items-center gap-3">
@@ -776,7 +774,7 @@ export default function InvitationsDashboardPage({
                   <p className="text-xs text-gray-500">Envoyez votre invitation interactive à vos contacts ou dans un groupe</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsShareModalOpen(false)}
                 className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors"
               >
@@ -792,18 +790,17 @@ export default function InvitationsDashboardPage({
                   Lien de votre invitation
                 </label>
                 <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-xl">
-                  <input 
-                    type="text" 
-                    readOnly 
+                  <input
+                    type="text"
+                    readOnly
                     value={shareUrl}
                     className="flex-1 bg-transparent text-sm text-gray-700 px-3 outline-none truncate font-mono text-xs"
                   />
-                  <button 
+                  <button
                     type="button"
                     onClick={handleCopyLink}
-                    className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                      copied ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${copied ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                      }`}
                   >
                     {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
                     {copied ? 'Copié' : 'Copier le lien'}
@@ -820,33 +817,30 @@ export default function InvitationsDashboardPage({
                   <button
                     type="button"
                     onClick={() => setWaTone("chaleureux")}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
-                      waTone === "chaleureux"
-                        ? "bg-[#25D366]/10 border-[#25D366] text-[#128C7E]"
-                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                    }`}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${waTone === "chaleureux"
+                      ? "bg-[#25D366]/10 border-[#25D366] text-[#128C7E]"
+                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                      }`}
                   >
                     ✨ Chaleureux
                   </button>
                   <button
                     type="button"
                     onClick={() => setWaTone("prestige")}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
-                      waTone === "prestige"
-                        ? "bg-[#b8924a]/10 border-[#b8924a] text-[#8f6f33]"
-                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                    }`}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${waTone === "prestige"
+                      ? "bg-[#b8924a]/10 border-[#b8924a] text-[#8f6f33]"
+                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                      }`}
                   >
                     🎩 Prestige
                   </button>
                   <button
                     type="button"
                     onClick={() => setWaTone("court")}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
-                      waTone === "court"
-                        ? "bg-black text-white border-black"
-                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                    }`}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${waTone === "court"
+                      ? "bg-black text-white border-black"
+                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                      }`}
                   >
                     ⚡ Express
                   </button>
