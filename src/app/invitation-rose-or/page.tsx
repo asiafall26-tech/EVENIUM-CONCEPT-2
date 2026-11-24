@@ -12,14 +12,22 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function InvitationRoseOrPage() {
+interface Props {
+  searchParams?: Promise<{ preview?: string; canEdit?: string; hideCta?: string; eventId?: string }>;
+}
+
+export default async function InvitationRoseOrPage({ searchParams }: Props) {
+  const sp = searchParams ? await searchParams : {};
   // Modèle retiré du site par l'admin ; sinon la page animée charge elle-même la version publiée
   const { hidden } = await fetchPublishedModel(await createClient(), ROSE_OR_MODEL_ID);
   if (hidden) notFound();
+
+  const iframeSrc = `${DEMO_SRC}${sp.eventId ? `&eventId=${encodeURIComponent(sp.eventId)}` : ''}${sp.preview === '1' ? '&preview=1' : ''}${sp.hideCta === '1' ? '&hideCta=1' : ''}`;
+
   return (
     <main className="w-full h-screen overflow-hidden bg-[#efe2dc] m-0 p-0 relative flex items-center justify-center">
       <iframe
-        src={DEMO_SRC}
+        src={iframeSrc}
         title="Rose Poudrée & Or Impérial"
         className="w-full h-full border-0 block"
         allow="autoplay; fullscreen"

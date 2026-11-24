@@ -510,6 +510,70 @@ export function getModelStudioConfig(
       defaultValues[f.id] = f.original || "";
     });
 
+    // Si fields est vide mais que customModel.content existe (cas des modèles redesign comme Fatou & Ibrahima)
+    if (fields.length === 0 && customModel.content && typeof customModel.content === "object") {
+      const rawContent = (customModel.draft_content && Object.keys(customModel.draft_content).length > 0)
+        ? customModel.draft_content
+        : customModel.content;
+      
+      const txt = rawContent.texts && typeof rawContent.texts === "object" ? rawContent.texts : {};
+      const coupleFields: StudioFieldConfig[] = [];
+      
+      if ("n1" in txt || "partnerA" in txt || "prenom1" in txt || "mariee" in txt) {
+        coupleFields.push({
+          id: "texts.n1",
+          label: "Prénom / Première personne (ex: Épouse)",
+          type: "text",
+          placeholder: "Ex: Fatou",
+        });
+      }
+      if ("n2" in txt || "partnerB" in txt || "prenom2" in txt || "marie" in txt) {
+        coupleFields.push({
+          id: "texts.n2",
+          label: "Prénom / Deuxième personne (ex: Époux)",
+          type: "text",
+          placeholder: "Ex: Ibrahima",
+        });
+      }
+
+      Object.entries(txt).forEach(([k, v]) => {
+        if (!["n1", "n2", "partnerA", "partnerB", "prenom1", "prenom2", "mariee", "marie"].includes(k) && typeof v === "string") {
+          coupleFields.push({
+            id: `texts.${k}`,
+            label: k.charAt(0).toUpperCase() + k.slice(1),
+            type: v.length > 60 ? "textarea" : "text",
+          });
+        }
+      });
+
+      if (coupleFields.length) {
+        sections.push({
+          id: "couple",
+          title: "INFORMATIONS",
+          desc: "Noms, prénoms et textes principaux",
+          fields: coupleFields,
+        });
+      }
+
+      if ("date" in rawContent) {
+        sections.push({
+          id: "date",
+          title: "DATE & HEURE",
+          desc: "Date officielle et horaires",
+          fields: [
+            {
+              id: "date",
+              label: "Date de l'événement",
+              type: "text",
+              placeholder: "Ex: 2026-12-31T17:00",
+            },
+          ],
+        });
+      }
+
+      Object.assign(defaultValues, rawContent);
+    }
+
     return {
       modelId: customModel.slug || modelId,
       modelName: customModel.name || "Modèle personnalisé",

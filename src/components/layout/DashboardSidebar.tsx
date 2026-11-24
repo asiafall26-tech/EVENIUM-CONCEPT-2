@@ -88,7 +88,7 @@ export function DashboardSidebar() {
                     <div className="pl-3 space-y-0.5 mt-1.5 border-l border-[#b8924a]/30 ml-6 pb-2">
                       {event.plan === "Standard" ? (
                         <>
-                          <SubLink href={`/dashboard/events/${event.id}`} label="Lien & QR Code Actif" currentPath={pathname} exact />
+                          <SubLink href={`/dashboard/events/${event.id}`} label="Aperçu & Lien Direct" currentPath={pathname} exact />
                           <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Mon Invitation" currentPath={pathname} />
                           <SubLink href={`/dashboard/events/${event.id}`} label="Dashboard RSVP (Premium)" currentPath={pathname} locked={true} />
                           <SubLink href={`/dashboard/events/${event.id}`} label="Budget & Checklist (Gold)" currentPath={pathname} locked={true} />

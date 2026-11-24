@@ -4,7 +4,8 @@ import { Save, AlertTriangle, Trash2, Loader2, CheckCircle2, Calendar, Sparkles,
 import { useEvents } from "@/store/EventsContext";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
 import { EventDetailsFields } from "@/components/events/EventDetailsFields";
 import { eventDetailsFromRow, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from "@/lib/eventDetails";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
@@ -16,24 +17,62 @@ export default function EventSettingsPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { events, isLoaded, updateEventStatus, updateEventFields } = useEvents();
-  const event = events.find((e) => e.id === id);
+  const { events, isLoaded, updateEventStatus, updateEventFields, refreshEvents } = useEvents();
+  const supabase = createClient();
+  const eventFromContext = events.find((e) => e.id === id);
+  const [directEvent, setDirectEvent] = useState<any>(null);
+  const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
+  const [notFoundTriggered, setNotFoundTriggered] = useState(false);
+
+  const event = eventFromContext || directEvent;
+
+  useEffect(() => {
+    if (eventFromContext) {
+      setLoadingDirect(false);
+      return;
+    }
+
+    const fetchDirect = async () => {
+      try {
+        const { data } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          setDirectEvent(data);
+          refreshEvents();
+        } else if (isLoaded) {
+          setNotFoundTriggered(true);
+        }
+      } catch {
+        if (isLoaded) setNotFoundTriggered(true);
+      } finally {
+        setLoadingDirect(false);
+      }
+    };
+    fetchDirect();
+  }, [id, eventFromContext, isLoaded, supabase, refreshEvents]);
 
   const [details, setDetails] = useState<EventDetails>(() => eventDetailsFromRow(event));
+
+  useEffect(() => {
+    if (event) {
+      setDetails(eventDetailsFromRow(event));
+    }
+  }, [event]);
+
   const [showErrors, setShowErrors] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!event) {
-    if (!isLoaded) {
-      return (
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
-          <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs sm:text-sm font-semibold text-stone-500 animate-pulse">Chargement des paramètres…</p>
-        </div>
-      );
-    }
+  if (loadingDirect && !event) {
+    return (
+      <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
+        <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs sm:text-sm font-semibold text-stone-500 animate-pulse">Chargement des paramètres…</p>
+      </div>
+    );
+  }
+
+  if (notFoundTriggered || (!event && !loadingDirect && isLoaded)) {
     notFound();
     return null;
   }

@@ -42,7 +42,7 @@ export default async function AdminLayout({
     .eq('id', user.id)
     .maybeSingle();
 
-  const userRole = profile?.role || user.user_metadata?.role || (user.email === 'asiafall26@gmail.com' ? 'admin' : null);
+  const userRole = user.email === 'asiafall26@gmail.com' ? 'admin' : (profile?.role || user.user_metadata?.role);
 
   if (userRole === 'client') {
     redirect('/dashboard');

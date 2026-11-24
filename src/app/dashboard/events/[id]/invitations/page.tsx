@@ -86,11 +86,6 @@ export default function InvitationsDashboardPage({
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
-  const studioIframeRef = useRef<HTMLIFrameElement>(null);
-  const studioContentRef = useRef<any>(null);
-  const [mobileEditorTab, setMobileEditorTab] = useState<'edit' | 'preview'>('edit');
-  const [studioContent, setStudioContent] = useState<any>(null);
-  const [isSavingStudio, setIsSavingStudio] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showResetPageModal, setShowResetPageModal] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -108,57 +103,6 @@ export default function InvitationsDashboardPage({
       );
     }
   }, [event?.name, accompanimentMsg]);
-
-  const handleSetMobileEditorTab = (tab: 'edit' | 'preview') => {
-    setMobileEditorTab(tab);
-    studioIframeRef.current?.contentWindow?.postMessage({
-      type: 'evenium:set-tab',
-      tab,
-    }, '*');
-  };
-
-  // Écouter les messages émis par l'iframe du studio
-  useEffect(() => {
-    if (!isStudioOpen) return;
-    const handleStudioMessage = (e: MessageEvent) => {
-      if (!e.data) return;
-      if (e.data.type === 'evenium:content-change' || e.data.type === 'ev:content') {
-        const updated = e.data.content || e.data.values || e.data.data;
-        if (updated && typeof updated === 'object') {
-          studioContentRef.current = updated;
-        }
-      } else if (e.data.type === 'evenium:tab-changed') {
-        if (e.data.tab === 'preview' || e.data.tab === 'edit') {
-          setMobileEditorTab(e.data.tab);
-        }
-      } else if (e.data.type === 'evenium:open-checkout' || e.data.type === 'evenium:finish') {
-        handleFinishStudio();
-      }
-    };
-    window.addEventListener('message', handleStudioMessage);
-    return () => window.removeEventListener('message', handleStudioMessage);
-  }, [isStudioOpen]);
-
-  const handleFinishStudio = async () => {
-    if (!event) return;
-    setIsSavingStudio(true);
-    try {
-      const toSave = studioContentRef.current || studioContent || event.invitationContent || event.invitation_content;
-      if (toSave) {
-        await updateEventInvitationContent(event.id, toSave);
-        await supabase.from('events').update({ invitation_content: toSave }).eq('id', event.id);
-        setDirectEvent((prev: any) => (prev ? { ...prev, invitationContent: toSave, invitation_content: toSave } : null));
-        refreshEvents();
-      }
-      setResetSuccessMessage("Vos modifications ont été enregistrées avec succès et sont visibles en direct pour vos invités !");
-      setTimeout(() => setResetSuccessMessage(null), 5000);
-    } catch (err) {
-      console.error("Erreur enregistrement studio :", err);
-    } finally {
-      setIsSavingStudio(false);
-      setIsStudioOpen(false);
-    }
-  };
   
   const [invitationData, setInvitationData] = useState({
     title: "",
@@ -219,27 +163,6 @@ export default function InvitationsDashboardPage({
     if (!isCustomModelId(event?.invitationModelId)) return;
     fetchCustomModel(createBrowserClient(), slugOfModelId(event.invitationModelId)).then(setCustomModel);
   }, [event?.invitationModelId]);
-
-  // Écoute des modifications faites via le crayon intégré pour sauvegarde automatique en base
-  useEffect(() => {
-    const handleContentMessage = async (e: MessageEvent) => {
-      if (!e.data || typeof e.data !== "object") return;
-      if (
-        e.data.type === "evenium:content-change" ||
-        e.data.type === "velours:content" ||
-        e.data.type === "ev:content"
-      ) {
-        const updated = e.data.content || e.data.values;
-        if (updated && event?.id) {
-          const isCustomModel = isCustomModelId(event.invitationModelId);
-          const payload = isCustomModel ? { values: updated } : { ...updated };
-          await updateEventInvitationContent(event.id, payload);
-        }
-      }
-    };
-    window.addEventListener("message", handleContentMessage);
-    return () => window.removeEventListener("message", handleContentMessage);
-  }, [event?.id, event?.invitationModelId, updateEventInvitationContent]);
 
   const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court">("chaleureux");
   const [waCopiedText, setWaCopiedText] = useState(false);
@@ -344,22 +267,6 @@ export default function InvitationsDashboardPage({
     if (isCustom && customModel) return customModel.name;
     return event.invitationModelId || "Modèle Exclusif";
   };
-
-  const studioIframeSrc = useMemo(() => {
-    if (!event?.id) return '';
-    const base = isCustom && customModel
-      ? customModelUrl(customModel)
-      : isSceau
-      ? "/invitation-sceau-dor"
-      : isIvoire
-      ? "/invitation-ivoire"
-      : isRoseOr
-      ? "/invitation-rose-or"
-      : isAnniversaire
-      ? "/invitation-anniversaire"
-      : "/invitation-mariage";
-    return `${base}?preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1&eventId=${event.id}`;
-  }, [event?.id, isCustom, customModel?.slug, isSceau, isIvoire, isRoseOr, isAnniversaire]);
 
   // Fermeture des modales d'invitation avec la touche Échap
   useEffect(() => {
@@ -588,91 +495,40 @@ export default function InvitationsDashboardPage({
       </section>
 
       {isStudioOpen && (
-        <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
-          <header
-            className="w-full bg-[#13090C]/95 backdrop-blur-md border-b border-[#D4AF37]/30 px-3 sm:px-6 flex items-center justify-between shrink-0 z-50 select-none shadow-lg"
-            style={{
-              paddingTop: "max(env(safe-area-inset-top, 0px), 32px)",
-              paddingBottom: "10px",
-              minHeight: "calc(4.25rem + env(safe-area-inset-top, 0px))",
-            }}
-          >
-            {/* Côté gauche : Fermer sans enregistrer / Quitter */}
-            <button
-              type="button"
-              onClick={() => setIsStudioOpen(false)}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer shrink-0"
-              title="Fermer"
-            >
-              <X size={15} className="text-[#f0d999] shrink-0" />
-              <span>Fermer</span>
-            </button>
-
-            {/* Centre : Sélecteur segmenté MODIFIER / APERÇU sur mobile, Titre & Crayon sur desktop */}
-            <div className="flex items-center justify-center min-w-0 px-1">
-              <div className="flex md:hidden items-center bg-[#251219] p-1 rounded-full border border-white/10 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => handleSetMobileEditorTab('edit')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
-                    mobileEditorTab === 'edit'
-                      ? "bg-white text-[#13090C] font-bold shadow-xs"
-                      : "text-white/60 hover:text-white"
-                  }`}
-                >
-                  MODIFIER
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetMobileEditorTab('preview')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
-                    mobileEditorTab === 'preview'
-                      ? "bg-white text-[#13090C] font-bold shadow-xs"
-                      : "text-white/60 hover:text-white"
-                  }`}
-                >
-                  APERÇU
-                </button>
-              </div>
-
-              <div className="hidden md:flex items-center gap-2">
-                <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-xs text-center">
-                  {getModelName()}
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
-                  <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
-                </span>
-              </div>
-            </div>
-
-            {/* Côté droit : Bouton Enregistrer & Terminer */}
-            <button
-              type="button"
-              disabled={isSavingStudio}
-              onClick={handleFinishStudio}
-              className="inline-flex items-center gap-1.5 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0 disabled:opacity-60"
-            >
-              {isSavingStudio ? (
-                <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <CheckCircle size={14} className="text-black shrink-0" />
-              )}
-              <span>{isSavingStudio ? "Enregistrement..." : "Terminer"}</span>
-            </button>
-          </header>
-
-          <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0 sm:p-4 lg:p-6">
-            <div className="w-full h-full sm:max-w-[440px] sm:max-h-[890px] bg-black rounded-none sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] sm:border-[#251219] overflow-hidden flex flex-col ring-0 sm:ring-1 sm:ring-white/10 relative">
-              <iframe
-                ref={studioIframeRef}
-                src={studioIframeSrc}
-                title="Personnalisation de l'invitation"
-                className="w-full h-full border-0 bg-black block"
-                allow="autoplay; fullscreen"
-              />
-            </div>
-          </main>
-        </div>
+        <SplitStudioEditor
+          modelId={event.invitationModelId || VELOURS_MODEL_ID}
+          customModel={customModel}
+          eventId={event.id}
+          eventName={event.name}
+          eventType={event.type}
+          shareUrl={shareUrl}
+          guests={guestsList}
+          isStatic={isStatic}
+          initialContent={
+            event.invitationContent?.values ??
+            event.invitation_content?.values ??
+            (typeof event.invitationContent === "object" ? event.invitationContent : null) ??
+            (typeof event.invitation_content === "object" ? event.invitation_content : null) ??
+            {}
+          }
+          onSave={async (newContent) => {
+            const isCustomModel = isCustomModelId(event.invitationModelId);
+            const payload = isCustomModel ? { ...newContent, values: newContent } : newContent;
+            await supabase.from('events').update({ invitation_content: payload }).eq('id', event.id);
+            setDirectEvent((prev: any) => (prev ? { ...prev, invitationContent: payload, invitation_content: payload } : null));
+          }}
+          onFinalize={() => {
+            setIsStudioOpen(false);
+            refreshEvents();
+            setResetSuccessMessage("Vos modifications ont été enregistrées avec succès et sont visibles en direct pour vos invités !");
+            setTimeout(() => setResetSuccessMessage(null), 5000);
+          }}
+          onClose={() => {
+            setIsStudioOpen(false);
+            refreshEvents();
+          }}
+          finalizeLabel="Enregistrer & Fermer"
+        />
       )}
 
       {/* Modal de rétablissement de la version originale */}

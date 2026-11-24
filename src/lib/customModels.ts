@@ -33,7 +33,7 @@ export interface CustomField {
   sectionTitle?: string;
 }
 
-export type CustomValues = Record<string, string>;
+export type CustomValues = Record<string, any>;
 
 export type CustomStatus = "draft" | "published" | "hidden";
 
@@ -62,8 +62,14 @@ export const customModelUrl = (m: Pick<CustomModelRow, "slug" | "entry">) => `/m
 /** Valeurs complètes : celles données, sinon celles d'origine du fichier. */
 export function customValues(fields: CustomField[], ...layers: (CustomValues | null | undefined)[]): CustomValues {
   const out: CustomValues = {};
-  for (const f of fields) out[f.id] = f.original;
-  for (const layer of layers) if (layer) for (const [k, v] of Object.entries(layer)) if (typeof v === "string") out[k] = v;
+  for (const f of fields || []) out[f.id] = f.original;
+  for (const layer of layers) {
+    if (layer && typeof layer === "object") {
+      for (const [k, v] of Object.entries(layer)) {
+        if (v !== undefined) out[k] = v;
+      }
+    }
+  }
   return out;
 }
 

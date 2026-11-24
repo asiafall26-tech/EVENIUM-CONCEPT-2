@@ -202,6 +202,14 @@ export function getInvitationModelName(id?: string | null, customNames?: Record<
   if (id === "invit-9" || lower.includes("ivoire")) return "Ivoire Couture";
   if (id === "invit-10" || lower.includes("rose")) return "Rose Poudrée & Or Impérial";
   if (id === "invit-11" || lower.includes("anniversaire")) return "Anniversaire Bordeaux & Or";
+
+  if (id.startsWith("custom:")) {
+    const slug = id.replace("custom:", "").replace(/-v\d+$/i, "");
+    return slug
+      .split("-")
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
   return id;
 }
 

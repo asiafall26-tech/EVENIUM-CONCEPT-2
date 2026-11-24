@@ -675,7 +675,7 @@ export function StudioSectionAccordion({
         <div className="px-5 sm:px-6 pb-6 pt-1 space-y-4 bg-[#FAF7F2] border-t border-[#E8DFD5]/50 animate-in fade-in duration-200">
           {section.fields.map((field) => {
             const isHidden = hiddenFields.includes(field.id);
-            const val = values[field.id];
+            const val = values[field.id] ?? (field.id.includes('.') ? values[field.id.split('.')[0]]?.[field.id.split('.')[1]] : undefined);
             const handleFocus = () => onFocusField(section.id, field.id);
 
             if (isHidden) {

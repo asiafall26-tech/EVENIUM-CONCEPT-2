@@ -27,6 +27,8 @@ interface Props {
   onFinalize?: () => void;
   finalizeLabel?: string;
   customModel?: CustomModelRow | null;
+  /** ID de l'événement en cours d'édition */
+  eventId?: string;
   /** Titre ou nom de l'événement */
   eventName?: string;
   /** Catégorie ou type d'événement pour les messages d'accompagnement */
@@ -44,6 +46,7 @@ export default function SplitStudioEditor({
   onFinalize,
   finalizeLabel = "TERMINER",
   customModel,
+  eventId,
   eventName,
   eventType = "Mariage",
   shareUrl = "https://evenium.com/invite/demo",
@@ -55,7 +58,8 @@ export default function SplitStudioEditor({
 
   // État local du contenu personnalisé
   const [content, setContent] = useState<Record<string, any>>(() => {
-    return { ...config.defaultValues, ...initialContent };
+    const raw = initialContent?.values ?? initialContent ?? {};
+    return { ...config.defaultValues, ...(typeof raw === "object" ? raw : {}) };
   });
 
   // Champs masqués par l'utilisateur
@@ -74,7 +78,8 @@ export default function SplitStudioEditor({
   });
 
   // Mode actif : "edit" (MODIFIER) vs "preview" (APERÇU)
-  const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
+  const hasFields = config.sections.some((s) => s.fields && s.fields.length > 0);
+  const [mobileTab, setMobileTab] = useState<"edit" | "preview">(() => (hasFields ? "edit" : "preview"));
 
   // Sous-onglet du panneau gauche : "content" (Champs) vs "messages" (Message d'envoi)
   const [activePanelTab, setActivePanelTab] = useState<"content" | "messages">("content");
@@ -91,12 +96,13 @@ export default function SplitStudioEditor({
   const frameRef = useRef<HTMLIFrameElement>(null);
   const isIframeReady = useRef(false);
 
-  // Déterminer l'URL de prévisualisation dans l'iframe
+  // Déterminer l'URL de prévisualisation dans l'iframe avec le mode édition interactif actif pour l'organisateur
   const previewSrc = React.useMemo(() => {
     const base = config.previewPath;
     const delim = base.includes("?") ? "&" : "?";
-    return `${base}${delim}preview=1&hideCta=1`;
-  }, [config.previewPath]);
+    const evParam = eventId ? `&eventId=${encodeURIComponent(eventId)}` : "";
+    return `${base}${delim}preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1${evParam}`;
+  }, [config.previewPath, eventId]);
 
   // Envoi postMessage vers l'iframe pour mise à jour instantanée sans rechargement
   const sendPostMessage = useCallback((msg: object) => {
@@ -110,28 +116,12 @@ export default function SplitStudioEditor({
   // Dès que le contenu change, on pousse immédiatement l'aperçu sans rechargement
   const pushUpdateToPreview = useCallback((nextContent: Record<string, any>) => {
     // Protocole universel Evenium
-    sendPostMessage({ type: "evenium:model-update", content: nextContent });
+    sendPostMessage({ type: "evenium:model-update", content: nextContent, values: nextContent, data: nextContent });
     // Protocoles spécifiques existants
     sendPostMessage({ type: "velours:content", content: nextContent });
-    sendPostMessage({ type: "ev:content", values: nextContent });
+    sendPostMessage({ type: "ev:content", values: nextContent, content: nextContent, data: nextContent });
+    sendPostMessage({ type: "evenium:set-values", values: nextContent, content: nextContent, data: nextContent });
   }, [sendPostMessage]);
-
-  // Gestion des messages reçus de l'iframe (prêt / ready)
-  useEffect(() => {
-    const handleMessage = (e: MessageEvent) => {
-      if (!e.data || typeof e.data !== "object") return;
-      if (
-        e.data.type === "evenium:ready" ||
-        e.data.type === "velours:ready" ||
-        e.data.type === "ev:ready"
-      ) {
-        isIframeReady.current = true;
-        pushUpdateToPreview(content);
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [content, pushUpdateToPreview]);
 
   // Sauvegarde automatique avec debounce de 800 ms
   const triggerAutoSave = useCallback((updatedContent: Record<string, any>) => {
@@ -153,10 +143,47 @@ export default function SplitStudioEditor({
     }, 800);
   }, [onSave]);
 
+  // Gestion des messages reçus de l'iframe (prêt / ready + modifications internes)
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (!e.data || typeof e.data !== "object") return;
+      if (
+        e.data.type === "evenium:ready" ||
+        e.data.type === "velours:ready" ||
+        e.data.type === "ev:ready"
+      ) {
+        isIframeReady.current = true;
+        pushUpdateToPreview(content);
+      } else if (
+        e.data.type === "evenium:content-change" ||
+        e.data.type === "velours:content" ||
+        (e.data.type === "ev:content" && (e.data.source === "iframe" || !e.data.source))
+      ) {
+        const updated = e.data.content || e.data.values || e.data.data;
+        if (updated && typeof updated === "object") {
+          setContent((prev) => {
+            const next = { ...prev, ...updated };
+            triggerAutoSave(next);
+            return next;
+          });
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [content, pushUpdateToPreview, triggerAutoSave]);
+
   // Modification d'un champ
   const handleFieldChange = (fieldId: string, value: any) => {
     setContent((prev) => {
-      const next = { ...prev, [fieldId]: value };
+      const next = { ...prev };
+      if (fieldId.includes(".")) {
+        const [parent, child] = fieldId.split(".");
+        next[parent] = { ...(typeof next[parent] === "object" ? next[parent] : {}), [child]: value };
+        next[child] = value;
+      } else {
+        next[fieldId] = value;
+      }
       pushUpdateToPreview(next);
       triggerAutoSave(next);
       return next;

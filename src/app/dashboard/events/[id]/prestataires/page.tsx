@@ -25,8 +25,38 @@ export default function PrestatairesDashboardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { events, isLoaded } = useEvents();
-  const event = events.find((e) => e.id === id);
+  const { events, isLoaded, refreshEvents } = useEvents();
+  const supabase = createClient();
+  const eventFromContext = events.find((e) => e.id === id);
+  const [directEvent, setDirectEvent] = useState<any>(null);
+  const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
+  const [notFoundTriggered, setNotFoundTriggered] = useState(false);
+
+  const event = eventFromContext || directEvent;
+
+  useEffect(() => {
+    if (eventFromContext) {
+      setLoadingDirect(false);
+      return;
+    }
+
+    const fetchDirect = async () => {
+      try {
+        const { data } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          setDirectEvent(data);
+          refreshEvents();
+        } else if (isLoaded) {
+          setNotFoundTriggered(true);
+        }
+      } catch {
+        if (isLoaded) setNotFoundTriggered(true);
+      } finally {
+        setLoadingDirect(false);
+      }
+    };
+    fetchDirect();
+  }, [id, eventFromContext, isLoaded, supabase, refreshEvents]);
 
   const [selectedProvider, setSelectedProvider] = useState<any | null>(null);
   const [selectedServiceForDetails, setSelectedServiceForDetails] = useState<any | null>(null);
@@ -82,8 +112,6 @@ export default function PrestatairesDashboardPage({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isDevisOpen, isModifyModalOpen, isShareModalOpen, isRevisionModalOpen, reviewTarget, selectedServiceForDetails, selectedProvider]);
-
-  const supabase = createClient();
 
   const handleDevisResponse = async (status: 'Accepté' | 'Refusé') => {
     if (!selectedDevis) return;
@@ -377,15 +405,16 @@ export default function PrestatairesDashboardPage({
     }
   };
 
-  if (!event) {
-    if (!isLoaded) {
-      return (
-        <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
-          <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-gray-500 animate-pulse">Chargement des prestataires...</p>
-        </div>
-      );
-    }
+  if (loadingDirect && !event) {
+    return (
+      <div className="flex h-[60vh] w-full flex-col items-center justify-center gap-4 text-[#8f6f33]">
+        <div className="w-10 h-10 border-3 border-[#b8924a] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium text-gray-500 animate-pulse">Chargement des prestataires...</p>
+      </div>
+    );
+  }
+
+  if (notFoundTriggered || (!event && !loadingDirect && isLoaded)) {
     notFound();
   }
 

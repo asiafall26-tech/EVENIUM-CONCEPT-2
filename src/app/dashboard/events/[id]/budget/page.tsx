@@ -36,7 +36,18 @@ export default function BudgetDashboardPage({
   });
 
   const fetchData = async () => {
-    const eventData = events.find(e => e.id === id);
+    let eventData = events.find(e => e.id === id);
+    if (!eventData) {
+      const { data: directEv } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+      if (directEv) {
+        eventData = {
+          id: directEv.id,
+          name: directEv.name,
+          plan: directEv.plan,
+          budget: { total: Number(directEv.budget_total) || 0, spent: 0 },
+        } as any;
+      }
+    }
     if (eventData) {
       setEvent(eventData);
     }

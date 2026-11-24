@@ -1030,21 +1030,30 @@ function CreateExpressStudioContent({
 
       if (fullName?.trim()) {
         try {
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          const currentRole = existingProfile?.role === 'admin' || user.email === 'asiafall26@gmail.com' ? 'admin' : 'client';
+
           await supabase
             .from('profiles')
             .upsert({
               id: user.id,
               full_name: fullName.trim(),
               email: email ? email.trim().toLowerCase() : user.email,
-              role: 'client'
+              role: currentRole
             }, { onConflict: 'id' });
         } catch { }
       }
 
       // 2. Insérer le nouvel événement dérivé des informations de l'invitation
+      const finalEventName = customEventName?.trim() || eventMetadata.name || "Mon Événement";
       const eventPayload: any = {
         client_id: effectiveUserId,
-        name: eventMetadata.name,
+        name: finalEventName,
         // Les 3 services clairement typés
         type: isMotDoux ? "Mots Doux" : isVoeu ? "Vœux" : isCouple ? "Couple" : (selectedEventCategory === "Tous" ? currentModel.category : selectedEventCategory),
         date: eventMetadata.date,
@@ -1054,14 +1063,18 @@ function CreateExpressStudioContent({
         format: isStaticCard ? 'Carte' : 'Animée',
         status: 'active',
         invitation_model_id: selectedModelId,
-        invitation_title: eventMetadata.welcomeTitle,
+        invitation_title: finalEventName,
         invitation_message: accompanimentMessage || eventMetadata.welcomeText,
         invitation_content: (() => {
           const c = eventMetadata.contentJson || {};
           const m = customOf(selectedModelId);
-          const baseContent = m ? (isStaticCard ? withoutMusicValues(m.fields, c.values) : c.values) : forInvitationKind(c, isStaticCard);
+          let baseContent = m ? (isStaticCard ? withoutMusicValues(m.fields, c.values || m.content) : (c.values || m.content)) : forInvitationKind(c, isStaticCard);
+          if (!baseContent || (typeof baseContent === "object" && Object.keys(baseContent).length === 0)) {
+            baseContent = m?.content || {};
+          }
           return {
             ...(typeof baseContent === "object" ? baseContent : { values: baseContent }),
+            values: typeof baseContent === "object" ? baseContent : {},
             accompanimentMessage: accompanimentMessage,
           };
         })(),
@@ -1839,10 +1852,10 @@ function CreateExpressStudioContent({
                         {currentModel.badge} · {isMicroService ? "Lien Direct Prêt à Envoyer" : "Invitation & Dashboard Débloqués"}
                       </span>
                       <h4 className="font-serif font-bold text-gray-900 text-sm truncate">
-                        {eventMetadata.name}
+                        {standardSuccessEvent.name || customEventName?.trim() || eventMetadata.name}
                       </h4>
                       <p className="text-[11px] text-gray-500">
-                        {eventMetadata.date}
+                        {standardSuccessEvent.date || eventMetadata.date}
                       </p>
                     </div>
                   </div>
@@ -2463,8 +2476,22 @@ function CreateExpressStudioContent({
                           </div>
                           <input
                             type="text"
-                            value={customEventName || eventMetadata.name}
-                            onChange={(e) => setCustomEventName(e.target.value)}
+                            value={customEventName !== '' ? customEventName : eventMetadata.name}
+                            onChange={(e) => {
+                              const newName = e.target.value;
+                              setCustomEventName(newName);
+                              setAccompanimentMessage(generateAccompanimentMessage({
+                                serviceType: currentModel?.kind,
+                                eventType: selectedEventCategory || currentModel?.category,
+                                eventName: newName.trim() || currentModel?.name,
+                                isVoeu,
+                                isMotDoux,
+                                isCouple,
+                                dateFormatted: eventMetadata.rawDate,
+                                time: eventMetadata.rawTime,
+                                location: eventMetadata.rawLocation,
+                              }));
+                            }}
                             placeholder="Ex: Mon Événement..."
                             className="w-full text-xs sm:text-sm font-serif font-bold text-gray-900 bg-amber-50/40 border border-[#b8924a]/30 focus:border-[#b8924a] focus:ring-1 focus:ring-[#b8924a] rounded-lg px-2.5 py-1.5 outline-none transition-all"
                           />
@@ -2496,8 +2523,22 @@ function CreateExpressStudioContent({
                           </div>
                           <input
                             type="text"
-                            value={customEventName || eventMetadata.name}
-                            onChange={(e) => setCustomEventName(e.target.value)}
+                            value={customEventName !== '' ? customEventName : eventMetadata.name}
+                            onChange={(e) => {
+                              const newName = e.target.value;
+                              setCustomEventName(newName);
+                              setAccompanimentMessage(generateAccompanimentMessage({
+                                serviceType: currentModel?.kind,
+                                eventType: selectedEventCategory || currentModel?.category,
+                                eventName: newName.trim() || currentModel?.name,
+                                isVoeu,
+                                isMotDoux,
+                                isCouple,
+                                dateFormatted: eventMetadata.rawDate,
+                                time: eventMetadata.rawTime,
+                                location: eventMetadata.rawLocation,
+                              }));
+                            }}
                             placeholder="Ex: Mariage de Fatou & Ibrahima"
                             className="w-full text-xs sm:text-sm font-serif font-bold text-gray-900 bg-amber-50/40 border border-[#b8924a]/30 focus:border-[#b8924a] focus:ring-1 focus:ring-[#b8924a] rounded-lg px-2.5 py-1.5 outline-none transition-all"
                           />
