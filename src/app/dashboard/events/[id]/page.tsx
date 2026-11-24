@@ -12,6 +12,7 @@ import { PrivilegeOffersCarousel } from "@/components/dashboard/PrivilegeOffersC
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 import WishReplyModal, { WishReplyGuest } from "@/components/dashboard/WishReplyModal";
 import { getWishRepliesAction } from "@/app/actions/wishReplies";
+import WhatsAppShareWidget from "@/components/invitations/WhatsAppShareWidget";
 
 const formatFrenchDate = (d?: string) => {
   if (!d || d === "À définir") return d || "Date à définir";
@@ -192,7 +193,7 @@ export default function EventDashboardPage({
     };
 
     fetchStats();
-  }, [event, id, supabase]);
+  }, [id, event?.id]);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -262,91 +263,41 @@ export default function EventDashboardPage({
         </div>
       </div>
 
-      {/* ─────────────── CARTE PRINCIPALE : MON INVITATION & DIFFUSION DIRECTE ─────────────── */}
-      <section className="bg-white rounded-3xl p-5 sm:p-7 border border-[#b8924a]/30 shadow-sm mb-6 sm:mb-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+      {/* ─────────────── CARTE PRINCIPALE : DIFFUSION WHATSAPP OFFICIELLE & APERÇU RÉALISTE ─────────────── */}
+      <div className="mb-6 sm:mb-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#8f6f33] bg-[#fbf7f0] px-3 py-1 rounded-full border border-[#b8924a]/30">
-              Diffusion Immédiate &amp; Réponses Invités
+              Diffusion WhatsApp &amp; Réponses Invités
             </span>
             <h2 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 mt-2">
               Votre Invitation Officielle Interactive
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-              Partagez votre lien en 1 clic avec vos invités et personnalisez vos contenus sans limite.
-            </p>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href={`/dashboard/events/${event.id}/invitations`}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-[#d4af37] text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 text-[#d4af37] text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
             >
-              <Edit3 size={15} />
-              <span>Personnaliser mon invitation</span>
+              <Edit3 size={14} />
+              <span>Personnaliser l&apos;invitation</span>
             </Link>
           </div>
         </div>
 
-        {/* Le lien officiel & Partage WhatsApp */}
-        <div className="space-y-3 pt-1">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-              <Share2 size={13} className="text-[#b8924a]" />
-              Lien officiel de votre création (copiable en 1 clic) :
-            </label>
-            <div className="flex items-stretch gap-2">
-              <input
-                type="text"
-                readOnly
-                value={typeof window !== 'undefined' ? `${window.location.origin}/invite/${event.id}` : `/invite/${event.id}`}
-                onFocus={(e) => e.currentTarget.select()}
-                className="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-gray-800 outline-none select-all"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const url = `${window.location.origin}/invite/${event.id}`;
-                  navigator.clipboard.writeText(url);
-                  setCopiedLink(true);
-                  setTimeout(() => setCopiedLink(false), 2500);
-                }}
-                className={`shrink-0 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
-                  copiedLink
-                    ? "bg-emerald-600 text-white"
-                    : "bg-[#b8924a] hover:bg-[#a37f3a] text-black"
-                }`}
-              >
-                {copiedLink ? <Check size={14} /> : <Copy size={14} />}
-                <span>{copiedLink ? "Copié !" : "Copier le lien"}</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-            <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                `✨ Nous avons l'immense honneur de vous convier à notre événement "${event.name}". Découvrez votre invitation officielle interactive et confirmez votre présence ici :\n\n👉 ${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${event.id}`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 cursor-pointer"
-            >
-              <MessageCircle size={17} />
-              <span>Partager sur WhatsApp</span>
-            </a>
-
-            <a
-              href={`/invite/${event.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 cursor-pointer"
-            >
-              <Eye size={16} className="text-[#b8924a]" />
-              <span>Tester / Voir mon lien</span>
-            </a>
-          </div>
-        </div>
-      </section>
+        {/* Widget WhatsApp avec aperçu fidèle et partage 1 clic */}
+        <WhatsAppShareWidget
+          eventId={event.id}
+          eventName={event.name}
+          eventType={event.type}
+          date={event.date}
+          time={event.time}
+          location={event.location}
+          modelId={event.invitationModelId}
+          coverImage={event.cover_url || event.image}
+          shareUrl={typeof window !== 'undefined' ? `${window.location.origin}/invite/${event.id}` : `/invite/${event.id}`}
+        />
+      </div>
 
       {/* ─────────────── DÉTAILS DE L'ÉVÉNEMENT (saisis à l'achat Premium / Gold, modifiables) ─────────────── */}
       {(() => {

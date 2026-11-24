@@ -40,7 +40,7 @@ export default function ModelCard({
   onPreview,
   actions,
   compact = false,
-  sizes = "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw",
+  sizes = "(min-width: 1280px) 16vw, (min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw",
   priority,
   className = "",
 }: ModelCardProps) {
@@ -56,38 +56,38 @@ export default function ModelCard({
       />
 
       {/* Badges discrets et élégants */}
-      <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 right-1.5 sm:right-2 flex items-center justify-between gap-1 z-10 pointer-events-none">
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-md px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-medium text-neutral-800 shadow-2xs border border-white/70">
+      <div className="absolute top-1 sm:top-1.5 left-1 sm:left-1.5 right-1 sm:right-1.5 flex items-center justify-between gap-1 z-10 pointer-events-none">
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-md px-1.5 py-0.5 text-[8px] font-medium text-neutral-800 shadow-2xs border border-white/70">
           {kind === "voeu" ? (
             <>
-              <Sparkles size={9} className="text-amber-500" />
+              <Sparkles size={8} className="text-amber-500" />
               <span>Vœux</span>
             </>
           ) : kind === "mot_doux" ? (
             <>
-              <Heart size={9} className="text-rose-500 fill-rose-500" />
+              <Heart size={8} className="text-rose-500 fill-rose-500" />
               <span>Mot doux</span>
             </>
           ) : kind === "couple" ? (
             <>
-              <Heart size={9} className="text-purple-500" />
+              <Heart size={8} className="text-purple-500" />
               <span>Couple</span>
             </>
           ) : kind === "animée" ? (
             <>
-              <PlayCircle size={9} className="text-[#b8924a]" />
+              <PlayCircle size={8} className="text-[#b8924a]" />
               <span>3D Animé</span>
             </>
           ) : (
             <>
-              <FileImage size={9} className="text-gray-600" />
+              <FileImage size={8} className="text-gray-600" />
               <span>Prestige</span>
             </>
           )}
         </span>
 
         {badge && (
-          <span className="rounded-full bg-neutral-900/90 backdrop-blur-md px-1.5 py-0.5 text-[7px] sm:text-[8px] font-bold uppercase tracking-wider text-[#f5dfaa] shadow-2xs">
+          <span className="rounded-full bg-neutral-900/90 backdrop-blur-md px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider text-[#f5dfaa] shadow-2xs">
             {badge}
           </span>
         )}
@@ -95,8 +95,8 @@ export default function ModelCard({
 
       {/* Survol élégant avec bouton Aperçu rapide */}
       <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/25 backdrop-blur-[1px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none">
-        <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white text-neutral-900 text-[10px] sm:text-[11px] font-semibold shadow-xl flex items-center gap-1 transform scale-95 group-hover:scale-100 transition-transform duration-300">
-          <Eye size={11} className="text-[#b8924a]" />
+        <span className="px-2.5 py-1 rounded-full bg-white text-neutral-900 text-[10px] font-semibold shadow-md flex items-center gap-1 transform scale-95 group-hover:scale-100 transition-transform duration-300">
+          <Eye size={10} className="text-[#b8924a]" />
           <span>Aperçu</span>
         </span>
       </div>
@@ -111,14 +111,14 @@ export default function ModelCard({
             {eyebrow}
           </p>
         )}
-        <h3 className="font-serif text-neutral-900 font-bold leading-tight transition-colors duration-200 group-hover:text-[#b8924a] text-xs sm:text-[13px] md:text-sm truncate">
+        <h3 className="font-serif text-neutral-900 font-bold leading-tight transition-colors duration-200 group-hover:text-[#b8924a] text-xs sm:text-[13px] truncate">
           {name}
         </h3>
       </div>
     </div>
   );
 
-  const cardStyle = `group relative flex flex-col p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-white border border-neutral-200/80 hover:border-neutral-400 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 ${className}`;
+  const cardStyle = `group relative flex flex-col p-1 sm:p-1.5 rounded-xl bg-white border border-neutral-200/80 hover:border-neutral-400 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 ${className}`;
 
   if (href) {
     return (

@@ -55,6 +55,8 @@ async function count(query: PromiseLike<{ count: number | null; error: unknown }
   return error ? 0 : (count ?? 0);
 }
 
+const serverBadgeCache = new Map<string, { counts: BadgeCounts; timestamp: number }>();
+
 /**
  * Counters shown as badges in the menus and the bell, for the signed-in user.
  * `rsvpSeenAt` maps an event id to the last time its participants page was opened (ISO date).
@@ -64,6 +66,12 @@ export async function getBadgeCounts(rsvpSeenAt: Record<string, string> = {}, pr
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return EMPTY;
+
+  const now = Date.now();
+  const cached = serverBadgeCache.get(user.id);
+  if (cached && now - cached.timestamp < 10000) {
+    return cached.counts;
+  }
 
   const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", user.id).single();
   const role = (profile?.role ?? null) as AppRole | null;
@@ -122,6 +130,7 @@ export async function getBadgeCounts(rsvpSeenAt: Record<string, string> = {}, pr
     }
   }
 
+  serverBadgeCache.set(user.id, { counts: result, timestamp: Date.now() });
   return result;
 }
 

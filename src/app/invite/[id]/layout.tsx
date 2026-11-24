@@ -88,13 +88,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         imageUrl = customModel.cover_url;
       }
     } else if (event.invitation_model_id?.includes("sceau")) {
-      imageUrl = `${baseUrl}/models/sceau-cover.jpg`;
+      imageUrl = `${baseUrl}/invit-sceau-dor-cover.jpg`;
     } else if (event.invitation_model_id?.includes("ivoire")) {
-      imageUrl = `${baseUrl}/models/ivoire-cover.jpg`;
+      imageUrl = `${baseUrl}/invit-ivoire-cover.jpg`;
     } else if (event.invitation_model_id?.includes("rose-or")) {
-      imageUrl = `${baseUrl}/models/rose-or-cover.jpg`;
+      imageUrl = `${baseUrl}/invit-rose-or-cover.jpg`;
     } else if (event.invitation_model_id?.includes("anniversaire")) {
-      imageUrl = `${baseUrl}/models/anniversaire-cover.jpg`;
+      imageUrl = `${baseUrl}/invit-anniversaire-cover.jpg`;
+    } else {
+      imageUrl = `${baseUrl}/invit-velours-cover.jpg`;
     }
 
     // Si l'image est un chemin relatif, la préfixer avec le baseUrl

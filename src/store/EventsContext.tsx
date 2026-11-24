@@ -28,6 +28,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
   const lastFetchTime = useRef(0);
+  const isFetchingRef = useRef(false);
   const isDashboardRoute = Boolean(pathname && (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')));
 
   const fetchEvents = useCallback(async (force = false) => {
@@ -39,12 +40,19 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    if (isFetchingRef.current) return;
+
     const now = Date.now();
-    // Cache de 15 secondes pour éviter le spam de requêtes simultanées lors des navigations rapides,
-    // mais SEULEMENT si on a déjà des événements chargés et qu'on ne force pas.
-    if (!force && isLoaded && events.length > 0 && now - lastFetchTime.current < 15000) {
+    // Cache de 15 secondes pour éviter le spam de requêtes simultanées lors des navigations rapides
+    if (!force && now - lastFetchTime.current < 15000) {
       return;
     }
+    // Protection anti-spam même sur les demandes forcées (minimum 4s entre deux appels)
+    if (force && now - lastFetchTime.current < 4000) {
+      return;
+    }
+
+    isFetchingRef.current = true;
     lastFetchTime.current = now;
 
     try {
@@ -124,31 +132,30 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Unexpected error in fetchEvents:", err);
     } finally {
+      isFetchingRef.current = false;
       setIsLoaded(true);
     }
-  }, [isLoaded, events.length, supabase]);
+  }, [supabase]);
 
   // Déclencher le chargement dès qu'on est sur une route dashboard
   useEffect(() => {
-    if (isDashboardRoute) {
-      if (!isLoaded || events.length === 0) {
-        fetchEvents(true);
-      }
+    if (!isDashboardRoute) return;
 
-      const unsubSync = subscribeToSync("events", () => fetchEvents(true));
+    fetchEvents();
 
-      const channel = supabase
-        .channel("user_events_realtime")
-        .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => fetchEvents(true))
-        .on("postgres_changes", { event: "*", schema: "public", table: "guests" }, () => fetchEvents(true))
-        .subscribe();
+    const unsubSync = subscribeToSync("events", () => fetchEvents(true));
 
-      return () => {
-        unsubSync();
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [isDashboardRoute, isLoaded, events.length, fetchEvents, supabase]);
+    const channel = supabase
+      .channel("user_events_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => fetchEvents(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "guests" }, () => fetchEvents(true))
+      .subscribe();
+
+    return () => {
+      unsubSync();
+      supabase.removeChannel(channel);
+    };
+  }, [isDashboardRoute, fetchEvents, supabase]);
 
   // Écouter les changements d'état d'authentification (connexion, rafraîchissement token...)
   useEffect(() => {

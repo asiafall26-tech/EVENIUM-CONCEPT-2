@@ -60,6 +60,9 @@ export async function saveWishReplyAction(input: SaveWishReplyInput) {
       guest_replies: updatedReplies,
     };
 
+    // Invalider le cache mémoire
+    repliesCache.delete(input.eventId);
+
     // Mettre à jour events.event_details
     const { error: updateEventError } = await admin
       .from("events")
@@ -108,11 +111,19 @@ export async function saveWishReplyAction(input: SaveWishReplyInput) {
   }
 }
 
+const repliesCache = new Map<string, { data: Record<string, WishReplyRecord>; ts: number }>();
+
 /**
  * Récupère l'ensemble des réponses enregistrées pour un événement donné
  */
 export async function getWishRepliesAction(eventId: string): Promise<Record<string, WishReplyRecord>> {
   try {
+    const now = Date.now();
+    const cached = repliesCache.get(eventId);
+    if (cached && now - cached.ts < 10000) {
+      return cached.data;
+    }
+
     const admin = getSupabaseAdmin();
     const { data: ev } = await admin
       .from("events")
@@ -122,7 +133,9 @@ export async function getWishRepliesAction(eventId: string): Promise<Record<stri
 
     if (!ev || !ev.event_details) return {};
     const details = ev.event_details as Record<string, any>;
-    return (details.guest_replies as Record<string, WishReplyRecord>) || {};
+    const res = (details.guest_replies as Record<string, WishReplyRecord>) || {};
+    repliesCache.set(eventId, { data: res, ts: Date.now() });
+    return res;
   } catch (err) {
     console.error("getWishRepliesAction error:", err);
     return {};

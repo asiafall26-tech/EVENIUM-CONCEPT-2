@@ -25,6 +25,7 @@ import SplitStudioEditor from "@/components/studio/SplitStudioEditor";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 import WishReplyModal, { WishReplyGuest } from "@/components/dashboard/WishReplyModal";
 import { getWishRepliesAction } from "@/app/actions/wishReplies";
+import WhatsAppShareWidget from "@/components/invitations/WhatsAppShareWidget";
 
 export default function InvitationsDashboardPage({
   params,
@@ -415,118 +416,38 @@ export default function InvitationsDashboardPage({
         )}
       </section>
 
-      {/* 2. PARTAGE DIRECT & MESSAGE D'ACCOMPAGNEMENT */}
+      {/* 2. PARTAGE DIRECT & MESSAGE D'ACCOMPAGNEMENT WHATSAPP */}
+      <WhatsAppShareWidget
+        eventId={event.id}
+        eventName={event.name}
+        eventType={event.type}
+        date={event.date}
+        time={event.time}
+        location={event.location}
+        modelId={event.invitationModelId}
+        coverImage={event.cover_url || event.image}
+        shareUrl={shareUrl}
+      />
+
+      {/* 3. SUIVI DES CONFIRMATIONS & VŒUX DES INVITÉS */}
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33] font-bold">Partage &amp; Diffusion</p>
-            <h3 className="font-serif text-xl sm:text-2xl text-gray-900 mt-0.5">Partagez votre invitation officielle</h3>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33] font-bold">Suivi en direct</p>
+            <h3 className="font-serif text-xl sm:text-2xl text-gray-900 mt-0.5">Réponses des invités (RSVP)</h3>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Lien direct actif
-            </span>
-          </div>
-        </div>
-
-        {/* Lien officiel direct avec bouton copier */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-gray-700">Lien direct de l&apos;invitation (copiable en 1 clic) :</label>
-          <div className="flex items-stretch gap-2">
-            <input
-              type="text"
-              readOnly
-              value={shareUrl}
-              onFocus={(e) => e.currentTarget.select()}
-              className="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-gray-700 outline-none select-all"
-              aria-label="Lien officiel de l'invitation"
-            />
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className={`shrink-0 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${copied ? "bg-emerald-600 text-white" : "bg-[#b8924a] hover:bg-[#a37f3a] text-black"
-                }`}
+            <Link
+              href={`/dashboard/events/${event.id}/participants`}
+              className="text-xs font-semibold text-[#8f6f33] hover:underline"
             >
-              {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
-              {copied ? "Copié !" : "Copier le lien"}
-            </button>
+              Gérer la liste complète &rarr;
+            </Link>
           </div>
-        </div>
-
-        {/* Message d'accompagnement éditable directement avant partage WhatsApp */}
-        <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-              <MessageCircle size={14} className="text-[#25D366]" />
-              Message d&apos;accompagnement WhatsApp (personnalisable) :
-            </label>
-            <span className="text-[10px] text-gray-400 font-normal">
-              {accompanimentMsg.length} caractères
-            </span>
-          </div>
-
-          {/* Sélecteur de style rapide */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] uppercase font-bold text-gray-400 mr-1">Style :</span>
-            {(["religieux", "chaleureux", "prestige", "court"] as const).map((tone) => (
-              <button
-                key={tone}
-                type="button"
-                onClick={() => {
-                  setWaTone(tone);
-                  setAccompanimentMsg(generateWhatsAppMessage(tone));
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${waTone === tone
-                  ? "bg-[#140c06] text-[#f5dfaa] border-[#b8924a]"
-                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                  }`}
-              >
-                {tone === "religieux" ? "🕌 Bénédiction" : tone === "chaleureux" ? "✨ Chaleureux" : tone === "prestige" ? "🎩 Prestige" : "⚡ Express"}
-              </button>
-            ))}
-          </div>
-
-          <textarea
-            rows={4}
-            value={accompanimentMsg}
-            onChange={(e) => setAccompanimentMsg(e.target.value)}
-            placeholder="Personnalisez le message qui accompagnera votre lien officiel..."
-            className="w-full bg-gray-50/70 border border-gray-200 rounded-xl p-3 text-xs text-gray-800 focus:bg-white focus:ring-2 focus:ring-[#b8924a] focus:border-transparent outline-none transition-all leading-relaxed shadow-inner"
-          />
-        </div>
-
-        {/* Boutons d'action : Partager sur WhatsApp + Copier le message complet */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(
-              `${accompanimentMsg.trim()}\n\n${shareUrl}`
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-98 cursor-pointer"
-          >
-            <MessageCircle size={18} />
-            <span>Partager sur WhatsApp</span>
-          </a>
-
-          <button
-            type="button"
-            onClick={() => {
-              const fullMsg = `${accompanimentMsg.trim()}\n\n${shareUrl}`;
-              navigator.clipboard.writeText(fullMsg);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 3000);
-            }}
-            className="w-full py-3.5 px-4 rounded-xl bg-[#fbf7f0] hover:bg-[#f3ebd9] text-[#6f5527] border border-[#b8924a]/30 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 cursor-pointer"
-          >
-            <Copy size={16} />
-            <span>Copier le message complet + lien</span>
-          </button>
         </div>
 
         {/* Synthèse rapide des confirmations RSVP */}
-        <div className="pt-2 grid grid-cols-3 gap-2 text-center">
+        <div className="pt-1 grid grid-cols-3 gap-2 text-center">
           <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-100">
             <span className="text-[10px] uppercase font-bold text-emerald-700 block">Confirmés</span>
             <span className="font-serif text-lg font-bold text-emerald-800">{guestStats.confirmed}</span>

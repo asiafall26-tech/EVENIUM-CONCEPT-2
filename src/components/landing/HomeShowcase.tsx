@@ -228,8 +228,8 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
           <Reveal
             className={
               displayedModels.length >= 4
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5 mb-10 max-w-5xl mx-auto"
-                : "flex flex-wrap justify-center gap-2.5 sm:gap-3.5 mb-10 max-w-5xl mx-auto"
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 mb-10 max-w-6xl mx-auto"
+                : "flex flex-wrap justify-center gap-2 sm:gap-3 mb-10 max-w-6xl mx-auto"
             }
           >
             {displayedModels.map((model) => (
@@ -241,11 +241,11 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
                 kind={model.type}
                 eyebrow={activeCategory?.label || `Collection ${model.category}`}
                 compact
-                sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
+                sizes="(min-width: 1280px) 16vw, (min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
                 className={
                   displayedModels.length >= 4
                     ? "w-full"
-                    : "w-[calc(50%-0.5rem)] max-w-[220px] md:w-52"
+                    : "w-[calc(50%-0.5rem)] max-w-[190px] md:w-48"
                 }
               />
             ))}

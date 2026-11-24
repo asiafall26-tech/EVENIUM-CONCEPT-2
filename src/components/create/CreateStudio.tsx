@@ -1290,8 +1290,8 @@ function CreateExpressStudioContent({
                 </div>
               )}
 
-              {/* Grille des modèles disponibles */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 max-w-5xl mx-auto w-full">
+              {/* Grille des modèles disponibles (réduite et compacte) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 max-w-6xl mx-auto w-full">
                 {filteredModels.map((model) => (
                   <ModelCard
                     key={model.id}
@@ -1303,24 +1303,24 @@ function CreateExpressStudioContent({
                     description={model.subtitle}
                     compact
                     onPreview={() => setDemoModelId(model.id)}
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                    sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
                     actions={
-                      <div className="grid grid-cols-2 gap-1 pt-1.5 border-t border-neutral-100">
+                      <div className="grid grid-cols-2 gap-1 pt-1 border-t border-neutral-100">
                         <button
                           type="button"
                           onClick={() => setDemoModelId(model.id)}
-                          className="py-1.5 px-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[10px] sm:text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                          className="py-1 px-1 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         >
-                          <Eye size={11} className="text-neutral-600 shrink-0" />
+                          <Eye size={10} className="text-neutral-600 shrink-0" />
                           <span>Aperçu</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleChooseModel(model.id)}
-                          className="py-1.5 px-1.5 rounded-lg bg-neutral-900 hover:bg-black text-[#f5dfaa] text-[10px] sm:text-[11px] font-semibold flex items-center justify-center gap-1 shadow-2xs transition-all active:scale-98 cursor-pointer"
+                          className="py-1 px-1 rounded-md bg-neutral-900 hover:bg-black text-[#f5dfaa] text-[10px] font-semibold flex items-center justify-center gap-1 shadow-2xs transition-all active:scale-98 cursor-pointer"
                         >
                           <span>Choisir</span>
-                          <ArrowRight size={11} className="text-[#f5dfaa] shrink-0" />
+                          <ArrowRight size={10} className="text-[#f5dfaa] shrink-0" />
                         </button>
                       </div>
                     }

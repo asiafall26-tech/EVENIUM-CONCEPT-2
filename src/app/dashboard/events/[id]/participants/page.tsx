@@ -2,6 +2,7 @@
 
 import { Users, Plus, Search, MoreHorizontal, Mail, CheckCircle, CheckCircle2, Clock, XCircle, ChevronDown, ArrowRight, Edit2, Trash2, X, FileText, User, MessageCircle, Copy, Share2, Sparkles, Send, Lock, Bell } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { use, useState, useEffect, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
@@ -11,6 +12,7 @@ import { generateAccompanimentMessage } from "@/lib/accompanimentMessages";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 import WishReplyModal, { WishReplyGuest } from "@/components/dashboard/WishReplyModal";
 import { getWishRepliesAction } from "@/app/actions/wishReplies";
+import { resolveModelThumbnail } from "@/components/invitations/WhatsAppShareWidget";
 
 export default function ParticipantsDashboardPage({
   params,
@@ -106,9 +108,26 @@ export default function ParticipantsDashboardPage({
   // WhatsApp Share State
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [whatsAppGuest, setWhatsAppGuest] = useState<{ id?: string; name: string; phone?: string } | null>(null);
-  const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court" | "religieux">("chaleureux");
+  const [waTone, setWaTone] = useState<"chaleureux" | "prestige" | "court" | "religieux">("religieux");
   const [waPhoneInput, setWaPhoneInput] = useState("");
   const [waCopied, setWaCopied] = useState(false);
+
+  const formatEventDate = (dateStr?: string) => {
+    if (!dateStr || dateStr === "À définir") return "";
+    try {
+      const parsed = new Date(dateStr);
+      if (!isNaN(parsed.getTime())) {
+        const formatted = parsed.toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+        return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+      }
+    } catch {}
+    return dateStr;
+  };
 
   const getShareUrl = () => {
     if (typeof window !== "undefined") {
@@ -117,15 +136,15 @@ export default function ParticipantsDashboardPage({
     return `/invite/${id}`;
   };
 
-  const generateWhatsAppMessage = (guestName?: string, tone: "chaleureux" | "prestige" | "court" | "religieux" = "chaleureux") => {
+  const generateWhatsAppMessage = (guestName?: string, tone: "chaleureux" | "prestige" | "court" | "religieux" = "religieux") => {
     return generateAccompanimentMessage({
       serviceType: (event as any).invitation_model_type || (event as any).type,
       eventType: event.type,
       eventName: event.name,
       guestName,
-      dateFormatted: event.date,
-      time: event.time,
-      location: event.location,
+      dateFormatted: formatEventDate(event.date),
+      time: event.time && event.time !== "À définir" ? event.time : undefined,
+      location: event.location && event.location !== "À définir" ? event.location : undefined,
       link: getShareUrl(),
       tone,
     });
@@ -900,7 +919,7 @@ export default function ParticipantsDashboardPage({
                 </div>
               </div>
 
-              {/* Message Live Preview */}
+              {/* Message Live Preview (Simulation WhatsApp fidèle) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -908,9 +927,39 @@ export default function ParticipantsDashboardPage({
                   </label>
                   <span className="text-[11px] text-gray-400">Prêt à envoyer</span>
                 </div>
-                <div className="p-4 bg-[#EFEAE2] rounded-2xl border border-gray-200/80 shadow-inner text-sm font-sans text-gray-800 whitespace-pre-line leading-relaxed">
-                  <div className="bg-white p-3.5 rounded-xl shadow-sm border border-black/5 text-gray-800">
-                    {generateWhatsAppMessage(whatsAppGuest?.name, waTone)}
+                <div className="p-3 sm:p-4 bg-[#0b141a] rounded-2xl border border-black/10 shadow-inner flex justify-center">
+                  <div className="w-full bg-[#1f2c34] text-[#e9edef] rounded-xl p-3 shadow-lg border border-white/5 space-y-2">
+                    {/* Carte miniature lien WhatsApp */}
+                    <div className="bg-[#182229] rounded-lg overflow-hidden border border-white/5 flex items-stretch">
+                      <div className="relative w-16 h-16 shrink-0 bg-neutral-900 overflow-hidden">
+                        <Image
+                          src={resolveModelThumbnail(event?.invitationModelId, event?.cover_url || event?.image)}
+                          alt={event?.name || "Invitation"}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="p-2 flex-1 min-w-0 flex flex-col justify-center">
+                        <p className="font-semibold text-xs text-[#e9edef] leading-tight line-clamp-1">
+                          {event?.type?.toLowerCase().includes("mariage")
+                            ? `Vous êtes invités au mariage de ${event?.name?.replace(/^mariage\s*[·:\-]?\s*(de\s*)?/i, "") || event?.name}`
+                            : `Vous êtes invités : ${event?.name}`}
+                        </p>
+                        <p className="text-[10px] text-[#8696a0] leading-tight mt-0.5 truncate">
+                          {event?.location && event?.location !== "À définir" ? `${event.location} · ` : ""}Ouvrez votre invitation...
+                        </p>
+                        <p className="text-[9px] text-[#8696a0] mt-1 flex items-center gap-1 font-mono">
+                          <span>🔗</span>
+                          <span className="truncate">{typeof window !== "undefined" ? window.location.host : "evenium.app"}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Texte du message */}
+                    <div className="text-xs text-[#e9edef] leading-relaxed whitespace-pre-wrap font-sans">
+                      {generateWhatsAppMessage(whatsAppGuest?.name, waTone)}
+                    </div>
                   </div>
                 </div>
               </div>

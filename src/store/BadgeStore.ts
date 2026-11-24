@@ -86,18 +86,30 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
   loaded: false,
   refresh: () => {
     const now = Date.now();
-    // Cache de 10 secondes pour éviter de surcharger la base de données
-    if (get().loaded && now - lastRefreshTime < 10000) {
+    // Cache de 15 secondes pour éviter de surcharger la base de données
+    if (get().loaded && now - lastRefreshTime < 15000) {
       return Promise.resolve();
     }
-    // Several components may ask at once (realtime event + page action): share one request
+    // Plusieurs composants peuvent demander en même temps : partager une seule requête en vol
     const inBrowser = typeof window !== "undefined";
+    if (inBrowser) {
+      const p = window.location.pathname;
+      if (!p.startsWith('/dashboard') && !p.startsWith('/admin') && !p.startsWith('/prestataire')) {
+        // Ne pas exécuter getBadgeCounts sur les pages publiques non connectées
+        return Promise.resolve();
+      }
+    }
+
     inFlight ??= getBadgeCounts(inBrowser ? readRsvpSeen() : {}, inBrowser ? readPrestatairesSeen() : undefined)
       .then((counts) => {
         lastRefreshTime = Date.now();
         set({ ...counts, loaded: true });
       })
-      .catch(() => {})
+      .catch((err) => {
+        // En cas d'erreur ou timeout, appliquer le délai d'attente pour ne pas spammer le serveur
+        lastRefreshTime = Date.now();
+        console.warn("BadgeStore: refresh temporairement suspendu suite à une latence réseau:", err?.message || err);
+      })
       .finally(() => {
         inFlight = null;
       });
