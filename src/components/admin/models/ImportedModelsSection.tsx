@@ -76,12 +76,12 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
   };
 
   const publish = (m: CustomModelRow, patch: Partial<CustomModelRow> = {}) =>
-    saveCustomModelAction(m.slug, {
+    saveCustomModelAction(m.slug, JSON.stringify({
       ...patch,
       content: patch.content ?? m.draft_content ?? m.content,
       status: "published",
       published_at: new Date().toISOString(),
-    });
+    }));
 
   const remove = async (m: CustomModelRow) => {
     if (!confirm(`Supprimer définitivement « ${m.name} » et ses fichiers ? Les invitations déjà achetées avec ce modèle ne s'afficheront plus.`)) return;
@@ -218,7 +218,7 @@ export default function ImportedModelsSection({ kindFilter, eventFilter, searchQ
           model={editingModel}
           onClose={() => setEditingModel(null)}
           onSave={async (patch) => {
-            await saveCustomModelAction(editingModel.slug, patch);
+            await saveCustomModelAction(editingModel.slug, JSON.stringify(patch));
             await load();
             await onReload?.();
           }}

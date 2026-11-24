@@ -20,6 +20,18 @@ function purgeModelCaches() {
   }
 }
 
+/** Désérialise les payloads volumineux ou imbriqués pour contourner la limite de récursion Flight de React */
+function parsePayload<T>(input: T | string): T {
+  if (typeof input === "string") {
+    try {
+      return JSON.parse(input) as T;
+    } catch {
+      return input as unknown as T;
+    }
+  }
+  return input;
+}
+
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -69,8 +81,9 @@ async function writeModelDefault(payload: Record<string, unknown>) {
 }
 
 /** Enregistre un brouillon de modèle (sans le publier) */
-export async function saveModelDraftAction(modelId: string, content: object, customName?: string): Promise<void> {
+export async function saveModelDraftAction(modelId: string, contentOrJson: Record<string, unknown> | string, customName?: string): Promise<void> {
   const userId = await verifyAdmin();
+  const content = parsePayload<Record<string, unknown>>(contentOrJson);
   const cleanName = customName?.trim() || (content as Record<string, unknown>)?.model_name;
   const enriched = cleanName ? { ...content, model_name: cleanName } : content;
   const payload: Record<string, unknown> = {
@@ -87,8 +100,9 @@ export async function saveModelDraftAction(modelId: string, content: object, cus
 }
 
 /** Publie un modèle sur le site */
-export async function publishModelAction(modelId: string, content: object, customName?: string): Promise<void> {
+export async function publishModelAction(modelId: string, contentOrJson: Record<string, unknown> | string, customName?: string): Promise<void> {
   const userId = await verifyAdmin();
+  const content = parsePayload<Record<string, unknown>>(contentOrJson);
   const now = new Date().toISOString();
   const cleanName = customName?.trim() || (content as Record<string, unknown>)?.model_name;
   const enriched = cleanName ? { ...content, model_name: cleanName } : content;
@@ -220,8 +234,9 @@ export async function resetModelDefaultAction(modelId: string, resetName = false
 }
 
 /** Met à jour un modèle importé (ZIP/HTML) */
-export async function saveCustomModelAction(slug: string, patch: Partial<CustomModelRow>): Promise<void> {
+export async function saveCustomModelAction(slug: string, patchOrJson: Partial<CustomModelRow> | string): Promise<void> {
   await verifyAdmin();
+  const patch = parsePayload<Partial<CustomModelRow>>(patchOrJson);
   const client = getAdminClient();
   const { error } = await client
     .from(CUSTOM_MODELS_TABLE)
@@ -234,8 +249,9 @@ export async function saveCustomModelAction(slug: string, patch: Partial<CustomM
 }
 
 /** Enregistre un nouveau modèle importé */
-export async function insertCustomModelAction(row: Omit<CustomModelRow, "updated_at" | "published_at" | "draft_content">): Promise<void> {
+export async function insertCustomModelAction(rowOrJson: Omit<CustomModelRow, "updated_at" | "published_at" | "draft_content"> | string): Promise<void> {
   await verifyAdmin();
+  const row = parsePayload<Omit<CustomModelRow, "updated_at" | "published_at" | "draft_content">>(rowOrJson);
   const client = getAdminClient();
   const { error } = await client.from(CUSTOM_MODELS_TABLE).insert(row);
   if (error) {

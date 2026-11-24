@@ -529,7 +529,7 @@ export default function AdminModelsStudioPage() {
                         onRename={() => setRenamingModel(model)}
                         onClassify={() => setClassifyingId(model.id)}
                         onCover={() => setCoverModel(model)}
-                        onPublish={async () => act(model, async () => { await publishModelAction(model.id, classOf(model).type === "carte" ? withoutMusic(workingContent(model)) : workingContent(model), name); }, `« ${name} » est publié sur le site.`)}
+                        onPublish={async () => act(model, async () => { await publishModelAction(model.id, JSON.stringify(classOf(model).type === "carte" ? withoutMusic(workingContent(model)) : workingContent(model)), name); }, `« ${name} » est publié sur le site.`)}
                         onShow={async () => act(model, async () => { await setModelHiddenAction(model.id, false); }, `« ${name} » est de retour sur le site.`)}
                         onHide={async () => {
                           if (!confirm(`Retirer « ${name} » du site ? Il n'apparaîtra plus dans les galeries ni à la création d'événement. Les invitations déjà achetées restent intactes.`)) return;
@@ -660,11 +660,11 @@ export default function AdminModelsStudioPage() {
           initial={workingContent(editing)}
           onClose={() => setEditingId(null)}
           onSave={async (content: ModelContent, newName?: string) => {
-            await saveModelDraftAction(editing.id, content, newName);
+            await saveModelDraftAction(editing.id, JSON.stringify(content), newName);
             await load(true);
           }}
           onPublish={async (content: ModelContent, newName?: string) => {
-            await publishModelAction(editing.id, classOf(editing).type === "carte" ? withoutMusic(content) : content, newName);
+            await publishModelAction(editing.id, JSON.stringify(classOf(editing).type === "carte" ? withoutMusic(content) : content), newName);
             await load(true);
           }}
         />

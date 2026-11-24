@@ -45,7 +45,7 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
           : ["Mariage"];
 
       setStep("Enregistrement du modèle…");
-      await insertCustomModelAction({
+      await insertCustomModelAction(JSON.stringify({
         slug,
         name: modelName,
         entry,
@@ -55,7 +55,7 @@ export default function ImportModelModal({ onClose, onImported }: { onClose: () 
         invitation_type: invitationType,
         event_types: eventTypes,
         status: "draft",
-      });
+      }));
       onImported(slug);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import impossible.");
