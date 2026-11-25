@@ -2,7 +2,7 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Users, CheckCircle, CheckCircle2, Clock, Wallet, CheckSquare, Sparkles, MapPin, Calendar, Share2, MessageCircle, Eye, Edit3, Copy, Check } from "lucide-react";
+import { Users, CheckCircle, CheckCircle2, Clock, Wallet, CheckSquare, Sparkles, MapPin, Calendar, Share2, MessageCircle, Eye, Edit3, Copy, Check, ArrowRight, Lock } from "lucide-react";
 import { use, useState, useEffect } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
@@ -29,7 +29,7 @@ export default function EventDashboardPage({
   const { id } = use(params);
   const { events, isLoaded, updateEventPlan, refreshEvents } = useEvents();
   const supabase = createClient();
-  
+
   const eventFromContext = events.find(e => e.id === id);
   const [directEvent, setDirectEvent] = useState<any>(null);
   const [loadingDirect, setLoadingDirect] = useState(!eventFromContext);
@@ -176,7 +176,7 @@ export default function EventDashboardPage({
 
   useEffect(() => {
     if (!event) return;
-    
+
     // Set static initial values from event
     setBudget(prev => ({ ...prev, total: event.budget?.total || 0 }));
     setGuests(prev => ({ ...prev, total: event.guestsCount || 0 }));
@@ -235,7 +235,7 @@ export default function EventDashboardPage({
       {/* Event Header avec Message d'accueil clair & Présentation responsive aérée */}
       <div className="bg-white rounded-3xl p-5 sm:p-7 lg:p-8 border border-gray-200/90 shadow-sm mb-6 sm:mb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#b8924a]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-        
+
         {/* En-tête d'accueil */}
         <div className="relative z-10 mb-4 pb-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
@@ -391,15 +391,15 @@ export default function EventDashboardPage({
         );
       })()}
 
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${event.plan === "Gold" ? "lg:grid-cols-4" : "lg:grid-cols-2 max-w-2xl"} gap-6 mb-8`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${event.plan === "Gold" ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-6 mb-8`}>
         {/* Formule Card */}
-        <Link href={`/dashboard/events/${event.id}/settings`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col relative overflow-hidden hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
+        <Link href={`/dashboard/events/${event.id}/settings`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm flex flex-col relative overflow-hidden hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
           <div className="absolute top-0 right-0 p-3 opacity-[0.03]">
             <Sparkles size={80} />
           </div>
           <div className="flex justify-between items-start mb-4 text-gray-600 font-medium relative z-10">
             <div className="flex items-center gap-2 group-hover:text-[#8f6f33] transition-colors">
-              <Sparkles size={18} className="text-accent" /> Formule {event.plan}
+              <Sparkles size={18} className="text-accent" /> Formule {event.plan === "Gold" ? "Gold VIP" : "Premium"}
             </div>
             <span className="bg-accent/10 text-accent px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
               {event.format === "Animée" ? "Animée · Musique" : "Statique · Sans son"}
@@ -407,45 +407,36 @@ export default function EventDashboardPage({
           </div>
           <div className="mb-2 relative z-10">
             <span className="text-3xl font-semibold">
-              {event.plan === "Standard"
-                ? (event.format === "Animée" ? "5 000" : "3 500")
-                : event.plan === "Premium"
-                  ? (event.format === "Animée" ? "10 000" : "7 500")
-                  : (event.format === "Animée" ? "20 000" : "15 000")}
+              {event.plan === "Gold"
+                ? (event.format === "Animée" ? "20 000" : "15 000")
+                : (event.format === "Animée" ? "10 000" : "7 500")}
             </span>
             <span className="text-gray-500 text-sm ml-1">FCFA</span>
           </div>
           <p className="text-sm text-gray-500 mb-4">Paiement unique réglé</p>
-          
+
           <ul className="text-xs text-gray-500 space-y-1.5 mt-auto relative z-10">
             {event.plan === "Gold" ? (
               <>
-                <li>• Accès prestataires certifiés (0% commission)</li>
+                <li>• Catalogue prestataires certifiés &amp; devis directs</li>
                 <li>• Suivi du budget global &amp; dépenses</li>
                 <li>• To-do list &amp; Planning Jour J</li>
-                <li>• Suivi des confirmations RSVP</li>
-              </>
-            ) : event.plan === "Premium" ? (
-              <>
-                <li>• Envoi d&apos;invitations illimité</li>
-                <li>• Suivi des réponses (RSVP) en direct</li>
-                <li>• Programme &amp; GPS Google Maps</li>
-                <li>• {event.format === "Animée" ? "Musique d'ambiance & galerie photos" : "Galerie photos enrichie (sans musique)"}</li>
+                <li>• Suivi des réponses RSVP &amp; Livre d&apos;or</li>
               </>
             ) : (
               <>
-                <li>• {event.format === "Animée" ? "Faire-part animé avec musique" : "Carte digitale statique épurée"}</li>
-                <li>• Accès Dashboard Organisateur</li>
-                <li>• Lien officiel &amp; QR Code actif</li>
-                <li>• Partage WhatsApp illimité</li>
+                <li>• Envoi d&apos;invitations illimité</li>
+                <li>• Suivi des réponses (RSVP) en direct</li>
+                <li>• Livre d&apos;or &amp; vœux des invités</li>
+                <li>• {event.format === "Animée" ? "Musique d'ambiance & galerie photos" : "Carte digitale haute définition"}</li>
               </>
             )}
           </ul>
         </Link>
 
-        {/* Budget Card */}
+        {/* Budget Card (Gold Only) */}
         {event.plan === "Gold" && (
-          <Link href={`/dashboard/events/${event.id}/budget`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
+          <Link href={`/dashboard/events/${event.id}/budget`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm flex flex-col hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
             <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
               <Wallet size={18} /> Budget
             </div>
@@ -455,8 +446,8 @@ export default function EventDashboardPage({
             </div>
             <p className="text-sm text-gray-500 mb-4">Sur un total de {budget.total.toLocaleString()} FCFA</p>
             <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
-              <div 
-                className="bg-primary h-2 rounded-full" 
+              <div
+                className="bg-primary h-2 rounded-full"
                 style={{ width: `${budget.total > 0 ? (budget.spent / budget.total) * 100 : 0}%` }}
               />
             </div>
@@ -464,11 +455,12 @@ export default function EventDashboardPage({
         )}
 
         {/* Guests Card */}
-        <Link href={`/dashboard/events/${event.id}/participants`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
-          <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
-            <Users size={18} /> Invités ({guests.total})
+        <Link href={`/dashboard/events/${event.id}/participants`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col">
+          <div className="flex items-center justify-between mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
+            <span className="flex items-center gap-2"><Users size={18} /> Invités ({guests.total})</span>
+            <span className="text-[11px] text-[#8f6f33] font-semibold">Suivi RSVP &rarr;</span>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 mb-4">
             <div className="flex justify-between items-center text-sm">
               <span className="flex items-center gap-2 text-green-600"><CheckCircle size={16} /> Confirmés</span>
               <span className="font-semibold text-green-700">{guests.confirmed}</span>
@@ -478,11 +470,14 @@ export default function EventDashboardPage({
               <span className="font-semibold text-amber-600">{guests.pending}</span>
             </div>
           </div>
+          <p className="text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100">
+            Livre d&apos;or &amp; vœux inclus
+          </p>
         </Link>
 
-        {/* Tasks Card */}
+        {/* Tasks Card (Gold Only) */}
         {event.plan === "Gold" && (
-          <Link href={`/dashboard/events/${event.id}/checklist`} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
+          <Link href={`/dashboard/events/${event.id}/checklist`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col">
             <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
               <CheckSquare size={18} /> To-do List
             </div>
@@ -492,10 +487,35 @@ export default function EventDashboardPage({
             </div>
             <p className="text-sm text-gray-500 mb-4">{tasks.total - tasks.completed} tâches restantes</p>
             <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
-              <div 
-                className="bg-accent h-2 rounded-full" 
+              <div
+                className="bg-accent h-2 rounded-full"
                 style={{ width: `${tasks.total > 0 ? (tasks.completed / tasks.total) * 100 : 0}%` }}
               />
+            </div>
+          </Link>
+        )}
+
+        {/* Upgrade to Gold Card (Premium Only) */}
+        {event.plan !== "Gold" && (
+          <Link href={`/dashboard/events/${event.id}/settings`} className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-2xl p-6 border border-[#c9a45e]/40 shadow-sm hover:border-[#c9a45e] hover:shadow-lg transition-all flex flex-col justify-between group relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a45e]/15 rounded-full blur-xl pointer-events-none" />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] bg-[#c9a45e]/20 px-2 py-0.5 rounded-full">
+                  Organisation Complète
+                </span>
+                <Sparkles size={16} className="text-[#d4af37]" />
+              </div>
+              <h4 className="font-serif text-lg font-bold text-white mb-1 group-hover:text-[#f0d999] transition-colors">
+                Passer en Formule Gold
+              </h4>
+              <p className="text-xs text-gray-300 leading-relaxed mb-3">
+                Débloquez le suivi du budget, la to-do list, le catalogue prestataires certifiés et les statistiques.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-[#f0d999]">
+              <span>Évoluer vers Gold</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
         )}
@@ -584,7 +604,7 @@ export default function EventDashboardPage({
 
       {/* SÉLECTION PRIVILÈGE & RECOMMANDATIONS POUR CET ÉVÉNEMENT */}
       <div className="mt-8">
-        <PrivilegeOffersCarousel 
+        <PrivilegeOffersCarousel
           eventType={event.type}
           zone={event.location}
           title={`Sélection Privilège pour votre ${event.type || "événement"}`}

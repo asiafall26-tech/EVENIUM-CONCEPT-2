@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
           // Première lettre en majuscule
           dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
         }
-      } catch {}
+      } catch { }
     }
 
     // Description élégante : Lieu · Date · Action

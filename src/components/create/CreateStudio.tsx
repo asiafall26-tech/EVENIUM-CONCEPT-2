@@ -45,6 +45,7 @@ import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
 import { generateAccompanimentMessage, getAccompanimentSuggestions } from '@/lib/accompanimentMessages';
 import SplitStudioEditor from '@/components/studio/SplitStudioEditor';
+import { recordClientPurchaseAction } from '@/app/actions/clientPurchase';
 
 // Full Studio components
 import VeloursStudio from '@/components/invitations/velours/VeloursStudio';
@@ -678,9 +679,9 @@ function CreateExpressStudioContent({
     };
   }, []);
 
-  // Formule & Paiement
-  const [selectedPlan, setSelectedPlan] = useState<'Standard' | 'Premium' | 'Gold'>('Standard');
-  // Formules Premium et Gold : détails de l'événement obligatoires, repris dans le dashboard
+  // Formule & Paiement (2 formules : Premium = Invitation + Suivi des réponses | Gold = Tout-en-un)
+  const [selectedPlan, setSelectedPlan] = useState<'Standard' | 'Premium' | 'Gold'>('Premium');
+  // Formule Gold : détails de l'événement obligatoires, repris dans le dashboard
   const [eventDetails, setEventDetails] = useState<EventDetails>(EMPTY_EVENT_DETAILS);
   const [showDetailsErrors, setShowDetailsErrors] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'wave' | 'om' | 'card'>('wave');
@@ -879,7 +880,11 @@ function CreateExpressStudioContent({
   const isMicroService = isVoeu || isMotDoux || isCouple;
   // Tarifs exacts demandés par l'utilisateur : Vœux 2 000 F, Mots Doux 1 000 F, Invitations Couple 4 000 F
   const microFixedPrice = isMotDoux ? 1000 : isVoeu ? 2000 : isCouple ? 4000 : 5000;
-  const currentActualPrice = isMicroService ? microFixedPrice : (selectedPlan === "Gold" ? 20000 : selectedPlan === "Premium" ? 10000 : 5000);
+  const currentActualPrice = isMicroService
+    ? microFixedPrice
+    : selectedPlan === "Gold"
+      ? (isStaticCard ? 15000 : 20000)
+      : (isStaticCard ? 7500 : 10000);
 
   // Message d'accompagnement chic qui précède le lien lors des partages WhatsApp / SMS
   const defaultAccompaniment = useMemo(() => {
@@ -942,10 +947,14 @@ function CreateExpressStudioContent({
     }
   }, [defaultAccompaniment, accompanimentMessage]);
 
-  // Montant selon la formule pour grands événements
-  const planPrice = selectedPlan === "Gold" ? 20000 : selectedPlan === "Premium" ? 10000 : 5000;
+  // Montant selon la formule pour grands événements (Gold: 20 000 / 15 000 | Premium: 10 000 / 7 500)
+  const planPrice = isMicroService
+    ? microFixedPrice
+    : selectedPlan === "Gold"
+      ? (isStaticCard ? 15000 : 20000)
+      : (isStaticCard ? 7500 : 10000);
 
-  const choosePlan = (plan: 'Standard' | 'Premium' | 'Gold') => setSelectedPlan(plan);
+  const choosePlan = (plan: 'Premium' | 'Gold') => setSelectedPlan(plan);
 
   // Date, heure et lieu de l'invitation reportés dans les détails tant que l'organisateur ne les modifie pas
   const detailsWithInvitation: EventDetails = {
@@ -1111,23 +1120,26 @@ function CreateExpressStudioContent({
         };
       }
 
-      // 3. Enregistrer la transaction d'achat avec le montant exact
+      // 3. Enregistrer de manière robuste la transaction et le profil via Server Action (contourne RLS)
       try {
-        await supabase.from('transactions').insert([{
-          event_id: newEvent.id,
-          libelle: isMicroService
-            ? `Achat ${isMotDoux ? "Mot Doux" : isVoeu ? "Vœu d'Exception" : "Invitation Couple"} (${currentModel.name})`
-            : `Achat Formule ${selectedPlan} (${currentModel.name})`,
-          montant: currentActualPrice,
-          type: 'revenu',
-          date: new Date().toISOString()
-        }]);
+        await recordClientPurchaseAction({
+          eventId: newEvent.id,
+          userId: effectiveUserId,
+          fullName: fullName?.trim() || user.user_metadata?.full_name || "Client Organisateur",
+          email: email ? email.trim().toLowerCase() : user.email || "",
+          plan: (selectedPlan === "Standard" ? "Premium" : selectedPlan) as any,
+          format: isStaticCard ? "Carte" : "Animée",
+          modelName: currentModel?.name || "Modèle Haute Couture",
+          amount: currentActualPrice,
+        });
       } catch (txErr) {
         console.warn("Transaction warning:", txErr);
       }
 
-      // 4. Débloquer l'accès au Dashboard et afficher l'écran de confirmation & partage
+      // 4. Débloquer l'accès au Dashboard et notifier en temps réel
       broadcastChange("events");
+      broadcastChange("profiles");
+      broadcastChange("transactions");
       setStandardSuccessEvent(newEvent);
       setIsSubmitting(false);
 
@@ -1225,20 +1237,18 @@ function CreateExpressStudioContent({
                           setSelectedEventCategory(cat.id);
                           try { sessionStorage.setItem('evenium:last_category', cat.id); } catch { }
                         }}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
-                          isSelected
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${isSelected
                             ? "bg-neutral-900 text-white font-semibold shadow-xs"
                             : "bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200/80"
-                        }`}
+                          }`}
                       >
                         <span>{cat.icon}</span>
                         <span>{cat.label}</span>
                         <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                            isSelected
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isSelected
                               ? "bg-white/20 text-white"
                               : "bg-neutral-100 text-neutral-500"
-                          }`}
+                            }`}
                         >
                           {cat.count}
                         </span>
@@ -1374,22 +1384,20 @@ function CreateExpressStudioContent({
                 <button
                   type="button"
                   onClick={() => handleSetMobileEditorTab('edit')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
-                    mobileEditorTab === 'edit'
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${mobileEditorTab === 'edit'
                       ? "bg-white text-[#13090C] font-bold shadow-xs"
                       : "text-white/60 hover:text-white"
-                  }`}
+                    }`}
                 >
                   MODIFIER
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSetMobileEditorTab('preview')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
-                    mobileEditorTab === 'preview'
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${mobileEditorTab === 'preview'
                       ? "bg-white text-[#13090C] font-bold shadow-xs"
                       : "text-white/60 hover:text-white"
-                  }`}
+                    }`}
                 >
                   APERÇU
                 </button>
@@ -1880,8 +1888,8 @@ function CreateExpressStudioContent({
                           setTimeout(() => setCopiedLink(false), 2500);
                         }}
                         className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${copiedLink
-                            ? "bg-emerald-600 text-white"
-                            : "bg-black hover:bg-gray-800 text-[#b8924a] border border-[#b8924a]/30"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-black hover:bg-gray-800 text-[#b8924a] border border-[#b8924a]/30"
                           }`}
                       >
                         {copiedLink ? (
@@ -2128,120 +2136,100 @@ function CreateExpressStudioContent({
                             Sélectionnez la formule correspondant à votre besoin d&apos;organisation.
                           </p>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                            {/* Formule Standard */}
-                            <div
-                              onClick={() => choosePlan('Standard')}
-                              className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Standard'
-                                ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
-                                : "border-gray-200 hover:border-gray-300 bg-white"
-                                }`}
-                            >
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-serif font-bold text-sm text-gray-900">Standard</span>
-                                  {selectedPlan === 'Standard' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
-                                </div>
-                                <p className="text-lg font-bold text-black mb-2">
-                                  5 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
-                                </p>
-                                <ul className="text-[10px] text-gray-600 space-y-1.5">
-                                  <li className="flex items-start gap-1 font-medium">
-                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Faire-part digital interactif</span>
-                                  </li>
-                                  <li className="flex items-start gap-1 font-medium">
-                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span><strong>Accès Dashboard Organisateur</strong></span>
-                                  </li>
-                                  <li className="flex items-start gap-1 font-medium">
-                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span><strong>Lien officiel direct &amp; QR Code actif</strong></span>
-                                  </li>
-                                  <li className="flex items-start gap-1 font-medium">
-                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Téléchargement PNG &amp; Carton imprimable</span>
-                                  </li>
-                                  <li className="flex items-start gap-1 font-medium">
-                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Partage WhatsApp &amp; réseaux illimité</span>
-                                  </li>
-                                </ul>
-                              </div>
-                            </div>
-
-                            {/* Formule Premium */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                            {/* Formule Premium (Regroupe Standard + Premium : INVITATION + SUIVI DES RÉPONSES) */}
                             <div
                               onClick={() => choosePlan('Premium')}
-                              className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Premium'
+                              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedPlan === 'Premium' || selectedPlan === 'Standard'
                                 ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
                                 : "border-gray-200 hover:border-gray-300 bg-white"
                                 }`}
                             >
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="font-serif font-bold text-sm text-gray-900">Premium</span>
-                                  {selectedPlan === 'Premium' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-serif font-bold text-base text-gray-900">Formule Premium</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                      Invitation + Suivi
+                                    </span>
+                                  </div>
+                                  {(selectedPlan === 'Premium' || selectedPlan === 'Standard') && <CheckCircle2 size={18} className="text-[#b8924a] shrink-0" />}
                                 </div>
-                                <p className="text-lg font-bold text-black mb-2">
-                                  10 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
+                                <p className="text-xl font-bold text-black mb-1">
+                                  {isStaticCard ? "7 500" : "10 000"} <span className="text-xs text-gray-500 font-normal">FCFA</span>
                                 </p>
-                                <ul className="text-[10px] text-gray-600 space-y-1.5">
-                                  <li className="flex items-start gap-1 font-medium">
+                                <p className="text-[11px] font-semibold text-[#8f6f33] mb-3">
+                                  INVITATION + SUIVI DES RÉPONSES
+                                </p>
+                                <ul className="text-xs text-gray-700 space-y-2">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Tout le pack Standard inclus</span>
+                                    <span><strong>Faire-part haute couture</strong> ({isStaticCard ? "Carte graphique de prestige" : "Modèle animé avec musique & effets"})</span>
                                   </li>
-                                  <li className="flex items-start gap-1 font-medium">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span><strong>Accès Dashboard Organisateur</strong></span>
+                                    <span><strong>Suivi des confirmations RSVP en temps réel</strong></span>
                                   </li>
-                                  <li className="flex items-start gap-1 font-medium">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Suivi des confirmations RSVP</span>
+                                    <span><strong>Livre d&apos;or des convives</strong> (vœux, messages &amp; réponses 1 clic)</span>
                                   </li>
-                                  <li className="flex items-start gap-1 font-medium">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Programme &amp; GPS Maps</span>
+                                    <span>Partage WhatsApp illimité &amp; QR Code haute définition</span>
+                                  </li>
+                                  <li className="flex items-start gap-1.5 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Lien officiel permanent sans publicité</span>
                                   </li>
                                 </ul>
                               </div>
                             </div>
 
-                            {/* Formule Gold */}
+                            {/* Formule Gold (TOUTES LES FONCTIONNALITÉS) */}
                             <div
                               onClick={() => choosePlan('Gold')}
-                              className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${selectedPlan === 'Gold'
+                              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative mt-2.5 sm:mt-0 ${selectedPlan === 'Gold'
                                 ? "border-[#b8924a] bg-[#fbf7f0] shadow-sm"
                                 : "border-gray-200 hover:border-gray-300 bg-white"
                                 }`}
                             >
-                              <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-                                Recommandée
+                              <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                                Recommandée · Tout-en-un
                               </span>
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="font-serif font-bold text-sm text-gray-900">Gold VIP</span>
-                                  {selectedPlan === 'Gold' && <CheckCircle2 size={16} className="text-[#b8924a] shrink-0" />}
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-serif font-bold text-base text-gray-900">Formule Gold VIP</span>
+                                  </div>
+                                  {selectedPlan === 'Gold' && <CheckCircle2 size={18} className="text-[#b8924a] shrink-0" />}
                                 </div>
-                                <p className="text-lg font-bold text-black mb-2">
-                                  20 000 <span className="text-[10px] text-gray-500 font-normal">FCFA</span>
+                                <p className="text-xl font-bold text-black mb-1">
+                                  {isStaticCard ? "15 000" : "20 000"} <span className="text-xs text-gray-500 font-normal">FCFA</span>
                                 </p>
-                                <ul className="text-[10px] text-gray-600 space-y-1.5">
-                                  <li className="flex items-start gap-1 font-medium">
+                                <p className="text-[11px] font-semibold text-[#8f6f33] mb-3">
+                                  TOUTES LES FONCTIONNALITÉS (Organisation complète)
+                                </p>
+                                <ul className="text-xs text-gray-700 space-y-2">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Tout le pack Premium inclus</span>
+                                    <span><strong>Tout le pack Premium inclus</strong> (Invitation + Suivi RSVP + Livre d&apos;or)</span>
                                   </li>
-                                  <li className="flex items-start gap-1 font-medium">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span><strong>Dashboard complet de Gestion</strong></span>
+                                    <span><strong>Gestion du Budget</strong> &amp; suivi des acomptes avec alertes</span>
                                   </li>
-                                  <li className="flex items-start gap-1 font-medium">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Budget &amp; Checklist Jour J</span>
+                                    <span><strong>To-do List &amp; Checklist</strong> intelligente du Jour J</span>
                                   </li>
-                                  <li className="flex items-start gap-1 font-medium">
+                                  <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                                    <span>Prestataires &amp; Support 7j/7</span>
+                                    <span><strong>Réseau Prestataires certifiés</strong> (accès direct &amp; devis)</span>
+                                  </li>
+                                  <li className="flex items-start gap-1.5 font-medium">
+                                    <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                    <span>Statistiques complètes &amp; export des convives</span>
                                   </li>
                                 </ul>
                               </div>

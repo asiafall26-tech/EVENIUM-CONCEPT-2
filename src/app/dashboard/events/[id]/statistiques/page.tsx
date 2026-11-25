@@ -2,9 +2,10 @@
 
 import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { useEvents } from "@/store/EventsContext";
 import { createClient } from "@/utils/supabase/client";
-import { BarChart3, Users, Wallet, CheckSquare, TrendingUp, Sparkles } from "lucide-react";
+import { BarChart3, Users, Wallet, CheckSquare, TrendingUp, Sparkles, Lock } from "lucide-react";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 
 export default function StatistiquesPage({
@@ -111,6 +112,31 @@ export default function StatistiquesPage({
 
   if (stats.isLoading) {
     return <div className="p-4 sm:p-6 lg:p-8 text-gray-500 animate-pulse">Chargement des statistiques...</div>;
+  }
+
+  if (event && event.plan !== "Gold") {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+        <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Statistiques & Rapports" />
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
+            <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock size={32} />
+            </div>
+            <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
+            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+              Le tableau de bord analytique et les statistiques avancées sont réservés aux organisateurs ayant souscrit à la formule Gold (Organisation complète).
+            </p>
+            <Link
+              href={`/dashboard/events/${event.id}/settings`}
+              className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors text-center"
+            >
+              Évoluer vers la formule Gold
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Calculations

@@ -252,14 +252,12 @@ export default function EventSettingsPage({
           <div className="bg-[#fbf7f0] border border-[#b8924a]/40 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-[#8f6f33] block mb-1">
-                Formule {event.plan || "Standard"}
+                Formule {event.plan === "Gold" ? "Gold VIP" : "Premium"}
               </span>
               <p className="text-sm font-bold text-stone-900">
                 {event.plan === "Gold"
-                  ? "Formule Gold — Accès VIP illimité à tous les modules"
-                  : event.plan === "Premium"
-                  ? "Formule Premium — Outils de suivi RSVP & invitations"
-                  : "Formule Standard — Dashboard & lien officiel"}
+                  ? "Formule Gold VIP — Organisation complète (Invitation, RSVP, Budget, Checklist, Prestataires, Statistiques)"
+                  : "Formule Premium — Invitation interactive & Suivi complet des réponses (RSVP & Livre d'or)"}
               </p>
               <p className="text-xs text-stone-500 mt-0.5">
                 Valable pendant toute la durée de préparation de votre événement.

@@ -22,7 +22,7 @@ export function registerInvalidator(fn: Invalidator): () => void {
   };
 }
 
-export type SyncTopic = "models" | "events" | "prestataires" | "badges" | "categories" | "all";
+export type SyncTopic = "models" | "events" | "prestataires" | "badges" | "categories" | "profiles" | "transactions" | "all";
 
 const CHANNEL_NAME = "evenium_sync_bus";
 const STORAGE_PREFIX = "evenium_sync_";

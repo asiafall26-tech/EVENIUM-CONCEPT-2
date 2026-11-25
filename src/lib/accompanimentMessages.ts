@@ -795,14 +795,14 @@ export function getAccompanimentSuggestions(params: AccompanimentParams): Accomp
   return [
     ...(isMarriage
       ? [
-          {
-            id: "religieux",
-            label: "Bénédiction & Mariage Religieux",
-            icon: "🕌",
-            tone: "religieux" as const,
-            text: generateAccompanimentMessage({ ...params, tone: "religieux" }),
-          },
-        ]
+        {
+          id: "religieux",
+          label: "Bénédiction & Mariage Religieux",
+          icon: "🕌",
+          tone: "religieux" as const,
+          text: generateAccompanimentMessage({ ...params, tone: "religieux" }),
+        },
+      ]
       : []),
     {
       id: "prestige",

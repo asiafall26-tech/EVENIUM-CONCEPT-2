@@ -221,13 +221,12 @@ export async function getClientsWithStats() {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  const { data: clients, error: clientsError } = await supabaseAdmin
+  const { data: allProfiles, error: clientsError } = await supabaseAdmin
     .from('profiles')
     .select('*')
-    .eq('role', 'client')
     .order('created_at', { ascending: false });
 
-  if (clientsError || !clients) return { data: [], error: clientsError?.message };
+  if (clientsError && !allProfiles) return { data: [], error: clientsError?.message };
 
   const { data: events, error: eventsError } = await supabaseAdmin
     .from('events')
@@ -238,21 +237,41 @@ export async function getClientsWithStats() {
     console.error("Error fetching events in getClientsWithStats:", eventsError);
   }
 
+  // Filtrer les profils clients (exclure uniquement prestataires et admins stricts)
+  const clientsList = (allProfiles || []).filter(p => p.role !== 'prestataire' && p.role !== 'admin');
+  const clientIdsSet = new Set(clientsList.map(c => c.id));
+
+  // S'assurer qu'aucun client ayant créé un événement n'est omis
+  (events || []).forEach(e => {
+    if (e.client_id && !clientIdsSet.has(e.client_id)) {
+      clientIdsSet.add(e.client_id);
+      clientsList.push({
+        id: e.client_id,
+        full_name: (e as any).client_name || `Client #${e.client_id.slice(0, 6)}`,
+        email: (e as any).client_email || "Client Organisateur",
+        phone: (e as any).client_phone || "",
+        role: "client",
+        is_active: true,
+        created_at: e.created_at || new Date().toISOString()
+      });
+    }
+  });
+
   const { getInvitationModelName, getInvitationModelThumbnail } = await import("@/data/mock/invitations");
 
-  const enrichedClients = clients.map(client => {
+  const enrichedClients = clientsList.map(client => {
     const clientEvents = (events || []).filter(e => e.client_id === client.id);
     const totalBudget = clientEvents.reduce((sum, e) => sum + Number(e.budget_total || e.budget?.total || 0), 0);
     const latestEvent = clientEvents[0];
 
     const hasPurchased = clientEvents.length > 0;
-    const plan = latestEvent?.plan ? (latestEvent.plan.toLowerCase() === "gold" ? "Gold" : "Premium") : "Premium";
-    const format = latestEvent?.format?.toLowerCase().includes("carte") ? "Carte" : "Animée";
+    const isGold = (latestEvent?.plan || "").toLowerCase() === "gold";
+    const isAnim = (latestEvent?.format || "").toLowerCase().includes("anim") ?? true;
+    const plan = isGold ? "Gold" : "Premium";
+    const format = isAnim ? "Animée" : "Carte";
     const modelId = latestEvent?.invitation_model_id;
     const modelName = hasPurchased ? getInvitationModelName(modelId) : "Aucun modèle";
     const modelThumbnail = hasPurchased ? getInvitationModelThumbnail(modelId) : "/invit-velours-cover.jpg";
-    const isGold = plan === "Gold";
-    const isAnim = format === "Animée";
     const purchaseAmount = hasPurchased 
       ? (isGold ? (isAnim ? 20000 : 15000) : (isAnim ? 10000 : 7500))
       : 0;

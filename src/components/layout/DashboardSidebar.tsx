@@ -86,27 +86,15 @@ export function DashboardSidebar() {
                   
                   {isEventActive && (
                     <div className="pl-3 space-y-0.5 mt-1.5 border-l border-[#b8924a]/30 ml-6 pb-2">
-                      {event.plan === "Standard" ? (
-                        <>
-                          <SubLink href={`/dashboard/events/${event.id}`} label="Aperçu & Lien Direct" currentPath={pathname} exact />
-                          <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Mon Invitation" currentPath={pathname} />
-                          <SubLink href={`/dashboard/events/${event.id}`} label="Dashboard RSVP (Premium)" currentPath={pathname} locked={true} />
-                          <SubLink href={`/dashboard/events/${event.id}`} label="Budget & Checklist (Gold)" currentPath={pathname} locked={true} />
-                        </>
-                      ) : (
-                        <>
-                          <SubLink href={`/dashboard/events/${event.id}`} label="Accueil / Aperçu" currentPath={pathname} exact />
-                          <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitations" currentPath={pathname} />
-                          <SubLink href={`/dashboard/events/${event.id}/participants`} label="Invités & RSVP" currentPath={pathname} badge={badgeLabel(newRsvps[event.id] ?? 0)} />
-                          
-                          {/* GOLD Features - Locked if Premium */}
-                          <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={event.plan !== "Gold"} />
-                          <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} locked={event.plan !== "Gold"} />
-                          <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} locked={event.plan !== "Gold"} />
-                          
-                          <SubLink href={`/dashboard/events/${event.id}/statistiques`} label="Statistiques" currentPath={pathname} />
-                        </>
-                      )}
+                      <SubLink href={`/dashboard/events/${event.id}`} label="Accueil / Aperçu" currentPath={pathname} exact />
+                      <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitation & Livre d'or" currentPath={pathname} />
+                      <SubLink href={`/dashboard/events/${event.id}/participants`} label="Invités & Suivi RSVP" currentPath={pathname} badge={badgeLabel(newRsvps[event.id] ?? 0)} />
+                      
+                      {/* GOLD Features - Réservé formule Gold */}
+                      <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      <SubLink href={`/dashboard/events/${event.id}/statistiques`} label="Statistiques" currentPath={pathname} locked={event.plan !== "Gold"} />
                     </div>
                   )}
                 </div>

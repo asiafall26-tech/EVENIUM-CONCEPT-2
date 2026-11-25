@@ -56,23 +56,13 @@ export default async function AdminDashboardPage() {
     const thumbnail = getInvitationModelThumbnail(modelId);
     const isAnim = e.format?.toLowerCase().includes("anim") ?? true;
     const isGold = (e.plan || "").toLowerCase() === "gold";
-    const isStandard = (e.plan || "").toLowerCase() === "standard";
 
-    // Evenium pricing rules:
+    // Evenium 2 formules :
     // Gold + Animée: 20 000 FCFA | Gold + Carte: 15 000 FCFA
     // Premium + Animée: 10 000 FCFA | Premium + Carte: 7 500 FCFA
-    // Standard + Animée: 5 000 FCFA | Standard + Carte: 3 500 FCFA
     const amount = isGold
-      ? isAnim
-        ? 20000
-        : 15000
-      : isStandard
-      ? isAnim
-        ? 5000
-        : 3500
-      : isAnim
-      ? 10000
-      : 7500;
+      ? (isAnim ? 20000 : 15000)
+      : (isAnim ? 10000 : 7500);
 
     // Real payment lookup (from transactions table if present, otherwise validated online payment)
     const eventTx = (realTransactions || []).find((t: any) => t.event_id === e.id);
@@ -93,7 +83,7 @@ export default async function AdminDashboardPage() {
       eventEndDate: datesInfo.endDateFormatted,
       autoClosingDate: datesInfo.closingDateFormatted,
       closingDateShort: datesInfo.closingDateShort,
-      plan: isGold ? "Gold" : isStandard ? "Standard" : "Premium",
+      plan: isGold ? "Gold" : "Premium",
       format: isAnim ? "Animée" : "Carte",
       invitationModelId: modelId,
       invitationModelName: modelName,

@@ -31,61 +31,11 @@ interface Formula {
 
 const formulas: Formula[] = [
   {
-    id: "standard",
-    name: "Formule Standard",
-    tagline: {
-      carte: "La carte digitale visuelle épurée & partage direct (sans musique ni animation)",
-      animee: "Le faire-part digital immersif essentiel avec musique d'ambiance & partage direct"
-    },
-    prices: {
-      carte: "3 500",
-      animee: "5 000"
-    },
-    features: {
-      animee: [
-        {
-          title: "Faire-part immersif animé haute couture",
-          desc: "Design animé interactif personnalisé avec musique d'ambiance, ouverture au sceau et photos."
-        },
-        {
-          title: "Accès au Dashboard Organisateur",
-          desc: "Retrouvez votre événement, votre lien officiel et votre QR Code actif à tout moment."
-        },
-        {
-          title: "Lien officiel & QR Code interactif",
-          desc: "Générez et téléchargez votre QR code haute définition et votre carton imprimable."
-        },
-        {
-          title: "Partage illimité WhatsApp & Réseaux",
-          desc: "Lien diffusable partout en 1 clic sans aucune restriction de convives."
-        }
-      ],
-      carte: [
-        {
-          title: "Carte digitale haute couture épurée",
-          desc: "Design visuel soigné et photos haute définition (modèle graphique épuré, sans musique ni animation sonore)."
-        },
-        {
-          title: "Accès au Dashboard Organisateur",
-          desc: "Retrouvez votre événement, votre lien officiel et votre QR Code actif à tout moment."
-        },
-        {
-          title: "Lien officiel & QR Code interactif",
-          desc: "Générez et téléchargez votre QR code haute définition et votre carton imprimable."
-        },
-        {
-          title: "Partage illimité WhatsApp & Réseaux",
-          desc: "Lien diffusable partout en 1 clic sans aucune restriction de convives."
-        }
-      ]
-    },
-  },
-  {
     id: "premium",
     name: "Formule Premium",
     tagline: {
-      carte: "L'art de la carte digitale épurée & le suivi des convives en temps réel",
-      animee: "L'art de l'invitation animée avec musique & le suivi en temps réel"
+      carte: "INVITATION + SUIVI DES RÉPONSES · L'élégance de la carte digitale épurée & le suivi des convives",
+      animee: "INVITATION + SUIVI DES RÉPONSES · L'art de l'invitation animée avec musique & le suivi des convives"
     },
     prices: {
       carte: "7 500",
@@ -94,38 +44,46 @@ const formulas: Formula[] = [
     features: {
       animee: [
         {
-          title: "Tout le pack Standard inclus",
-          desc: "Faire-part animé haute couture, musique, Dashboard, lien officiel et QR Code actif."
+          title: "Faire-part immersif animé haute couture",
+          desc: "Design animé personnalisé avec musique d'ambiance, ouverture au sceau, effets et galerie photos."
         },
         {
           title: "Suivi des confirmations (RSVP) en direct",
-          desc: "Collecte instantanée des présences, régimes et messages des convives sur votre dashboard."
+          desc: "Collecte instantanée des présences, régimes et réponses de vos convives sur votre dashboard."
         },
         {
-          title: "Programme & Itinéraire Google Maps",
-          desc: "Déroulé chronologique du Jour J et guidage GPS direct vers votre réception."
+          title: "Livre d'or digital & Réponses en 1 clic",
+          desc: "Recevez les vœux et félicitations de vos invités et répondez-leur directement sur WhatsApp."
         },
         {
-          title: "Musique d'ambiance & Galerie enrichie",
-          desc: "Personnalisation audio immersive et album photos haute définition illimité."
+          title: "Accès au Dashboard Organisateur & QR Code",
+          desc: "Retrouvez votre événement, votre lien officiel sécurisé et votre QR Code haute définition à tout moment."
+        },
+        {
+          title: "Partage illimité WhatsApp & Réseaux",
+          desc: "Lien diffusable partout en 1 clic sans aucune restriction de nombre de convives."
         }
       ],
       carte: [
         {
-          title: "Tout le pack Standard inclus",
-          desc: "Carte statique haute couture, Dashboard, lien officiel et QR Code actif."
+          title: "Carte digitale haute couture épurée",
+          desc: "Design graphique de prestige et photos haute définition (modèle visuel épuré, sans musique)."
         },
         {
           title: "Suivi des confirmations (RSVP) en direct",
-          desc: "Collecte instantanée des présences, régimes et messages des convives sur votre dashboard."
+          desc: "Collecte instantanée des présences, régimes et réponses de vos convives sur votre dashboard."
         },
         {
-          title: "Programme & Itinéraire Google Maps",
-          desc: "Déroulé chronologique du Jour J et guidage GPS direct vers votre réception."
+          title: "Livre d'or digital & Réponses en 1 clic",
+          desc: "Recevez les vœux et félicitations de vos invités et répondez-leur directement sur WhatsApp."
         },
         {
-          title: "Galerie photos enrichie (sans musique)",
-          desc: "Album photos haute définition illimité (les cartes statiques ne peuvent pas comporter de musique ni de son)."
+          title: "Accès au Dashboard Organisateur & QR Code",
+          desc: "Retrouvez votre événement, votre lien officiel sécurisé et votre QR Code actif à tout moment."
+        },
+        {
+          title: "Partage illimité WhatsApp & Réseaux",
+          desc: "Lien diffusable partout en 1 clic sans aucune restriction de nombre de convives."
         }
       ]
     },
@@ -134,10 +92,10 @@ const formulas: Formula[] = [
     id: "gold",
     name: "Formule Gold VIP",
     tagline: {
-      carte: "La plateforme complète pour organiser tout votre événement avec carte statique",
-      animee: "La plateforme complète pour organiser tout votre événement avec invitation animée"
+      carte: "TOUTES LES FONCTIONNALITÉS · La plateforme tout-en-un pour organiser l'intégralité de votre événement",
+      animee: "TOUTES LES FONCTIONNALITÉS · La plateforme tout-en-un pour organiser l'intégralité de votre événement"
     },
-    badge: "Recommandée",
+    badge: "Recommandée · Tout-en-un",
     prices: {
       carte: "15 000",
       animee: "20 000"
@@ -146,7 +104,7 @@ const formulas: Formula[] = [
       animee: [
         {
           title: "Tout le pack Premium inclus",
-          desc: "Faire-part animé avec musique d'ambiance, suivi RSVP en direct et QR Code."
+          desc: "Faire-part animé avec musique d'ambiance, suivi RSVP en direct, livre d'or et QR Code."
         },
         {
           title: "Tableau de Bord Complet d'Organisation",
@@ -161,14 +119,14 @@ const formulas: Formula[] = [
           desc: "Toutes les étapes clés de l'organisation pré-remplies et personnalisables."
         },
         {
-          title: "Réseau Prestataires & Support Privilège 7j/7",
-          desc: "Mise en relation directe avec nos prestataires d'exception et assistance prioritaire."
+          title: "Réseau Prestataires & Statistiques Avancées",
+          desc: "Mise en relation directe avec les prestataires certifiés et export des convives."
         }
       ],
       carte: [
         {
           title: "Tout le pack Premium inclus",
-          desc: "Carte statique haute couture, suivi RSVP en direct et QR Code actif."
+          desc: "Carte statique de prestige, suivi RSVP en direct, livre d'or et QR Code."
         },
         {
           title: "Tableau de Bord Complet d'Organisation",
@@ -183,8 +141,8 @@ const formulas: Formula[] = [
           desc: "Toutes les étapes clés de l'organisation pré-remplies et personnalisables."
         },
         {
-          title: "Réseau Prestataires & Support Privilège 7j/7",
-          desc: "Mise en relation directe avec nos prestataires d'exception et assistance prioritaire."
+          title: "Réseau Prestataires & Statistiques Avancées",
+          desc: "Mise en relation directe avec les prestataires certifiés et export des convives."
         }
       ]
     },
@@ -292,7 +250,7 @@ export default function PricingSection() {
             </div>
 
             {/* Grille des 3 formules d'événements */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 sm:gap-8 items-stretch">
               
               {/* Formule STANDARD */}
               <motion.div 
@@ -462,7 +420,7 @@ export default function PricingSection() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 sm:gap-8 items-stretch">
 
               {/* 1. LES MOTS DOUX : 1 000 FCFA */}
               <motion.div

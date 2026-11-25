@@ -55,8 +55,8 @@ export function PublicFooter() {
     user?.role === "prestataire"
       ? "/prestataire"
       : user?.role === "admin"
-      ? "/admin"
-      : "/dashboard";
+        ? "/admin"
+        : "/dashboard";
 
   return (
     <footer

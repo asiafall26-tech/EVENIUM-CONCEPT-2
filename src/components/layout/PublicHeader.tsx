@@ -53,15 +53,15 @@ export function PublicHeader() {
     user?.role === "prestataire"
       ? "/prestataire"
       : user?.role === "admin"
-      ? "/admin"
-      : "/dashboard";
+        ? "/admin"
+        : "/dashboard";
 
   const dashboardLabel =
     user?.role === "prestataire"
       ? "Espace Prestataire"
       : user?.role === "admin"
-      ? "Admin"
-      : "Mon Espace";
+        ? "Admin"
+        : "Mon Espace";
 
   return (
     <header
@@ -88,60 +88,48 @@ export function PublicHeader() {
 
           <span aria-hidden className="hidden md:block h-6 sm:h-7 w-px bg-gradient-to-b from-transparent via-[#b8924a] to-transparent shrink-0" />
 
-          {/* Liens principaux affichés à partir de md: (tablettes larges et ordinateurs) : Les 4 Services sans prix */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2.5 shrink-0">
-            {/* Service 1 : Invitations événementielles */}
+          {/* Liens principaux affichés à partir de md: (tablettes larges et ordinateurs) : Les 4 Services épurés */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2 shrink-0">
+            {/* Service 1 : Invitations */}
             <Link
               href="/invitations?cat=invitations"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 ${
-                pathname === '/invitations' ? 'text-[#8f6f33] font-bold' : 'text-[#2b1d12] hover:text-[#8f6f33]'
-              }`}
+              className={`py-1.5 px-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 rounded-lg ${pathname === '/invitations' ? 'text-[#8f6f33] font-bold bg-[#b8924a]/10' : 'text-[#2b1d12] hover:text-[#8f6f33]'
+                }`}
             >
-              <span>🎉 Invitations événementielles</span>
+              <span>🎉 Invitations</span>
             </Link>
 
-            <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
-
-            {/* Service 2 : Vœux & Célébrations */}
+            {/* Service 2 : Vœux */}
             <Link
               href="/invitations?cat=voeux"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 ${
-                pathname.startsWith('/voeux') ? 'text-[#8f6f33] font-bold' : 'text-[#2b1d12] hover:text-[#8f6f33]'
-              }`}
+              className={`py-1.5 px-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 rounded-lg ${pathname.startsWith('/voeux') ? 'text-[#8f6f33] font-bold bg-[#b8924a]/10' : 'text-[#2b1d12] hover:text-[#8f6f33]'
+                }`}
             >
-              <span>🎁 Vœux &amp; Célébrations</span>
+              <span>🎁 Vœux</span>
             </Link>
-
-            <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
 
             {/* Service 3 : Mots doux */}
             <Link
               href="/invitations?cat=mots_doux"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#9e1b23] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1 ${
-                pathname.startsWith('/mots-doux') ? 'font-bold' : ''
-              }`}
+              className={`py-1.5 px-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#9e1b23] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1.5 rounded-lg ${pathname.startsWith('/mots-doux') ? 'font-bold bg-[#9e1b23]/10' : ''
+                }`}
             >
               <span>💌 Mots doux</span>
             </Link>
 
-            <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
-
             {/* Service 4 : Espace Couple */}
             <Link
               href="/invitations?cat=couple"
-              className={`py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#7a1c22] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1 ${
-                pathname.startsWith('/couple') ? 'font-bold' : ''
-              }`}
+              className={`py-1.5 px-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#7a1c22] hover:text-[#d62828] transition-colors whitespace-nowrap shrink-0 font-serif flex items-center gap-1.5 rounded-lg ${pathname.startsWith('/couple') ? 'font-bold bg-[#7a1c22]/10' : ''
+                }`}
             >
               <span>❤️ Espace Couple</span>
             </Link>
 
-            <span aria-hidden className="h-3.5 lg:h-4 w-px bg-[#b8924a]/30 shrink-0" />
-
             {/* Prestataires */}
             <Link
               href="/espace-prestataire"
-              className="py-1.5 px-2 text-[10px] lg:text-xs font-semibold uppercase tracking-[0.08em] lg:tracking-[0.12em] text-[#2b1d12] hover:text-[#8f6f33] transition-colors whitespace-nowrap shrink-0"
+              className="py-1.5 px-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#2b1d12] hover:text-[#8f6f33] transition-colors whitespace-nowrap shrink-0 rounded-lg"
             >
               <span>Prestataires</span>
             </Link>
@@ -186,65 +174,6 @@ export function PublicHeader() {
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
-      </div>
-
-      {/* Sur téléphone : Barre de navigation directe des catégories */}
-      <div className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-[#faf3e8]/95 border-t border-[#c9a45e]/20 overflow-x-auto no-scrollbar scroll-smooth">
-        {user && (
-          <Link
-            href={dashboardHref}
-            className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 bg-[#281a10] text-[#f7e7b4] border border-[#b8924a]/50 shadow-xs"
-          >
-            <LayoutDashboard size={11} className="text-[#c9a45e]" />
-            <span>Mon Espace</span>
-          </Link>
-        )}
-        <Link
-          href="/invitations?cat=invitations"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname === '/invitations'
-              ? 'bg-[#2b1d12] text-[#f0d999] shadow-xs'
-              : 'bg-white/90 border border-[#c9a45e]/40 text-[#2b1d12]'
-            }`}
-        >
-          <span>🎉 Invitations</span>
-        </Link>
-
-        <Link
-          href="/invitations?cat=voeux"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/voeux')
-              ? 'bg-[#2b1d12] text-[#f0d999] shadow-xs'
-              : 'bg-white/90 border border-[#c9a45e]/40 text-[#2b1d12]'
-            }`}
-        >
-          <span>🎁 Vœux</span>
-        </Link>
-
-        <Link
-          href="/invitations?cat=mots_doux"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/mots-doux')
-              ? 'bg-[#9e1b23] text-white shadow-xs'
-              : 'bg-white/90 border border-[#f4c2c9] text-[#9e1b23]'
-            }`}
-        >
-          <span>💌 Mots doux</span>
-        </Link>
-
-        <Link
-          href="/invitations?cat=couple"
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 transition-all ${pathname.startsWith('/couple')
-              ? 'bg-[#7a1c22] text-white shadow-xs'
-              : 'bg-white/90 border border-[#f4c2c9] text-[#7a1c22]'
-            }`}
-        >
-          <span>❤️ Espace Couple</span>
-        </Link>
-
-        <Link
-          href="/espace-prestataire"
-          className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 flex items-center gap-1 bg-[#2a1b0f] text-[#f0d999]"
-        >
-          <Store size={11} className="text-[#e2c178]" /> Prestataires
-        </Link>
       </div>
 
       {/* Menu déroulant mobile raffiné Haute Couture présentant les 4 services sans prix */}

@@ -362,22 +362,20 @@ export default function InvitationsClientPage({
                   key={cat.slug}
                   type="button"
                   onClick={() => handleSelectCategory(cat.slug)}
-                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
-                    isActive
+                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${isActive
                       ? "bg-neutral-900 text-white font-semibold shadow-xs"
                       : "bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200/80"
-                  }`}
+                    }`}
                 >
                   <span>{cat.icon}</span>
                   <span>{cat.label}</span>
                   <span
-                    className={`text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive
+                    className={`text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-bold ${isActive
                         ? "bg-white/20 text-white"
                         : isEmpty
-                        ? "bg-neutral-100 text-neutral-400 font-normal"
-                        : "bg-neutral-100 text-neutral-500"
-                    }`}
+                          ? "bg-neutral-100 text-neutral-400 font-normal"
+                          : "bg-neutral-100 text-neutral-500"
+                      }`}
                   >
                     {isEmpty ? "Bientôt" : cat.count}
                   </span>
@@ -396,22 +394,20 @@ export default function InvitationsClientPage({
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("all")}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    selectedFormat === "all"
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedFormat === "all"
                       ? "bg-white text-neutral-900 shadow-2xs"
                       : "text-neutral-500 hover:text-neutral-900"
-                  }`}
+                    }`}
                 >
                   Tous ({formatCounts.all})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("animée")}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                    selectedFormat === "animée"
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${selectedFormat === "animée"
                       ? "bg-white text-neutral-900 shadow-2xs"
                       : "text-neutral-500 hover:text-neutral-900"
-                  }`}
+                    }`}
                 >
                   <span>🎬 3D Animée</span>
                   <span className="text-[10px] opacity-75">({formatCounts.animee})</span>
@@ -419,11 +415,10 @@ export default function InvitationsClientPage({
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("statique")}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                    selectedFormat === "statique"
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${selectedFormat === "statique"
                       ? "bg-white text-neutral-900 shadow-2xs"
                       : "text-neutral-500 hover:text-neutral-900"
-                  }`}
+                    }`}
                 >
                   <span>📜 Haute Couture</span>
                   <span className="text-[10px] opacity-75">({formatCounts.statique})</span>
@@ -466,11 +461,10 @@ export default function InvitationsClientPage({
               <button
                 type="button"
                 onClick={() => setSelectedEvent("all")}
-                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                  selectedEvent === "all" || selectedEvent === "Tous"
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 ${selectedEvent === "all" || selectedEvent === "Tous"
                     ? "bg-neutral-800 text-[#f5dfaa] font-semibold"
                     : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200/80"
-                }`}
+                  }`}
               >
                 Tous ({availableEvents.total})
               </button>
@@ -482,11 +476,10 @@ export default function InvitationsClientPage({
                     key={evt.name}
                     type="button"
                     onClick={() => setSelectedEvent(isSelected ? "all" : evt.name)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
-                      isSelected
+                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1 ${isSelected
                         ? "bg-neutral-800 text-[#f5dfaa] font-semibold"
                         : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200/80"
-                    }`}
+                      }`}
                   >
                     <span>{evt.icon}</span>
                     <span>{evt.name}</span>

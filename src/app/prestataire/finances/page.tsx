@@ -118,7 +118,7 @@ export default function PrestataireFinancesPage() {
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
             Mes Finances <Wallet size={24} className="text-[#b8924a]" />
           </h1>
-          <p className="text-gray-500 text-sm">Suivez vos revenus réels. Evenium ne prélève aucune commission sur vos prestations (0% de commission).</p>
+          <p className="text-gray-500 text-sm">Suivez vos revenus réels, vos devis confirmés et vos transactions.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -146,11 +146,11 @@ export default function PrestataireFinancesPage() {
             <div className="w-10 h-10 bg-white text-[#8f6f33] rounded-full flex items-center justify-center mb-3 shadow-xs">
               <TrendingUp size={20} />
             </div>
-            <p className="text-stone-600 font-medium mb-1 text-sm">Taux de Commission</p>
+            <p className="text-stone-600 font-medium mb-1 text-sm">Prestations Validées</p>
           </div>
           <div>
-            <h3 className="text-2xl font-bold font-serif text-[#8f6f33]">0% (Sans commission)</h3>
-            <p className="text-xs text-stone-500 mt-1">100% de vos gains conservés</p>
+            <h3 className="text-2xl font-bold font-serif text-[#8f6f33]">{devisStats.count} devis</h3>
+            <p className="text-xs text-stone-500 mt-1">Prestations signées</p>
           </div>
         </div>
 
@@ -159,11 +159,11 @@ export default function PrestataireFinancesPage() {
             <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-3">
               <DollarSign size={20} />
             </div>
-            <p className="text-gray-500 font-medium mb-1 text-sm">Revenu Net Prestataire (100%)</p>
+            <p className="text-gray-500 font-medium mb-1 text-sm">Revenus Nets Encaissés</p>
           </div>
           <div>
             <h3 className="text-2xl font-bold font-serif text-emerald-600">{netEstimated.toLocaleString()} FCFA</h3>
-            <p className="text-xs text-gray-400 mt-1">Zéro commission prélevée</p>
+            <p className="text-xs text-gray-400 mt-1">Totalité des gains prestataire</p>
           </div>
         </div>
 

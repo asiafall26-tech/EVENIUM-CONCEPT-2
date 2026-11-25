@@ -144,11 +144,10 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
                     setSelectedCategory(cat.slug);
                     setSelectedEvent("all");
                   }}
-                  className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-                    isSelected
+                  className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${isSelected
                       ? "bg-neutral-900 text-white shadow-xs"
                       : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/60"
-                  }`}
+                    }`}
                 >
                   {getCategoryIcon(cat.slug)}
                   <span>{cat.label}</span>
@@ -165,11 +164,10 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
               <button
                 type="button"
                 onClick={() => setSelectedEvent("all")}
-                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedEvent === "all"
+                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${selectedEvent === "all"
                     ? "bg-neutral-900 text-[#f5dfaa] shadow-xs"
                     : "text-neutral-600 hover:text-neutral-900"
-                }`}
+                  }`}
               >
                 Tous
               </button>
@@ -180,11 +178,10 @@ export default function HomeShowcase({ initialModels }: HomeShowcaseProps) {
                     key={evt.name}
                     type="button"
                     onClick={() => setSelectedEvent(isSelected ? "all" : evt.name)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
-                      isSelected
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${isSelected
                         ? "bg-neutral-900 text-[#f5dfaa] font-semibold shadow-xs"
                         : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/60"
-                    }`}
+                      }`}
                   >
                     <span>{evt.icon}</span>
                     <span>{evt.name}</span>

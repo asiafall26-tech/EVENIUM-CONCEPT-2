@@ -79,10 +79,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
 
         const formattedEvents: Event[] = data.map((dbEvent: any) => {
           const eventGuests = (guestsData || []).filter((g: any) => g.event_id === dbEvent.id);
-          
+
           let confirmed = 0;
           let declined = 0;
-          
+
           eventGuests.forEach((g: any) => {
             if (g.statut_rsvp === 'Confirmé') {
               confirmed += 1 + (g.nombre_accompagnants || 0);
@@ -113,11 +113,11 @@ export function EventsProvider({ children }: { children: ReactNode }) {
             invitationContent: dbEvent.invitation_content ?? null,
             eventDetails: dbEvent.event_details ?? null,
             budget: { total: Number(dbEvent.budget_total) || 0, spent: 0 },
-            guests: { 
-              total: Math.max(totalCapacity, totalResponses), 
-              confirmed, 
-              pending, 
-              declined 
+            guests: {
+              total: Math.max(totalCapacity, totalResponses),
+              confirmed,
+              pending,
+              declined
             },
             tasks: { total: 0, completed: 0 },
             providersCount: 0
@@ -252,7 +252,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchEvents]);
 
   const updateEventInvitation = useCallback(async (id: string, title: string, message: string) => {
-    const { error } = await supabase.from('events').update({ 
+    const { error } = await supabase.from('events').update({
       invitation_title: title,
       invitation_message: message
     }).eq('id', id);

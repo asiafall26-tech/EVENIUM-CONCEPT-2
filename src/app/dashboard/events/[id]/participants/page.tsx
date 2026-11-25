@@ -67,29 +67,7 @@ export default function ParticipantsDashboardPage({
     notFound();
   }
 
-  if (event.plan === "Standard") {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full h-[80vh] flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
-          <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock size={32} />
-          </div>
-          <h2 className="font-serif text-2xl font-bold text-black mb-3">Réservé aux Formules Premium &amp; Gold</h2>
-          <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-            Le suivi des confirmations RSVP en temps réel et la gestion de la liste des invités sont accessibles à partir de la formule Premium. En formule Standard, vous bénéficiez du téléchargement direct du lien de votre invitation.
-          </p>
-          <Link href={`/dashboard/events/${event.id}`} className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors">
-            Voir mon lien d&apos;invitation ou Évoluer
-          </Link>
-          <div className="mt-4">
-             <Link href={`/dashboard/events/${event.id}`} className="text-sm font-medium text-gray-400 hover:text-black">
-               Retour à l&apos;aperçu
-             </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
