@@ -114,7 +114,7 @@ export default function StatistiquesPage({
     return <div className="p-4 sm:p-6 lg:p-8 text-gray-500 animate-pulse">Chargement des statistiques...</div>;
   }
 
-  if (event && event.plan !== "Gold") {
+  if (event && (event.plan || "").toLowerCase() !== "gold") {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
         <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Statistiques & Rapports" />

@@ -297,7 +297,7 @@ export default function PrestatairesDashboardPage({
   };
 
   useEffect(() => {
-    if (event?.plan === "Gold") {
+    if ((event?.plan || "").toLowerCase() === "gold") {
       fetchDemandes();
 
       const channel = supabase.channel('client_demandes_sync')
@@ -418,7 +418,7 @@ export default function PrestatairesDashboardPage({
     notFound();
   }
 
-  if (event.plan !== "Gold") {
+  if ((event.plan || "").toLowerCase() !== "gold") {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
         <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Mes Prestataires" />

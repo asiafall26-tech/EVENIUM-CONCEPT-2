@@ -435,24 +435,49 @@ export default function EventDashboardPage({
         </Link>
 
         {/* Budget Card (Gold Only) */}
-        {event.plan === "Gold" && (
-          <Link href={`/dashboard/events/${event.id}/budget`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm flex flex-col hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
-            <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
-              <Wallet size={18} /> Budget
-            </div>
-            <div className="mb-2">
-              <span className="text-3xl font-semibold">{budget.spent.toLocaleString()}</span>
-              <span className="text-gray-500 text-sm ml-1">FCFA dépensés</span>
-            </div>
-            <p className="text-sm text-gray-500 mb-4">Sur un total de {budget.total.toLocaleString()} FCFA</p>
-            <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
-              <div
-                className="bg-primary h-2 rounded-full"
-                style={{ width: `${budget.total > 0 ? (budget.spent / budget.total) * 100 : 0}%` }}
-              />
-            </div>
-          </Link>
-        )}
+        {(() => {
+          const isGold = (event.plan || "").toLowerCase() === "gold";
+          return isGold ? (
+            <Link href={`/dashboard/events/${event.id}/budget`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm flex flex-col hover:border-[#b8924a]/50 hover:shadow-md transition-all group">
+              <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
+                <Wallet size={18} /> Budget &amp; Finances
+              </div>
+              <div className="mb-2">
+                <span className="text-3xl font-semibold">{budget.spent.toLocaleString()}</span>
+                <span className="text-gray-500 text-sm ml-1">FCFA dépensés</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">Sur un total de {budget.total.toLocaleString()} FCFA</p>
+              <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
+                <div
+                  className="bg-primary h-2 rounded-full"
+                  style={{ width: `${budget.total > 0 ? Math.min(100, (budget.spent / budget.total) * 100) : 0}%` }}
+                />
+              </div>
+            </Link>
+          ) : (
+            <Link href={`/dashboard/events/${event.id}/budget`} className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-2xl p-6 border border-[#c9a45e]/40 shadow-sm hover:border-[#c9a45e] hover:shadow-lg transition-all flex flex-col justify-between group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a45e]/15 rounded-full blur-xl pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] bg-[#c9a45e]/20 px-2 py-0.5 rounded-full">
+                    Formule Gold VIP
+                  </span>
+                  <Sparkles size={16} className="text-[#d4af37]" />
+                </div>
+                <h4 className="font-serif text-lg font-bold text-white mb-1 group-hover:text-[#f0d999] transition-colors">
+                  Suivi du Budget &amp; Finances
+                </h4>
+                <p className="text-xs text-gray-300 leading-relaxed mb-3">
+                  Débloquez le suivi du budget, les dépenses réelles, la to-do list et le catalogue de prestataires certifiés.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-[#f0d999]">
+                <span>Débloquer la Formule Gold</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          );
+        })()}
 
         {/* Guests Card */}
         <Link href={`/dashboard/events/${event.id}/invitations#rsvps`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col">
@@ -476,49 +501,48 @@ export default function EventDashboardPage({
         </Link>
 
         {/* Tasks Card (Gold Only) */}
-        {event.plan === "Gold" && (
-          <Link href={`/dashboard/events/${event.id}/checklist`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col">
-            <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
-              <CheckSquare size={18} /> To-do List
-            </div>
-            <div className="mb-2">
-              <span className="text-3xl font-semibold">{tasks.completed}</span>
-              <span className="text-gray-500 text-sm ml-1">/ {tasks.total} tâches</span>
-            </div>
-            <p className="text-sm text-gray-500 mb-4">{tasks.total - tasks.completed} tâches restantes</p>
-            <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
-              <div
-                className="bg-accent h-2 rounded-full"
-                style={{ width: `${tasks.total > 0 ? (tasks.completed / tasks.total) * 100 : 0}%` }}
-              />
-            </div>
-          </Link>
-        )}
-
-        {/* Upgrade to Gold Card (Premium Only) */}
-        {event.plan !== "Gold" && (
-          <Link href={`/dashboard/events/${event.id}/settings`} className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-2xl p-6 border border-[#c9a45e]/40 shadow-sm hover:border-[#c9a45e] hover:shadow-lg transition-all flex flex-col justify-between group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a45e]/15 rounded-full blur-xl pointer-events-none" />
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#d4af37] bg-[#c9a45e]/20 px-2 py-0.5 rounded-full">
-                  Organisation Complète
-                </span>
-                <Sparkles size={16} className="text-[#d4af37]" />
+        {(() => {
+          const isGold = (event.plan || "").toLowerCase() === "gold";
+          return isGold ? (
+            <Link href={`/dashboard/events/${event.id}/checklist`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col">
+              <div className="flex items-center gap-2 mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
+                <CheckSquare size={18} /> To-do List &amp; Planning
               </div>
-              <h4 className="font-serif text-lg font-bold text-white mb-1 group-hover:text-[#f0d999] transition-colors">
-                Passer en Formule Gold
-              </h4>
-              <p className="text-xs text-gray-300 leading-relaxed mb-3">
-                Débloquez le suivi du budget, la to-do list, le catalogue prestataires certifiés et les statistiques.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-[#f0d999]">
-              <span>Évoluer vers Gold</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-        )}
+              <div className="mb-2">
+                <span className="text-3xl font-semibold">{tasks.completed}</span>
+                <span className="text-gray-500 text-sm ml-1">/ {tasks.total} tâches</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">{tasks.total - tasks.completed} tâches restantes</p>
+              <div className="w-full bg-gray-100 rounded-full h-2 mt-auto overflow-hidden">
+                <div
+                  className="bg-accent h-2 rounded-full"
+                  style={{ width: `${tasks.total > 0 ? (tasks.completed / tasks.total) * 100 : 0}%` }}
+                />
+              </div>
+            </Link>
+          ) : (
+            <Link href={`/dashboard/events/${event.id}/checklist`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-3 text-gray-500">
+                  <span className="flex items-center gap-2 font-medium text-xs"><CheckSquare size={16} /> To-do List &amp; Planning</span>
+                  <span className="text-[10px] font-bold text-[#b8924a] bg-[#b8924a]/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Lock size={10} /> Gold
+                  </span>
+                </div>
+                <h4 className="font-serif text-lg font-bold text-gray-900 mb-1">
+                  Rétroplanning Jour J
+                </h4>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Gérez chaque étape clé de vos préparatifs avec une to-do list sur-mesure.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#8f6f33] mt-4">
+                <span>Découvrir la To-do List</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          );
+        })()}
       </div>
 
       {/* VŒUX & MOTS DOUX REÇUS DES INVITÉS */}

@@ -90,10 +90,17 @@ export function DashboardSidebar() {
                       <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitation & Réponses Invités" currentPath={pathname} badge={badgeLabel(newRsvps[event.id] ?? 0)} />
                       
                       {/* GOLD Features - Réservé formule Gold */}
-                      <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={event.plan !== "Gold"} />
-                      <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} locked={event.plan !== "Gold"} />
-                      <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} locked={event.plan !== "Gold"} />
-                      <SubLink href={`/dashboard/events/${event.id}/statistiques`} label="Statistiques" currentPath={pathname} locked={event.plan !== "Gold"} />
+                      {(() => {
+                        const isGold = (event.plan || "").toLowerCase() === "gold";
+                        return (
+                          <>
+                            <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={!isGold} />
+                            <SubLink href={`/dashboard/events/${event.id}/checklist`} label="Checklist / Tâches" currentPath={pathname} locked={!isGold} />
+                            <SubLink href={`/dashboard/events/${event.id}/prestataires`} label="Prestataires" currentPath={pathname} locked={!isGold} />
+                            <SubLink href={`/dashboard/events/${event.id}/statistiques`} label="Statistiques" currentPath={pathname} locked={!isGold} />
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -144,13 +151,17 @@ function SubLink({ href, label, currentPath, exact = false, locked = false, badg
   
   if (locked) {
     return (
-      <div className="flex items-center justify-between px-3 py-1.5 text-[13px] font-medium rounded-lg text-gray-300 cursor-not-allowed group relative">
+      <Link
+        href={href}
+        className={`flex items-center justify-between px-3 py-1.5 text-[13px] font-medium rounded-lg transition-colors group ${
+          isActive ? 'text-[#9a7209] font-semibold bg-[#b8924a]/10' : 'text-gray-400 hover:text-gray-800 hover:bg-gray-50'
+        }`}
+      >
         <span className="flex items-center gap-2">{label}</span>
-        <Lock size={12} className="text-gray-300" />
-        <div className="absolute left-full ml-2 hidden group-hover:block w-max bg-gray-900 text-white text-[10px] py-1.5 px-3 rounded z-50 shadow-xl normal-case font-medium">
-          Disponible avec la formule Gold
-        </div>
-      </div>
+        <span className="flex items-center gap-1 text-[10px] text-[#b8924a] font-semibold bg-[#b8924a]/10 px-1.5 py-0.5 rounded group-hover:bg-[#b8924a]/20 transition-colors">
+          <Lock size={10} /> Gold
+        </span>
+      </Link>
     );
   }
 
