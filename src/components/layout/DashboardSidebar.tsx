@@ -87,8 +87,7 @@ export function DashboardSidebar() {
                   {isEventActive && (
                     <div className="pl-3 space-y-0.5 mt-1.5 border-l border-[#b8924a]/30 ml-6 pb-2">
                       <SubLink href={`/dashboard/events/${event.id}`} label="Accueil / Aperçu" currentPath={pathname} exact />
-                      <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitation & Livre d'or" currentPath={pathname} />
-                      <SubLink href={`/dashboard/events/${event.id}/participants`} label="Invités & Suivi RSVP" currentPath={pathname} badge={badgeLabel(newRsvps[event.id] ?? 0)} />
+                      <SubLink href={`/dashboard/events/${event.id}/invitations`} label="Invitation & Réponses Invités" currentPath={pathname} badge={badgeLabel(newRsvps[event.id] ?? 0)} />
                       
                       {/* GOLD Features - Réservé formule Gold */}
                       <SubLink href={`/dashboard/events/${event.id}/budget`} label="Budget" currentPath={pathname} locked={event.plan !== "Gold"} />

@@ -1,11 +1,12 @@
 "use client";
 
-import { Send, Edit3, Eye, Sparkles, X, CheckCircle, CheckCircle2, Copy, MessageCircle, RotateCcw, MessageSquare, Users } from "lucide-react";
+import { Send, Edit3, Eye, Sparkles, X, CheckCircle, CheckCircle2, Copy, MessageCircle, RotateCcw, MessageSquare, Users, UserPlus, Search, Trash2, Plus, Clock, XCircle, Phone } from "lucide-react";
 import { useState, use, useEffect, useRef, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { markRsvpSeen } from "@/store/BadgeStore";
 import VeloursEditorModal from "@/components/invitations/velours/VeloursEditorModal";
 import { VELOURS_MODEL_ID, seedFromEvent, withDefaults } from "@/components/invitations/velours/content";
 import SceauEditorModal from "@/components/invitations/sceau/SceauEditorModal";
@@ -131,11 +132,24 @@ export default function InvitationsDashboardPage({
   const [accompanimentMsg, setAccompanimentMsg] = useState<string>("");
   const [guestStats, setGuestStats] = useState({ total: 0, confirmed: 0, declined: 0 });
 
-  const [guestsList, setGuestsList] = useState<Array<{ id: string; nom: string; telephone?: string; email?: string; statut_rsvp?: string; message?: string; reply?: string; repliedAt?: string; channel?: string; created_at?: string }>>([]);
+  const [guestsList, setGuestsList] = useState<Array<{ id: string; nom: string; telephone?: string; email?: string; statut_rsvp?: string; message?: string; reply?: string; repliedAt?: string; channel?: string; nombre_accompagnants?: number; created_at?: string }>>([]);
 
   const guestsWithMessages = useMemo(() => {
     return guestsList.filter((g: any) => g.message && String(g.message).trim().length > 0);
   }, [guestsList]);
+
+  // Guest list filters & search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"Tous" | "Confirmé" | "En attente" | "Refusé">("Tous");
+
+  // Add Guest Modal State
+  const [isAddGuestModalOpen, setIsAddGuestModalOpen] = useState(false);
+  const [newGuest, setNewGuest] = useState({
+    nom: "",
+    telephone: "",
+    statut_rsvp: "Confirmé",
+    nombre_accompagnants: 0,
+  });
 
   // Modal de réponse aux vœux
   const [isWishReplyModalOpen, setIsWishReplyModalOpen] = useState(false);
@@ -166,7 +180,7 @@ export default function InvitationsDashboardPage({
     Promise.all([
       supabase
         .from('guests')
-        .select('id, nom, telephone, email, statut_rsvp, message, created_at')
+        .select('id, nom, telephone, email, statut_rsvp, message, nombre_accompagnants, created_at')
         .eq('event_id', id)
         .order('created_at', { ascending: false }),
       getWishRepliesAction(id),
@@ -174,6 +188,7 @@ export default function InvitationsDashboardPage({
       if (data) {
         const enriched = data.map((g: any) => ({
           ...g,
+          nombre_accompagnants: Number(g.nombre_accompagnants || 0),
           reply: g.reponse || repliesMap[g.id]?.reply || "",
           repliedAt: g.reponse_envoyee_le || repliesMap[g.id]?.repliedAt || "",
           channel: repliesMap[g.id]?.channel || "whatsapp",
@@ -183,8 +198,84 @@ export default function InvitationsDashboardPage({
         const decl = data.filter((g: any) => g.statut_rsvp === "Refusé").length;
         setGuestStats({ total: data.length, confirmed: conf, declined: decl });
       }
+      markRsvpSeen(id);
     });
   }, [id, supabase]);
+
+  const handleAddGuest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGuest.nom.trim()) return;
+    const { data } = await supabase.from('guests').insert([{
+      event_id: id,
+      nom: newGuest.nom.trim(),
+      telephone: newGuest.telephone.trim() || null,
+      statut_rsvp: newGuest.statut_rsvp,
+      nombre_accompagnants: Number(newGuest.nombre_accompagnants) || 0
+    }]).select().single();
+    if (data) {
+      setGuestsList(prev => [data, ...prev]);
+      setIsAddGuestModalOpen(false);
+      setNewGuest({ nom: "", telephone: "", statut_rsvp: "Confirmé", nombre_accompagnants: 0 });
+      const updated = [data, ...guestsList];
+      const conf = updated.filter((g: any) => g.statut_rsvp === "Confirmé").length;
+      const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé").length;
+      setGuestStats({ total: updated.length, confirmed: conf, declined: decl });
+    }
+  };
+
+  const handleUpdateStatus = async (guestId: string, newStatus: string) => {
+    setGuestsList(prev => prev.map(g => g.id === guestId ? { ...g, statut_rsvp: newStatus } : g));
+    await supabase.from('guests').update({ statut_rsvp: newStatus }).eq('id', guestId);
+    const updated = guestsList.map(g => g.id === guestId ? { ...g, statut_rsvp: newStatus } : g);
+    const conf = updated.filter((g: any) => g.statut_rsvp === "Confirmé").length;
+    const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé").length;
+    setGuestStats({ total: updated.length, confirmed: conf, declined: decl });
+  };
+
+  const handleDeleteGuest = async (guestId: string) => {
+    if (!confirm("Voulez-vous retirer cet invité de la liste ?")) return;
+    setGuestsList(prev => prev.filter(g => g.id !== guestId));
+    await supabase.from('guests').delete().eq('id', guestId);
+    const updated = guestsList.filter(g => g.id !== guestId);
+    const conf = updated.filter((g: any) => g.statut_rsvp === "Confirmé").length;
+    const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé").length;
+    setGuestStats({ total: updated.length, confirmed: conf, declined: decl });
+  };
+
+  const handleRelanceGuest = (guest: any) => {
+    const text = generateAccompanimentMessage({
+      modelId: event.invitationModelId,
+      eventType: event.type,
+      eventName: event.name,
+      guestName: guest.nom,
+      dateFormatted: formatEventDate(event.date),
+      time: event.time && event.time !== "À définir" ? event.time : undefined,
+      location: event.location && event.location !== "À définir" ? event.location : undefined,
+      link: shareUrl,
+      tone: "chaleureux",
+    });
+    const phone = (guest.telephone || "").replace(/[^0-9]/g, "");
+    const url = phone
+      ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
+  const filteredGuests = useMemo(() => {
+    return guestsList.filter((g) => {
+      const matchSearch =
+        g.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (g.telephone && g.telephone.includes(searchQuery));
+      const matchStatus = statusFilter === "Tous" || g.statut_rsvp === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [guestsList, searchQuery, statusFilter]);
+
+  const totalAccompagnants = useMemo(() => {
+    return guestsList
+      .filter((g) => g.statut_rsvp === "Confirmé")
+      .reduce((sum, g) => sum + Number((g as any).nombre_accompagnants || 0), 0);
+  }, [guestsList]);
 
   const [invitationData, setInvitationData] = useState({
     title: "",
@@ -468,121 +559,366 @@ export default function InvitationsDashboardPage({
         shareUrl={shareUrl}
       />
 
-      {/* 3. SUIVI DES CONFIRMATIONS & VŒUX DES INVITÉS */}
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+      {/* 2. SUIVI DES RÉPONSES (RSVP) & GESTION DES INVITÉS */}
+      <section id="rsvps" className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.25em] text-[#8f6f33] font-bold">Suivi en direct</p>
-            <h3 className="font-serif text-xl sm:text-2xl text-gray-900 mt-0.5">Réponses des invités (RSVP)</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.25em] text-[#8f6f33] font-bold flex items-center gap-1.5">
+                <Users size={13} className="text-[#b8924a]" /> Suivi en direct
+              </span>
+            </div>
+            <h3 className="font-serif text-xl sm:text-2xl text-gray-900 mt-1">
+              Réponses des Invités (RSVP)
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Consultez les confirmations en temps réel, ajoutez vos invités ou relancez-les par WhatsApp.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/dashboard/events/${event.id}/participants`}
-              className="text-xs font-semibold text-[#8f6f33] hover:underline"
-            >
-              Gérer la liste complète &rarr;
-            </Link>
-          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsAddGuestModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#281a10] hover:bg-[#1a1008] text-[#f7e7b4] text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
+          >
+            <UserPlus size={15} className="text-[#c9a45e]" />
+            <span>Ajouter un invité</span>
+          </button>
         </div>
 
-        {/* Synthèse rapide des confirmations RSVP */}
-        <div className="pt-1 grid grid-cols-3 gap-2 text-center">
-          <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-100">
+        {/* Synthèse KPI des confirmations */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
+          <div className="p-3.5 bg-emerald-50/80 rounded-2xl border border-emerald-100/90 flex flex-col justify-center">
             <span className="text-[10px] uppercase font-bold text-emerald-700 block">Confirmés</span>
-            <span className="font-serif text-lg font-bold text-emerald-800">{guestStats.confirmed}</span>
+            <span className="font-serif text-2xl font-bold text-emerald-800 mt-0.5">{guestStats.confirmed}</span>
+            {totalAccompagnants > 0 && (
+              <span className="text-[10px] text-emerald-600 font-medium mt-0.5">
+                +{totalAccompagnants} accompagnant{totalAccompagnants > 1 ? "s" : ""}
+              </span>
+            )}
           </div>
-          <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-200/70">
-            <span className="text-[10px] uppercase font-bold text-gray-500 block">Total réponses</span>
-            <span className="font-serif text-lg font-bold text-gray-800">{guestStats.total}</span>
+
+          <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-100 flex flex-col justify-center">
+            <span className="text-[10px] uppercase font-bold text-amber-700 block">En attente</span>
+            <span className="font-serif text-2xl font-bold text-amber-800 mt-0.5">
+              {Math.max(0, guestStats.total - guestStats.confirmed - guestStats.declined)}
+            </span>
+            <span className="text-[10px] text-amber-600 font-medium mt-0.5">À relancer</span>
           </div>
-          <div className="p-2.5 bg-rose-50/80 rounded-xl border border-rose-100">
+
+          <div className="p-3.5 bg-rose-50/80 rounded-2xl border border-rose-100/90 flex flex-col justify-center">
             <span className="text-[10px] uppercase font-bold text-rose-700 block">Déclinés</span>
-            <span className="font-serif text-lg font-bold text-rose-800">{guestStats.declined}</span>
+            <span className="font-serif text-2xl font-bold text-rose-800 mt-0.5">{guestStats.declined}</span>
+            <span className="text-[10px] text-rose-500 font-medium mt-0.5">Absents</span>
+          </div>
+
+          <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200/70 flex flex-col justify-center">
+            <span className="text-[10px] uppercase font-bold text-gray-500 block">Total Réponses</span>
+            <span className="font-serif text-2xl font-bold text-gray-900 mt-0.5">{guestStats.total}</span>
+            <span className="text-[10px] text-gray-400 font-medium mt-0.5">Convives enregistrés</span>
           </div>
         </div>
 
-        {/* Derniers mots doux et vœux reçus */}
-        <div className="pt-3 border-t border-gray-100 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-              <Sparkles size={13} className="text-[#b8924a]" />
-              Mots envoyés aux mariés {guestsWithMessages.length > 0 ? `(${guestsWithMessages.length})` : ""} :
-            </span>
-            <Link
-              href={`/dashboard/events/${event.id}/participants`}
-              className="text-[11px] font-semibold text-[#8f6f33] hover:underline"
-            >
-              Tout voir &rarr;
-            </Link>
+        {/* Barre de Recherche & Filtres Rapides */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher par nom ou téléphone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30 transition-all"
+            />
           </div>
 
-          {guestsWithMessages.length > 0 ? (
-            <div className="space-y-2.5">
-              {guestsWithMessages.slice(0, 5).map((g: any) => (
-                <div
-                  key={g.id}
-                  className="p-3 bg-amber-50/70 border border-[#b8924a]/25 rounded-xl text-xs flex flex-col gap-1.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-gray-900">{g.nom}</span>
-                    <span className="text-[10px] text-gray-400 font-mono">
-                      {g.created_at ? new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
-                    </span>
-                  </div>
-                  <p className="font-serif italic text-gray-700 leading-relaxed">« {g.message} »</p>
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+            {(["Tous", "Confirmé", "En attente", "Refusé"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setStatusFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  statusFilter === tab
+                    ? "bg-[#281a10] text-[#f7e7b4] shadow-xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {tab === "Tous"
+                  ? `Tous (${guestsList.length})`
+                  : tab === "Confirmé"
+                  ? `Confirmés (${guestStats.confirmed})`
+                  : tab === "Refusé"
+                  ? `Refusés (${guestStats.declined})`
+                  : `En attente (${Math.max(0, guestStats.total - guestStats.confirmed - guestStats.declined)})`}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                  {g.reply && (
-                    <div className="p-2 bg-white/90 rounded-lg border border-[#b8924a]/20 text-[11px] text-emerald-800 space-y-0.5">
-                      <strong className="text-emerald-800 flex items-center gap-1">
-                        <CheckCircle2 size={11} /> Votre réponse envoyée :
-                      </strong>
-                      <span className="italic text-gray-700">« {g.reply} »</span>
-                    </div>
-                  )}
+        {/* Liste des Invités (Tableau épuré et lisible) */}
+        <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-xs">
+          {filteredGuests.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#fbf7f0] text-gray-600 uppercase text-[10px] tracking-wider border-b border-[#b8924a]/20">
+                  <tr>
+                    <th className="px-4 py-3 font-bold">Invité</th>
+                    <th className="px-4 py-3 font-bold">Contact</th>
+                    <th className="px-4 py-3 font-bold text-center">Statut RSVP</th>
+                    <th className="px-4 py-3 font-bold text-center">Accompagnants</th>
+                    <th className="px-4 py-3 font-bold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredGuests.map((g: any) => (
+                    <tr key={g.id} className="hover:bg-amber-50/20 transition-colors">
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-[#f5eee1] text-[#8f6f33] flex items-center justify-center font-bold text-xs shrink-0">
+                            {g.nom.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-900 block">{g.nom}</span>
+                            {g.created_at && (
+                              <span className="text-[10px] text-gray-400 font-mono">
+                                {new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
 
-                  <div className="flex items-center justify-between pt-1 border-t border-[#b8924a]/15">
-                    {g.reply ? (
-                      <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
-                        <CheckCircle2 size={11} /> Répondu
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-amber-700">Non répondu</span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => openWishReplyModal(g)}
-                      className="px-2.5 py-1 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white text-[10px] font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer ml-auto"
-                    >
-                      <MessageCircle size={11} />
-                      <span>{g.reply ? "Modifier réponse" : "Répondre"}</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <td className="px-4 py-3.5 text-gray-600 font-mono text-[11px]">
+                        {g.telephone || <span className="text-gray-300 italic">Non renseigné</span>}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-center">
+                        <select
+                          value={g.statut_rsvp || "En attente"}
+                          onChange={(e) => handleUpdateStatus(g.id, e.target.value)}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none ${
+                            g.statut_rsvp === "Confirmé"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : g.statut_rsvp === "Refusé"
+                              ? "bg-rose-50 text-rose-800 border-rose-200"
+                              : "bg-amber-50 text-amber-800 border-amber-200"
+                          }`}
+                        >
+                          <option value="Confirmé">✓ Confirmé</option>
+                          <option value="En attente">⏳ En attente</option>
+                          <option value="Refusé">✕ Refusé</option>
+                        </select>
+                      </td>
+
+                      <td className="px-4 py-3.5 text-center text-gray-700 font-semibold">
+                        {g.nombre_accompagnants ? `+${g.nombre_accompagnants}` : "—"}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleRelanceGuest(g)}
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            title="Relancer par WhatsApp"
+                          >
+                            <MessageCircle size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGuest(g.id)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Supprimer"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-center">
-              <p className="text-xs font-semibold text-amber-900 mb-0.5">Aucun mot reçu pour le moment</p>
-              <p className="text-[11px] text-amber-700/80 leading-relaxed">
-                Les vœux et félicitations laissés par vos invités s&apos;afficheront ici dès qu&apos;ils confirmeront leur présence. Vous pourrez leur répondre individuellement.
+            <div className="p-8 text-center bg-gray-50/50">
+              <Users size={28} className="mx-auto text-gray-300 mb-2" />
+              <p className="text-xs font-semibold text-gray-700">Aucun invité correspondant</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {searchQuery
+                  ? "Modifiez votre recherche ou réinitialisez les filtres."
+                  : "Partagez votre lien d'invitation ou ajoutez vos premiers invités manuellement."}
               </p>
             </div>
           )}
         </div>
       </section>
 
-      {/* 3. TEXTE DE L'INVITATION */}
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500">Texte de l&apos;invitation</p>
-          <button onClick={() => setIsEditModalOpen(true)} className="text-[#8f6f33] text-sm font-semibold flex items-center gap-1">
-            <Edit3 size={14} /> Corriger
-          </button>
+      {/* 3. LIVRE D'OR · VŒUX & MOTS DOUX REÇUS DES CONVIVES */}
+      <section id="livredor" className="bg-gradient-to-br from-[#1c1209] via-[#24170d] to-[#140b06] text-[#f7eedc] rounded-3xl border border-[#c9a45e]/40 shadow-xl p-5 sm:p-7 relative overflow-hidden space-y-5">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-[#c9a45e]/15 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4 relative z-10">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[#d4af37] font-bold flex items-center gap-1.5">
+              <Sparkles size={12} className="text-[#d4af37]" /> Livre d&apos;or officiel
+            </p>
+            <h3 className="font-serif text-xl sm:text-2xl text-white mt-0.5">
+              Mots envoyés aux mariés {guestsWithMessages.length > 0 ? `(${guestsWithMessages.length})` : ""}
+            </h3>
+            <p className="text-xs text-gray-300 mt-0.5">
+              Tous les vœux et félicitations laissés par vos invités. Répondez-leur directement sur WhatsApp en 1 clic.
+            </p>
+          </div>
         </div>
-        <p className="font-serif text-xl text-gray-900 mt-3">{invitationData.title}</p>
-        <p className="text-sm text-[#8f6f33] font-semibold mt-0.5">{event.date}</p>
-        <p className="text-sm italic text-gray-700 leading-relaxed mt-2 whitespace-pre-line">{invitationData.message}</p>
+
+        {guestsWithMessages.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+            {guestsWithMessages.map((g: any) => (
+              <div
+                key={g.id}
+                className="bg-black/40 border border-[#c9a45e]/30 hover:border-[#c9a45e]/60 rounded-2xl p-4 flex flex-col justify-between transition-colors shadow-sm"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="font-semibold text-sm text-white">{g.nom}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {g.created_at ? new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
+                    </span>
+                  </div>
+
+                  <p className="font-serif italic text-sm text-[#f5dfaa] leading-relaxed bg-[#140c06]/60 p-3 rounded-xl border border-[#c9a45e]/20">
+                    « {g.message} »
+                  </p>
+
+                  {g.reply && (
+                    <div className="mt-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 size={11} /> Votre réponse envoyée :
+                      </span>
+                      <p className="text-gray-300 italic text-[11px] leading-relaxed">« {g.reply} »</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                  {g.reply ? (
+                    <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                      <CheckCircle2 size={11} /> Répondu
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-amber-400/80">Non répondu</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openWishReplyModal(g)}
+                    className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer ml-auto"
+                  >
+                    <MessageCircle size={13} />
+                    <span>{g.reply ? "Modifier réponse" : "Répondre sur WhatsApp"}</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-black/30 border border-[#c9a45e]/20 rounded-2xl p-6 text-center max-w-lg mx-auto relative z-10">
+            <span className="text-2xl mb-2 block">💌</span>
+            <p className="text-sm font-semibold text-[#f5dfaa] mb-1">
+              En attente des premiers mots de vos convives
+            </p>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              Dès qu&apos;un invité confirme sa présence sur votre lien d&apos;invitation et vous laisse un mot doux, il apparaîtra ici en temps réel et vous pourrez lui répondre directement sur WhatsApp en 1 clic.
+            </p>
+          </div>
+        )}
       </section>
+
+      {/* MODAL : AJOUTER UN INVITÉ */}
+      {isAddGuestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h4 className="font-serif text-lg font-bold text-gray-900">Ajouter un invité</h4>
+              <button
+                type="button"
+                onClick={() => setIsAddGuestModalOpen(false)}
+                className="p-1 rounded-full text-gray-400 hover:text-gray-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddGuest} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Nom &amp; Prénom *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Fatou Sow"
+                  value={newGuest.nom}
+                  onChange={(e) => setNewGuest({ ...newGuest, nom: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Numéro WhatsApp / Téléphone</label>
+                <input
+                  type="text"
+                  placeholder="Ex: +221 77 000 00 00"
+                  value={newGuest.telephone}
+                  onChange={(e) => setNewGuest({ ...newGuest, telephone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Statut RSVP</label>
+                  <select
+                    value={newGuest.statut_rsvp}
+                    onChange={(e) => setNewGuest({ ...newGuest, statut_rsvp: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                  >
+                    <option value="Confirmé">✓ Confirmé</option>
+                    <option value="En attente">⏳ En attente</option>
+                    <option value="Refusé">✕ Refusé</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Accompagnants</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={newGuest.nombre_accompagnants}
+                    onChange={(e) => setNewGuest({ ...newGuest, nombre_accompagnants: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddGuestModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-[#281a10] hover:bg-[#1a1008] text-[#f7e7b4] font-bold"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isStudioOpen && (
         <SplitStudioEditor

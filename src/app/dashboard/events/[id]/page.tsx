@@ -455,7 +455,7 @@ export default function EventDashboardPage({
         )}
 
         {/* Guests Card */}
-        <Link href={`/dashboard/events/${event.id}/participants`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col">
+        <Link href={`/dashboard/events/${event.id}/invitations#rsvps`} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:border-[#b8924a]/50 hover:shadow-md transition-all group flex flex-col">
           <div className="flex items-center justify-between mb-4 text-gray-600 font-medium group-hover:text-[#8f6f33] transition-colors">
             <span className="flex items-center gap-2"><Users size={18} /> Invités ({guests.total})</span>
             <span className="text-[11px] text-[#8f6f33] font-semibold">Suivi RSVP &rarr;</span>
@@ -533,10 +533,10 @@ export default function EventDashboardPage({
             </h3>
           </div>
           <Link
-            href={`/dashboard/events/${event.id}/participants`}
+            href={`/dashboard/events/${event.id}/invitations#livredor`}
             className="text-xs text-[#f0d999] hover:underline flex items-center gap-1 font-semibold"
           >
-            <span>Tous les invités ({guests.total})</span>
+            <span>Voir tout le livre d&apos;or ({guests.total})</span>
             <span>&rarr;</span>
           </Link>
         </div>

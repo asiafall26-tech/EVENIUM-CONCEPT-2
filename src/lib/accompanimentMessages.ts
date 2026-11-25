@@ -6,6 +6,8 @@
 export type AccompanimentTone = "chaleureux" | "prestige" | "court" | "poetique" | "religieux";
 
 export interface AccompanimentParams {
+  /** Modèle d'invitation (optionnel) */
+  modelId?: string;
   /** Service ou format principal : animée, carte, voeu, mot_doux, couple */
   serviceType?: string;
   /** Type d'événement : Mariage, Anniversaire, Baptême, Gala, etc. */
