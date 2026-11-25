@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Edit3, Eye, Sparkles, X, CheckCircle, CheckCircle2, Copy, MessageCircle, RotateCcw, MessageSquare, Users, UserPlus, Search, Trash2, Plus, Clock, XCircle, Phone } from "lucide-react";
+import { Send, Edit3, Eye, Sparkles, X, CheckCircle, CheckCircle2, Copy, MessageCircle, RotateCcw, MessageSquare, Users, UserPlus, Search, Trash2, Plus, Clock, XCircle, Phone, Download, Upload, FileSpreadsheet, Mail, Layers, Check, ExternalLink } from "lucide-react";
 import { useState, use, useEffect, useRef, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
@@ -27,6 +27,10 @@ import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 import WishReplyModal, { WishReplyGuest } from "@/components/dashboard/WishReplyModal";
 import { getWishRepliesAction } from "@/app/actions/wishReplies";
 import WhatsAppShareWidget from "@/components/invitations/WhatsAppShareWidget";
+import { downloadGuestTemplateExcel, parseGuestFile, exportGuestsToExcel, extractGroupAndWish, formatMsgWithGroup, normalizePhoneNumber, ParsedGuestRow } from "@/lib/guestImportUtils";
+import { updateGuestStatusAction, deleteGuestAction, sendBulkEmailInvitationsAction } from "@/app/actions/guestsImport";
+import { GuestImportModal } from "@/components/dashboard/GuestImportModal";
+import { WhatsAppChainSenderModal } from "@/components/dashboard/WhatsAppChainSenderModal";
 
 export default function InvitationsDashboardPage({
   params,
@@ -140,14 +144,28 @@ export default function InvitationsDashboardPage({
 
   // Guest list filters & search
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"Tous" | "Confirmé" | "En attente" | "Refusé">("Tous");
+  const [statusFilter, setStatusFilter] = useState<"Tous" | "Non envoyé" | "Envoyé" | "Ouvert" | "Confirmé" | "En attente" | "Refusé">("Tous");
+  const [groupFilter, setGroupFilter] = useState<string>("Tous");
+
+  // Excel Import & Modals
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [parsedImportGuests, setParsedImportGuests] = useState<ParsedGuestRow[]>([]);
+  const [importFileName, setImportFileName] = useState("");
+  const [isChainSenderModalOpen, setIsChainSenderModalOpen] = useState(false);
+  const [isBulkEmailModalOpen, setIsBulkEmailModalOpen] = useState(false);
+  const [isSendingBulkEmail, setIsSendingBulkEmail] = useState(false);
+  const [bulkEmailSuccess, setBulkEmailSuccess] = useState<string | null>(null);
+  const [copiedPersonalLinkId, setCopiedPersonalLinkId] = useState<string | null>(null);
 
   // Add Guest Modal State
   const [isAddGuestModalOpen, setIsAddGuestModalOpen] = useState(false);
   const [newGuest, setNewGuest] = useState({
     nom: "",
     telephone: "",
-    statut_rsvp: "Confirmé",
+    email: "",
+    groupe: "Famille",
+    statut_rsvp: "Non envoyé",
     nombre_accompagnants: 0,
   });
 
@@ -176,7 +194,7 @@ export default function InvitationsDashboardPage({
     );
   };
 
-  useEffect(() => {
+  const fetchGuestsData = () => {
     Promise.all([
       supabase
         .from('guests')
@@ -195,54 +213,121 @@ export default function InvitationsDashboardPage({
         }));
         setGuestsList(enriched);
         const conf = data.filter((g: any) => g.statut_rsvp === "Confirmé").length;
-        const decl = data.filter((g: any) => g.statut_rsvp === "Refusé").length;
+        const decl = data.filter((g: any) => g.statut_rsvp === "Refusé" || g.statut_rsvp === "Décliné").length;
         setGuestStats({ total: data.length, confirmed: conf, declined: decl });
       }
       markRsvpSeen(id);
     });
+  };
+
+  useEffect(() => {
+    fetchGuestsData();
   }, [id, supabase]);
+
+  // Groupes uniques présents parmi les invités
+  const availableGroups = useMemo(() => {
+    const set = new Set<string>();
+    guestsList.forEach((g: any) => {
+      const { group } = extractGroupAndWish(g.message);
+      if (group && group !== "Général") {
+        set.add(group);
+      }
+    });
+    return Array.from(set);
+  }, [guestsList]);
+
+  // Invités en attente / à relancer
+  const pendingCount = useMemo(() => {
+    return guestsList.filter(
+      (g: any) =>
+        g.statut_rsvp === "Non envoyé" ||
+        g.statut_rsvp === "Envoyé" ||
+        g.statut_rsvp === "Ouvert" ||
+        g.statut_rsvp === "En attente" ||
+        !g.statut_rsvp
+    ).length;
+  }, [guestsList]);
+
+  // Invités éligibles pour email
+  const eligibleForEmail = useMemo(() => {
+    return guestsList.filter(
+      (g: any) =>
+        g.email &&
+        String(g.email).trim().length > 0 &&
+        g.statut_rsvp !== "Confirmé" &&
+        g.statut_rsvp !== "Refusé" &&
+        g.statut_rsvp !== "Décliné"
+    );
+  }, [guestsList]);
+
+  // Gestion du fichier Excel importé
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const parsed = await parseGuestFile(file, guestsList);
+      setParsedImportGuests(parsed);
+      setImportFileName(file.name);
+      setIsImportModalOpen(true);
+    } catch (err: any) {
+      alert("Erreur lors de la lecture du fichier Excel : " + (err.message || "Fichier invalide"));
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleAddGuest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGuest.nom.trim()) return;
+
+    const messageField = formatMsgWithGroup(newGuest.groupe, null);
+    const normalizedPhone = newGuest.telephone.trim() ? normalizePhoneNumber(newGuest.telephone) : null;
+
     const { data } = await supabase.from('guests').insert([{
       event_id: id,
       nom: newGuest.nom.trim(),
-      telephone: newGuest.telephone.trim() || null,
-      statut_rsvp: newGuest.statut_rsvp,
-      nombre_accompagnants: Number(newGuest.nombre_accompagnants) || 0
+      telephone: normalizedPhone,
+      email: newGuest.email.trim() ? newGuest.email.trim().toLowerCase() : null,
+      statut_rsvp: newGuest.statut_rsvp || "Non envoyé",
+      nombre_accompagnants: Number(newGuest.nombre_accompagnants) || 0,
+      message: messageField,
     }]).select().single();
+
     if (data) {
       setGuestsList(prev => [data, ...prev]);
       setIsAddGuestModalOpen(false);
-      setNewGuest({ nom: "", telephone: "", statut_rsvp: "Confirmé", nombre_accompagnants: 0 });
+      setNewGuest({ nom: "", telephone: "", email: "", groupe: "Famille", statut_rsvp: "Non envoyé", nombre_accompagnants: 0 });
       const updated = [data, ...guestsList];
       const conf = updated.filter((g: any) => g.statut_rsvp === "Confirmé").length;
-      const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé").length;
+      const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé" || g.statut_rsvp === "Décliné").length;
       setGuestStats({ total: updated.length, confirmed: conf, declined: decl });
     }
   };
 
   const handleUpdateStatus = async (guestId: string, newStatus: string) => {
     setGuestsList(prev => prev.map(g => g.id === guestId ? { ...g, statut_rsvp: newStatus } : g));
-    await supabase.from('guests').update({ statut_rsvp: newStatus }).eq('id', guestId);
+    await updateGuestStatusAction(guestId, id, newStatus);
     const updated = guestsList.map(g => g.id === guestId ? { ...g, statut_rsvp: newStatus } : g);
     const conf = updated.filter((g: any) => g.statut_rsvp === "Confirmé").length;
-    const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé").length;
+    const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé" || g.statut_rsvp === "Décliné").length;
     setGuestStats({ total: updated.length, confirmed: conf, declined: decl });
   };
 
   const handleDeleteGuest = async (guestId: string) => {
     if (!confirm("Voulez-vous retirer cet invité de la liste ?")) return;
     setGuestsList(prev => prev.filter(g => g.id !== guestId));
-    await supabase.from('guests').delete().eq('id', guestId);
+    await deleteGuestAction(guestId, id);
     const updated = guestsList.filter(g => g.id !== guestId);
     const conf = updated.filter((g: any) => g.statut_rsvp === "Confirmé").length;
-    const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé").length;
+    const decl = updated.filter((g: any) => g.statut_rsvp === "Refusé" || g.statut_rsvp === "Décliné").length;
     setGuestStats({ total: updated.length, confirmed: conf, declined: decl });
   };
 
-  const handleRelanceGuest = (guest: any) => {
+  const handleRelanceGuest = async (guest: any) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://evenium.com";
+    const personalUrl = `${origin}/invite/${event.id}?guest=${guest.id}`;
+
     const text = generateAccompanimentMessage({
       modelId: event.invitationModelId,
       eventType: event.type,
@@ -251,25 +336,92 @@ export default function InvitationsDashboardPage({
       dateFormatted: formatEventDate(event.date),
       time: event.time && event.time !== "À définir" ? event.time : undefined,
       location: event.location && event.location !== "À définir" ? event.location : undefined,
-      link: shareUrl,
+      link: personalUrl,
       tone: "chaleureux",
     });
-    const phone = (guest.telephone || "").replace(/[^0-9]/g, "");
+
+    const phone = (guest.telephone || "").replace(/\D/g, "");
     const url = phone
-      ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
-      : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    // Marquer comme 'Envoyé' s'il était 'Non envoyé'
+    if (guest.statut_rsvp === "Non envoyé") {
+      await handleUpdateStatus(guest.id, "Envoyé");
+    }
+  };
+
+  const handleCopyPersonalLink = (guestId: string) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://evenium.com";
+    const personalUrl = `${origin}/invite/${event.id}?guest=${guestId}`;
+    navigator.clipboard.writeText(personalUrl);
+    setCopiedPersonalLinkId(guestId);
+    setTimeout(() => setCopiedPersonalLinkId(null), 2500);
+  };
+
+  const handleConfirmBulkEmail = async () => {
+    if (eligibleForEmail.length === 0) return;
+    setIsSendingBulkEmail(true);
+    setBulkEmailSuccess(null);
+
+    const guestIds = eligibleForEmail.map((g: any) => g.id);
+    const res = await sendBulkEmailInvitationsAction({
+      eventId: id,
+      eventName: event?.name || "Votre événement",
+      guestIds,
+    });
+
+    if (res.success) {
+      setBulkEmailSuccess(`${res.sentCount} invitations par email ont été envoyées avec succès !`);
+      setGuestsList((prev) =>
+        prev.map((g) => (guestIds.includes(g.id) ? { ...g, statut_rsvp: "Envoyé" } : g))
+      );
+      setTimeout(() => {
+        setIsBulkEmailModalOpen(false);
+        setBulkEmailSuccess(null);
+      }, 2000);
+    } else {
+      alert("Erreur lors de l'envoi groupé par email : " + (res.error || "Erreur inconnue"));
+    }
+    setIsSendingBulkEmail(false);
   };
 
   const filteredGuests = useMemo(() => {
     return guestsList.filter((g) => {
-      const matchSearch =
-        g.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (g.telephone && g.telephone.includes(searchQuery));
-      const matchStatus = statusFilter === "Tous" || g.statut_rsvp === statusFilter;
-      return matchSearch && matchStatus;
+      // 1. Recherche
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesNom = g.nom?.toLowerCase().includes(q);
+        const matchesTel = g.telephone?.includes(q);
+        const matchesEmail = g.email?.toLowerCase().includes(q);
+        if (!matchesNom && !matchesTel && !matchesEmail) return false;
+      }
+      // 2. Filtre Groupe
+      if (groupFilter !== "Tous") {
+        const { group } = extractGroupAndWish(g.message);
+        if (group !== groupFilter) return false;
+      }
+      // 3. Filtre Statut
+      if (statusFilter !== "Tous") {
+        if (statusFilter === "En attente") {
+          return (
+            g.statut_rsvp === "Non envoyé" ||
+            g.statut_rsvp === "Envoyé" ||
+            g.statut_rsvp === "Ouvert" ||
+            g.statut_rsvp === "En attente" ||
+            !g.statut_rsvp
+          );
+        }
+        if (statusFilter === "Refusé") {
+          return g.statut_rsvp === "Refusé" || g.statut_rsvp === "Décliné";
+        }
+        return g.statut_rsvp === statusFilter;
+      }
+      return true;
     });
-  }, [guestsList, searchQuery, statusFilter]);
+  }, [guestsList, searchQuery, groupFilter, statusFilter]);
 
   const totalAccompagnants = useMemo(() => {
     return guestsList
@@ -561,36 +713,110 @@ export default function InvitationsDashboardPage({
 
       {/* 2. SUIVI DES RÉPONSES (RSVP) & GESTION DES INVITÉS */}
       <section id="rsvps" className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept=".xlsx,.xls,.csv"
+          className="hidden"
+        />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] uppercase tracking-[0.25em] text-[#8f6f33] font-bold flex items-center gap-1.5">
-                <Users size={13} className="text-[#b8924a]" /> Suivi en direct
+                <Users size={13} className="text-[#b8924a]" /> Suivi &amp; Gestion des Invités
               </span>
             </div>
             <h3 className="font-serif text-xl sm:text-2xl text-gray-900 mt-1">
               Réponses des Invités (RSVP)
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Consultez les confirmations en temps réel, ajoutez vos invités ou relancez-les par WhatsApp.
+              Importez vos invités par Excel, transmettez-leur leur lien personnel par WhatsApp ou email et suivez leurs confirmations.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsAddGuestModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#281a10] hover:bg-[#1a1008] text-[#f7e7b4] text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
-          >
-            <UserPlus size={15} className="text-[#c9a45e]" />
-            <span>Ajouter un invité</span>
-          </button>
+          {/* Boutons d'action principaux (Excel, Import, Export, Ajout) */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={downloadGuestTemplateExcel}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-200 transition-all cursor-pointer"
+              title="Télécharger le modèle de fichier Excel avec les colonnes attendues"
+            >
+              <Download size={14} className="text-[#8f6f33]" />
+              <span>Modèle Excel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#fbf7f0] hover:bg-[#f5eee1] text-[#8f6f33] text-xs font-bold border border-[#b8924a]/30 transition-all shadow-xs cursor-pointer"
+              title="Importer une liste d'invités depuis un fichier .xlsx ou .csv"
+            >
+              <Upload size={14} className="text-[#b8924a]" />
+              <span>Importer mes invités</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => exportGuestsToExcel(guestsList, event?.name || "Evenium", id)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-200 transition-all cursor-pointer"
+              title="Télécharger la liste complète de suivi RSVP en Excel"
+            >
+              <FileSpreadsheet size={14} className="text-emerald-700" />
+              <span>Exporter en Excel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsAddGuestModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#281a10] hover:bg-[#1a1008] text-[#f7e7b4] text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <UserPlus size={14} className="text-[#c9a45e]" />
+              <span>Ajouter</span>
+            </button>
+          </div>
         </div>
 
-        {/* Synthèse KPI des confirmations */}
+        {/* Barre d'action rapide d'envoi groupé WhatsApp / Email */}
+        <div className="p-3 bg-[#fcfaf7] border border-[#b8924a]/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-gray-700">
+            <Sparkles size={15} className="text-[#b8924a] shrink-0" />
+            <span>
+              <strong>Envoi simplifié :</strong> transmettez le lien personnel unique de chaque invité pour qu&apos;il soit reconnu automatiquement.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsChainSenderModalOpen(true)}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold shadow-xs hover:brightness-105 transition-all cursor-pointer"
+            >
+              <MessageCircle size={14} />
+              <span>Envoi à la chaîne WhatsApp</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsBulkEmailModalOpen(true)}
+              disabled={eligibleForEmail.length === 0}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-black hover:bg-gray-800 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-40 cursor-pointer"
+            >
+              <Mail size={14} />
+              <span>Envoyer à tous par email ({eligibleForEmail.length})</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Synthèse KPI des confirmations (avec chiffres classiques bien lisibles) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
           <div className="p-3.5 bg-emerald-50/80 rounded-2xl border border-emerald-100/90 flex flex-col justify-center">
             <span className="text-[10px] uppercase font-bold text-emerald-700 block">Confirmés</span>
-            <span className="font-serif text-2xl font-bold text-emerald-800 mt-0.5">{guestStats.confirmed}</span>
+            <span className="font-sans font-extrabold text-2xl sm:text-3xl tabular-nums [font-variant-numeric:lining-nums] text-emerald-800 mt-0.5">
+              {guestStats.confirmed}
+            </span>
             {totalAccompagnants > 0 && (
               <span className="text-[10px] text-emerald-600 font-medium mt-0.5">
                 +{totalAccompagnants} accompagnant{totalAccompagnants > 1 ? "s" : ""}
@@ -599,64 +825,113 @@ export default function InvitationsDashboardPage({
           </div>
 
           <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-100 flex flex-col justify-center">
-            <span className="text-[10px] uppercase font-bold text-amber-700 block">En attente</span>
-            <span className="font-serif text-2xl font-bold text-amber-800 mt-0.5">
-              {Math.max(0, guestStats.total - guestStats.confirmed - guestStats.declined)}
+            <span className="text-[10px] uppercase font-bold text-amber-700 block">En attente / À relancer</span>
+            <span className="font-sans font-extrabold text-2xl sm:text-3xl tabular-nums [font-variant-numeric:lining-nums] text-amber-800 mt-0.5">
+              {pendingCount}
             </span>
-            <span className="text-[10px] text-amber-600 font-medium mt-0.5">À relancer</span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("En attente")}
+              className="text-[10px] text-amber-700 hover:underline font-bold mt-0.5 inline-flex items-center justify-center gap-1 cursor-pointer"
+            >
+              Filtrer &amp; relancer &rarr;
+            </button>
           </div>
 
           <div className="p-3.5 bg-rose-50/80 rounded-2xl border border-rose-100/90 flex flex-col justify-center">
             <span className="text-[10px] uppercase font-bold text-rose-700 block">Déclinés</span>
-            <span className="font-serif text-2xl font-bold text-rose-800 mt-0.5">{guestStats.declined}</span>
+            <span className="font-sans font-extrabold text-2xl sm:text-3xl tabular-nums [font-variant-numeric:lining-nums] text-rose-800 mt-0.5">
+              {guestStats.declined}
+            </span>
             <span className="text-[10px] text-rose-500 font-medium mt-0.5">Absents</span>
           </div>
 
           <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200/70 flex flex-col justify-center">
-            <span className="text-[10px] uppercase font-bold text-gray-500 block">Total Réponses</span>
-            <span className="font-serif text-2xl font-bold text-gray-900 mt-0.5">{guestStats.total}</span>
+            <span className="text-[10px] uppercase font-bold text-gray-500 block">Total Invités</span>
+            <span className="font-sans font-extrabold text-2xl sm:text-3xl tabular-nums [font-variant-numeric:lining-nums] text-gray-900 mt-0.5">
+              {guestsList.length}
+            </span>
             <span className="text-[10px] text-gray-400 font-medium mt-0.5">Convives enregistrés</span>
           </div>
         </div>
 
-        {/* Barre de Recherche & Filtres Rapides */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher par nom ou téléphone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30 transition-all"
-            />
+        {/* Barre de Recherche & Filtres Rapides (Statut & Groupe) */}
+        <div className="space-y-2.5 pt-1">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher par nom, téléphone ou email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30 transition-all"
+              />
+            </div>
+
+            {/* Filtre par Statut */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+              {(["Tous", "Non envoyé", "Envoyé", "Ouvert", "Confirmé", "En attente", "Refusé"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setStatusFilter(tab)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    statusFilter === tab
+                      ? "bg-[#281a10] text-[#f7e7b4] shadow-xs"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {tab === "Tous"
+                    ? `Tous (${guestsList.length})`
+                    : tab === "En attente"
+                    ? `En attente (${pendingCount})`
+                    : tab === "Confirmé"
+                    ? `Confirmés (${guestStats.confirmed})`
+                    : tab === "Refusé"
+                    ? `Déclinés (${guestStats.declined})`
+                    : `${tab} (${guestsList.filter((g: any) => g.statut_rsvp === tab).length})`}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
-            {(["Tous", "Confirmé", "En attente", "Refusé"] as const).map((tab) => (
+          {/* Filtre par Groupe (si des groupes existent) */}
+          {availableGroups.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 text-xs">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+                <Layers size={12} /> Groupe :
+              </span>
               <button
-                key={tab}
                 type="button"
-                onClick={() => setStatusFilter(tab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  statusFilter === tab
-                    ? "bg-[#281a10] text-[#f7e7b4] shadow-xs"
+                onClick={() => setGroupFilter("Tous")}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                  groupFilter === "Tous"
+                    ? "bg-[#b8924a] text-white shadow-2xs"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {tab === "Tous"
-                  ? `Tous (${guestsList.length})`
-                  : tab === "Confirmé"
-                  ? `Confirmés (${guestStats.confirmed})`
-                  : tab === "Refusé"
-                  ? `Refusés (${guestStats.declined})`
-                  : `En attente (${Math.max(0, guestStats.total - guestStats.confirmed - guestStats.declined)})`}
+                Tous les groupes
               </button>
-            ))}
-          </div>
+              {availableGroups.map((grp) => (
+                <button
+                  key={grp}
+                  type="button"
+                  onClick={() => setGroupFilter(grp)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                    groupFilter === grp
+                      ? "bg-[#b8924a] text-white shadow-2xs"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {grp} ({guestsList.filter((g: any) => extractGroupAndWish(g.message).group === grp).length})
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Liste des Invités (Tableau épuré et lisible) */}
+        {/* Liste des Invités (Tableau haute couture épuré et lisible) */}
         <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-xs">
           {filteredGuests.length > 0 ? (
             <div className="overflow-x-auto">
@@ -665,78 +940,129 @@ export default function InvitationsDashboardPage({
                   <tr>
                     <th className="px-4 py-3 font-bold">Invité</th>
                     <th className="px-4 py-3 font-bold">Contact</th>
+                    <th className="px-4 py-3 font-bold">Groupe</th>
                     <th className="px-4 py-3 font-bold text-center">Statut RSVP</th>
-                    <th className="px-4 py-3 font-bold text-center">Accompagnants</th>
-                    <th className="px-4 py-3 font-bold text-right">Actions</th>
+                    <th className="px-4 py-3 font-bold text-center">Places</th>
+                    <th className="px-4 py-3 font-bold text-right">Actions &amp; Liens</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredGuests.map((g: any) => (
-                    <tr key={g.id} className="hover:bg-amber-50/20 transition-colors">
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#f5eee1] text-[#8f6f33] flex items-center justify-center font-bold text-xs shrink-0">
-                            {g.nom.charAt(0).toUpperCase()}
+                  {filteredGuests.map((g: any) => {
+                    const { group } = extractGroupAndWish(g.message);
+                    const totalPlaces = 1 + (Number(g.nombre_accompagnants) || 0);
+                    const isCopied = copiedPersonalLinkId === g.id;
+
+                    return (
+                      <tr key={g.id} className="hover:bg-amber-50/20 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-[#f5eee1] text-[#8f6f33] flex items-center justify-center font-bold text-xs shrink-0">
+                              {g.nom.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-900 block">{g.nom}</span>
+                              {g.created_at && (
+                                <span className="text-[10px] text-gray-400 font-mono whitespace-nowrap block">
+                                  {new Date(g.created_at).toLocaleDateString("fr-FR", {
+                                    day: "numeric",
+                                    month: "short",
+                                  })}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-semibold text-gray-900 block">{g.nom}</span>
-                            {g.created_at && (
-                              <span className="text-[10px] text-gray-400 font-mono">
-                                {new Date(g.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                              </span>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <div className="space-y-0.5">
+                            {g.telephone && (
+                              <p className="text-gray-700 font-mono text-[11px] font-medium">{g.telephone}</p>
+                            )}
+                            {g.email && (
+                              <p className="text-gray-400 text-[10px] truncate max-w-[150px]">{g.email}</p>
+                            )}
+                            {!g.telephone && !g.email && (
+                              <span className="text-gray-300 italic text-[11px]">Non renseigné</span>
                             )}
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-4 py-3.5 text-gray-600 font-mono text-[11px]">
-                        {g.telephone || <span className="text-gray-300 italic">Non renseigné</span>}
-                      </td>
+                        <td className="px-4 py-3.5">
+                          <span className="inline-block px-2 py-0.5 rounded-full bg-[#b8924a]/10 text-[#8f6f33] text-[10px] font-bold">
+                            {group || "Général"}
+                          </span>
+                        </td>
 
-                      <td className="px-4 py-3.5 text-center">
-                        <select
-                          value={g.statut_rsvp || "En attente"}
-                          onChange={(e) => handleUpdateStatus(g.id, e.target.value)}
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none ${
-                            g.statut_rsvp === "Confirmé"
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                              : g.statut_rsvp === "Refusé"
-                              ? "bg-rose-50 text-rose-800 border-rose-200"
-                              : "bg-amber-50 text-amber-800 border-amber-200"
-                          }`}
-                        >
-                          <option value="Confirmé">✓ Confirmé</option>
-                          <option value="En attente">⏳ En attente</option>
-                          <option value="Refusé">✕ Refusé</option>
-                        </select>
-                      </td>
-
-                      <td className="px-4 py-3.5 text-center text-gray-700 font-semibold">
-                        {g.nombre_accompagnants ? `+${g.nombre_accompagnants}` : "—"}
-                      </td>
-
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleRelanceGuest(g)}
-                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
-                            title="Relancer par WhatsApp"
+                        <td className="px-4 py-3.5 text-center">
+                          <select
+                            value={g.statut_rsvp || "Non envoyé"}
+                            onChange={(e) => handleUpdateStatus(g.id, e.target.value)}
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none ${
+                              g.statut_rsvp === "Confirmé"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : g.statut_rsvp === "Refusé" || g.statut_rsvp === "Décliné"
+                                ? "bg-rose-50 text-rose-800 border-rose-200"
+                                : g.statut_rsvp === "Ouvert"
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : g.statut_rsvp === "Envoyé"
+                                ? "bg-blue-50 text-blue-800 border-blue-200"
+                                : "bg-gray-100 text-gray-700 border-gray-200"
+                            }`}
                           >
-                            <MessageCircle size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteGuest(g.id)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Supprimer"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            <option value="Non envoyé">⚪ Non envoyé</option>
+                            <option value="Envoyé">✉️ Envoyé</option>
+                            <option value="Ouvert">👀 Ouvert</option>
+                            <option value="Confirmé">✓ Confirmé</option>
+                            <option value="Refusé">✕ Décliné</option>
+                          </select>
+                        </td>
+
+                        <td className="px-4 py-3.5 text-center text-gray-700 font-semibold">
+                          <span title={`${totalPlaces} place(s) au total`}>
+                            {totalPlaces > 1 ? `${totalPlaces} places (+${g.nombre_accompagnants})` : "1 place"}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* WhatsApp avec message + lien personnel */}
+                            {g.telephone && (
+                              <button
+                                type="button"
+                                onClick={() => handleRelanceGuest(g)}
+                                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                title="Envoyer l'invitation sur WhatsApp avec son lien personnel"
+                              >
+                                <MessageCircle size={16} />
+                              </button>
+                            )}
+
+                            {/* Copier le lien personnel unique */}
+                            <button
+                              type="button"
+                              onClick={() => handleCopyPersonalLink(g.id)}
+                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                isCopied ? "text-emerald-600 bg-emerald-50" : "text-gray-500 hover:bg-gray-100"
+                              }`}
+                              title={isCopied ? "Lien personnel copié !" : "Copier le lien personnel unique de cet invité"}
+                            >
+                              {isCopied ? <Check size={15} /> : <Copy size={15} />}
+                            </button>
+
+                            {/* Supprimer */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteGuest(g.id)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Supprimer cet invité"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -745,9 +1071,9 @@ export default function InvitationsDashboardPage({
               <Users size={28} className="mx-auto text-gray-300 mb-2" />
               <p className="text-xs font-semibold text-gray-700">Aucun invité correspondant</p>
               <p className="text-[11px] text-gray-400 mt-0.5">
-                {searchQuery
+                {searchQuery || groupFilter !== "Tous" || statusFilter !== "Tous"
                   ? "Modifiez votre recherche ou réinitialisez les filtres."
-                  : "Partagez votre lien d'invitation ou ajoutez vos premiers invités manuellement."}
+                  : "Importez vos invités par fichier Excel ou ajoutez-les manuellement."}
               </p>
             </div>
           )}
@@ -862,18 +1188,45 @@ export default function InvitationsDashboardPage({
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Numéro WhatsApp / Téléphone</label>
-                <input
-                  type="text"
-                  placeholder="Ex: +221 77 000 00 00"
-                  value={newGuest.telephone}
-                  onChange={(e) => setNewGuest({ ...newGuest, telephone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Numéro WhatsApp / Téléphone</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: +221 77 000 00 00"
+                    value={newGuest.telephone}
+                    onChange={(e) => setNewGuest({ ...newGuest, telephone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Adresse Email</label>
+                  <input
+                    type="email"
+                    placeholder="Ex: fatou@example.com"
+                    value={newGuest.email}
+                    onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">Groupe</label>
+                  <select
+                    value={newGuest.groupe}
+                    onChange={(e) => setNewGuest({ ...newGuest, groupe: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
+                  >
+                    <option value="Famille">Famille</option>
+                    <option value="Amis">Amis</option>
+                    <option value="Collègues">Collègues</option>
+                    <option value="VIP">VIP</option>
+                    <option value="Général">Général</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">Statut RSVP</label>
                   <select
@@ -881,8 +1234,10 @@ export default function InvitationsDashboardPage({
                     onChange={(e) => setNewGuest({ ...newGuest, statut_rsvp: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#b8924a]/30"
                   >
+                    <option value="Non envoyé">⏳ Non envoyé</option>
+                    <option value="Envoyé">✉️ Envoyé</option>
+                    <option value="Ouvert">👀 Ouvert</option>
                     <option value="Confirmé">✓ Confirmé</option>
-                    <option value="En attente">⏳ En attente</option>
                     <option value="Refusé">✕ Refusé</option>
                   </select>
                 </div>
@@ -1221,6 +1576,121 @@ export default function InvitationsDashboardPage({
           type: event?.type,
         }}
         onReplySaved={handleWishReplySaved}
+      />
+
+      {/* Modal Envoi Groupé par Email */}
+      {isBulkEmailModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSendingBulkEmail) setIsBulkEmailModalOpen(false);
+          }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-gray-100 animate-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold">
+                  <Mail size={20} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-gray-900">
+                    Envoyer à tous par email
+                  </h3>
+                  <p className="text-xs text-gray-500">Envoi groupé des invitations</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isSendingBulkEmail}
+                onClick={() => setIsBulkEmailModalOpen(false)}
+                className="p-1 rounded-full text-gray-400 hover:text-gray-700 disabled:opacity-50"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {bulkEmailSuccess ? (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-xs">
+                <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
+                <span>{bulkEmailSuccess}</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Vous vous apprêtez à envoyer une invitation personnalisée par email aux invités disposant d'une adresse email valide.
+                </p>
+
+                <div className="p-4 bg-[#fbf7f0] border border-[#b8924a]/25 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600">Invités avec adresse email :</span>
+                    <span className="font-bold text-gray-900 tabular-nums [font-variant-numeric:lining-nums]">
+                      {eligibleForEmail.length} invité{eligibleForEmail.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600">Statut après envoi :</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full text-[11px]">
+                      ✉️ Envoyé
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-amber-50/80 border border-amber-200/60 rounded-xl text-[11px] text-amber-900 leading-relaxed">
+                  💡 <strong>Lien personnel inclus :</strong> Chaque convive reçoit son mot d'accompagnement et son lien RSVP unique. Dès qu'il ouvrira son lien, son statut passera automatiquement à <strong>Ouvert</strong>.
+                </div>
+
+                <div className="flex gap-2.5 justify-end pt-2">
+                  <button
+                    type="button"
+                    disabled={isSendingBulkEmail}
+                    onClick={() => setIsBulkEmailModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-xs hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSendingBulkEmail || eligibleForEmail.length === 0}
+                    onClick={handleConfirmBulkEmail}
+                    className="px-4 py-2.5 rounded-xl bg-[#281a10] hover:bg-[#1a1008] text-[#f7e7b4] font-semibold text-xs shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Mail size={14} className={isSendingBulkEmail ? "animate-pulse" : ""} />
+                    <span>
+                      {isSendingBulkEmail ? "Envoi en cours…" : `Envoyer (${eligibleForEmail.length})`}
+                    </span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'import Excel / CSV */}
+      <GuestImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        eventId={id}
+        initialGuests={parsedImportGuests}
+        fileName={importFileName}
+        onImportSuccess={() => {
+          fetchGuestsData();
+        }}
+      />
+
+      {/* Modal d'envoi à la chaîne WhatsApp */}
+      <WhatsAppChainSenderModal
+        isOpen={isChainSenderModalOpen}
+        onClose={() => setIsChainSenderModalOpen(false)}
+        guests={filteredGuests}
+        eventId={id}
+        eventName={event?.name || "Votre événement"}
+        accompanimentMessage={accompanimentMsg}
+        onGuestStatusUpdated={(guestId, status) => {
+          setGuestsList((prev) =>
+            prev.map((g) => (g.id === guestId ? { ...g, statut_rsvp: status } : g))
+          );
+        }}
       />
     </div>
   );

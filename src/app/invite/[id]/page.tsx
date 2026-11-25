@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -20,6 +21,7 @@ import CustomGuestInvitation from "@/components/invitations/custom/CustomGuestIn
 import { isCustomModelId } from "@/lib/customModels";
 import { sendRsvpPushAction } from "@/app/actions/notify";
 import { submitGuestRsvpAction } from "@/app/actions/rsvp";
+import { markGuestOpenedAction } from "@/app/actions/guestsImport";
 import { CheckCircle, XCircle, Users, Phone, Mail, User, Loader2, Music, MapPin, Clock, Camera, Navigation, Gift, Car, Hotel, Info } from "lucide-react";
 
 const FadeInScroll = ({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) => (
@@ -36,6 +38,9 @@ const FadeInScroll = ({ children, delay = 0 }: { children: React.ReactNode, dela
 
 export default function InvitePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const guestId = searchParams.get("guest");
+
   const supabase = createClient();
   
   const [event, setEvent] = useState<any>(null);
@@ -51,6 +56,23 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
     statut_rsvp: "Confirmé",
     message: ""
   });
+
+  // Marquer l'invité comme 'Ouvert' et pré-remplir ses coordonnées s'il utilise un lien personnel
+  useEffect(() => {
+    if (guestId) {
+      markGuestOpenedAction(guestId, id).then((res) => {
+        if (res.success && res.guest) {
+          setFormData((prev) => ({
+            ...prev,
+            nom: res.guest.nom || prev.nom,
+            email: res.guest.email || prev.email,
+            telephone: res.guest.telephone || prev.telephone,
+            nombre_accompagnants: res.guest.nombre_accompagnants || prev.nombre_accompagnants,
+          }));
+        }
+      });
+    }
+  }, [guestId, id]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -77,6 +99,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
   const saveRsvp = async (rsvp: RsvpPayload & { email?: string }) => {
     const res = await submitGuestRsvpAction({
       eventId: event.id,
+      guestId: guestId || null,
       nom: rsvp.name,
       email: rsvp.email,
       telephone: rsvp.phone,
@@ -170,6 +193,7 @@ export default function InvitePage({ params }: { params: Promise<{ id: string }>
     try {
       const res = await submitGuestRsvpAction({
         eventId: event.id,
+        guestId: guestId || null,
         nom: formData.nom,
         email: formData.email,
         telephone: formData.telephone,
