@@ -249,14 +249,14 @@ export default function PricingSection() {
               )}
             </div>
 
-            {/* Grille des 3 formules d'événements */}
+            {/* Grille des 2 formules d'événements : Premium & Gold VIP */}
             <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 sm:gap-8 items-stretch">
               
-              {/* Formule STANDARD */}
+              {/* 1. Formule PREMIUM (Invitation + Suivi des réponses) */}
               <motion.div 
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="card-lux flex flex-col p-6 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.45)] transition-shadow justify-between"
+                className="card-lux flex flex-col p-6 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.45)] transition-shadow justify-between border-2 border-gray-200"
               >
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
@@ -296,59 +296,11 @@ export default function PricingSection() {
                   href="/create"
                   className="btn-lux w-full py-3.5 text-[11px]"
                 >
-                  Choisir Standard (5 000 F)
+                  Choisir Formule Premium ({formulas[0].prices[invitationType]} F)
                 </Link>
               </motion.div>
 
-              {/* Formule PREMIUM */}
-              <motion.div 
-                whileHover={{ y: -4 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="card-lux flex flex-col p-6 !border-2 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.45)] transition-shadow justify-between relative"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900">
-                      {formulas[1].name}
-                    </h3>
-                  </div>
-                  <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-                    {formulas[1].tagline[invitationType]}
-                  </p>
-                  
-                  <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-gray-100">
-                    <span className="text-3xl sm:text-4xl font-serif font-bold text-gray-950 tracking-tight">
-                      {formulas[1].prices[invitationType]}
-                    </span>
-                    <span className="text-xs font-medium text-gray-400">FCFA / événement</span>
-                  </div>
-                  
-                  <ul className="space-y-3.5 mb-6">
-                    {formulas[1].features[invitationType].map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2.5">
-                        <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs sm:text-sm font-semibold text-gray-900 leading-snug">
-                            {feature.title}
-                          </p>
-                          <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-                            {feature.desc}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <Link 
-                  href="/create"
-                  className="btn-lux w-full py-3.5 text-[11px]"
-                >
-                  Choisir Premium (10 000 F)
-                </Link>
-              </motion.div>
-
-              {/* Formule GOLD VIP */}
+              {/* 2. Formule GOLD VIP (Organisation Complète) */}
               <motion.div 
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -357,29 +309,31 @@ export default function PricingSection() {
                 <div aria-hidden className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-[#b8924a]/20 blur-[70px] pointer-events-none" />
                 
                 {/* Badge Recommandé */}
-                <div className="absolute top-5 right-5 text-[9px] font-bold uppercase tracking-wider text-[#241b13] bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
-                  <Crown size={11} /> {formulas[2].badge}
-                </div>
+                {formulas[1].badge && (
+                  <div className="absolute top-5 right-5 text-[9px] font-bold uppercase tracking-wider text-[#241b13] bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                    <Crown size={11} /> {formulas[1].badge}
+                  </div>
+                )}
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <h3 className="font-serif text-xl sm:text-2xl font-bold text-gold-foil">
-                      {formulas[2].name}
+                      {formulas[1].name}
                     </h3>
                   </div>
                   <p className="text-xs text-white/60 mb-5 leading-relaxed">
-                    {formulas[2].tagline[invitationType]}
+                    {formulas[1].tagline[invitationType]}
                   </p>
                   
                   <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-white/10">
                     <span className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight">
-                      {formulas[2].prices[invitationType]}
+                      {formulas[1].prices[invitationType]}
                     </span>
                     <span className="text-xs font-medium text-white/50">FCFA / événement</span>
                   </div>
                   
                   <ul className="space-y-3.5 mb-6">
-                    {formulas[2].features[invitationType].map((feature, i) => (
+                    {formulas[1].features[invitationType].map((feature, i) => (
                       <li key={i} className="flex items-start gap-2.5">
                         <CheckCircle2 size={16} className="text-[#b8924a] shrink-0 mt-0.5" />
                         <div>
@@ -399,7 +353,7 @@ export default function PricingSection() {
                   href="/create"
                   className="relative w-full py-3 text-center rounded-xl font-bold text-xs sm:text-sm text-black bg-gradient-to-r from-[#b8924a] via-[#d9c08c] to-[#b8924a] hover:brightness-110 shadow-md shadow-[#b8924a]/20 transition-all flex items-center justify-center gap-2 group"
                 >
-                  <span>Choisir Gold VIP (20 000 F)</span>
+                  <span>Choisir Gold VIP ({formulas[1].prices[invitationType]} F)</span>
                   <ChevronRight size={15} className="transition-transform group-hover:translate-x-1" />
                 </Link>
               </motion.div>
