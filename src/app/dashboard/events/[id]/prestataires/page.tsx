@@ -21,8 +21,10 @@ import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 import { ProviderCampaign } from "@/types/campaigns";
 import { fetchActiveCampaignsAction, toggleCampaignLikeAction } from "@/app/actions/campaignActions";
+import { loadActiveCampaigns } from "@/lib/campaignsStorage";
 import { addNotificationForClient, addNotificationForProvider } from "@/lib/notifications";
 import { QuoteRequestModal } from "@/components/dashboard/QuoteRequestModal";
+import { CampaignQuoteRequestModal } from "@/components/dashboard/CampaignQuoteRequestModal";
 
 export default function PrestatairesDashboardPage({
   params,
@@ -123,6 +125,8 @@ export default function PrestatairesDashboardPage({
   const [followedProviders, setFollowedProviders] = useState<Record<string, boolean>>({});
   const [quoteModalProvider, setQuoteModalProvider] = useState<any | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [selectedCampaignForQuote, setSelectedCampaignForQuote] = useState<ProviderCampaign | null>(null);
+  const [isCampaignQuoteModalOpen, setIsCampaignQuoteModalOpen] = useState(false);
 
   // Chargement des besoins enregistrés & des campagnes sponsorisées
   useEffect(() => {
@@ -142,13 +146,13 @@ export default function PrestatairesDashboardPage({
       }
     } catch {}
 
-    // Charger les campagnes actives ciblées pour cet événement
+    // Charger les campagnes actives réelles ciblées pour cet événement (zéro fausse pub)
     async function loadCampaigns() {
       try {
-        const campaigns = await fetchActiveCampaignsAction({
+        const campaigns = await loadActiveCampaigns({
           eventType: event?.type,
           zone: event?.location,
-          limit: 10,
+          limit: 12,
         });
         setSponsoredCampaigns(campaigns || []);
       } catch (err) {
@@ -156,6 +160,14 @@ export default function PrestatairesDashboardPage({
       }
     }
     loadCampaigns();
+
+    const onCampaignsUpdated = () => {
+      loadCampaigns();
+    };
+    window.addEventListener("evenium_campaigns_updated", onCampaignsUpdated);
+    return () => {
+      window.removeEventListener("evenium_campaigns_updated", onCampaignsUpdated);
+    };
   }, [id, event?.type, event?.location]);
 
   // Détection & matching automatique des prestataires
@@ -878,19 +890,19 @@ export default function PrestatairesDashboardPage({
                   <div className="p-3.5 bg-gray-50/80 border-t border-gray-100 flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleOpenQuoteModal({
-                        id: pub.provider_id,
-                        full_name: pub.provider_name,
-                        business_name: pub.provider_name,
-                      })}
-                      className="flex-1 py-2 px-3 rounded-xl bg-[#281a10] hover:bg-black text-[#f7e7b4] text-xs font-bold text-center transition cursor-pointer shadow-xs"
+                      onClick={() => {
+                        setSelectedCampaignForQuote(pub);
+                        setIsCampaignQuoteModalOpen(true);
+                      }}
+                      className="flex-1 py-2 px-3 rounded-xl bg-[#281a10] hover:bg-black text-[#f7e7b4] text-xs font-bold text-center transition cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
                     >
-                      {pub.cta_label || "Demander un devis"}
+                      <FileText size={13} className="text-[#f5dfaa]" />
+                      <span>{pub.cta_label || "Demander un devis"}</span>
                     </button>
                     <Link
-                      href={`/dashboard/messages?prestataire=${encodeURIComponent(pub.provider_id)}&msg=${encodeURIComponent(`Bonjour, j'ai vu votre publication « ${pub.title} » et je souhaite échanger pour mon événement.`)}`}
-                      className="p-2 rounded-xl border border-gray-200 hover:bg-white text-gray-700"
-                      title="Échanger en direct"
+                      href={`/dashboard/messages?prestataire=${encodeURIComponent(pub.provider_id)}&name=${encodeURIComponent(pub.provider_name)}&msg=${encodeURIComponent(`Bonjour ${pub.provider_name}, j'ai vu votre publication « ${pub.title} » et je souhaite échanger pour mon événement.`)}`}
+                      className="p-2 rounded-xl border border-gray-200 hover:bg-white text-gray-700 transition hover:scale-105"
+                      title="Échanger en direct avec le prestataire"
                     >
                       <MessageSquare size={16} />
                     </Link>
@@ -1939,6 +1951,20 @@ export default function PrestatairesDashboardPage({
           }}
         />
       )}
+
+      {/* Modale Demande de Devis spécifique à la publication/offre sponsorisée */}
+      <CampaignQuoteRequestModal
+        campaign={selectedCampaignForQuote}
+        isOpen={isCampaignQuoteModalOpen}
+        onClose={() => {
+          setIsCampaignQuoteModalOpen(false);
+          setSelectedCampaignForQuote(null);
+        }}
+        eventId={id}
+        eventName={event?.name || event?.type}
+        defaultDate={event?.date}
+        defaultLocation={event?.location}
+      />
 
       </>
     )}

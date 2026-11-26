@@ -52,6 +52,11 @@ import {
   activateCampaignAction,
   deleteProviderCampaignAction
 } from "@/app/actions/campaignActions";
+import { 
+  loadProviderCampaigns, 
+  saveCampaignLocallyAndRemotely, 
+  deleteCampaignLocallyAndRemotely 
+} from "@/lib/campaignsStorage";
 import { MAIN_COUNTRIES, regionsOf, quartiersOf } from "@/lib/zones";
 import { activityFromProfile, ProviderActivity } from "@/lib/providerProfile";
 import CreditCardFields, { CreditCardData, validateCreditCard } from "@/components/ui/CreditCardFields";
@@ -194,7 +199,7 @@ export default function PrestatairePublicitePage() {
           }
         }
 
-        const campaigns = await fetchProviderCampaignsAction(provId);
+        const campaigns = await loadProviderCampaigns(provId);
         setAllCampaigns(campaigns || []);
         if (campaigns && campaigns.length > 0) {
           const current = campaigns[0];
@@ -307,7 +312,7 @@ export default function PrestatairePublicitePage() {
     }
     setSaving(true);
     try {
-      const updated = await saveProviderCampaignAction({
+      const updated = await saveCampaignLocallyAndRemotely({
         id: campaign?.id,
         provider_id: currentProviderId,
         provider_name: providerName,
@@ -339,7 +344,7 @@ export default function PrestatairePublicitePage() {
     }
     setSaving(true);
     try {
-      const updated = await saveProviderCampaignAction({
+      const updated = await saveCampaignLocallyAndRemotely({
         id: editingCampaignId || campaign?.id,
         provider_id: currentProviderId,
         provider_name: providerName,
@@ -409,7 +414,7 @@ export default function PrestatairePublicitePage() {
   const handleDeleteCampaign = async (c: ProviderCampaign) => {
     if (!confirm(`Supprimer définitivement la publication « ${c.title} » ?`)) return;
     try {
-      await deleteProviderCampaignAction(c.id, currentProviderId);
+      await deleteCampaignLocallyAndRemotely(c.id, currentProviderId);
       const updated = allCampaigns.filter((item) => item.id !== c.id);
       setAllCampaigns(updated);
       if (campaign?.id === c.id) {
@@ -426,7 +431,7 @@ export default function PrestatairePublicitePage() {
     const nextStatus = c.status === "active" ? "paused" : "active";
     setSaving(true);
     try {
-      const updated = await saveProviderCampaignAction({
+      const updated = await saveCampaignLocallyAndRemotely({
         ...c,
         status: nextStatus,
       });
@@ -489,7 +494,7 @@ export default function PrestatairePublicitePage() {
 
     let activeCampaignId = campaign?.id;
     if (!activeCampaignId) {
-      const created = await saveProviderCampaignAction({
+      const created = await saveCampaignLocallyAndRemotely({
         provider_id: currentProviderId,
         provider_name: providerName,
         provider_avatar: providerAvatar,

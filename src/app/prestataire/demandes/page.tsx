@@ -106,6 +106,20 @@ export default function PrestataireDemandesPage() {
         .order('created_at', { ascending: false });
       if (dFallback) demandesList = dFallback;
     }
+
+    try {
+      const localDemandes = JSON.parse(localStorage.getItem('evenium_demandes_devis') || '[]');
+      const matchingLocal = localDemandes.filter((ld: any) => ld.prestataire_id === user.id || ld.prestataire_id === 'prov-me');
+      if (matchingLocal.length > 0) {
+        const existingIds = new Set(demandesList.map((d: any) => d.id));
+        matchingLocal.forEach((ld: any) => {
+          if (!existingIds.has(ld.id)) {
+            demandesList.unshift(ld);
+          }
+        });
+      }
+    } catch {}
+
     setDemandes(demandesList);
 
     // 2. Fetch Devis émis

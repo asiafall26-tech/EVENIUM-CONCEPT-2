@@ -10,10 +10,11 @@ import { useBadgeStore } from "@/store/BadgeStore";
 
 function ClientMessagesInner() {
   const searchParams = useSearchParams();
-  const contactIdParam = searchParams.get('contactId') || searchParams.get('userId');
-  const contactNameParam = searchParams.get('contactName');
+  const contactIdParam = searchParams.get('prestataire') || searchParams.get('contactId') || searchParams.get('userId');
+  const contactNameParam = searchParams.get('name') || searchParams.get('contactName') || searchParams.get('providerName');
   const eventNameParam = searchParams.get('eventName');
   const eventTypeParam = searchParams.get('eventType');
+  const initialMsgParam = searchParams.get('msg') || searchParams.get('message');
 
   const [messages, setMessages] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
@@ -30,7 +31,7 @@ function ClientMessagesInner() {
           id: 'init',
           sender_id: '',
           receiver_id: contactIdParam,
-          content: 'Chargement des messages...',
+          content: 'Démarrer une discussion...',
           created_at: new Date().toISOString(),
           is_read: true,
         },
@@ -51,7 +52,7 @@ function ClientMessagesInner() {
   const [potentialContacts, setPotentialContacts] = useState<any[]>([]);
   const [selectedContactId, setSelectedContactId] = useState("");
   const [initialMessage, setInitialMessage] = useState("");
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = useState(() => (initialMsgParam ? decodeURIComponent(initialMsgParam) : ""));
   
   const [myId, setMyId] = useState<string | null>(null);
   const supabase = createClient();
@@ -67,6 +68,12 @@ function ClientMessagesInner() {
       setActiveConvId(contactIdParam);
     }
   }, [contactIdParam]);
+
+  useEffect(() => {
+    if (initialMsgParam) {
+      setNewMessage(decodeURIComponent(initialMsgParam));
+    }
+  }, [initialMsgParam]);
 
   const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser();

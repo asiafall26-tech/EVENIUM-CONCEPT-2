@@ -1,11 +1,50 @@
 "use server";
 
+import fs from "fs";
+import path from "path";
 import { createClient } from "@supabase/supabase-js";
 import { ProviderCampaign, CampaignPlanType, CampaignStatus, CAMPAIGN_PLANS } from "@/types/campaigns";
 import { getContextualCampaigns } from "@/data/mock/campaigns";
 
-// Mémoire d'exécution partagée pour garantir la persistance immédiate même si la table SQL n'est pas encore créée
-const RUNTIME_CAMPAIGNS: ProviderCampaign[] = [];
+const PERSISTED_FILE = path.join(process.cwd(), "src", "data", "mock", "persisted_campaigns.json");
+
+function readPersistedCampaigns(): ProviderCampaign[] {
+  try {
+    if (fs.existsSync(PERSISTED_FILE)) {
+      const raw = fs.readFileSync(PERSISTED_FILE, "utf-8");
+      if (raw && raw.trim()) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("readPersistedCampaigns notice:", err);
+  }
+  return [];
+}
+
+function writePersistedCampaigns(campaigns: ProviderCampaign[]): void {
+  try {
+    fs.writeFileSync(PERSISTED_FILE, JSON.stringify(campaigns, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("writePersistedCampaigns notice:", err);
+  }
+}
+
+// Initialisation de la mémoire d'exécution à partir du stockage persistant sur disque
+const RUNTIME_CAMPAIGNS: ProviderCampaign[] = readPersistedCampaigns();
+
+function updateRuntimeList(item: ProviderCampaign) {
+  const idx = RUNTIME_CAMPAIGNS.findIndex((c) => c.id === item.id);
+  if (idx >= 0) {
+    RUNTIME_CAMPAIGNS[idx] = item;
+  } else {
+    RUNTIME_CAMPAIGNS.unshift(item);
+  }
+  writePersistedCampaigns(RUNTIME_CAMPAIGNS);
+}
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,6 +69,13 @@ export async function fetchActiveCampaignsAction(filters?: {
   zone?: string;
   limit?: number;
 }): Promise<ProviderCampaign[]> {
+  const diskCampaigns = readPersistedCampaigns();
+  diskCampaigns.forEach((c) => {
+    if (!RUNTIME_CAMPAIGNS.some((rc) => rc.id === c.id)) {
+      RUNTIME_CAMPAIGNS.push(c);
+    }
+  });
+
   try {
     const admin = getAdminClient();
     if (admin) {
@@ -49,14 +95,19 @@ export async function fetchActiveCampaignsAction(filters?: {
       const { data, error } = await query;
 
       if (!error && data && data.length > 0) {
-        return getContextualCampaigns(data as ProviderCampaign[], filters);
+        const mergedMap = new Map<string, ProviderCampaign>();
+        (data as ProviderCampaign[]).forEach((c) => mergedMap.set(c.id, c));
+        RUNTIME_CAMPAIGNS.forEach((c) => {
+          if (!mergedMap.has(c.id)) mergedMap.set(c.id, c);
+        });
+        return getContextualCampaigns(Array.from(mergedMap.values()), filters);
       }
     }
   } catch (err) {
     console.warn("fetchActiveCampaignsAction db notice:", err);
   }
 
-  // Filtrage sur les campagnes réelles en mémoire
+  // Filtrage sur les campagnes réelles persistées
   return getContextualCampaigns(RUNTIME_CAMPAIGNS, filters);
 }
 
@@ -69,6 +120,13 @@ export async function fetchProviderCampaignsAction(providerId?: string): Promise
     return [];
   }
 
+  const diskCampaigns = readPersistedCampaigns();
+  diskCampaigns.forEach((c) => {
+    if (!RUNTIME_CAMPAIGNS.some((rc) => rc.id === c.id)) {
+      RUNTIME_CAMPAIGNS.push(c);
+    }
+  });
+
   try {
     const admin = getAdminClient();
     if (admin) {
@@ -79,19 +137,25 @@ export async function fetchProviderCampaignsAction(providerId?: string): Promise
         .order("created_at", { ascending: false });
 
       if (!error && data && data.length > 0) {
-        return data as ProviderCampaign[];
+        const mergedMap = new Map<string, ProviderCampaign>();
+        (data as ProviderCampaign[]).forEach((c) => mergedMap.set(c.id, c));
+        RUNTIME_CAMPAIGNS.filter((c) => c.provider_id === providerId).forEach((c) => {
+          if (!mergedMap.has(c.id)) mergedMap.set(c.id, c);
+        });
+        return Array.from(mergedMap.values());
       }
     }
   } catch (err) {
     console.warn("fetchProviderCampaignsAction db notice:", err);
   }
 
-  // Fallback mémoire locale sur les campagnes de ce prestataire
+  // Fallback persistance locale sur les campagnes de ce prestataire
   return RUNTIME_CAMPAIGNS.filter((c) => c.provider_id === providerId);
 }
 
 /**
  * Enregistre ou met à jour une annonce créée par le prestataire
+ * Active par défaut pour être immédiatement visible des organisateurs
  */
 export async function saveProviderCampaignAction(campaign: Partial<ProviderCampaign> & { provider_id: string }): Promise<ProviderCampaign> {
   const planInfo = CAMPAIGN_PLANS.find((p) => p.id === campaign.plan_type) || CAMPAIGN_PLANS[0];
@@ -99,7 +163,7 @@ export async function saveProviderCampaignAction(campaign: Partial<ProviderCampa
   const durationDays = campaign.plan_type === "boost_7j" ? 7 : 30;
   const endsAt = campaign.ends_at || new Date(now.getTime() + durationDays * 86400000).toISOString();
 
-  const campaignId = campaign.id || `camp-${Date.now()}`;
+  const campaignId = campaign.id || `camp-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
   const payload: ProviderCampaign = {
     id: campaignId,
@@ -110,19 +174,20 @@ export async function saveProviderCampaignAction(campaign: Partial<ProviderCampa
     title: campaign.title || "",
     hook: campaign.hook || "",
     description: campaign.description || "",
-    badge: campaign.badge || "Offre Spéciale",
+    badge: campaign.badge || "✨ Offre Spéciale",
     media_url: campaign.media_url || null,
     cta_label: campaign.cta_label || "Demander un devis",
     target_event_types: campaign.target_event_types && campaign.target_event_types.length > 0 ? campaign.target_event_types : ["Tous"],
     target_zones: campaign.target_zones && campaign.target_zones.length > 0 ? campaign.target_zones : ["Toutes"],
     plan_type: campaign.plan_type || "boost_7j",
-    status: campaign.status || "draft",
+    status: campaign.status || "active",
     price_paid_fcfa: campaign.price_paid_fcfa ?? 0,
     starts_at: campaign.starts_at || now.toISOString(),
     ends_at: endsAt,
     impressions_count: campaign.impressions_count ?? 0,
     clicks_count: campaign.clicks_count ?? 0,
     contacts_count: campaign.contacts_count ?? 0,
+    likes_count: campaign.likes_count ?? 0,
     created_at: campaign.created_at || now.toISOString(),
     updated_at: now.toISOString(),
   };
@@ -156,20 +221,11 @@ export async function saveProviderCampaignAction(campaign: Partial<ProviderCampa
       }
     }
   } catch (err) {
-    console.warn("saveProviderCampaignAction error, persisting in runtime memory:", err);
+    console.warn("saveProviderCampaignAction error, persisting in local storage & disk:", err);
   }
 
   updateRuntimeList(payload);
   return payload;
-}
-
-function updateRuntimeList(item: ProviderCampaign) {
-  const idx = RUNTIME_CAMPAIGNS.findIndex((c) => c.id === item.id);
-  if (idx >= 0) {
-    RUNTIME_CAMPAIGNS[idx] = item;
-  } else {
-    RUNTIME_CAMPAIGNS.unshift(item);
-  }
 }
 
 /**
@@ -203,7 +259,7 @@ export async function activateCampaignAction(
     console.warn("activateCampaignAction db update failed:", err);
   }
 
-  // Mise à jour de la mémoire d'exécution
+  // Mise à jour de la persistance disque et mémoire
   const target = RUNTIME_CAMPAIGNS.find((c) => c.id === campaignId) || RUNTIME_CAMPAIGNS[0];
   if (target) {
     target.status = "active";
@@ -212,6 +268,7 @@ export async function activateCampaignAction(
     target.starts_at = now.toISOString();
     target.ends_at = endsAt;
     target.updated_at = now.toISOString();
+    writePersistedCampaigns(RUNTIME_CAMPAIGNS);
   }
 
   return {
@@ -230,12 +287,12 @@ export async function recordCampaignAction(
   userId?: string,
   eventId?: string
 ): Promise<void> {
-  // Incrément mémoire runtime
   const target = RUNTIME_CAMPAIGNS.find((c) => c.id === campaignId);
   if (target) {
     if (action === "impression") target.impressions_count = (target.impressions_count || 0) + 1;
     if (action === "click") target.clicks_count = (target.clicks_count || 0) + 1;
     if (action === "contact") target.contacts_count = (target.contacts_count || 0) + 1;
+    writePersistedCampaigns(RUNTIME_CAMPAIGNS);
   }
 
   try {
@@ -289,6 +346,7 @@ export async function deleteProviderCampaignAction(campaignId: string, providerI
   const idx = RUNTIME_CAMPAIGNS.findIndex((c) => c.id === campaignId && c.provider_id === providerId);
   if (idx !== -1) {
     RUNTIME_CAMPAIGNS.splice(idx, 1);
+    writePersistedCampaigns(RUNTIME_CAMPAIGNS);
   }
 
   try {
@@ -311,6 +369,7 @@ export async function toggleCampaignLikeAction(
   const target = RUNTIME_CAMPAIGNS.find((c) => c.id === campaignId);
   if (target) {
     target.likes_count = Math.max(0, (target.likes_count || 0) + (increment ? 1 : -1));
+    writePersistedCampaigns(RUNTIME_CAMPAIGNS);
   }
 
   try {
@@ -338,6 +397,7 @@ export async function updateCampaignStatusAction(
   if (target) {
     target.status = status;
     target.updated_at = new Date().toISOString();
+    writePersistedCampaigns(RUNTIME_CAMPAIGNS);
   }
 
   try {
