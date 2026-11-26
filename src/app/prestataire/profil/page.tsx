@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Store, Mail, Phone, MapPin, Edit2, Save, X, Briefcase, Camera, Image as ImageIcon, ArrowLeft, Crop } from "lucide-react";
+import { User, Store, Mail, Phone, MapPin, Edit2, Save, X, Briefcase, Camera, Image as ImageIcon, ArrowLeft, Crop, Eye, Sparkles, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
@@ -12,6 +12,7 @@ import { RubriquesEditor } from "@/components/prestataire/RubriquesEditor";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { parseRubriques, suggestProfileRubriques, type Rubrique } from "@/lib/rubriques";
 import { isMissingColumn } from "@/lib/devis/persist";
+import { Modal } from "@/components/ui/Modal";
 
 export default function PrestataireProfilPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -29,6 +30,7 @@ export default function PrestataireProfilPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isOfferPreviewOpen, setIsOfferPreviewOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -261,7 +263,15 @@ export default function PrestataireProfilPage() {
           <p className="text-gray-500 text-sm">Gerez l'apparence de votre vitrine pour les clients.</p>
         </div>
         {!isEditing ? (
-          <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsOfferPreviewOpen(true)}
+              className="flex items-center gap-2 bg-white border border-[#b8924a]/40 text-gray-800 hover:border-[#b8924a] px-5 py-2.5 rounded-full text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <Eye size={15} className="text-[#8f6f33]" />
+              <span>Aperçu complet de l&apos;offre</span>
+            </button>
             <div className="flex items-center gap-2 mr-2">
               <span className={`text-sm font-semibold ${formData.is_active ? 'text-green-600' : 'text-gray-400'}`}>
                 {formData.is_active ? 'Vitrine Active' : 'Vitrine Inactive'}
@@ -283,6 +293,14 @@ export default function PrestataireProfilPage() {
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsOfferPreviewOpen(true)}
+              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-800 px-4 py-2 rounded-full text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <Eye size={14} className="text-[#b8924a]" />
+              <span>Tester l&apos;aperçu</span>
+            </button>
             <div className="flex items-center gap-2 mr-2">
               <span className={`text-sm font-semibold ${formData.is_active ? 'text-green-600' : 'text-gray-500'}`}>
                 {formData.is_active ? 'Rendre Inactif' : 'Rendre Actif'}
@@ -312,23 +330,35 @@ export default function PrestataireProfilPage() {
         )}
       </div>
 
+      {/* 1. GRANDE BANNIÈRE PANORAMIQUE HAUTE DÉFINITION (FORMAT AMÉLIORÉ ET ÉLÉGANT) */}
+      <div className="relative w-full h-52 sm:h-72 rounded-3xl overflow-hidden bg-gradient-to-r from-amber-100/70 via-[#fbf7f0] to-stone-200 border border-gray-200 shadow-sm mb-8 group">
+        {profile?.cover_url ? (
+          <img src={profile.cover_url} className="w-full h-full object-cover" alt="Bannière de couverture" />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 p-4 text-center">
+            <ImageIcon size={38} className="opacity-40" />
+            <span className="text-xs font-semibold text-gray-500">Photo de couverture panoramique de votre vitrine prestataire</span>
+            <span className="text-[10px] text-gray-400">Format paysage recommandé (1200 x 400 px)</span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+        {isEditing && (
+          <label className="absolute bottom-4 right-4 bg-black/80 hover:bg-black text-[#f7e7b4] text-xs font-bold px-4 py-2.5 rounded-full flex items-center gap-2 cursor-pointer transition shadow-lg backdrop-blur-md border border-white/20">
+            <Camera size={15} />
+            <span>Changer la bannière de couverture</span>
+            <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} disabled={uploadingImage} />
+          </label>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Colonne de gauche : Avatar et infos rapides */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-32 z-0 bg-[#FFF5F8]">
-              {profile?.cover_url && <img src={profile.cover_url} className="w-full h-full object-cover" alt="Cover" />}
-              {isEditing && (
-                <label className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black text-white rounded-full flex items-center justify-center cursor-pointer transition-colors z-10 backdrop-blur-sm">
-                  <Camera size={14} />
-                  <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} disabled={uploadingImage} />
-                </label>
-              )}
-            </div>
             
-            <div className="relative z-10 mt-12 mb-4 group">
-              <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-100 shadow-xl flex items-center justify-center overflow-hidden">
+            <div className="relative z-10 mb-4 group">
+              <div className="w-32 h-32 rounded-full border-4 border-[#b8924a]/20 bg-gray-100 shadow-xl flex items-center justify-center overflow-hidden">
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
@@ -640,6 +670,120 @@ export default function PrestataireProfilPage() {
           </div>
         </div>
       )}
+
+      {/* Modale d'Aperçu complet de la vitrine prestataire */}
+      <Modal
+        isOpen={isOfferPreviewOpen}
+        onClose={() => setIsOfferPreviewOpen(false)}
+        title="Aperçu complet de votre vitrine prestataire"
+      >
+        <div className="max-h-[80vh] overflow-y-auto pr-1">
+          {/* Bannière panoramique */}
+          <div className="relative w-full h-44 sm:h-56 rounded-2xl overflow-hidden bg-stone-200 border border-gray-200 mb-6">
+            {profile?.cover_url ? (
+              <img src={profile.cover_url} className="w-full h-full object-cover" alt="Couverture" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-amber-50 to-stone-100 text-gray-400 text-xs">
+                Aucune bannière de couverture
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-16 rounded-full border-2 border-white overflow-hidden bg-white shadow-md shrink-0">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#b8924a] text-white font-bold text-lg">
+                      {formData.full_name?.slice(0, 1) || "P"}
+                    </div>
+                  )}
+                </div>
+                <div className="text-white drop-shadow-md">
+                  <h3 className="font-serif font-bold text-lg sm:text-xl leading-tight">{formData.full_name || "Nom de l'entreprise"}</h3>
+                  <p className="text-xs text-amber-200">{formData.category || "Prestataire événementiel"}</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/90 text-gray-900 shadow-xs">
+                {formData.is_active ? "Vitrine Active" : "Vitrine Inactive"}
+              </span>
+            </div>
+          </div>
+
+          {/* Description & Bio */}
+          <div className="bg-[#fbf7f0] border border-[#b8924a]/20 rounded-2xl p-4 sm:p-5 mb-5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#8f6f33] mb-2">À propos du prestataire</h4>
+            <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+              {formData.description || "Aucune description détaillée renseignée pour le moment."}
+            </p>
+          </div>
+
+          {/* Rubriques personnalisées */}
+          {rubriques.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Rubriques & Prestations</h4>
+              <RubriquesView value={rubriques} />
+            </div>
+          )}
+
+          {/* Types d'événements et prestations */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4">
+              <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Types d&apos;événements</h5>
+              <div className="flex flex-wrap gap-1.5">
+                {activity.event_types.length > 0 ? (
+                  activity.event_types.map((e, i) => (
+                    <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-800 font-medium">
+                      {e}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-gray-400 italic">Tous types d&apos;événements</span>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-100 rounded-2xl p-4">
+              <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Zones d&apos;intervention</h5>
+              <div className="flex flex-wrap gap-1.5">
+                {activity.zones.length > 0 ? (
+                  activity.zones.map((z, i) => (
+                    <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200/60 font-medium">
+                      {z}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-gray-400 italic">National / Sur devis</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Galerie */}
+          {formData.gallery.length > 0 && (
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Galerie de réalisations ({formData.gallery.length})</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {formData.gallery.map((url, idx) => (
+                  <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                    <img src={url} alt={`Réalisation ${idx + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsOfferPreviewOpen(false)}
+              className="px-5 py-2.5 rounded-full bg-neutral-900 hover:bg-black text-white text-xs font-bold cursor-pointer"
+            >
+              Fermer l&apos;aperçu
+            </button>
+          </div>
+        </div>
+      </Modal>
       {editorElement}
     </div>
   );

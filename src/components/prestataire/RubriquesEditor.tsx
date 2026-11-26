@@ -23,9 +23,106 @@ interface Props {
   emptyHint?: string;
 }
 
+export const PRESET_TEMPLATES: Record<string, { title: string; kind: RubriqueKind; text?: string; items?: string[]; rows?: { label: string; value: string }[] }> = {
+  // Traiteur
+  "traiteur_menu": {
+    title: "Menu proposé",
+    kind: "liste",
+    items: ["Cocktail d'accueil & amuse-bouches", "Entrée raffinée au choix", "Plat principal généreux (Thiéboudienne / Dibi / Poulet braisé)", "Dessert gourmand ou pièce montée", "Café / Touba & Thés à la menthe"]
+  },
+  "traiteur_boissons": {
+    title: "Boissons & Cocktails",
+    kind: "liste",
+    items: ["Jus locaux frais (Bissap menthe, Bouye baobab, Gingembre ananas)", "Eaux minérales plates et gazeuses", "Sodas et rafraîchissements", "Fontaine à cocktail signature"]
+  },
+  "traiteur_regimes": {
+    title: "Régimes particuliers & Allergies",
+    kind: "texte",
+    text: "Menus 100% certifiés Halal. Adaptation possible sur simple demande : végétarien, sans porc, sans lactose et options sans gluten."
+  },
+  "traiteur_service": {
+    title: "Service & Logistique traiteur",
+    kind: "infos",
+    rows: [{ label: "Couverts minimum", value: "50 personnes" }, { label: "Couverts maximum", value: "1 500 personnes" }, { label: "Équipe de service", value: "Maîtres d'hôtel et serveurs en uniforme inclus" }]
+  },
+  // Photo & Vidéo
+  "photo_livrables": {
+    title: "Livrables photo & vidéo",
+    kind: "liste",
+    items: ["Photos HD retouchées en haute résolution", "Galerie privée en ligne téléchargeable pour les mariés et invités", "Film vidéo cinématographique 4K (Teaser 3 min + Film complet)", "Clé USB prestige dans son coffret en bois gravé"]
+  },
+  "photo_materiel": {
+    title: "Matériel utilisé",
+    kind: "liste",
+    items: ["Boîtiers plein format Sony Alpha / Canon R", "Objectifs focales fixes à grande ouverture pour ambiance tamisée", "Drone DJI 4K pour prises de vue aériennes spectaculaires", "Éclairage studio et micros cravates HF sans fil"]
+  },
+  "photo_delais": {
+    title: "Délais & Couverture",
+    kind: "infos",
+    rows: [{ label: "Heures de présence", value: "De la préparation jusqu'au gâteau" }, { label: "Nombre de photos livrées", value: "Entre 400 et 800 clichés retouchés" }, { label: "Délai de livraison", value: "15 jours ouvrés" }]
+  },
+  // Décoration
+  "deco_elements": {
+    title: "Éléments de décoration fournis",
+    kind: "liste",
+    items: ["Fleurs fraîches et compositions florales de prestige", "Arche de cérémonie laïque ou religieuse", "Centres de table hauts et bas avec bougeoirs dorés", "Drapés de scène, éclairage d'ambiance et moquette d'honneur"]
+  },
+  "deco_logistique": {
+    title: "Installation & Démontage",
+    kind: "infos",
+    rows: [{ label: "Délai d'installation", value: "La veille ou le matin dès 07h00" }, { label: "Superficie couverte", value: "Jusqu'à 1 000 m²" }, { label: "Démontage", value: "Intégralement pris en charge à la fin de la réception" }]
+  },
+  // Salle
+  "salle_equipements": {
+    title: "Équipements de la salle",
+    kind: "liste",
+    items: ["Climatisation centrale haute performance", "Groupe électrogène de secours insonorisé", "Cuisine professionnelle équipée pour traiteur", "Parking privé sécurisé 150 places"]
+  },
+  "salle_capacites": {
+    title: "Capacités & Horaires",
+    kind: "infos",
+    rows: [{ label: "Capacité assise (banquet)", value: "400 personnes" }, { label: "Capacité cocktail (debout)", value: "700 personnes" }, { label: "Heure limite nocturne", value: "Jusqu'à 05h00 du matin" }]
+  },
+  // Musique & DJ
+  "dj_repertoire": {
+    title: "Répertoire musical & Styles",
+    kind: "liste",
+    items: ["Mbalax & sonorités sénégalaises", "Afrobeat, Amapiano & Coupé-décalé", "Variété internationale & R&B", "Zouk, Salsa & Slows romantiques", "Musique d'ambiance lounge pour cocktail"]
+  },
+  // Conditions
+  "conditions_reservation": {
+    title: "Conditions de réservation",
+    kind: "texte",
+    text: "Réservation confirmée dès signature du devis et versement d'un acompte de 30%. Solde à régler une semaine avant l'événement ou le jour J. Annulation sans frais jusqu'à 30 jours avant la date."
+  },
+  "paiement_moyens": {
+    title: "Moyens de paiement acceptés",
+    kind: "liste",
+    items: ["Wave", "Orange Money", "Carte Bancaire (Visa / Mastercard)", "Virement bancaire", "Espèces avec reçu officiel"]
+  }
+};
+
 /** Rubriques libres : ajouter, renommer, choisir le format, réordonner, supprimer ; avec suggestions adaptées. */
 export function RubriquesEditor({ value, onChange, suggestions, newSources = [], emptyHint }: Props) {
   const [blankKind, setBlankKind] = useState<RubriqueKind>("texte");
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState("");
+
+  const handleSelectTemplate = (key: string) => {
+    if (!key || !PRESET_TEMPLATES[key]) return;
+    const t = PRESET_TEMPLATES[key];
+    onChange([
+      ...value,
+      {
+        id: newRubriqueId(),
+        title: t.title,
+        kind: t.kind,
+        text: t.text,
+        items: t.items ? [...t.items] : undefined,
+        rows: t.rows ? t.rows.map(r => ({ ...r })) : undefined,
+      }
+    ]);
+    setSelectedTemplateKey("");
+  };
 
   const update = (id: string, patch: Partial<Rubrique>) => onChange(value.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   const remove = (id: string) => onChange(value.filter((r) => r.id !== id));
@@ -64,6 +161,47 @@ export function RubriquesEditor({ value, onChange, suggestions, newSources = [],
 
   return (
     <div className="space-y-4">
+      {/* Menu déroulant des rubriques recommandées selon l'activité */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#fbf7f0] to-[#f4e8d3]/60 border border-[#b8924a]/30 space-y-1.5">
+        <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+          <Sparkles size={14} className="text-[#8f6f33]" />
+          Insérer une rubrique type selon votre métier :
+        </label>
+        <select
+          value={selectedTemplateKey}
+          onChange={(e) => handleSelectTemplate(e.target.value)}
+          className="w-full bg-white border border-[#b8924a]/40 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium text-gray-800 focus:ring-2 focus:ring-[#b8924a] outline-none shadow-2xs"
+        >
+          <option value="">-- Sélectionnez une rubrique pour l&apos;ajouter avec son contenu type --</option>
+          <optgroup label="🍽️ Traiteur & Gastronomie">
+            <option value="traiteur_menu">Menu proposé (Entrée, Plat, Dessert, Boissons...)</option>
+            <option value="traiteur_boissons">Boissons &amp; Cocktails (Jus locaux, Sodas...)</option>
+            <option value="traiteur_regimes">Régimes particuliers (Halal, Végétarien...)</option>
+            <option value="traiteur_service">Logistique &amp; Personnel de service</option>
+          </optgroup>
+          <optgroup label="📸 Photographie & Vidéo">
+            <option value="photo_livrables">Livrables &amp; Formats (Photos HD, Film 4K, Clé USB...)</option>
+            <option value="photo_materiel">Matériel &amp; Drone (Appareils plein format, Drone DJI...)</option>
+            <option value="photo_delais">Délais de livraison &amp; Heures de présence</option>
+          </optgroup>
+          <optgroup label="💐 Décoration & Scénographie">
+            <option value="deco_elements">Éléments de décoration fournis (Fleurs, Arche, Centres...)</option>
+            <option value="deco_logistique">Horaires d&apos;installation &amp; Démontage</option>
+          </optgroup>
+          <optgroup label="🏛️ Salles & Lieux de Réception">
+            <option value="salle_equipements">Équipements (Climatisation, Groupe électrogène, Parking...)</option>
+            <option value="salle_capacites">Capacités banquet / cocktail &amp; Heure limite</option>
+          </optgroup>
+          <optgroup label="🎶 Musique & Animation DJ">
+            <option value="dj_repertoire">Répertoire musical &amp; Styles (Mbalax, Afrobeat, Variété...)</option>
+          </optgroup>
+          <optgroup label="📋 Conditions & Réservation">
+            <option value="conditions_reservation">Conditions de réservation &amp; Acompte</option>
+            <option value="paiement_moyens">Moyens de paiement acceptés</option>
+          </optgroup>
+        </select>
+      </div>
+
       {value.length === 0 && <p className="text-sm text-gray-500">{emptyHint || "Aucune rubrique pour l'instant. Ajoutez-en une ou choisissez une suggestion."}</p>}
 
       {value.map((r, index) => (

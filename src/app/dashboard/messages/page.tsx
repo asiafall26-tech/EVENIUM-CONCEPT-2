@@ -151,6 +151,87 @@ function ClientMessagesInner() {
       convs.push(...sortedConvs);
     }
 
+    // Récupérer les devis récents et réponses RSVP pour alimenter la boîte d'alertes & notifications
+    const systemMessages: any[] = [
+      {
+        id: 'msg-welcome',
+        sender_id: 'evenium_assistant',
+        receiver_id: user.id,
+        content: "✨ Bienvenue sur votre messagerie Evenium !\nVotre tableau de bord et votre suivi d'événements sont opérationnels. Vous retrouverez ici en temps réel les propositions de devis de vos prestataires, le suivi des réponses RSVP de vos convives et les messages de vos invités.",
+        created_at: user.created_at || new Date().toISOString(),
+        is_read: true,
+      }
+    ];
+
+    try {
+      const { data: clientDevis } = await supabase
+        .from('devis')
+        .select('id, amount, total, status, created_at, event_id, prestataire_id, profiles(full_name, category)')
+        .eq('client_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (clientDevis && clientDevis.length > 0) {
+        clientDevis.forEach((d: any) => {
+          const provName = d.profiles?.full_name || 'Votre prestataire';
+          const provCat = d.profiles?.category ? `(${d.profiles.category})` : '';
+          const amt = Number(d.total || d.amount || 0).toLocaleString('fr-FR');
+          systemMessages.push({
+            id: `msg-devis-${d.id}`,
+            sender_id: 'evenium_assistant',
+            receiver_id: user.id,
+            content: `📋 Mise à jour Devis - ${provName} ${provCat}\nStatut : ${d.status}\nMontant : ${amt} FCFA\nConsultez les détails et échangez directement avec votre prestataire depuis cet espace.`,
+            created_at: d.created_at || new Date().toISOString(),
+            is_read: true,
+          });
+        });
+      }
+
+      if (clientEvents && clientEvents.length > 0) {
+        const evIds = clientEvents.map(e => e.id);
+        const { data: recentGuests } = await supabase
+          .from('guests')
+          .select('id, name, status, companions, updated_at, event_id')
+          .in('event_id', evIds)
+          .order('updated_at', { ascending: false })
+          .limit(5);
+
+        if (recentGuests && recentGuests.length > 0) {
+          recentGuests.forEach((g: any) => {
+            const statusLabel = g.status === 'confirmed' ? 'Confirmé' : g.status === 'declined' ? 'Décliné' : g.status;
+            systemMessages.push({
+              id: `msg-rsvp-${g.id}`,
+              sender_id: 'evenium_assistant',
+              receiver_id: user.id,
+              content: `💌 Réponse Invité (RSVP) : ${g.name} a répondu « ${statusLabel} »${g.companions ? ` (${g.companions} accompagnant(s))` : ''}.`,
+              created_at: g.updated_at || new Date().toISOString(),
+              is_read: true,
+            });
+          });
+        }
+      }
+    } catch { }
+
+    const systemConv = {
+      id: 'evenium_assistant',
+      profile: {
+        id: 'evenium_assistant',
+        full_name: 'Evenium • Mises à jour & Suivi',
+        role: 'admin',
+        category: 'Assistant Officiel',
+        avatar_url: null,
+      },
+      lastMessage: systemMessages[systemMessages.length - 1],
+      messages: systemMessages,
+      unread: 0,
+      eventContext: {
+        name: 'Notifications & Alertes de vos Événements',
+        type: 'Système'
+      }
+    };
+
+    convs.unshift(systemConv);
+
     // SI UN CONTACT EST CIBLÉ DANS L'URL (?contactId=...)
     if (contactIdParam) {
       const existingConv = convs.find(c => c.id === contactIdParam);
@@ -232,6 +313,37 @@ function ClientMessagesInner() {
     e?.preventDefault?.();
     const contentToSend = (typeof customContent === "string" ? customContent : newMessage).trim();
     if (!myId || !activeConvId || !contentToSend) return;
+
+    if (activeConvId === 'evenium_assistant') {
+      const userMsg = {
+        id: `user-${Date.now()}`,
+        sender_id: myId,
+        receiver_id: 'evenium_assistant',
+        content: contentToSend,
+        created_at: new Date().toISOString(),
+        is_read: true,
+      };
+      const autoReply = {
+        id: `reply-${Date.now() + 1}`,
+        sender_id: 'evenium_assistant',
+        receiver_id: myId,
+        content: "Merci pour votre message ! Votre demande a été enregistrée auprès de l'assistance Evenium. Nos conseillers ou vos prestataires prendront contact avec vous rapidement.",
+        created_at: new Date(Date.now() + 600).toISOString(),
+        is_read: true,
+      };
+      setConversations(prev => prev.map(c => {
+        if (c.id === 'evenium_assistant') {
+          return {
+            ...c,
+            messages: [...c.messages, userMsg, autoReply],
+            lastMessage: autoReply,
+          };
+        }
+        return c;
+      }));
+      setNewMessage("");
+      return;
+    }
 
     const { error } = await sendMessage(myId, activeConvId, contentToSend);
     

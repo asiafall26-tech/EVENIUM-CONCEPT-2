@@ -13,6 +13,7 @@ import { suggestOfferRubriques, type Rubrique } from "@/lib/rubriques";
 import { RubriquesEditor } from "@/components/prestataire/RubriquesEditor";
 import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { useImageEditor } from "@/components/media/ImageEditorModal";
+import { Modal } from "@/components/ui/Modal";
 
 const PRICE_TYPES = ["Prix fixe", "À partir de", "Par personne", "Par table", "Par prestation", "Forfait", "Sur devis"];
 
@@ -61,6 +62,8 @@ export default function PrestataireCataloguePage() {
   const [showAllEvents, setShowAllEvents] = useState(false);
   const [showAllPrestations, setShowAllPrestations] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
+  const [previewOfferData, setPreviewOfferData] = useState<any | null>(null);
   /** Types d'événements, prestations et zones du prestataire (profil) */
   const [activity, setActivity] = useState<ProviderActivity>(EMPTY_ACTIVITY);
   const { editImage, editorElement } = useImageEditor();
@@ -424,7 +427,15 @@ export default function PrestataireCataloguePage() {
           </button>
           <h1 className="font-serif text-3xl font-bold text-black">{mode === 'create' ? "Créer un catalogue" : "Modifier le catalogue"}</h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMobilePreviewOpen(true)}
+            className="px-5 py-2.5 bg-white border border-[#b8924a]/50 text-gray-800 hover:border-[#b8924a] font-semibold rounded-xl transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
+          >
+            <Eye size={17} className="text-[#8f6f33]" />
+            <span>Aperçu de l&apos;offre</span>
+          </button>
           <button
             disabled={isUploading}
             onClick={() => handleSave('Brouillon')}
@@ -632,31 +643,49 @@ export default function PrestataireCataloguePage() {
                 <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} />
               </label>
               {form.imagePreview && (
-                <button type="button" onClick={editCover} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#8f6f33] hover:underline">
-                  <Crop size={13} /> Recadrer et retoucher
-                </button>
+                <div className="mt-2 flex flex-wrap items-center gap-4">
+                  <button type="button" onClick={editCover} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8f6f33] hover:underline cursor-pointer">
+                    <Crop size={13} /> Recadrer et retoucher
+                  </button>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, imagePreview: "", imageFile: null }))} className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:underline cursor-pointer">
+                    <Trash2 size={13} /> Retirer la photo de couverture
+                  </button>
+                </div>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-2">Galerie de l'offre (Optionnel)</label>
-              <p className="text-xs text-gray-500 mb-3">Chaque photo importée s'ouvre dans l'éditeur ; cliquez sur une photo pour la modifier.</p>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              <p className="text-xs text-gray-500 mb-3">Chaque photo importée s'ouvre dans l'éditeur ; cliquez sur une photo pour la modifier ou la supprimer.</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {form.gallery.map((g, idx) => (
-                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group">
+                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-200 bg-gray-50 shadow-2xs">
                     <img src={g.preview} alt={`Galerie ${idx + 1}`} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button type="button" onClick={() => editGalleryItem(idx)} className="bg-white/90 text-gray-900 rounded-full p-1.5" aria-label="Recadrer et retoucher">
-                        <Crop size={14} />
-                      </button>
-                      <button type="button" onClick={() => set('gallery', form.gallery.filter((_, i) => i !== idx))} className="bg-white/90 text-red-600 rounded-full p-1.5" aria-label="Supprimer la photo">
-                        <X size={14} />
-                      </button>
-                    </div>
+                    {/* Bouton de suppression permanent & accessible sur tous les écrans */}
+                    <button
+                      type="button"
+                      onClick={() => set('gallery', form.gallery.filter((_, i) => i !== idx))}
+                      className="absolute top-1.5 right-1.5 z-10 w-7 h-7 bg-black/80 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors cursor-pointer"
+                      aria-label="Supprimer la photo"
+                      title="Supprimer la photo"
+                    >
+                      <X size={14} />
+                    </button>
+                    {/* Bouton de retouche / recadrage */}
+                    <button
+                      type="button"
+                      onClick={() => editGalleryItem(idx)}
+                      className="absolute bottom-1.5 left-1.5 z-10 w-7 h-7 bg-black/80 hover:bg-[#b8924a] text-white rounded-full flex items-center justify-center shadow-md transition-colors cursor-pointer"
+                      aria-label="Recadrer et retoucher"
+                      title="Recadrer et retoucher"
+                    >
+                      <Crop size={13} />
+                    </button>
                   </div>
                 ))}
-                <label className="flex items-center justify-center aspect-square border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-[#b8924a] text-gray-400 hover:text-[#8f6f33] transition-all">
-                  <Plus size={24} />
+                <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-[#b8924a] text-gray-400 hover:text-[#8f6f33] transition-all p-2 text-center">
+                  <Plus size={24} className="mb-1" />
+                  <span className="text-[11px] font-semibold">Ajouter</span>
                   <input type="file" className="hidden" accept="image/*" multiple onChange={handleGalleryUpload} />
                 </label>
               </div>
@@ -752,6 +781,9 @@ export default function PrestataireCataloguePage() {
                   <button onClick={() => toggleStatus(s)} className={`flex items-center justify-center gap-2 py-2.5 font-semibold rounded-xl border transition-colors text-sm ${s.status === 'Publié' ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'}`}>
                     {s.status === 'Publié' ? <><X size={16} /> Masquer</> : <><CheckCircle size={16} /> Publier</>}
                   </button>
+                  <button type="button" onClick={() => setPreviewOfferData(s)} className="col-span-2 flex items-center justify-center gap-2 py-2.5 bg-white hover:bg-[#fbf7f0] text-[#8f6f33] font-bold rounded-xl border border-[#b8924a]/40 transition-colors text-sm shadow-2xs cursor-pointer">
+                    <Eye size={16} /> Aperçu complet de l&apos;offre
+                  </button>
                   <button onClick={() => duplicateOffer(s)} className="col-span-2 flex items-center justify-center gap-2 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-800 font-semibold rounded-xl border border-gray-200 transition-colors text-sm">
                     <Plus size={16} /> Dupliquer le catalogue
                   </button>
@@ -774,6 +806,115 @@ export default function PrestataireCataloguePage() {
   return (
     <>
       {mode === 'list' ? renderList() : renderEditor()}
+
+      {/* Modale d'Aperçu pour l'éditeur (mobile / grand écran) */}
+      <Modal
+        isOpen={isMobilePreviewOpen}
+        onClose={() => setIsMobilePreviewOpen(false)}
+        title="Aperçu de votre offre en cours d'édition"
+      >
+        <div className="max-h-[80vh] overflow-y-auto">
+          {renderPreview()}
+        </div>
+      </Modal>
+
+      {/* Modale d'Aperçu pour une offre existante */}
+      <Modal
+        isOpen={Boolean(previewOfferData)}
+        onClose={() => setPreviewOfferData(null)}
+        title="Aperçu complet du catalogue"
+      >
+        {previewOfferData && (
+          <div className="max-h-[80vh] overflow-y-auto space-y-6">
+            <div className="relative h-56 sm:h-64 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+              {previewOfferData.image_url ? (
+                <img src={previewOfferData.image_url} alt={previewOfferData.nom_service} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
+                  <ImageIcon size={40} />
+                  <span className="text-xs">Aucune image principale</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 text-white">
+                <span className="bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm mb-2 inline-block">
+                  {offerTagLine(previewOfferData)}
+                </span>
+                <h3 className="font-serif text-2xl font-bold leading-tight">{previewOfferData.nom_service}</h3>
+                <p className="text-[#d9c08c] font-semibold text-base mt-1">
+                  {previewOfferData.type_prix || "Prix fixe"} {previewOfferData.prix_base ? `${Number(previewOfferData.prix_base).toLocaleString('fr-FR')} FCFA` : "Sur devis"}
+                </p>
+              </div>
+            </div>
+
+            {previewOfferData.description && (
+              <div className="bg-[#fbf7f0] p-4 rounded-2xl border border-[#b8924a]/20">
+                <h4 className="text-xs font-bold uppercase text-[#8f6f33] mb-1">Description</h4>
+                <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{previewOfferData.description}</p>
+              </div>
+            )}
+
+            {previewOfferData.inclus && previewOfferData.inclus.length > 0 && (
+              <div>
+                <h4 className="text-xs font-bold uppercase text-gray-500 mb-2">Ce qui est inclus</h4>
+                <ul className="space-y-1.5 text-xs text-gray-700">
+                  {previewOfferData.inclus.map((item: string, i: number) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <CheckCircle size={14} className="text-emerald-600 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {previewOfferData.options && previewOfferData.options.length > 0 && (
+              <div>
+                <h4 className="text-xs font-bold uppercase text-gray-500 mb-2">Options complémentaires</h4>
+                <div className="space-y-1.5">
+                  {previewOfferData.options.map((opt: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-gray-50 text-xs">
+                      <span className="font-medium text-gray-800">{opt.name}</span>
+                      <span className="text-[#8f6f33] font-bold">{opt.price ? `${Number(opt.price).toLocaleString('fr-FR')} FCFA` : "Inclus"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {previewOfferData.rubriques && previewOfferData.rubriques.length > 0 && (
+              <div>
+                <h4 className="text-xs font-bold uppercase text-gray-500 mb-2">Détails &amp; Rubriques</h4>
+                <RubriquesView value={previewOfferData.rubriques} />
+              </div>
+            )}
+
+            {previewOfferData.gallery && previewOfferData.gallery.length > 0 && (
+              <div>
+                <h4 className="text-xs font-bold uppercase text-gray-500 mb-2">Galerie photo de l&apos;offre ({previewOfferData.gallery.length})</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {previewOfferData.gallery.map((url: string, i: number) => (
+                    <div key={i} className="aspect-square rounded-xl overflow-hidden border border-gray-200">
+                      <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-gray-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewOfferData(null)}
+                className="px-5 py-2.5 rounded-full bg-neutral-900 hover:bg-black text-white text-xs font-bold cursor-pointer"
+              >
+                Fermer l&apos;aperçu
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {editorElement}
     </>
   );

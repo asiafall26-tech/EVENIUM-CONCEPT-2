@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { registerPurchasedCard, type VirtualCard, type CardCategoryType } from "@/lib/cartesService";
 import { CartesStudio, type CartesStudioValue } from "./CartesStudio";
+import CreditCardFields, { CreditCardData, validateCreditCard } from "@/components/ui/CreditCardFields";
 
 interface CardStudioModalProps {
   isOpen: boolean;
@@ -81,6 +82,13 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
   const [buyerEmail, setBuyerEmail] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"wave" | "om" | "card">("wave");
+  const [cardData, setCardData] = useState<CreditCardData>({
+    cardHolder: "",
+    cardNumber: "",
+    cardExpiry: "",
+    cardCvc: "",
+  });
+  const [cardError, setCardError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -88,7 +96,7 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
   const [generatedCard, setGeneratedCard] = useState<VirtualCard | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Initialisation à l'ouverture
+  // Initialisation à l'ouverture et pré-remplissage persistant
   useEffect(() => {
     if (cardConfig) {
       setRecipient(cardConfig.defaultRecipient || "");
@@ -110,7 +118,19 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
       setDressCode(cardConfig.defaultDressCode || "");
       setStep(1);
       setErrorMessage("");
+      setCardError(null);
       setGeneratedCard(null);
+
+      try {
+        const saved = localStorage.getItem("evenium_client_saved_info");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.fullName) setBuyerName(parsed.fullName);
+          if (parsed.email) setBuyerEmail(parsed.email);
+          if (parsed.phoneNumber) setBuyerPhone(parsed.phoneNumber);
+          if (parsed.cardHolder) setCardData((prev) => ({ ...prev, cardHolder: parsed.cardHolder }));
+        }
+      } catch { }
     }
   }, [cardConfig]);
 
@@ -137,15 +157,40 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
 
   const handleFinalPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!buyerName.trim() || !buyerEmail.trim() || !buyerPhone.trim()) {
-      setErrorMessage("Merci de renseigner votre nom, email et téléphone pour sécuriser votre lien.");
+    if (!buyerName.trim() || !buyerEmail.trim()) {
+      setErrorMessage("Merci de renseigner votre nom et email pour sécuriser votre lien.");
       return;
+    }
+
+    if (paymentMethod === "card") {
+      const cardVal = validateCreditCard(cardData);
+      if (cardVal) {
+        setCardError(cardVal);
+        setErrorMessage(cardVal);
+        return;
+      }
+    } else {
+      if (!buyerPhone.trim()) {
+        setErrorMessage("Veuillez renseigner votre numéro de téléphone pour la validation du paiement mobile.");
+        return;
+      }
     }
 
     setIsProcessing(true);
     setErrorMessage("");
+    setCardError(null);
 
     try {
+      // Enregistrement des coordonnées pour réutilisation automatique
+      try {
+        localStorage.setItem("evenium_client_saved_info", JSON.stringify({
+          fullName: buyerName.trim(),
+          email: buyerEmail.trim(),
+          phoneNumber: buyerPhone.trim(),
+          cardHolder: cardData.cardHolder.trim()
+        }));
+      } catch { }
+
       // Génération de l'identifiant unique
       const randomSuffix = Math.random().toString(36).substring(2, 8);
       const cardId = `c_${cardConfig.type.substring(0, 4)}_${randomSuffix}`;
@@ -429,6 +474,20 @@ export function CardStudioModal({ isOpen, onClose, cardConfig }: CardStudioModal
                     <span className="text-xs">Carte Bancaire</span>
                   </button>
                 </div>
+
+                {paymentMethod === "card" && (
+                  <div className="pt-3">
+                    <CreditCardFields
+                      cardData={cardData}
+                      onChange={(d) => {
+                        setCardData(d);
+                        if (cardError) setCardError(null);
+                      }}
+                      error={cardError}
+                      compact
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 flex items-center justify-between">

@@ -46,6 +46,7 @@ import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEv
 import { generateAccompanimentMessage, getAccompanimentSuggestions } from '@/lib/accompanimentMessages';
 import SplitStudioEditor from '@/components/studio/SplitStudioEditor';
 import { recordClientPurchaseAction } from '@/app/actions/clientPurchase';
+import CreditCardFields, { CreditCardData, validateCreditCard } from '@/components/ui/CreditCardFields';
 
 // Full Studio components
 import VeloursStudio from '@/components/invitations/velours/VeloursStudio';
@@ -686,6 +687,13 @@ function CreateExpressStudioContent({
   const [showDetailsErrors, setShowDetailsErrors] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'wave' | 'om' | 'card'>('wave');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [cardData, setCardData] = useState<CreditCardData>({
+    cardHolder: '',
+    cardNumber: '',
+    cardExpiry: '',
+    cardCvc: '',
+  });
+  const [cardError, setCardError] = useState<string | null>(null);
 
   // Authentification de l'organisateur
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -699,6 +707,23 @@ function CreateExpressStudioContent({
   const [errorMessage, setErrorMessage] = useState('');
   const [standardSuccessEvent, setStandardSuccessEvent] = useState<any>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCreds, setCopiedCreds] = useState(false);
+
+  // Pré-remplissage des informations déjà renseignées (Persistance)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('evenium_client_saved_info');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.fullName && !fullName) setFullName(parsed.fullName);
+        if (parsed.email && !email) setEmail(parsed.email);
+        if (parsed.phoneNumber && !phoneNumber) setPhoneNumber(parsed.phoneNumber);
+        if (parsed.cardHolder) {
+          setCardData(prev => ({ ...prev, cardHolder: parsed.cardHolder }));
+        }
+      }
+    } catch { }
+  }, []);
 
   // Vérifier la session existante
   useEffect(() => {
@@ -969,6 +994,24 @@ function CreateExpressStudioContent({
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage("");
+    setCardError(null);
+
+    // Validation stricte du moyen de paiement
+    if (paymentMethod === 'card') {
+      const cardValidation = validateCreditCard(cardData);
+      if (cardValidation) {
+        setCardError(cardValidation);
+        setErrorMessage(cardValidation);
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (paymentMethod === 'wave' || paymentMethod === 'om') {
+      if (!phoneNumber.trim()) {
+        setErrorMessage("Veuillez renseigner votre numéro de téléphone pour la validation du paiement.");
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     try {
       // Processus express : aucun blocage sur les détails organisationnels.
@@ -1137,6 +1180,23 @@ function CreateExpressStudioContent({
       }
 
       // 4. Débloquer l'accès au Dashboard et notifier en temps réel
+      try {
+        localStorage.setItem('evenium_client_saved_info', JSON.stringify({
+          fullName: fullName?.trim() || user.user_metadata?.full_name || '',
+          email: email ? email.trim().toLowerCase() : user.email || '',
+          phoneNumber: phoneNumber.trim(),
+          cardHolder: cardData.cardHolder.trim()
+        }));
+        if (password) {
+          localStorage.setItem('evenium_last_generated_access', JSON.stringify({
+            email: email.trim().toLowerCase(),
+            password: password,
+            fullName: fullName.trim(),
+            savedAt: new Date().toISOString()
+          }));
+        }
+      } catch { }
+
       broadcastChange("events");
       broadcastChange("profiles");
       broadcastChange("transactions");
@@ -1952,6 +2012,41 @@ function CreateExpressStudioContent({
                     </a>
                   </div>
 
+                  {/* Récapitulatif sécurisé des identifiants générés / enregistrés */}
+                  {email && (
+                    <div className="bg-[#fbf7f0] border border-[#b8924a]/30 rounded-xl p-3 text-left space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33] flex items-center gap-1">
+                          <Lock size={11} /> Vos accès au Dashboard enregistrés :
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const credsText = `Vos identifiants Evenium :\nEmail : ${email}\n${password ? `Mot de passe : ${password}\n` : ''}Connexion : ${typeof window !== 'undefined' ? window.location.origin : ''}/login`;
+                            navigator.clipboard.writeText(credsText);
+                            setCopiedCreds(true);
+                            setTimeout(() => setCopiedCreds(false), 2000);
+                          }}
+                          className="text-[10px] text-[#b8924a] font-bold hover:underline cursor-pointer"
+                        >
+                          {copiedCreds ? "Identifiants copiés !" : "Copier mes identifiants"}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-gray-700 font-mono">
+                        <div className="bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 truncate">
+                          <span className="text-gray-400 select-none font-sans text-[10px] block">Email :</span>
+                          {email}
+                        </div>
+                        {password && (
+                          <div className="bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 truncate">
+                            <span className="text-gray-400 select-none font-sans text-[10px] block">Mot de passe :</span>
+                            {password}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Bouton pour copier le message complet avec lien */}
                   <button
                     type="button"
@@ -2155,12 +2250,12 @@ function CreateExpressStudioContent({
                                   </div>
                                   {(selectedPlan === 'Premium' || selectedPlan === 'Standard') && <CheckCircle2 size={18} className="text-[#b8924a] shrink-0" />}
                                 </div>
-                                <p className="text-xl font-bold text-black mb-1">
+                                <p className="text-xl font-bold text-black mb-1.5">
                                   {isStaticCard ? "7 500" : "10 000"} <span className="text-xs text-gray-500 font-normal">FCFA</span>
                                 </p>
-                                <p className="text-[11px] font-semibold text-[#8f6f33] mb-3">
+                                <div className="inline-block bg-[#1f150e] text-[#f5dfaa] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md mb-3 shadow-xs">
                                   INVITATION + SUIVI DES RÉPONSES
-                                </p>
+                                </div>
                                 <ul className="text-xs text-gray-700 space-y-2">
                                   <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
@@ -2204,12 +2299,12 @@ function CreateExpressStudioContent({
                                   </div>
                                   {selectedPlan === 'Gold' && <CheckCircle2 size={18} className="text-[#b8924a] shrink-0" />}
                                 </div>
-                                <p className="text-xl font-bold text-black mb-1">
+                                <p className="text-xl font-bold text-black mb-1.5">
                                   {isStaticCard ? "15 000" : "20 000"} <span className="text-xs text-gray-500 font-normal">FCFA</span>
                                 </p>
-                                <p className="text-[11px] font-semibold text-[#8f6f33] mb-3">
-                                  TOUTES LES FONCTIONNALITÉS (Organisation complète)
-                                </p>
+                                <div className="inline-block bg-gradient-to-r from-[#b8924a] to-[#d9c08c] text-[#1c120a] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md mb-3 shadow-xs">
+                                  TOUTES LES FONCTIONNALITÉS
+                                </div>
                                 <ul className="text-xs text-gray-700 space-y-2">
                                   <li className="flex items-start gap-1.5 font-medium">
                                     <span className="text-emerald-600 font-bold shrink-0">✓</span>
@@ -2417,6 +2512,20 @@ function CreateExpressStudioContent({
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             placeholder="Ex: 77 000 00 00"
                             className="w-full min-w-0 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-[#b8924a] outline-none"
+                          />
+                        </div>
+                      )}
+
+                      {paymentMethod === 'card' && (
+                        <div className="pt-2">
+                          <CreditCardFields
+                            cardData={cardData}
+                            onChange={(data) => {
+                              setCardData(data);
+                              if (cardError) setCardError(null);
+                            }}
+                            error={cardError}
+                            compact
                           />
                         </div>
                       )}

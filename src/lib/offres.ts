@@ -38,12 +38,16 @@ export const offerRubriques = (s: any): Rubrique[] => parseRubriques(s?.infos_pr
 export const offerHidden = (s: any): BuiltinSection[] =>
   strings(s?.infos_pratiques?.masquees).filter((k): k is BuiltinSection => k in BUILTIN_SECTIONS);
 
-/** Ligne courte « Traiteurs et restauration · Mariage, Baptême » */
+/** Ligne courte « Traiteurs et restauration · Mariage, Baptême » sans répétition de mots */
 export function offerTagLine(s: any, max = 2): string {
   const prestations = offerPrestations(s);
   const events = offerEventTypes(s);
-  const p = prestations.slice(0, max).join(", ") + (prestations.length > max ? ` +${prestations.length - max}` : "");
-  const e = events.length ? events.slice(0, max).join(", ") + (events.length > max ? ` +${events.length - max}` : "") : ALL_EVENTS;
+  const uniquePrestations = Array.from(new Set(prestations));
+  const uniqueEvents = Array.from(new Set(events)).filter(
+    (ev) => !uniquePrestations.some((p) => p.toLowerCase().includes(ev.toLowerCase()))
+  );
+  const p = uniquePrestations.slice(0, max).join(", ") + (uniquePrestations.length > max ? ` +${uniquePrestations.length - max}` : "");
+  const e = uniqueEvents.length ? uniqueEvents.slice(0, max).join(", ") + (uniqueEvents.length > max ? ` +${uniqueEvents.length - max}` : "") : ALL_EVENTS;
   return [p, e].filter(Boolean).join(" · ");
 }
 

@@ -141,6 +141,83 @@ function PrestataireMessagesInner() {
       convs.push(...sortedConvs);
     }
 
+    // Récupérer les demandes de devis et alertes pour alimenter la boîte prestataire
+    const systemMessages: any[] = [
+      {
+        id: 'msg-welcome-prov',
+        sender_id: 'evenium_assistant',
+        receiver_id: user.id,
+        content: "✨ Bienvenue dans votre centre de messagerie Evenium Pro !\nRetrouvez ici en temps réel les demandes de devis de vos clients, les révisions demandées, les validations de contrats et les avis déposés sur votre vitrine.",
+        created_at: user.created_at || new Date().toISOString(),
+        is_read: true,
+      }
+    ];
+
+    try {
+      const { data: provDemandes } = await supabase
+        .from('demandes_devis')
+        .select('id, status, created_at, event_id, client_id, events(name, type, client_id)')
+        .eq('prestataire_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (provDemandes && provDemandes.length > 0) {
+        provDemandes.forEach((d: any) => {
+          const ev = Array.isArray(d.events) ? d.events[0] : d.events;
+          const evName = ev?.name || 'Événement client';
+          systemMessages.push({
+            id: `msg-demande-${d.id}`,
+            sender_id: 'evenium_assistant',
+            receiver_id: user.id,
+            content: `📩 Demande de Devis reçue pour l'événement : « ${evName} »\nStatut actuel : ${d.status}\nConsultez l'onglet « Demandes » pour y répondre ou envoyez directement votre devis personnalisé.`,
+            created_at: d.created_at || new Date().toISOString(),
+            is_read: true,
+          });
+        });
+      }
+
+      const { data: provDevis } = await supabase
+        .from('devis')
+        .select('id, amount, total, status, created_at, event_id, client_id')
+        .eq('prestataire_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (provDevis && provDevis.length > 0) {
+        provDevis.forEach((dev: any) => {
+          const amt = Number(dev.total || dev.amount || 0).toLocaleString('fr-FR');
+          systemMessages.push({
+            id: `msg-devis-${dev.id}`,
+            sender_id: 'evenium_assistant',
+            receiver_id: user.id,
+            content: `📑 Suivi Devis (${amt} FCFA) : Statut actuel « ${dev.status} ».`,
+            created_at: dev.created_at || new Date().toISOString(),
+            is_read: true,
+          });
+        });
+      }
+    } catch { }
+
+    const systemConv = {
+      id: 'evenium_assistant',
+      profile: {
+        id: 'evenium_assistant',
+        full_name: 'Evenium Pro • Mises à jour & Suivi',
+        role: 'admin',
+        category: 'Assistant Officiel',
+        avatar_url: null,
+      },
+      lastMessage: systemMessages[systemMessages.length - 1],
+      messages: systemMessages,
+      unread: 0,
+      eventContext: {
+        name: 'Notifications & Activité Commerciale',
+        type: 'Système'
+      }
+    };
+
+    convs.unshift(systemConv);
+
     // SI UN CONTACT A ÉTÉ DEMANDÉ EN PARAMÈTRE (?contactId=...)
     if (contactIdParam) {
       const existingConv = convs.find(c => c.id === contactIdParam);
@@ -224,6 +301,37 @@ function PrestataireMessagesInner() {
     e?.preventDefault?.();
     const contentToSend = (typeof customContent === "string" ? customContent : newMessage).trim();
     if (!myId || !activeConvId || !contentToSend) return;
+
+    if (activeConvId === 'evenium_assistant') {
+      const userMsg = {
+        id: `prov-user-${Date.now()}`,
+        sender_id: myId,
+        receiver_id: 'evenium_assistant',
+        content: contentToSend,
+        created_at: new Date().toISOString(),
+        is_read: true,
+      };
+      const autoReply = {
+        id: `prov-reply-${Date.now() + 1}`,
+        sender_id: 'evenium_assistant',
+        receiver_id: myId,
+        content: "Merci pour votre message ! Votre demande a été enregistrée auprès de l'équipe partenaire Evenium Pro. Nos coordinateurs vous assisteront rapidement.",
+        created_at: new Date(Date.now() + 600).toISOString(),
+        is_read: true,
+      };
+      setConversations(prev => prev.map(c => {
+        if (c.id === 'evenium_assistant') {
+          return {
+            ...c,
+            messages: [...c.messages, userMsg, autoReply],
+            lastMessage: autoReply,
+          };
+        }
+        return c;
+      }));
+      setNewMessage("");
+      return;
+    }
 
     const { error } = await sendMessage(myId, activeConvId, contentToSend);
     

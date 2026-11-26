@@ -31,7 +31,9 @@ import {
   RotateCcw,
   CheckCheck,
   Flame,
-  Globe
+  Globe,
+  Lightbulb,
+  Info
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { ProviderCampaign, CampaignPlanType, CAMPAIGN_PLANS } from "@/types/campaigns";
@@ -43,6 +45,7 @@ import {
 } from "@/app/actions/campaignActions";
 import { MAIN_COUNTRIES, regionsOf, quartiersOf } from "@/lib/zones";
 import { activityFromProfile, ProviderActivity } from "@/lib/providerProfile";
+import CreditCardFields, { CreditCardData, validateCreditCard } from "@/components/ui/CreditCardFields";
 
 const BADGE_OPTIONS = [
   "✨ Offre Spéciale",
@@ -105,6 +108,13 @@ export default function PrestatairePublicitePage() {
   const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<CampaignPlanType>("boost_30j");
   const [paymentMethod, setPaymentMethod] = useState<"wave" | "orange_money" | "card">("wave");
+  const [cardData, setCardData] = useState<CreditCardData>({
+    cardHolder: "",
+    cardNumber: "",
+    cardExpiry: "",
+    cardCvc: "",
+  });
+  const [cardError, setCardError] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
 
@@ -296,6 +306,15 @@ export default function PrestatairePublicitePage() {
       return;
     }
 
+    if (paymentMethod === "card") {
+      const cardVal = validateCreditCard(cardData);
+      if (cardVal) {
+        setCardError(cardVal);
+        alert(cardVal);
+        return;
+      }
+    }
+
     let activeCampaignId = campaign?.id;
     if (!activeCampaignId) {
       const created = await saveProviderCampaignAction({
@@ -345,11 +364,11 @@ export default function PrestatairePublicitePage() {
     : 0;
 
   const isOnline = campaign?.status === "active";
-  const viewsCount = campaign?.impressions_count ?? 1240;
-  const rawLikes = 142 + (liked ? 1 : 0) + likesOffset;
-  const clicksCount = campaign?.clicks_count ?? 86;
-  const contactsCount = campaign?.contacts_count ?? 14;
-  const engagementRate = (((rawLikes + clicksCount + contactsCount) / (viewsCount || 1)) * 100).toFixed(1);
+  const viewsCount = campaign?.impressions_count ?? 0;
+  const rawLikes = campaign ? (liked ? 1 : 0) + likesOffset : (liked ? 1 : 0);
+  const clicksCount = campaign?.clicks_count ?? 0;
+  const contactsCount = campaign?.contacts_count ?? 0;
+  const engagementRate = viewsCount > 0 ? (((rawLikes + clicksCount + contactsCount) / viewsCount) * 100).toFixed(1) : "0.0";
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-16">
@@ -470,6 +489,32 @@ export default function PrestatairePublicitePage() {
             <p className="font-serif text-xl sm:text-2xl font-bold text-[#a47e36]">
               {engagementRate}%
             </p>
+          </div>
+        </div>
+
+        {/* Note explicative : Comment exploiter votre Boost */}
+        <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-[#ecdcc8] flex flex-col sm:flex-row items-start gap-3.5 text-xs text-[#6b5847]">
+          <div className="p-2.5 rounded-xl bg-white text-[#8f6f33] shadow-2xs shrink-0">
+            <Lightbulb size={20} />
+          </div>
+          <div className="space-y-1.5 flex-1">
+            <h4 className="font-bold text-[#281a10] text-sm">
+              Guide pratique : Comment rentabiliser et exploiter votre Boost Evenium
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] leading-relaxed text-[#5c4a3b]">
+              <div>
+                • <strong className="text-gray-900">Visuel percutant :</strong> Utilisez une photo 4K nette ou un reel vidéo (10-15s) illustrant votre savoir-faire en situation réelle.
+              </div>
+              <div>
+                • <strong className="text-gray-900">Offre irrésistible :</strong> Mettez en avant un avantage concret dans votre accroche (remise, dégustation, option offerte).
+              </div>
+              <div>
+                • <strong className="text-gray-900">Ciblage géographique :</strong> Vos annonces s'affichent en tête auprès des organisateurs de votre zone (pays, région, quartier).
+              </div>
+              <div>
+                • <strong className="text-gray-900">Réactivité maximale :</strong> Répondez aux demandes en moins de 2h via la messagerie pour tripler vos signatures de devis.
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1030,6 +1075,20 @@ export default function PrestatairePublicitePage() {
                       <CreditCard size={16} /> <span>Carte Bancaire</span>
                     </button>
                   </div>
+
+                  {paymentMethod === "card" && (
+                    <div className="pt-3">
+                      <CreditCardFields
+                        cardData={cardData}
+                        onChange={(data) => {
+                          setCardData(data);
+                          if (cardError) setCardError(null);
+                        }}
+                        error={cardError}
+                        compact
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-2">

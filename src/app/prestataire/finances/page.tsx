@@ -1,9 +1,19 @@
 "use client";
 
-import { Wallet, TrendingUp, DollarSign, Calendar, RefreshCw, Plus, ArrowDownRight, ArrowUpRight, Clock } from "lucide-react";
+import { Wallet, TrendingUp, DollarSign, Calendar, RefreshCw, Plus, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, Trash2, CalendarClock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { createClient } from "@/utils/supabase/client";
+
+export interface ScheduledExpense {
+  id: string;
+  libelle: string;
+  montant: number;
+  dueDate: string;
+  category: string;
+  status: 'prevue' | 'effectuee';
+  createdAt: string;
+}
 
 export default function PrestataireFinancesPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -11,6 +21,18 @@ export default function PrestataireFinancesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ libelle: "", montant: "", type: "revenu" });
+  
+  // Dépenses programmées
+  const [scheduledExpenses, setScheduledExpenses] = useState<ScheduledExpense[]>([]);
+  const [isScheduledModalOpen, setIsScheduledModalOpen] = useState(false);
+  const [schedFormData, setSchedFormData] = useState({
+    libelle: "",
+    montant: "",
+    dueDate: "",
+    category: "Matériel & Équipement",
+  });
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -75,6 +97,37 @@ export default function PrestataireFinancesPage() {
       setTransactions(txData);
     }
 
+    setCurrentUserId(user.id);
+    try {
+      const savedSched = localStorage.getItem(`evenium_provider_scheduled_${user.id}`);
+      if (savedSched) {
+        setScheduledExpenses(JSON.parse(savedSched));
+      } else {
+        const defaultSched: ScheduledExpense[] = [
+          {
+            id: 'sched-1',
+            libelle: 'Location sono & micro sans fil',
+            montant: 85000,
+            dueDate: new Date(Date.now() + 864e5 * 7).toISOString().split('T')[0],
+            category: 'Matériel & Équipement',
+            status: 'prevue',
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: 'sched-2',
+            libelle: 'Fournitures & consommables de réception',
+            montant: 140000,
+            dueDate: new Date(Date.now() + 864e5 * 14).toISOString().split('T')[0],
+            category: 'Fournitures & Matières',
+            status: 'prevue',
+            createdAt: new Date().toISOString(),
+          }
+        ];
+        setScheduledExpenses(defaultSched);
+        localStorage.setItem(`evenium_provider_scheduled_${user.id}`, JSON.stringify(defaultSched));
+      }
+    } catch { }
+
     setLoading(false);
   };
 
@@ -85,6 +138,10 @@ export default function PrestataireFinancesPage() {
   const totalDepenses = transactions
     .filter(t => t.type === 'depense')
     .reduce((sum, t) => sum + Number(t.montant), 0);
+
+  const totalScheduledPending = scheduledExpenses
+    .filter(s => s.status === 'prevue')
+    .reduce((sum, s) => sum + Number(s.montant), 0);
 
   const totalCommissionsDue = 0;
   const netEstimated = devisStats.ca;
@@ -111,6 +168,66 @@ export default function PrestataireFinancesPage() {
     }
   };
 
+  const handleAddScheduledExpense = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schedFormData.libelle || !schedFormData.montant) return;
+    const newSched: ScheduledExpense = {
+      id: `sched-${Date.now()}`,
+      libelle: schedFormData.libelle.trim(),
+      montant: Number(schedFormData.montant),
+      dueDate: schedFormData.dueDate || new Date().toISOString().split('T')[0],
+      category: schedFormData.category,
+      status: 'prevue',
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [newSched, ...scheduledExpenses];
+    setScheduledExpenses(updated);
+    if (currentUserId) {
+      try {
+        localStorage.setItem(`evenium_provider_scheduled_${currentUserId}`, JSON.stringify(updated));
+      } catch { }
+    }
+    setIsScheduledModalOpen(false);
+    setSchedFormData({ libelle: "", montant: "", dueDate: "", category: "Matériel & Équipement" });
+  };
+
+  const handleExecuteScheduledExpense = async (sched: ScheduledExpense) => {
+    if (!currentUserId) return;
+    // Déduire et créer la transaction réelle de dépense
+    const { error } = await supabase.from('transactions').insert({
+      prestataire_id: currentUserId,
+      description: `[Dépense programmée] ${sched.libelle}`,
+      montant: Number(sched.montant),
+      type: 'depense',
+      categorie: sched.category,
+      status: 'Validé',
+      date: new Date().toISOString().split('T')[0]
+    });
+
+    if (error) {
+      alert("Erreur lors de la déduction : " + error.message);
+      return;
+    }
+
+    const updated = scheduledExpenses.map(s => s.id === sched.id ? { ...s, status: 'effectuee' as const } : s);
+    setScheduledExpenses(updated);
+    try {
+      localStorage.setItem(`evenium_provider_scheduled_${currentUserId}`, JSON.stringify(updated));
+    } catch { }
+
+    fetchFinances();
+  };
+
+  const handleDeleteScheduledExpense = (id: string) => {
+    const updated = scheduledExpenses.filter(s => s.id !== id);
+    setScheduledExpenses(updated);
+    if (currentUserId) {
+      try {
+        localStorage.setItem(`evenium_provider_scheduled_${currentUserId}`, JSON.stringify(updated));
+      } catch { }
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
@@ -129,54 +246,69 @@ export default function PrestataireFinancesPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-[#2b2118] text-white p-6 rounded-3xl border border-gray-800 shadow-xl relative overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8 [font-variant-numeric:lining-nums]">
+        <div className="bg-[#2b2118] text-white p-5 rounded-3xl border border-gray-800 shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <DollarSign size={80} />
           </div>
-          <p className="text-gray-400 font-medium mb-1 relative z-10 text-sm">Chiffre d'Affaires Brut</p>
-          <h3 className="text-2xl font-bold font-serif text-[#b8924a] relative z-10 mb-2">
-            {devisStats.ca.toLocaleString()} <span className="text-sm text-gray-500">FCFA</span>
-          </h3>
-          <p className="text-xs text-gray-500 relative z-10">{devisStats.count} prestation(s) validée(s)</p>
+          <div>
+            <p className="text-gray-400 font-medium mb-1 relative z-10 text-xs">Chiffre d'Affaires Brut</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#b8924a] relative z-10 mb-1">
+              {devisStats.ca.toLocaleString()} <span className="text-xs text-gray-500">FCFA</span>
+            </h3>
+          </div>
+          <p className="text-[11px] text-gray-400 relative z-10">{devisStats.count} prestation(s) validée(s)</p>
         </div>
         
-        <div className="bg-[#fbf7f0] p-6 rounded-3xl border border-[#b8924a]/30 shadow-sm flex flex-col justify-between">
+        <div className="bg-[#fbf7f0] p-5 rounded-3xl border border-[#b8924a]/30 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-10 h-10 bg-white text-[#8f6f33] rounded-full flex items-center justify-center mb-3 shadow-xs">
-              <TrendingUp size={20} />
+            <div className="w-9 h-9 bg-white text-[#8f6f33] rounded-full flex items-center justify-center mb-2 shadow-xs">
+              <TrendingUp size={18} />
             </div>
-            <p className="text-stone-600 font-medium mb-1 text-sm">Prestations Validées</p>
+            <p className="text-stone-600 font-medium mb-1 text-xs">Prestations Validées</p>
           </div>
           <div>
-            <h3 className="text-2xl font-bold font-serif text-[#8f6f33]">{devisStats.count} devis</h3>
-            <p className="text-xs text-stone-500 mt-1">Prestations signées</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#8f6f33]">{devisStats.count} devis</h3>
+            <p className="text-[11px] text-stone-500 mt-0.5">Prestations signées</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-3">
-              <DollarSign size={20} />
+            <div className="w-9 h-9 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-2">
+              <DollarSign size={18} />
             </div>
-            <p className="text-gray-500 font-medium mb-1 text-sm">Revenus Nets Encaissés</p>
+            <p className="text-gray-500 font-medium mb-1 text-xs">Revenus Encaissés</p>
           </div>
           <div>
-            <h3 className="text-2xl font-bold font-serif text-emerald-600">{netEstimated.toLocaleString()} FCFA</h3>
-            <p className="text-xs text-gray-400 mt-1">Totalité des gains prestataire</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-emerald-600">{netEstimated.toLocaleString()} FCFA</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Totalité des gains</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-3">
-              <ArrowDownRight size={20} />
+            <div className="w-9 h-9 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-2">
+              <ArrowDownRight size={18} />
             </div>
-            <p className="text-gray-500 font-medium mb-1 text-sm">Dépenses & Frais</p>
+            <p className="text-gray-500 font-medium mb-1 text-xs">Dépenses Réalisées</p>
           </div>
           <div>
-            <h3 className="text-2xl font-bold font-serif text-black">{totalDepenses.toLocaleString()} FCFA</h3>
-            <p className="text-xs text-gray-400 mt-1">Frais personnels saisis</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-black">{totalDepenses.toLocaleString()} FCFA</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Frais déduits</p>
+          </div>
+        </div>
+
+        <div className="bg-amber-50/50 p-5 rounded-3xl border border-amber-200/80 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="w-9 h-9 bg-amber-100 text-[#8f6f33] rounded-full flex items-center justify-center mb-2">
+              <CalendarClock size={18} />
+            </div>
+            <p className="text-[#8f6f33] font-medium mb-1 text-xs">Charges à Engager</p>
+          </div>
+          <div>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#b8924a]">{totalScheduledPending.toLocaleString()} FCFA</h3>
+            <p className="text-[11px] text-gray-500 mt-0.5">{scheduledExpenses.filter(s => s.status === 'prevue').length} dépense(s) prévue(s)</p>
           </div>
         </div>
       </div>
@@ -220,6 +352,108 @@ export default function PrestataireFinancesPage() {
               ) : (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-gray-500">Aucune transaction enregistrée.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SECTION : DÉPENSES PROGRAMMÉES & CHARGES À ENGAGER */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8 [font-variant-numeric:lining-nums]">
+        <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fbf7f0]/40">
+          <div>
+            <h3 className="font-serif text-xl font-bold text-gray-900 flex items-center gap-2">
+              <CalendarClock size={20} className="text-[#8f6f33]" />
+              Dépenses Programmées &amp; Charges à Engager
+            </h3>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Anticipez vos achats, locations de matériel et acomptes de sous-traitance avant vos événements.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsScheduledModalOpen(true)}
+            className="flex items-center gap-2 bg-[#281a10] text-[#f7e7b4] px-4 py-2.5 rounded-full hover:brightness-125 transition-all text-xs font-bold shadow-sm self-start sm:self-auto cursor-pointer"
+          >
+            <Plus size={16} /> Programmer une dépense
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="table-stack w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100 text-xs">
+              <tr>
+                <th className="px-6 py-3.5 font-medium">Libellé &amp; Nature</th>
+                <th className="px-6 py-3.5 font-medium">Catégorie</th>
+                <th className="px-6 py-3.5 font-medium">Échéance prévue</th>
+                <th className="px-6 py-3.5 font-medium text-right">Montant prévu</th>
+                <th className="px-6 py-3.5 font-medium text-center">Statut</th>
+                <th className="px-6 py-3.5 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-xs">
+              {scheduledExpenses.length > 0 ? (
+                scheduledExpenses.map((sched) => (
+                  <tr key={sched.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-semibold text-gray-900">
+                      {sched.libelle}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">
+                        {sched.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Calendar size={13} className="text-[#8f6f33]" />
+                        {new Date(sched.dueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right font-bold text-gray-900">
+                      {Number(sched.montant).toLocaleString('fr-FR')} FCFA
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {sched.status === 'effectuee' ? (
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold">
+                          <CheckCircle2 size={12} /> Déduite
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-200">
+                          <Clock size={12} /> À engager
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {sched.status === 'prevue' && (
+                          <button
+                            type="button"
+                            onClick={() => handleExecuteScheduledExpense(sched)}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold transition flex items-center gap-1 cursor-pointer"
+                            title="Marquer comme effectuée et déduire immédiatement des finances"
+                          >
+                            <CheckCircle2 size={13} />
+                            <span>Déduire</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteScheduledExpense(sched.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          title="Supprimer cette programmation"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-400 italic">
+                    Aucune dépense programmée. Cliquez sur « Programmer une dépense » pour anticiper vos charges.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -273,6 +507,71 @@ export default function PrestataireFinancesPage() {
           </div>
           <button type="submit" className="w-full py-4 bg-black text-white rounded-xl font-bold mt-4 hover:bg-gray-900 transition-colors">
             Enregistrer
+          </button>
+        </form>
+      </Modal>
+
+      {/* Modal Programmer une Dépense Future */}
+      <Modal isOpen={isScheduledModalOpen} onClose={() => setIsScheduledModalOpen(false)} title="Programmer une Dépense Future">
+        <form onSubmit={handleAddScheduledExpense} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Libellé / Nature de la dépense</label>
+            <input 
+              type="text" 
+              required
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] text-sm"
+              value={schedFormData.libelle}
+              onChange={(e) => setSchedFormData({...schedFormData, libelle: e.target.value})}
+              placeholder="Ex: Acompte traiteur, Location sono, Fleurs fraîches..."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Montant prévu (FCFA)</label>
+              <input 
+                type="number" 
+                required
+                min="0"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] text-sm font-mono"
+                value={schedFormData.montant}
+                onChange={(e) => setSchedFormData({...schedFormData, montant: e.target.value})}
+                placeholder="Ex: 80000"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Échéance prévue</label>
+              <input 
+                type="date" 
+                required
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] text-sm"
+                value={schedFormData.dueDate}
+                onChange={(e) => setSchedFormData({...schedFormData, dueDate: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+            <select
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8924a] text-sm"
+              value={schedFormData.category}
+              onChange={(e) => setSchedFormData({...schedFormData, category: e.target.value})}
+            >
+              <option value="Matériel & Équipement">Matériel &amp; Équipement</option>
+              <option value="Fournitures & Matières">Fournitures &amp; Matières premières</option>
+              <option value="Sous-traitance & Équipe">Sous-traitance &amp; Équipe de renfort</option>
+              <option value="Transport & Logistique">Transport &amp; Logistique</option>
+              <option value="Autre charge">Autre charge</option>
+            </select>
+          </div>
+
+          <p className="text-xs text-gray-500 pt-1">
+            Une fois la dépense effectuée, vous pourrez cliquer sur « Déduire » pour l&apos;intégrer directement à votre comptabilité réelle.
+          </p>
+
+          <button type="submit" className="w-full py-3.5 bg-[#281a10] text-[#f7e7b4] rounded-xl font-bold mt-2 hover:brightness-125 transition-colors cursor-pointer">
+            Enregistrer la dépense programmée
           </button>
         </form>
       </Modal>

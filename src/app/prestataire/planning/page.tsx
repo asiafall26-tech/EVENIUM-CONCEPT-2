@@ -23,6 +23,7 @@ export default function PrestatairePlanningPage() {
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = useState<any[]>([]);
   const [selectedDayString, setSelectedDayString] = useState("");
+  const [mobileSelectedDate, setMobileSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -346,7 +347,8 @@ export default function PrestatairePlanningPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-7 gap-px bg-gray-100 rounded-2xl overflow-hidden border border-gray-100">
+              {/* GRILLE CALENDRIER DESKTOP (Hidden on mobile) */}
+              <div className="hidden md:grid grid-cols-7 gap-px bg-gray-100 rounded-2xl overflow-hidden border border-gray-100 [font-variant-numeric:lining-nums]">
                 {/* Header */}
                 {['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'].map(d => (
                   <div key={d} className="bg-white text-center text-[10px] font-bold text-gray-400 py-3">{d}</div>
@@ -396,6 +398,110 @@ export default function PrestatairePlanningPage() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* GRILLE CALENDRIER MOBILE RESPONSIVE (Affichée uniquement sur smartphone/tablette) */}
+              <div className="md:hidden space-y-4 [font-variant-numeric:lining-nums]">
+                <div className="grid grid-cols-7 gap-1 bg-gray-50 p-2 rounded-2xl border border-gray-200">
+                  {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((d, idx) => (
+                    <div key={idx} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</div>
+                  ))}
+                  {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                    <div key={`m-empty-${i}`} className="h-9"></div>
+                  ))}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const dayNumber = i + 1;
+                    const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+                    const isSelected = mobileSelectedDate === dateString;
+                    const isToday = new Date().toISOString().split('T')[0] === dateString;
+                    const dayEvents = currentMonthEvents.filter(e => {
+                      const d = new Date(e.date);
+                      return d.getDate() === dayNumber;
+                    });
+                    const hasEvents = dayEvents.length > 0;
+
+                    return (
+                      <button
+                        key={`m-day-${dayNumber}`}
+                        type="button"
+                        onClick={() => {
+                          setMobileSelectedDate(dateString);
+                          openDayModal(dayEvents, dateString);
+                        }}
+                        className={`h-9 rounded-xl flex flex-col items-center justify-center relative transition-all text-xs font-semibold ${
+                          isSelected
+                            ? "bg-[#281a10] text-[#f7e7b4] shadow-sm font-bold ring-2 ring-[#b8924a]"
+                            : isToday
+                            ? "bg-[#b8924a] text-white font-bold"
+                            : "hover:bg-gray-200/60 text-gray-700"
+                        }`}
+                      >
+                        <span>{dayNumber}</span>
+                        {hasEvents && (
+                          <div className="flex gap-0.5 absolute bottom-1">
+                            {dayEvents.slice(0, 3).map((ev, eIdx) => (
+                              <span
+                                key={eIdx}
+                                className={`w-1 h-1 rounded-full ${
+                                  ev.rawType === 'indisponibilite' ? 'bg-red-500' :
+                                  ev.rawType === 'tache' ? 'bg-blue-500' :
+                                  ev.rawType === 'rendez-vous' ? 'bg-emerald-500' :
+                                  'bg-[#b8924a]'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Détails du jour sélectionné sur mobile */}
+                {(() => {
+                  const dayEvents = currentMonthEvents.filter(e => e.date === mobileSelectedDate);
+                  const parsedDay = new Date(mobileSelectedDate);
+                  return (
+                    <div className="p-4 rounded-2xl bg-[#fbf7f0] border border-[#b8924a]/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
+                            {parsedDay.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                          </span>
+                          <h4 className="text-sm font-bold text-gray-900">
+                            {dayEvents.length} activité{dayEvents.length > 1 ? "s" : ""} ce jour
+                          </h4>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openDayModal(dayEvents, mobileSelectedDate)}
+                          className="text-xs font-bold text-[#b8924a] bg-white px-3 py-1.5 rounded-full border border-[#b8924a]/30 shadow-xs"
+                        >
+                          + Gérer
+                        </button>
+                      </div>
+
+                      {dayEvents.length > 0 ? (
+                        <div className="space-y-2">
+                          {dayEvents.map((evt, idx) => (
+                            <div key={idx} onClick={() => openEditModal(evt)} className={`p-2.5 rounded-xl border ${evt.typeColor} flex items-center justify-between text-xs`}>
+                              <div className="flex items-center gap-2">
+                                <span>{evt.icon}</span>
+                                <div>
+                                  <p className="font-bold text-gray-900">{evt.name}</p>
+                                  <p className="text-[10px] opacity-75">{evt.typeLabel} {evt.timeString ? `• ${evt.timeString}` : ""}</p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-semibold text-[#8f6f33]">Modifier →</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic py-1">Aucune activité enregistrée pour ce jour.</p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </>
           )}

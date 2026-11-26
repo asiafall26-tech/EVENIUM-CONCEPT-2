@@ -259,12 +259,21 @@ export default function PricingSection() {
                 className="card-lux flex flex-col p-6 hover:shadow-[0_24px_50px_-20px_rgba(184,134,11,0.45)] transition-shadow justify-between border-2 border-gray-200"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-900">
                       {formulas[0].name}
                     </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-[#8f6f33] border border-[#b8924a]/30">
+                      Populaire
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+
+                  {/* Mise en avant claire : INVITATION + SUIVI DES RÉPONSES */}
+                  <div className="inline-block bg-[#1f150e] text-[#f5dfaa] text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-lg mb-3 shadow-xs">
+                    INVITATION + SUIVI DES RÉPONSES
+                  </div>
+
+                  <p className="text-xs text-gray-600 mb-5 leading-relaxed">
                     {formulas[0].tagline[invitationType]}
                   </p>
                   
@@ -316,12 +325,18 @@ export default function PricingSection() {
                 )}
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-serif text-xl sm:text-2xl font-bold text-gold-foil">
                       {formulas[1].name}
                     </h3>
                   </div>
-                  <p className="text-xs text-white/60 mb-5 leading-relaxed">
+
+                  {/* Mise en avant claire : TOUTES LES FONCTIONNALITÉS */}
+                  <div className="inline-block bg-gradient-to-r from-[#b8924a] to-[#d9c08c] text-[#1c120a] text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-lg mb-3 shadow-xs">
+                    TOUTES LES FONCTIONNALITÉS
+                  </div>
+
+                  <p className="text-xs text-white/70 mb-5 leading-relaxed">
                     {formulas[1].tagline[invitationType]}
                   </p>
                   
