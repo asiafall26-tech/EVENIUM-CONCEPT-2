@@ -1,36 +1,9 @@
 "use client";
 
-import { Star, Filter, MessageSquare, ThumbsUp, X, Send, Store, Share2, Check, Sparkles } from "lucide-react";
+import { Star, Filter, MessageSquare, ThumbsUp, X, Send, Store, Share2, Check, Sparkles, UserCheck } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useBadgeStore } from "@/store/BadgeStore";
-
-const DEFAULT_REVIEWS = [
-  {
-    id: "rev-1",
-    rating: 5,
-    comment: "Une prestation exceptionnelle pour notre mariage ! L'équipe a été d'un professionnalisme rare, du premier contact jusqu'au démontage le jour J. Tous nos invités nous en parlent encore.",
-    created_at: new Date(Date.now() - 864e5 * 3).toISOString(),
-    reply: "Merci infiniment pour votre confiance et pour ces mots chaleureux ! Ce fut un réel bonheur de contribuer à votre grand jour.",
-    profiles: { full_name: "Fatou & Ibrahima Sow" }
-  },
-  {
-    id: "rev-2",
-    rating: 5,
-    comment: "Service irréprochable pour le baptême de notre fils. Ponctualité, élégance et réactivité totale. Je recommande les yeux fermés à tous les organisateurs !",
-    created_at: new Date(Date.now() - 864e5 * 8).toISOString(),
-    reply: null,
-    profiles: { full_name: "Aminata Diallo" }
-  },
-  {
-    id: "rev-3",
-    rating: 4,
-    comment: "Très belle prestation lors de notre dîner d'entreprise à Dakar. Matériel impeccable et personnel très attentif.",
-    created_at: new Date(Date.now() - 864e5 * 18).toISOString(),
-    reply: null,
-    profiles: { full_name: "Cabinet Sylla & Partners" }
-  }
-];
 
 export default function PrestataireAvisPage() {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -55,6 +28,11 @@ export default function PrestataireAvisPage() {
     setProviderId(user.id);
 
     try {
+      // Suppression définitive de toute ancienne donnée simulée / faux avis
+      try {
+        localStorage.removeItem(`evenium_mock_reviews_${user.id}`);
+      } catch { }
+
       const { data } = await supabase
         .from('reviews')
         .select('*, profiles(full_name)')
@@ -74,17 +52,11 @@ export default function PrestataireAvisPage() {
         }));
         setReviews(merged);
       } else {
-        // Fallback aux avis certifiés Evenium
-        const savedFallback = localStorage.getItem(`evenium_mock_reviews_${user.id}`);
-        if (savedFallback) {
-          setReviews(JSON.parse(savedFallback));
-        } else {
-          setReviews(DEFAULT_REVIEWS);
-          localStorage.setItem(`evenium_mock_reviews_${user.id}`, JSON.stringify(DEFAULT_REVIEWS));
-        }
+        // Zéro faux avis : liste vide transparente
+        setReviews([]);
       }
     } catch {
-      setReviews(DEFAULT_REVIEWS);
+      setReviews([]);
     }
     setLoading(false);
   };
@@ -118,7 +90,7 @@ export default function PrestataireAvisPage() {
   };
 
   const calculateAverage = () => {
-    if (reviews.length === 0) return 0;
+    if (reviews.length === 0) return "0.0";
     const sum = reviews.reduce((acc, curr) => acc + curr.rating, 0);
     return (sum / reviews.length).toFixed(1);
   };
@@ -132,7 +104,7 @@ export default function PrestataireAvisPage() {
           <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
             Avis Clients <Star size={24} className="text-[#b8924a]" fill="#b8924a" />
           </h1>
-          <p className="text-gray-500 text-sm">Gérez votre e-réputation, répondez aux commentaires et collectez de nouveaux avis.</p>
+          <p className="text-gray-500 text-sm">Gérez votre e-réputation, répondez aux commentaires réels de vos clients et collectez de nouveaux avis certifiés.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -173,39 +145,55 @@ export default function PrestataireAvisPage() {
           <div className="absolute -right-4 -bottom-4 opacity-10">
             <Star size={100} />
           </div>
-          <h3 className="text-4xl sm:text-6xl font-bold font-serif text-[#b8924a] relative z-10">{averageRating}</h3>
+          <h3 className="text-4xl sm:text-6xl font-bold font-serif text-[#b8924a] relative z-10">
+            {reviews.length > 0 ? averageRating : "—"}
+          </h3>
           <div className="flex items-center justify-center gap-1 my-2 relative z-10">
             {[1,2,3,4,5].map(i => (
-              <Star key={i} size={16} className={i <= Number(averageRating) ? "text-[#b8924a]" : "text-gray-600"} fill={i <= Number(averageRating) ? "#b8924a" : "none"} />
+              <Star key={i} size={16} className={reviews.length > 0 && i <= Math.round(Number(averageRating)) ? "text-[#b8924a]" : "text-gray-600"} fill={reviews.length > 0 && i <= Math.round(Number(averageRating)) ? "#b8924a" : "none"} />
             ))}
           </div>
-          <p className="text-sm text-gray-400 relative z-10">{reviews.length} avis au total</p>
+          <p className="text-sm text-gray-400 relative z-10">
+            {reviews.length === 0 ? "0 avis enregistré" : `${reviews.length} avis réel${reviews.length > 1 ? "s" : ""}`}
+          </p>
         </div>
         
         <div className="md:col-span-3 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-center">
-          <div className="space-y-3">
-            {[5,4,3,2,1].map(rating => {
-              const count = reviews.filter(r => r.rating === rating).length;
-              const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-              return (
-                <div key={rating} className="flex items-center gap-3 text-sm">
-                  <div className="flex items-center gap-1 w-12 font-medium text-gray-700">
-                    {rating} <Star size={12} className="text-[#b8924a]" fill="#b8924a" />
+          {reviews.length === 0 ? (
+            <div className="text-center py-4 space-y-2">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-50 text-[#8f6f33] mb-1">
+                <Sparkles size={20} />
+              </div>
+              <h4 className="font-serif font-bold text-gray-900 text-base">Aucune évaluation enregistrée pour le moment</h4>
+              <p className="text-xs text-gray-500 max-w-lg mx-auto leading-relaxed">
+                Les faux avis ont été supprimés. Dès que vos clients réels laisseront une note sur votre vitrine Evenium, leur évaluation s&apos;affichera automatiquement ici.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {[5,4,3,2,1].map(rating => {
+                const count = reviews.filter(r => r.rating === rating).length;
+                const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                return (
+                  <div key={rating} className="flex items-center gap-3 text-sm">
+                    <div className="flex items-center gap-1 w-12 font-medium text-gray-700">
+                      {rating} <Star size={12} className="text-[#b8924a]" fill="#b8924a" />
+                    </div>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#b8924a] rounded-full" style={{ width: `${percentage}%` }}></div>
+                    </div>
+                    <div className="w-8 text-right text-gray-500 font-medium">{count}</div>
                   </div>
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#b8924a] rounded-full" style={{ width: `${percentage}%` }}></div>
-                  </div>
-                  <div className="w-8 text-right text-gray-500 font-medium">{count}</div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="space-y-6">
         {loading ? (
-           <div className="text-center p-6 sm:p-10 lg:p-12 text-gray-500">Chargement des avis...</div>
+           <div className="text-center p-6 sm:p-10 lg:p-12 text-gray-500">Chargement des avis vérifiés...</div>
         ) : filteredReviews.length > 0 ? (
           filteredReviews.map((review) => (
             <div key={review.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm group hover:border-[#b8924a]/30 transition-colors">
@@ -215,7 +203,7 @@ export default function PrestataireAvisPage() {
                     {review.profiles?.full_name?.substring(0,2) || "U"}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">{review.profiles?.full_name || "Utilisateur"}</h3>
+                    <h3 className="font-bold text-gray-900">{review.profiles?.full_name || "Client Evenium"}</h3>
                     <p className="text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString('fr-FR')}</p>
                   </div>
                 </div>
@@ -288,12 +276,31 @@ export default function PrestataireAvisPage() {
             </div>
           ))
         ) : (
-          <div className="text-center p-6 sm:p-10 lg:p-12 bg-white rounded-3xl border border-gray-100 shadow-sm">
-            <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Aucun avis {filterRating ? "correspondant" : ""} pour le moment</h3>
-            <p className="text-gray-500 max-w-sm mx-auto">
-              Vos futurs clients pourront laisser leurs avis ici après vos prestations.
-            </p>
+          <div className="text-center p-8 sm:p-12 lg:p-16 bg-white rounded-3xl border border-gray-100 shadow-sm space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-50 text-[#8f6f33] flex items-center justify-center mx-auto shadow-2xs">
+              <MessageSquare size={28} />
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="text-xl font-bold font-serif text-gray-900">
+                {filterRating ? `Aucun avis avec ${filterRating} étoile(s)` : "Aucun avis client pour le moment"}
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Tous les faux avis ont été supprimés. Partagez votre lien de vitrine auprès de vos clients récents pour recueillir leurs retours d&apos;expérience vérifiés.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const link = typeof window !== "undefined" ? `${window.location.origin}/prestataire/profil` : "";
+                if (link) navigator.clipboard.writeText(link);
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              className="inline-flex items-center gap-2 bg-[#281a10] hover:bg-black text-[#f7e7b4] px-6 py-3 rounded-full text-xs font-bold transition shadow-sm cursor-pointer"
+            >
+              {copiedLink ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />}
+              <span>{copiedLink ? "Lien de vitrine copié !" : "Copier mon lien pour collecter des avis"}</span>
+            </button>
           </div>
         )}
       </div>
