@@ -9,7 +9,7 @@ export interface EveniumNotificationItem {
   time: string;
   link?: string;
   bg?: string;
-  type?: "like" | "follow" | "matching_provider" | "boost_offer" | "quote" | "rsvp";
+  type?: "like" | "follow" | "matching_provider" | "boost_offer" | "quote" | "rsvp" | "message";
   createdAt: string;
 }
 
@@ -37,7 +37,15 @@ export function addNotificationForClient(notif: {
       time: "À l'instant",
       link: notif.link || "/dashboard",
       type: notif.type || "matching_provider",
-      bg: notif.type === "like" ? "bg-rose-100 text-rose-700" : notif.type === "follow" ? "bg-purple-100 text-purple-700" : "bg-amber-100 text-[#7a5e2b]",
+      bg: notif.type === "like" 
+        ? "bg-rose-100 text-rose-700" 
+        : notif.type === "follow" 
+        ? "bg-purple-100 text-purple-700" 
+        : notif.type === "message"
+        ? "bg-amber-100 text-[#7a5e2b]"
+        : notif.type === "quote"
+        ? "bg-blue-100 text-blue-700"
+        : "bg-amber-100 text-[#7a5e2b]",
       createdAt: new Date().toISOString(),
     };
 
@@ -74,7 +82,15 @@ export function addNotificationForProvider(
       time: "À l'instant",
       link: notif.link || "/prestataire/publicite",
       type: notif.type || "like",
-      bg: notif.type === "like" ? "bg-rose-100 text-rose-700" : notif.type === "follow" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-800",
+      bg: notif.type === "like" 
+        ? "bg-rose-100 text-rose-700" 
+        : notif.type === "follow" 
+        ? "bg-purple-100 text-purple-700" 
+        : notif.type === "message"
+        ? "bg-amber-100 text-[#7a5e2b]"
+        : notif.type === "quote"
+        ? "bg-blue-100 text-blue-700"
+        : "bg-emerald-100 text-emerald-800",
       createdAt: new Date().toISOString(),
     };
 
@@ -82,6 +98,45 @@ export function addNotificationForProvider(
     window.dispatchEvent(new Event("evenium_notifications_updated"));
   } catch (err) {
     console.warn("Erreur addNotificationForProvider:", err);
+  }
+}
+
+export function notifyMessageReceipt(params: {
+  receiverId: string;
+  senderId: string;
+  senderName: string;
+  senderRole?: string;
+  preview: string;
+}) {
+  if (typeof window === "undefined") return;
+  const isReceiverProvider = params.receiverId.startsWith("prov") || params.receiverId.includes("prestataire");
+  const link = isReceiverProvider
+    ? `/prestataire/messages?contactId=${encodeURIComponent(params.senderId)}&contactName=${encodeURIComponent(params.senderName)}`
+    : `/dashboard/messages?prestataire=${encodeURIComponent(params.senderId)}&name=${encodeURIComponent(params.senderName)}`;
+
+  if (isReceiverProvider) {
+    addNotificationForProvider(params.receiverId, {
+      title: `Nouveau message de ${params.senderName}`,
+      desc: params.preview,
+      link,
+      type: "message",
+    });
+    // Fallback prov-me
+    if (params.receiverId !== "prov-me") {
+      addNotificationForProvider("prov-me", {
+        title: `Nouveau message de ${params.senderName}`,
+        desc: params.preview,
+        link,
+        type: "message",
+      });
+    }
+  } else {
+    addNotificationForClient({
+      title: `Nouveau message de ${params.senderName}`,
+      desc: params.preview,
+      link,
+      type: "message",
+    });
   }
 }
 
@@ -97,7 +152,11 @@ export function getClientNotifications(): EveniumNotificationItem[] {
 export function getProviderNotifications(providerId: string): EveniumNotificationItem[] {
   if (typeof window === "undefined" || !providerId) return [];
   try {
-    return JSON.parse(localStorage.getItem(`evenium_provider_notifs_${providerId}`) || "[]");
+    const list = JSON.parse(localStorage.getItem(`evenium_provider_notifs_${providerId}`) || "[]");
+    if (list.length === 0 && providerId !== "prov-me") {
+      return JSON.parse(localStorage.getItem("evenium_provider_notifs_prov-me") || "[]");
+    }
+    return list;
   } catch {
     return [];
   }

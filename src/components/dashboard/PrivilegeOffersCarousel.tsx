@@ -18,6 +18,7 @@ import { ProviderCampaign } from "@/types/campaigns";
 import { recordCampaignAction } from "@/app/actions/campaignActions";
 import { loadActiveCampaigns } from "@/lib/campaignsStorage";
 import { CampaignQuoteRequestModal } from "@/components/dashboard/CampaignQuoteRequestModal";
+import { CampaignDetailModal } from "@/components/dashboard/CampaignDetailModal";
 
 interface PrivilegeOffersCarouselProps {
   eventType?: string;
@@ -42,6 +43,10 @@ export function PrivilegeOffersCarousel({
   // Modale devis spécifique à l'offre
   const [quoteModalCampaign, setQuoteModalCampaign] = useState<ProviderCampaign | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+
+  // Modale détaillée de l'élément publié
+  const [detailModalCampaign, setDetailModalCampaign] = useState<ProviderCampaign | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -290,14 +295,18 @@ export function PrivilegeOffersCarousel({
                 <span>Contacter</span>
               </Link>
 
-              <Link
-                href={`/prestataire-activite?id=${encodeURIComponent(current.provider_id)}`}
-                onClick={() => recordCampaignAction(current.id, "click")}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#8a682b] hover:text-[#5a4216] hover:underline px-2 py-1"
+              <button
+                type="button"
+                onClick={() => {
+                  recordCampaignAction(current.id, "click");
+                  setDetailModalCampaign(current);
+                  setIsDetailModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#ecdcc8] bg-white hover:bg-[#faf6ee] text-xs font-semibold text-[#8a682b] hover:text-[#5a4216] transition cursor-pointer shadow-xs"
               >
                 <span>Découvrir la vitrine</span>
                 <ExternalLink size={12} />
-              </Link>
+              </button>
             </div>
 
           </div>
@@ -329,6 +338,17 @@ export function PrivilegeOffersCarousel({
         isOpen={isQuoteModalOpen}
         onClose={() => setIsQuoteModalOpen(false)}
         eventName={eventType ? `Événement ${eventType}` : undefined}
+      />
+
+      {/* Modale détaillée de l'élément publié */}
+      <CampaignDetailModal
+        campaign={detailModalCampaign}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        onOpenQuoteModal={(camp) => {
+          setQuoteModalCampaign(camp);
+          setIsQuoteModalOpen(true);
+        }}
       />
     </>
   );

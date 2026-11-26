@@ -129,20 +129,35 @@ export function NotificationBell({ role }: NotificationBellProps) {
       } else if (role === "client") {
         const clientNotifs = getClientNotifications().map(n => ({
           ...n,
-          icon: n.type === "like" ? <Heart size={18} className="text-rose-500 fill-rose-500" /> : n.type === "follow" ? <UserPlus size={18} className="text-purple-600" /> : <Sparkles size={18} className="text-[#a47e36]" />
+          icon: n.type === "like" 
+            ? <Heart size={18} className="text-rose-500 fill-rose-500" /> 
+            : n.type === "follow" 
+            ? <UserPlus size={18} className="text-purple-600" /> 
+            : n.type === "message"
+            ? <MessageSquare size={18} className="text-[#8f6f33]" />
+            : n.type === "quote"
+            ? <FileText size={18} className="text-blue-600" />
+            : <Sparkles size={18} className="text-[#a47e36]" />
         }));
         setNotifications(clientNotifs);
       } else if (role === "prestataire") {
         try {
           const supabase = createClient();
           const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const provNotifs = getProviderNotifications(user.id).map(n => ({
-              ...n,
-              icon: n.type === "like" ? <Heart size={18} className="text-rose-500 fill-rose-500" /> : n.type === "follow" ? <UserPlus size={18} className="text-purple-600" /> : <Sparkles size={18} className="text-[#a47e36]" />
-            }));
-            setNotifications(provNotifs);
-          }
+          const provId = user?.id || "prov-me";
+          const provNotifs = getProviderNotifications(provId).map(n => ({
+            ...n,
+            icon: n.type === "like" 
+              ? <Heart size={18} className="text-rose-500 fill-rose-500" /> 
+              : n.type === "follow" 
+              ? <UserPlus size={18} className="text-purple-600" /> 
+              : n.type === "message"
+              ? <MessageSquare size={18} className="text-[#8f6f33]" />
+              : n.type === "quote"
+              ? <FileText size={18} className="text-blue-600" />
+              : <Sparkles size={18} className="text-[#a47e36]" />
+          }));
+          setNotifications(provNotifs);
         } catch (_) {}
       }
     }
@@ -150,7 +165,11 @@ export function NotificationBell({ role }: NotificationBellProps) {
 
     const onUpdate = () => loadNotifications();
     window.addEventListener("evenium_notifications_updated", onUpdate);
-    return () => window.removeEventListener("evenium_notifications_updated", onUpdate);
+    window.addEventListener("evenium_messages_updated", onUpdate);
+    return () => {
+      window.removeEventListener("evenium_notifications_updated", onUpdate);
+      window.removeEventListener("evenium_messages_updated", onUpdate);
+    };
   }, [role]);
 
   const markAllAsRead = () => {

@@ -25,6 +25,7 @@ import { loadActiveCampaigns } from "@/lib/campaignsStorage";
 import { addNotificationForClient, addNotificationForProvider } from "@/lib/notifications";
 import { QuoteRequestModal } from "@/components/dashboard/QuoteRequestModal";
 import { CampaignQuoteRequestModal } from "@/components/dashboard/CampaignQuoteRequestModal";
+import { CampaignDetailModal } from "@/components/dashboard/CampaignDetailModal";
 
 export default function PrestatairesDashboardPage({
   params,
@@ -127,6 +128,8 @@ export default function PrestatairesDashboardPage({
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [selectedCampaignForQuote, setSelectedCampaignForQuote] = useState<ProviderCampaign | null>(null);
   const [isCampaignQuoteModalOpen, setIsCampaignQuoteModalOpen] = useState(false);
+  const [detailModalCampaign, setDetailModalCampaign] = useState<ProviderCampaign | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Chargement des besoins enregistrés & des campagnes sponsorisées
   useEffect(() => {
@@ -828,7 +831,14 @@ export default function PrestatairesDashboardPage({
                     </div>
 
                     {/* Visuel média */}
-                    <div className="relative aspect-square w-full bg-black overflow-hidden">
+                    <div 
+                      onClick={() => {
+                        setDetailModalCampaign(pub);
+                        setIsDetailModalOpen(true);
+                      }}
+                      className="relative aspect-square w-full bg-black overflow-hidden cursor-pointer"
+                      title="Cliquer pour découvrir la vitrine et l'offre détaillée"
+                    >
                       {isVideo ? (
                         <video src={pub.media_url || ""} className="w-full h-full object-cover" controls playsInline muted />
                       ) : pub.media_url ? (
@@ -865,13 +875,17 @@ export default function PrestatairesDashboardPage({
                           </span>
                         </div>
 
-                        <Link
-                          href={`/prestataire-activite?id=${encodeURIComponent(pub.provider_id)}`}
-                          className="text-[11px] font-bold text-[#8f6f33] hover:underline flex items-center gap-1"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDetailModalCampaign(pub);
+                            setIsDetailModalOpen(true);
+                          }}
+                          className="text-[11px] font-bold text-[#8f6f33] hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0"
                         >
-                          <span>Vitrine</span>
+                          <span>Découvrir la vitrine</span>
                           <ExternalLink size={12} />
-                        </Link>
+                        </button>
                       </div>
 
                       {/* Titre & Accroche */}
@@ -1964,6 +1978,20 @@ export default function PrestatairesDashboardPage({
         eventName={event?.name || event?.type}
         defaultDate={event?.date}
         defaultLocation={event?.location}
+      />
+
+      {/* Modale détaillée de l'élément publié */}
+      <CampaignDetailModal
+        campaign={detailModalCampaign}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setDetailModalCampaign(null);
+        }}
+        onOpenQuoteModal={(camp) => {
+          setSelectedCampaignForQuote(camp);
+          setIsCampaignQuoteModalOpen(true);
+        }}
       />
 
       </>

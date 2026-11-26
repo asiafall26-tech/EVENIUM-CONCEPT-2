@@ -1,7 +1,12 @@
 "use server";
 
+import { markConversationReadInStore } from "@/app/actions/messages";
+import fs from "fs";
+import path from "path";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
+
+const PERSISTED_MESSAGES_FILE = path.join(process.cwd(), "src", "data", "mock", "persisted_messages.json");
 
 // Service-role client: counts must work whatever the RLS policies of each table
 const supabaseAdmin = createAdminClient(
@@ -77,9 +82,24 @@ export async function getBadgeCounts(rsvpSeenAt: Record<string, string> = {}, pr
   const role = (profile?.role ?? null) as AppRole | null;
   const result: BadgeCounts = { ...EMPTY, newRsvps: {}, userId: user.id, role };
 
-  result.unreadMessages = await count(
+  const dbUnread = await count(
     supabaseAdmin.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id).eq("is_read", false)
   );
+
+  let diskUnread = 0;
+  try {
+    if (fs.existsSync(PERSISTED_MESSAGES_FILE)) {
+      const raw = fs.readFileSync(PERSISTED_MESSAGES_FILE, "utf-8");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          diskUnread = parsed.filter((m: any) => m.receiver_id === user.id && !m.is_read).length;
+        }
+      }
+    }
+  } catch {}
+
+  result.unreadMessages = Math.max(dbUnread, diskUnread);
 
   if (role === "admin") {
     result.pendingSupport = await count(
@@ -120,7 +140,7 @@ export async function getBadgeCounts(rsvpSeenAt: Record<string, string> = {}, pr
     const seen = Object.entries(rsvpSeenAt).filter(([, at]) => !Number.isNaN(Date.parse(at)));
     if (seen.length) {
       const { data: events } = await supabaseAdmin.from("events").select("id").eq("client_id", user.id).in("id", seen.map(([id]) => id));
-      const mine = new Set((events ?? []).map((e) => e.id));
+      const mine = new Set((events ?? []).map((e: any) => e.id));
       const counts = await Promise.all(
         seen
           .filter(([id]) => mine.has(id))
@@ -138,14 +158,19 @@ export async function getBadgeCounts(rsvpSeenAt: Record<string, string> = {}, pr
 export async function markConversationRead(otherUserId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user || !otherUserId) return { error: "Non connecté" };
+  const userId = user?.id || "prov-me";
+  if (!otherUserId) return { error: "Paramètre manquant" };
 
-  const { error } = await supabaseAdmin
-    .from("messages")
-    .update({ is_read: true })
-    .eq("receiver_id", user.id)
-    .eq("sender_id", otherUserId)
-    .eq("is_read", false);
+  await markConversationReadInStore(userId, otherUserId);
 
-  return error ? { error: error.message } : { success: true };
+  try {
+    await supabaseAdmin
+      .from("messages")
+      .update({ is_read: true })
+      .eq("receiver_id", userId)
+      .eq("sender_id", otherUserId)
+      .eq("is_read", false);
+  } catch {}
+
+  return { success: true };
 }

@@ -7,6 +7,7 @@ import { MessagingView } from "@/components/messaging/MessagingView";
 import { getMessagesForUser, getProfiles, sendMessage } from "@/app/actions/messages";
 import { markConversationRead } from "@/app/actions/notifications";
 import { useBadgeStore } from "@/store/BadgeStore";
+import { notifyMessageReceipt } from "@/lib/notifications";
 
 function PrestataireMessagesInner() {
   const searchParams = useSearchParams();
@@ -70,8 +71,8 @@ function PrestataireMessagesInner() {
 
   const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    setMyId(user.id);
+    const effectiveUserId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("evenium_provider_id") : null) || "prov-me";
+    setMyId(effectiveUserId);
 
     const profData = await getProfiles();
     const profMap: Record<string, any> = {};
@@ -80,29 +81,31 @@ function PrestataireMessagesInner() {
 
     // Charger les événements liés aux clients pour afficher le badge d'événement
     const clientEventMap: Record<string, { name: string; type?: string }> = {};
-    const { data: demandesEvents } = await supabase
-      .from('demandes_devis')
-      .select('events(name, type, client_id)')
-      .eq('prestataire_id', user.id);
+    if (user?.id) {
+      const { data: demandesEvents } = await supabase
+        .from('demandes_devis')
+        .select('events(name, type, client_id)')
+        .eq('prestataire_id', user.id);
 
-    (demandesEvents || []).forEach((d: any) => {
-      const ev = Array.isArray(d.events) ? d.events[0] : d.events;
-      if (ev?.client_id && ev?.name) {
-        clientEventMap[ev.client_id] = { name: ev.name, type: ev.type };
-      }
-    });
+      (demandesEvents || []).forEach((d: any) => {
+        const ev = Array.isArray(d.events) ? d.events[0] : d.events;
+        if (ev?.client_id && ev?.name) {
+          clientEventMap[ev.client_id] = { name: ev.name, type: ev.type };
+        }
+      });
 
-    const { data: devisEvents } = await supabase
-      .from('devis')
-      .select('events(name, type, client_id)')
-      .eq('prestataire_id', user.id);
+      const { data: devisEvents } = await supabase
+        .from('devis')
+        .select('events(name, type, client_id)')
+        .eq('prestataire_id', user.id);
 
-    (devisEvents || []).forEach((dev: any) => {
-      const ev = Array.isArray(dev.events) ? dev.events[0] : dev.events;
-      if (ev?.client_id && ev?.name) {
-        clientEventMap[ev.client_id] = { name: ev.name, type: ev.type };
-      }
-    });
+      (devisEvents || []).forEach((dev: any) => {
+        const ev = Array.isArray(dev.events) ? dev.events[0] : dev.events;
+        if (ev?.client_id && ev?.name) {
+          clientEventMap[ev.client_id] = { name: ev.name, type: ev.type };
+        }
+      });
+    }
 
     if (contactIdParam && eventNameParam) {
       clientEventMap[contactIdParam] = {
@@ -111,19 +114,20 @@ function PrestataireMessagesInner() {
       };
     }
 
-    const msgData = await getMessagesForUser(user.id);
+    const msgData = await getMessagesForUser(effectiveUserId);
     const convs: any[] = [];
 
-    if (msgData) {
+    if (msgData && msgData.length > 0) {
       setMessages(msgData);
       
       const grouped: Record<string, any> = {};
       msgData.forEach(m => {
-        const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
+        const otherId = m.sender_id === effectiveUserId ? m.receiver_id : m.sender_id;
+        if (!otherId || otherId === 'evenium_assistant') return;
         if (!grouped[otherId]) {
           grouped[otherId] = {
             id: otherId,
-            profile: profMap[otherId],
+            profile: profMap[otherId] || { id: otherId, full_name: 'Organisateur Evenium', role: 'client' },
             lastMessage: m,
             messages: [],
             unread: 0,
@@ -131,7 +135,7 @@ function PrestataireMessagesInner() {
           };
         }
         grouped[otherId].messages.push(m);
-        if (m.receiver_id === user.id && !m.is_read) grouped[otherId].unread++;
+        if (m.receiver_id === effectiveUserId && !m.is_read) grouped[otherId].unread++;
         grouped[otherId].lastMessage = m;
       });
 
@@ -141,85 +145,8 @@ function PrestataireMessagesInner() {
       convs.push(...sortedConvs);
     }
 
-    // Récupérer les demandes de devis et alertes pour alimenter la boîte prestataire
-    const systemMessages: any[] = [
-      {
-        id: 'msg-welcome-prov',
-        sender_id: 'evenium_assistant',
-        receiver_id: user.id,
-        content: "✨ Bienvenue dans votre centre de messagerie Evenium Pro !\nRetrouvez ici en temps réel les demandes de devis de vos clients, les révisions demandées, les validations de contrats et les avis déposés sur votre vitrine.",
-        created_at: user.created_at || new Date().toISOString(),
-        is_read: true,
-      }
-    ];
-
-    try {
-      const { data: provDemandes } = await supabase
-        .from('demandes_devis')
-        .select('id, status, created_at, event_id, client_id, events(name, type, client_id)')
-        .eq('prestataire_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (provDemandes && provDemandes.length > 0) {
-        provDemandes.forEach((d: any) => {
-          const ev = Array.isArray(d.events) ? d.events[0] : d.events;
-          const evName = ev?.name || 'Événement client';
-          systemMessages.push({
-            id: `msg-demande-${d.id}`,
-            sender_id: 'evenium_assistant',
-            receiver_id: user.id,
-            content: `📩 Demande de Devis reçue pour l'événement : « ${evName} »\nStatut actuel : ${d.status}\nConsultez l'onglet « Demandes » pour y répondre ou envoyez directement votre devis personnalisé.`,
-            created_at: d.created_at || new Date().toISOString(),
-            is_read: true,
-          });
-        });
-      }
-
-      const { data: provDevis } = await supabase
-        .from('devis')
-        .select('id, amount, total, status, created_at, event_id, client_id')
-        .eq('prestataire_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (provDevis && provDevis.length > 0) {
-        provDevis.forEach((dev: any) => {
-          const amt = Number(dev.total || dev.amount || 0).toLocaleString('fr-FR');
-          systemMessages.push({
-            id: `msg-devis-${dev.id}`,
-            sender_id: 'evenium_assistant',
-            receiver_id: user.id,
-            content: `📑 Suivi Devis (${amt} FCFA) : Statut actuel « ${dev.status} ».`,
-            created_at: dev.created_at || new Date().toISOString(),
-            is_read: true,
-          });
-        });
-      }
-    } catch { }
-
-    const systemConv = {
-      id: 'evenium_assistant',
-      profile: {
-        id: 'evenium_assistant',
-        full_name: 'Evenium Pro • Mises à jour & Suivi',
-        role: 'admin',
-        category: 'Assistant Officiel',
-        avatar_url: null,
-      },
-      lastMessage: systemMessages[systemMessages.length - 1],
-      messages: systemMessages,
-      unread: 0,
-      eventContext: {
-        name: 'Notifications & Activité Commerciale',
-        type: 'Système'
-      }
-    };
-
-    convs.unshift(systemConv);
-
     // SI UN CONTACT A ÉTÉ DEMANDÉ EN PARAMÈTRE (?contactId=...)
-    if (contactIdParam) {
+    if (contactIdParam && contactIdParam !== 'evenium_assistant') {
       const existingConv = convs.find(c => c.id === contactIdParam);
       if (existingConv) {
         if (!existingConv.eventContext && clientEventMap[contactIdParam]) {
@@ -248,7 +175,7 @@ function PrestataireMessagesInner() {
           profile: targetProfile,
           lastMessage: {
             id: 'new',
-            sender_id: user.id,
+            sender_id: effectiveUserId,
             receiver_id: contactIdParam,
             content: 'Démarrer une discussion',
             created_at: new Date().toISOString(),
@@ -269,21 +196,27 @@ function PrestataireMessagesInner() {
 
     setConversations(convs);
 
-    const { data: demandes } = await supabase.from('demandes_devis').select('events(client_id)').eq('prestataire_id', user.id);
-    const clientIds = (demandes || []).map((d: any) => (Array.isArray(d.events) ? d.events[0]?.client_id : d.events?.client_id)).filter(Boolean);
-    const adminProfiles = Object.values(profMap).filter(p => p.role === 'admin');
-    const adminIds = adminProfiles.map(a => a.id);
-    const allValidContactIds = Array.from(new Set([...clientIds, ...adminIds]));
-    
-    setPotentialContacts(allValidContactIds.map(id => profMap[id]).filter(Boolean));
+    // Contacts potentiels : Tous les clients et administrateurs
+    const validContacts = Object.values(profMap).filter((p: any) => 
+      p.id !== effectiveUserId && 
+      p.id !== 'evenium_assistant' &&
+      (p.role === 'client' || p.role === 'admin')
+    );
+    setPotentialContacts(validContacts);
   };
 
   // Reload the inbox on mount, then whenever a new message arrives (the unread counter goes up)
   useEffect(() => {
     fetchData();
-    return useBadgeStore.subscribe((s, prev) => {
+    const onMsgsUpdated = () => fetchData();
+    window.addEventListener("evenium_messages_updated", onMsgsUpdated);
+    const sub = useBadgeStore.subscribe((s, prev) => {
       if (s.unreadMessages > prev.unreadMessages) fetchData();
     });
+    return () => {
+      window.removeEventListener("evenium_messages_updated", onMsgsUpdated);
+      sub();
+    };
   }, [contactIdParam]);
 
   const activeUnread = conversations.find(c => c.id === activeConvId)?.unread ?? 0;
@@ -294,6 +227,9 @@ function PrestataireMessagesInner() {
     markConversationRead(activeConvId).then(() => {
       setConversations(prev => prev.map(c => c.id === activeConvId ? { ...c, unread: 0 } : c));
       refreshBadges();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("evenium_notifications_updated"));
+      }
     });
   }, [activeConvId, activeUnread, refreshBadges]);
 
@@ -302,43 +238,26 @@ function PrestataireMessagesInner() {
     const contentToSend = (typeof customContent === "string" ? customContent : newMessage).trim();
     if (!myId || !activeConvId || !contentToSend) return;
 
-    if (activeConvId === 'evenium_assistant') {
-      const userMsg = {
-        id: `prov-user-${Date.now()}`,
-        sender_id: myId,
-        receiver_id: 'evenium_assistant',
-        content: contentToSend,
-        created_at: new Date().toISOString(),
-        is_read: true,
-      };
-      const autoReply = {
-        id: `prov-reply-${Date.now() + 1}`,
-        sender_id: 'evenium_assistant',
-        receiver_id: myId,
-        content: "Merci pour votre message ! Votre demande a été enregistrée auprès de l'équipe partenaire Evenium Pro. Nos coordinateurs vous assisteront rapidement.",
-        created_at: new Date(Date.now() + 600).toISOString(),
-        is_read: true,
-      };
-      setConversations(prev => prev.map(c => {
-        if (c.id === 'evenium_assistant') {
-          return {
-            ...c,
-            messages: [...c.messages, userMsg, autoReply],
-            lastMessage: autoReply,
-          };
-        }
-        return c;
-      }));
-      setNewMessage("");
-      return;
-    }
-
-    const { error } = await sendMessage(myId, activeConvId, contentToSend);
+    const res = await sendMessage(myId, activeConvId, contentToSend);
     
-    if (error) {
-      alert("Erreur lors de l'envoi : " + error);
+    if (res.error) {
+      alert("Erreur lors de l'envoi : " + res.error);
     } else {
       setNewMessage("");
+      // Émettre une notification in-app pour le client destinataire
+      const targetProf = profiles[activeConvId];
+      notifyMessageReceipt({
+        receiverId: activeConvId,
+        senderId: myId,
+        senderName: "Votre Prestataire",
+        senderRole: "prestataire",
+        preview: contentToSend.length > 70 ? contentToSend.substring(0, 70) + "…" : contentToSend,
+      });
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("evenium_messages_updated"));
+        window.dispatchEvent(new Event("evenium_notifications_updated"));
+      }
       fetchData();
     }
   };
