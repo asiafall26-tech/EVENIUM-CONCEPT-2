@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Edit3, Eye, Sparkles, X, CheckCircle, CheckCircle2, Copy, MessageCircle, RotateCcw, MessageSquare, Users, UserPlus, Search, Trash2, Plus, Clock, XCircle, Phone, Download, Upload, FileSpreadsheet, Mail, Layers, Check, ExternalLink } from "lucide-react";
+import { Send, Edit3, Eye, Sparkles, X, CheckCircle, CheckCircle2, Copy, MessageCircle, RotateCcw, MessageSquare, Users, UserPlus, Search, Trash2, Plus, Clock, XCircle, Phone, Download, Upload, FileSpreadsheet, Mail, Layers, Check, ExternalLink, Smartphone } from "lucide-react";
 import { useState, use, useEffect, useRef, useMemo } from "react";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
@@ -30,7 +30,6 @@ import WhatsAppShareWidget from "@/components/invitations/WhatsAppShareWidget";
 import { downloadGuestTemplateExcel, parseGuestFile, exportGuestsToExcel, extractGroupAndWish, formatMsgWithGroup, normalizePhoneNumber, ParsedGuestRow } from "@/lib/guestImportUtils";
 import { updateGuestStatusAction, deleteGuestAction, sendBulkEmailInvitationsAction } from "@/app/actions/guestsImport";
 import { GuestImportModal } from "@/components/dashboard/GuestImportModal";
-import { WhatsAppChainSenderModal } from "@/components/dashboard/WhatsAppChainSenderModal";
 
 export default function InvitationsDashboardPage({
   params,
@@ -152,7 +151,6 @@ export default function InvitationsDashboardPage({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [parsedImportGuests, setParsedImportGuests] = useState<ParsedGuestRow[]>([]);
   const [importFileName, setImportFileName] = useState("");
-  const [isChainSenderModalOpen, setIsChainSenderModalOpen] = useState(false);
   const [isBulkEmailModalOpen, setIsBulkEmailModalOpen] = useState(false);
   const [isSendingBulkEmail, setIsSendingBulkEmail] = useState(false);
   const [bulkEmailSuccess, setBulkEmailSuccess] = useState<string | null>(null);
@@ -348,6 +346,36 @@ export default function InvitationsDashboardPage({
     window.open(url, "_blank", "noopener,noreferrer");
 
     // Marquer comme 'Envoyé' s'il était 'Non envoyé'
+    if (guest.statut_rsvp === "Non envoyé") {
+      await handleUpdateStatus(guest.id, "Envoyé");
+    }
+  };
+
+  const handleSendSmsGuest = async (guest: any) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://evenium.com";
+    const personalUrl = `${origin}/invite/${event.id}?guest=${guest.id}`;
+    const cleanPhone = (guest.telephone || "").replace(/\D/g, "");
+
+    const text = `Bonjour ${guest.nom} ! Nous avons la joie de vous inviter à « ${event?.name || "notre événement"} ».\n\nRetrouvez tous les détails et confirmez votre présence en un clic sur votre lien personnel :\n${personalUrl}`;
+
+    const url = cleanPhone ? `sms:${cleanPhone}?&body=${encodeURIComponent(text)}` : `sms:?&body=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    if (guest.statut_rsvp === "Non envoyé") {
+      await handleUpdateStatus(guest.id, "Envoyé");
+    }
+  };
+
+  const handleSendEmailGuest = async (guest: any) => {
+    if (!guest.email) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://evenium.com";
+    const personalUrl = `${origin}/invite/${event.id}?guest=${guest.id}`;
+    const subject = `Invitation personnelle · ${event?.name || "Votre événement"}`;
+    const body = `Bonjour ${guest.nom},\n\nNous avons l'immense plaisir de vous convier à l'événement « ${event?.name || "notre événement"} ».\n\nRetrouvez tous les détails de la réception et confirmez votre présence facilement en cliquant sur votre lien personnel ci-dessous :\n\n👉 Accéder à mon invitation personnelle :\n${personalUrl}\n\nAu grand plaisir de célébrer ce moment avec vous !`;
+
+    const url = `mailto:${guest.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = url;
+
     if (guest.statut_rsvp === "Non envoyé") {
       await handleUpdateStatus(guest.id, "Envoyé");
     }
@@ -779,23 +807,24 @@ export default function InvitationsDashboardPage({
           </div>
         </div>
 
-        {/* Barre d'action rapide d'envoi groupé WhatsApp / Email */}
-        <div className="p-3 bg-[#fcfaf7] border border-[#b8924a]/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        {/* Tunnels de partage direct : WhatsApp / SMS / Email */}
+        <div className="p-3.5 bg-[#fcfaf7] border border-[#b8924a]/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-gray-700">
             <Sparkles size={15} className="text-[#b8924a] shrink-0" />
             <span>
-              <strong>Envoi simplifié :</strong> transmettez le lien personnel unique de chaque invité pour qu&apos;il soit reconnu automatiquement.
+              <strong>Tunnels de partage direct :</strong> transmettez vos invitations par <strong>WhatsApp</strong>, <strong>SMS</strong> ou <strong>Email</strong>. Chaque invité dispose de son lien personnel et peut être contacté en 1 clic.
             </span>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             <button
               type="button"
-              onClick={() => setIsChainSenderModalOpen(true)}
+              onClick={() => setIsShareModalOpen(true)}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold shadow-xs hover:brightness-105 transition-all cursor-pointer"
+              title="Ouvrir le tunnel de partage WhatsApp, SMS ou Email"
             >
-              <MessageCircle size={14} />
-              <span>Envoi à la chaîne WhatsApp</span>
+              <Send size={13} />
+              <span>Partager l&apos;invitation</span>
             </button>
 
             <button
@@ -804,7 +833,7 @@ export default function InvitationsDashboardPage({
               disabled={eligibleForEmail.length === 0}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-black hover:bg-gray-800 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-40 cursor-pointer"
             >
-              <Mail size={14} />
+              <Mail size={13} />
               <span>Envoyer à tous par email ({eligibleForEmail.length})</span>
             </button>
           </div>
@@ -1033,7 +1062,31 @@ export default function InvitationsDashboardPage({
                                 className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
                                 title="Envoyer l'invitation sur WhatsApp avec son lien personnel"
                               >
-                                <MessageCircle size={16} />
+                                <MessageCircle size={15} />
+                              </button>
+                            )}
+
+                            {/* SMS direct avec message + lien personnel */}
+                            {g.telephone && (
+                              <button
+                                type="button"
+                                onClick={() => handleSendSmsGuest(g)}
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                                title="Envoyer l'invitation par SMS avec son lien personnel"
+                              >
+                                <Smartphone size={15} />
+                              </button>
+                            )}
+
+                            {/* Email direct avec message + lien personnel */}
+                            {g.email && (
+                              <button
+                                type="button"
+                                onClick={() => handleSendEmailGuest(g)}
+                                className="p-1.5 rounded-lg text-[#b8924a] hover:bg-amber-50 transition-colors cursor-pointer"
+                                title="Envoyer l'invitation par Email avec son lien personnel"
+                              >
+                                <Mail size={15} />
                               </button>
                             )}
 
@@ -1530,35 +1583,53 @@ export default function InvitationsDashboardPage({
               </div>
             </div>
 
-            {/* Footer Actions */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3">
+            {/* Footer Actions : Tunnels de partage direct */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(generateWhatsAppMessage(waTone))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-3 px-3 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xs transition-all hover:scale-[1.01] active:scale-[0.98] shadow-sm flex items-center justify-center gap-1.5 text-center"
+                >
+                  <MessageCircle size={15} />
+                  <span>WhatsApp</span>
+                </a>
+
+                <a
+                  href={`sms:?&body=${encodeURIComponent(generateWhatsAppMessage(waTone))}`}
+                  className="py-3 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all hover:scale-[1.01] active:scale-[0.98] shadow-sm flex items-center justify-center gap-1.5 text-center"
+                >
+                  <Smartphone size={15} />
+                  <span>Par SMS</span>
+                </a>
+
+                <a
+                  href={`mailto:?subject=${encodeURIComponent(`Invitation : ${event?.name || "Notre événement"}`)}&body=${encodeURIComponent(generateWhatsAppMessage(waTone))}`}
+                  className="py-3 px-3 rounded-xl bg-[#281a10] hover:bg-black text-[#f7e7b4] font-bold text-xs transition-all hover:scale-[1.01] active:scale-[0.98] shadow-sm flex items-center justify-center gap-1.5 text-center"
+                >
+                  <Mail size={15} />
+                  <span>Par Email</span>
+                </a>
+              </div>
+
               <button
                 type="button"
                 onClick={handleCopyFullMessage}
-                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-2.5 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-2xs"
               >
                 {waCopiedText ? (
                   <>
-                    <CheckCircle size={16} className="text-green-600" />
-                    <span className="text-green-600">Message copié !</span>
+                    <CheckCircle size={15} className="text-green-600" />
+                    <span className="text-green-600">Message copié dans le presse-papier !</span>
                   </>
                 ) : (
                   <>
-                    <Copy size={16} />
-                    <span>Copier tout le message</span>
+                    <Copy size={15} />
+                    <span>Copier le texte complet du message</span>
                   </>
                 )}
               </button>
-
-              <a
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(generateWhatsAppMessage(waTone))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#25D366]/30 flex items-center justify-center gap-2 text-center"
-              >
-                <MessageCircle size={18} />
-                <span>Ouvrir WhatsApp</span>
-              </a>
             </div>
 
           </div>
@@ -1675,21 +1746,6 @@ export default function InvitationsDashboardPage({
         fileName={importFileName}
         onImportSuccess={() => {
           fetchGuestsData();
-        }}
-      />
-
-      {/* Modal d'envoi à la chaîne WhatsApp */}
-      <WhatsAppChainSenderModal
-        isOpen={isChainSenderModalOpen}
-        onClose={() => setIsChainSenderModalOpen(false)}
-        guests={filteredGuests}
-        eventId={id}
-        eventName={event?.name || "Votre événement"}
-        accompanimentMessage={accompanimentMsg}
-        onGuestStatusUpdated={(guestId, status) => {
-          setGuestsList((prev) =>
-            prev.map((g) => (g.id === guestId ? { ...g, statut_rsvp: status } : g))
-          );
         }}
       />
     </div>

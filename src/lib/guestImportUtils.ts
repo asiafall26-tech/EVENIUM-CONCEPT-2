@@ -111,27 +111,26 @@ export function splitFullName(fullName: string): { prenom: string; nom: string }
 
 /**
  * Génère et télécharge le fichier modèle Excel pour l'import d'invités.
+ * Modèle épuré contenant strictement les 4 colonnes clés : Prénom, Nom, Téléphone, Email.
  */
 export function downloadGuestTemplateExcel() {
   const wsData = [
-    ["Prénom", "Nom", "Téléphone", "Email", "Nombre de places", "Groupe"],
-    ["Amadou", "Diallo", "+221 77 123 45 67", "amadou.diallo@example.com", 2, "Famille"],
-    ["Aïssatou", "Ndiaye", "78 304 66 76", "aissatou.ndiaye@example.com", 1, "Amis"],
-    ["Moussa", "Sow", "76 987 65 43", "", 2, "Collègues"],
-    ["Fatou", "Ba", "", "fatou.ba@example.com", 1, "Famille"],
-    ["", "", "", "", "", ""],
-    ["NOTE IMPORTANTE : Le Téléphone OU l'Email est obligatoire pour chaque invité afin de lui envoyer son invitation."],
-    ["Le nombre de places (1 par défaut) et le groupe (Famille, Amis, Collègues...) sont facultatifs."],
+    ["Prénom", "Nom", "Téléphone", "Email"],
+    ["Amadou", "Diallo", "+221 77 123 45 67", "amadou.diallo@example.com"],
+    ["Aïssatou", "Ndiaye", "78 304 66 76", "aissatou.ndiaye@example.com"],
+    ["Moussa", "Sow", "76 987 65 43", ""],
+    ["Fatou", "Ba", "", "fatou.ba@example.com"],
+    ["", "", "", ""],
+    ["NOTE IMPORTANTE : Pour votre propre fichier Excel, il doit contenir respectivement les 4 colonnes ci-dessus (Prénom | Nom | Téléphone | Email)."],
+    ["Le Téléphone OU l'Email est obligatoire pour chaque invité afin de lui transmettre son invitation."],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws["!cols"] = [
-    { wch: 18 }, // Prénom
-    { wch: 18 }, // Nom
-    { wch: 22 }, // Téléphone
-    { wch: 30 }, // Email
-    { wch: 18 }, // Places
-    { wch: 18 }, // Groupe
+    { wch: 20 }, // Prénom
+    { wch: 20 }, // Nom
+    { wch: 24 }, // Téléphone
+    { wch: 34 }, // Email
   ];
 
   const wb = XLSX.utils.book_new();
@@ -153,6 +152,7 @@ export function downloadGuestTemplateExcel() {
 
 /**
  * Lit et analyse un fichier Excel ou CSV déposé par l'utilisateur.
+ * Conçu pour accepter les fichiers personnels contenant : Prénom, Nom, Téléphone, Email (colonnes 0 à 3).
  */
 export async function parseGuestFile(file: File, existingGuests: any[] = []): Promise<ParsedGuestRow[]> {
   const buffer = await file.arrayBuffer();
@@ -179,16 +179,16 @@ export async function parseGuestFile(file: File, existingGuests: any[] = []): Pr
   for (let r = 0; r < Math.min(10, rows.length); r++) {
     const row = rows[r].map((cell) => String(cell || "").toLowerCase().trim());
     const hasPrenom = row.some((c) => c.includes("prénom") || c.includes("prenom") || c.includes("first"));
-    const hasNom = row.some((c) => c === "nom" || c.includes("last") || c.includes("famille"));
-    const hasTel = row.some((c) => c.includes("tél") || c.includes("tel") || c.includes("phone"));
-    const hasEmail = row.some((c) => c.includes("mail"));
+    const hasNom = row.some((c) => c === "nom" || c.includes("nom de") || c.includes("last") || c.includes("famille"));
+    const hasTel = row.some((c) => c.includes("tél") || c.includes("tel") || c.includes("phone") || c.includes("portable") || c.includes("mobile"));
+    const hasEmail = row.some((c) => c.includes("mail") || c.includes("courriel"));
 
     if ((hasPrenom || hasNom) && (hasTel || hasEmail)) {
       headerIndex = r;
       row.forEach((cell, idx) => {
         if (cell.includes("prénom") || cell.includes("prenom") || cell.includes("first")) colMap.prenom = idx;
         else if (cell === "nom" || cell.includes("nom de") || cell.includes("last")) colMap.nom = idx;
-        else if (cell.includes("tél") || cell.includes("tel") || cell.includes("phone") || cell.includes("whatsapp"))
+        else if (cell.includes("tél") || cell.includes("tel") || cell.includes("phone") || cell.includes("whatsapp") || cell.includes("mobile") || cell.includes("portable"))
           colMap.telephone = idx;
         else if (cell.includes("mail") || cell.includes("courriel")) colMap.email = idx;
         else if (cell.includes("place") || cell.includes("nombre") || cell.includes("accompagnant") || cell.includes("invité"))
@@ -199,14 +199,15 @@ export async function parseGuestFile(file: File, existingGuests: any[] = []): Pr
     }
   }
 
-  // Si pas d'en-tête strict trouvé, utiliser les colonnes standard par défaut (0: Prénom, 1: Nom, 2: Tel, 3: Email, 4: Places, 5: Groupe)
-  const startRow = headerIndex >= 0 ? headerIndex + 1 : 1;
+  // Si pas d'en-tête strict trouvé, utiliser les colonnes standard par défaut :
+  // Col 0: Prénom | Col 1: Nom | Col 2: Téléphone | Col 3: Email
+  const startRow = headerIndex >= 0 ? headerIndex + 1 : 0;
   const pIdx = colMap.prenom >= 0 ? colMap.prenom : 0;
   const nIdx = colMap.nom >= 0 ? colMap.nom : 1;
   const tIdx = colMap.telephone >= 0 ? colMap.telephone : 2;
   const eIdx = colMap.email >= 0 ? colMap.email : 3;
-  const plIdx = colMap.places >= 0 ? colMap.places : 4;
-  const gIdx = colMap.groupe >= 0 ? colMap.groupe : 5;
+  const plIdx = colMap.places;
+  const gIdx = colMap.groupe;
 
   const seenPhones = new Set<string>();
   const seenEmails = new Set<string>();
@@ -226,13 +227,15 @@ export async function parseGuestFile(file: File, existingGuests: any[] = []): Pr
     const rawPrenom = String(row[pIdx] || "").trim();
     const rawNom = String(row[nIdx] || "").trim();
 
-    // Ignorer les lignes de notes / explications
-    if (rawPrenom.toLowerCase().startsWith("note") || rawNom.toLowerCase().startsWith("note")) continue;
+    // Ignorer si la ligne est elle-même la ligne d'en-tête résiduelle ou une note
+    const lowerPrenom = rawPrenom.toLowerCase();
+    const lowerNom = rawNom.toLowerCase();
+    if (lowerPrenom.startsWith("note") || lowerNom.startsWith("note") || lowerPrenom === "prénom" || lowerPrenom === "prenom") continue;
 
     const rawTel = String(row[tIdx] || "").trim();
     const rawEmail = String(row[eIdx] || "").trim();
-    const rawPlaces = row[plIdx];
-    const rawGroupe = String(row[gIdx] || "").trim();
+    const rawPlaces = plIdx >= 0 ? row[plIdx] : 1;
+    const rawGroupe = gIdx >= 0 ? String(row[gIdx] || "").trim() : "Général";
 
     const normalizedTel = normalizePhoneNumber(rawTel);
     const cleanEmail = rawEmail ? rawEmail.toLowerCase().trim() : "";

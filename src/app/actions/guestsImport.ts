@@ -157,3 +157,4 @@ export async function sendBulkEmailInvitationsAction(params: {
     return { success: false, error: err.message || "Erreur lors de l'envoi des invitations" };
   }
 }
+

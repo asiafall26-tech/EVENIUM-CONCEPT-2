@@ -10,7 +10,7 @@ export interface BudgetExpensePayload {
   category: string;
   date: string;
   amount: number;
-  status: "Payé" | "En attente";
+  status: "Payé" | "En attente" | "À engager";
 }
 
 export async function getEventBudgetAndExpensesAction(eventId: string) {
@@ -46,7 +46,7 @@ export async function getEventBudgetAndExpensesAction(eventId: string) {
       category: t.categorie || "Autre",
       date: t.date || new Date().toISOString().split("T")[0],
       amount: Number(t.montant) || 0,
-      status: (t.status === "Payé" ? "Payé" : "En attente") as "Payé" | "En attente",
+      status: (t.status === "Payé" ? "Payé" : (t.status === "À engager" ? "À engager" : "En attente")) as "Payé" | "En attente" | "À engager",
     }));
 
     return {
@@ -170,6 +170,49 @@ export async function deleteBudgetExpenseAction(expenseId: string, eventId: stri
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || "Impossible de supprimer la dépense" };
+  }
+}
+
+/**
+ * Défalque une charge engagée sur le budget initial :
+ * Met à jour son statut à "Payé" et actualise éventuellement le montant réel réglé et la date.
+ */
+export async function defalquerChargeAction(payload: {
+  expenseId: string;
+  eventId: string;
+  montantReel?: number;
+  dateReglement?: string;
+}) {
+  try {
+    const admin = getSupabaseAdmin();
+    const { expenseId, eventId, montantReel, dateReglement } = payload;
+
+    const updateFields: Record<string, any> = {
+      status: "Payé",
+    };
+
+    if (montantReel !== undefined && montantReel >= 0) {
+      updateFields.montant = Math.round(montantReel);
+    }
+    if (dateReglement) {
+      updateFields.date = dateReglement;
+    }
+
+    const { error } = await admin
+      .from("transactions")
+      .update(updateFields)
+      .eq("id", expenseId);
+
+    if (error) {
+      console.error("defalquerChargeAction error:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/dashboard/events/${eventId}/budget`);
+    revalidatePath(`/dashboard/events/${eventId}`);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Impossible de défalquer la charge" };
   }
 }
 

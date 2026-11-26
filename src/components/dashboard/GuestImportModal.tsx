@@ -179,7 +179,6 @@ export function GuestImportModal({
                     <th className="px-3 py-2.5">Téléphone</th>
                     <th className="px-3 py-2.5">Email</th>
                     <th className="px-3 py-2.5 text-center">Places</th>
-                    <th className="px-3 py-2.5">Groupe</th>
                     <th className="px-3 py-2.5">Validation</th>
                     <th className="px-3 py-2.5 text-center">Action</th>
                   </tr>
@@ -254,16 +253,6 @@ export function GuestImportModal({
                             handleFieldChange(idx, "accompagnants", Math.max(0, p - 1));
                           }}
                           className="w-14 text-center px-1.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-[#b8924a] outline-none"
-                        />
-                      </td>
-
-                      <td className="px-3 py-2">
-                        <input
-                          type="text"
-                          value={g.groupe}
-                          onChange={(e) => handleFieldChange(idx, "groupe", e.target.value)}
-                          placeholder="Famille, Amis..."
-                          className="w-24 px-2 py-1 bg-white border border-gray-200 rounded-lg text-xs focus:ring-1 focus:ring-[#b8924a] outline-none"
                         />
                       </td>
 

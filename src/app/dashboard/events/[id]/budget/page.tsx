@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, PieChart, TrendingDown, Plus, CheckCircle2, Lock, Receipt, X, FileText, Calendar, Edit2, Trash2, ArrowLeft, Sparkles, Check } from "lucide-react";
+import { Wallet, PieChart, TrendingDown, Plus, CheckCircle2, Lock, Receipt, X, FileText, Calendar, Edit2, Trash2, ArrowLeft, Sparkles, Check, ArrowDownCircle, Layers, Clock, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { use, useState, useEffect, useMemo, useTransition } from "react";
 import { useEvents } from "@/store/EventsContext";
@@ -11,6 +11,7 @@ import {
   saveBudgetExpenseAction,
   deleteBudgetExpenseAction,
   upgradeEventToGoldAction,
+  defalquerChargeAction,
 } from "@/app/actions/budgetActions";
 
 interface ExpenseItem {
@@ -19,7 +20,7 @@ interface ExpenseItem {
   category: string;
   date: string;
   amount: number;
-  status: "Payé" | "En attente";
+  status: "Payé" | "En attente" | "À engager";
 }
 
 interface EventBudgetInfo {
@@ -58,10 +59,18 @@ export default function BudgetDashboardPage({
   const [newExpense, setNewExpense] = useState({
     description: "",
     category: "Lieu & Traiteur",
+    customCategory: "",
+    isCustomCategory: false,
     date: new Date().toISOString().split("T")[0],
     amount: "",
-    status: "Payé" as "Payé" | "En attente",
+    status: "Payé" as "Payé" | "À engager",
   });
+
+  // Modale et confirmation de défalcation
+  const [defalquerModalItem, setDefalquerModalItem] = useState<ExpenseItem | null>(null);
+  const [defalquerAmount, setDefalquerAmount] = useState("");
+  const [defalquerDate, setDefalquerDate] = useState("");
+  const [defalquerSuccessMessage, setDefalquerSuccessMessage] = useState<string | null>(null);
 
   // Charger les données du budget et des dépenses via Server Action
   const loadBudgetData = async () => {
@@ -121,11 +130,22 @@ export default function BudgetDashboardPage({
   // Calculs financiers
   const globalBudget = event?.budgetTotal || 0;
 
-  const totalSpent = useMemo(() => {
-    return expenses
-      .filter((e) => e.status === "Payé")
-      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+  // Séparation : Dépenses réellement payées (défalquées) vs Charges à engager (prévisionnelles)
+  const depensesPayees = useMemo(() => {
+    return expenses.filter((e) => e.status === "Payé");
   }, [expenses]);
+
+  const chargesAEngager = useMemo(() => {
+    return expenses.filter((e) => e.status === "À engager" || e.status === "En attente");
+  }, [expenses]);
+
+  const totalSpent = useMemo(() => {
+    return depensesPayees.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  }, [depensesPayees]);
+
+  const totalChargesPrevue = useMemo(() => {
+    return chargesAEngager.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  }, [chargesAEngager]);
 
   const remainingBudget = globalBudget - totalSpent;
   const consumedPercentage =
@@ -139,7 +159,7 @@ export default function BudgetDashboardPage({
     return cats;
   }, [expenses]);
 
-  // Mise à jour du budget total
+  // Mise à jour du budget total initial
   const handleUpdateBudget = async () => {
     if (!newBudgetTotal) return;
     const num = Number(newBudgetTotal);
@@ -161,33 +181,48 @@ export default function BudgetDashboardPage({
   };
 
   // Gestion des modales d'ajout/édition
-  const openAddModal = () => {
+  const openAddModal = (defaultStatus: "Payé" | "À engager" = "Payé") => {
     setEditingExpenseId(null);
     setNewExpense({
       description: "",
       category: "Lieu & Traiteur",
+      customCategory: "",
+      isCustomCategory: false,
       date: new Date().toISOString().split("T")[0],
       amount: "",
-      status: "Payé",
+      status: defaultStatus,
     });
     setIsAddExpenseModalOpen(true);
   };
 
   const openEditModal = (expense: ExpenseItem) => {
+    const standardCategories = [
+      "Lieu & Traiteur",
+      "Photo & Vidéo",
+      "Décoration & Fleurs",
+      "Animation (DJ, Artistes)",
+      "Tenues & Beauté",
+      "Transport & Logistique",
+      "Cadeaux & Papeterie",
+    ];
+    const isStandard = standardCategories.includes(expense.category);
+
     setEditingExpenseId(expense.id);
     setNewExpense({
       description: expense.description,
-      category: expense.category,
+      category: isStandard ? expense.category : "Autre (personnalisé)",
+      customCategory: isStandard ? "" : expense.category,
+      isCustomCategory: !isStandard,
       date: expense.date || new Date().toISOString().split("T")[0],
       amount: expense.amount.toString(),
-      status: expense.status,
+      status: expense.status === "Payé" ? "Payé" : "À engager",
     });
     setIsAddExpenseModalOpen(true);
   };
 
-  // Supprimer une dépense
+  // Supprimer une dépense ou une charge
   const handleDeleteExpense = async (expenseId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette dépense ?")) return;
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet élément ?")) return;
 
     // Mise à jour optimiste
     setExpenses((prev) => prev.filter((e) => e.id !== expenseId));
@@ -195,7 +230,7 @@ export default function BudgetDashboardPage({
     if (refreshEvents) refreshEvents();
   };
 
-  // Enregistrer une dépense
+  // Enregistrer une dépense ou charge à engager
   const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpense.description || !newExpense.amount || !newExpense.date) return;
@@ -203,11 +238,20 @@ export default function BudgetDashboardPage({
     setIsSubmitting(true);
     const amountNum = Number(newExpense.amount);
 
+    // Permettre l'enregistrement d'une catégorie personnalisée non prévue par la liste déroulante
+    const finalCategory =
+      (newExpense.isCustomCategory || newExpense.category === "Autre (personnalisé)" || newExpense.category === "Autre") &&
+      newExpense.customCategory.trim()
+        ? newExpense.customCategory.trim()
+        : newExpense.category === "Autre (personnalisé)"
+        ? "Autre"
+        : newExpense.category;
+
     const payload = {
       id: editingExpenseId || undefined,
       eventId: id,
-      description: newExpense.description,
-      category: newExpense.category,
+      description: newExpense.description.trim(),
+      category: finalCategory,
       date: newExpense.date,
       amount: amountNum,
       status: newExpense.status,
@@ -219,7 +263,51 @@ export default function BudgetDashboardPage({
       if (refreshEvents) refreshEvents();
       setIsAddExpenseModalOpen(false);
     } else {
-      alert("Erreur lors de l'enregistrement de la dépense.");
+      alert("Erreur lors de l'enregistrement : " + (res.error || "Erreur inconnue"));
+    }
+    setIsSubmitting(false);
+  };
+
+  // Ouvrir la modale pour défalquer une charge sur le budget initial
+  const openDefalquerModal = (item: ExpenseItem) => {
+    setDefalquerModalItem(item);
+    setDefalquerAmount(item.amount.toString());
+    setDefalquerDate(new Date().toISOString().split("T")[0]);
+  };
+
+  // Confirmer la défalcation sur le budget initial
+  const handleConfirmDefalquer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!defalquerModalItem) return;
+
+    setIsSubmitting(true);
+    const amountNum = Number(defalquerAmount) || defalquerModalItem.amount;
+    const finalDate = defalquerDate || new Date().toISOString().split("T")[0];
+
+    // Mise à jour optimiste immédiate : passe en statut "Payé", déduite du restant
+    setExpenses((prev) =>
+      prev.map((exp) =>
+        exp.id === defalquerModalItem.id
+          ? { ...exp, status: "Payé", amount: amountNum, date: finalDate }
+          : exp
+      )
+    );
+
+    const res = await defalquerChargeAction({
+      expenseId: defalquerModalItem.id,
+      eventId: id,
+      montantReel: amountNum,
+      dateReglement: finalDate,
+    });
+
+    if (res.success) {
+      setDefalquerSuccessMessage(`${formatCurrency(amountNum)} FCFA ont été défalqués avec succès sur votre budget initial !`);
+      setTimeout(() => setDefalquerSuccessMessage(null), 4500);
+      setDefalquerModalItem(null);
+      if (refreshEvents) refreshEvents();
+    } else {
+      alert("Erreur lors de la défalcation : " + (res.error || "Erreur inconnue"));
+      await loadBudgetData();
     }
     setIsSubmitting(false);
   };
@@ -402,33 +490,60 @@ export default function BudgetDashboardPage({
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl text-gray-900 leading-tight mt-1">Mon budget</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Suivez vos dépenses, acomptes et gardez un œil sur ce qu&apos;il vous reste pour {event.name}.
+            Gérez vos charges prévisionnelles, suivez vos règlements et défalquez vos dépenses en direct pour {event.name}.
           </p>
         </div>
 
-        <button
-          onClick={openAddModal}
-          className="inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-[#f5eee1] px-5 py-3 rounded-full text-sm font-semibold shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
-        >
-          <Plus size={17} /> Ajouter une dépense
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <button
+            onClick={() => openAddModal("À engager")}
+            className="inline-flex items-center justify-center gap-2 bg-[#fbf7f0] hover:bg-[#f5eee1] text-[#8f6f33] border border-[#b8924a]/30 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-2xs active:scale-95 transition-all cursor-pointer"
+          >
+            <Clock size={15} className="text-[#b8924a]" />
+            <span>+ Charge à engager</span>
+          </button>
+
+          <button
+            onClick={() => openAddModal("Payé")}
+            className="inline-flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-[#f5eee1] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-md active:scale-95 transition-all cursor-pointer"
+          >
+            <Plus size={15} />
+            <span>+ Dépense effectuée</span>
+          </button>
+        </div>
       </div>
 
-      {/* Chiffres clés */}
+      {/* Bannière de confirmation de défalcation */}
+      {defalquerSuccessMessage && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-emerald-800 text-xs sm:text-sm shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+            <span className="font-medium">{defalquerSuccessMessage}</span>
+          </div>
+          <button
+            onClick={() => setDefalquerSuccessMessage(null)}
+            className="p-1 text-emerald-600 hover:text-emerald-900 cursor-pointer"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* Chiffres clés (4 KPIs) */}
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Budget Prévu */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Budget Initial Prévu */}
           <div className="rounded-2xl bg-gray-50/80 border border-gray-100 px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] uppercase tracking-wider text-gray-500 flex items-center gap-1.5 font-medium">
-                <Wallet size={13} /> Budget prévu
+                <Wallet size={13} /> Budget prévu initial
               </p>
               <button
                 onClick={() => {
                   setNewBudgetTotal(globalBudget > 0 ? globalBudget.toString() : "");
                   setIsEditingBudget(!isEditingBudget);
                 }}
-                className="p-1 -m-1 text-gray-400 hover:text-[#b8924a] transition-colors"
+                className="p-1 -m-1 text-gray-400 hover:text-[#b8924a] transition-colors cursor-pointer"
                 aria-label="Modifier le budget prévu"
                 title="Modifier le budget total"
               >
@@ -456,7 +571,7 @@ export default function BudgetDashboardPage({
                 </button>
                 <button
                   onClick={() => setIsEditingBudget(false)}
-                  className="shrink-0 text-gray-400 hover:text-gray-600 p-1"
+                  className="shrink-0 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
                 >
                   <X size={14} />
                 </button>
@@ -464,37 +579,47 @@ export default function BudgetDashboardPage({
             ) : (
               <div className="mt-1 flex items-baseline justify-between">
                 <p className="font-serif text-2xl sm:text-3xl text-gray-900 font-bold">
-                  {formatCurrency(globalBudget)} <span className="text-sm font-sans font-normal text-gray-400">FCFA</span>
+                  {formatCurrency(globalBudget)} <span className="text-xs font-sans font-normal text-gray-400">FCFA</span>
                 </p>
                 {globalBudget === 0 && (
                   <button
                     onClick={() => setIsEditingBudget(true)}
-                    className="text-[11px] text-[#b8924a] hover:underline font-semibold"
+                    className="text-[11px] text-[#b8924a] hover:underline font-semibold cursor-pointer"
                   >
-                    Définir un montant
+                    Définir
                   </button>
                 )}
               </div>
             )}
           </div>
 
-          {/* Dépensé */}
-          <div className="rounded-2xl bg-gray-50/80 border border-gray-100 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wider text-gray-500 flex items-center gap-1.5 font-medium">
-              <TrendingDown size={13} /> Dépensé (Payé)
+          {/* Défalqué sur le budget (Payé) */}
+          <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-emerald-800 flex items-center gap-1.5 font-medium">
+              <CheckCircle2 size={13} className="text-emerald-600" /> Défalqué (Payé)
             </p>
-            <p className="font-serif text-2xl sm:text-3xl text-gray-900 mt-1 font-bold">
-              {formatCurrency(totalSpent)} <span className="text-sm font-sans font-normal text-gray-400">FCFA</span>
+            <p className="font-serif text-2xl sm:text-3xl text-emerald-950 mt-1 font-bold">
+              {formatCurrency(totalSpent)} <span className="text-xs font-sans font-normal text-emerald-700/60">FCFA</span>
             </p>
           </div>
 
-          {/* Restant */}
+          {/* Charges à engager (Prévisionnel) */}
+          <div className="rounded-2xl bg-amber-50/60 border border-amber-100 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-amber-800 flex items-center gap-1.5 font-medium">
+              <Clock size={13} className="text-amber-600" /> Charges à engager
+            </p>
+            <p className="font-serif text-2xl sm:text-3xl text-amber-950 mt-1 font-bold">
+              {formatCurrency(totalChargesPrevue)} <span className="text-xs font-sans font-normal text-amber-700/60">FCFA</span>
+            </p>
+          </div>
+
+          {/* Restant disponible */}
           <div className="rounded-2xl bg-[#281a10] px-4 py-3 text-white border border-[#3d2b1f]">
             <p className="text-[11px] uppercase tracking-wider text-[#d9c08c] flex items-center gap-1.5 font-medium">
-              <CheckCircle2 size={13} /> Restant à engager
+              <TrendingDown size={13} /> Reste disponible
             </p>
             <p className="font-serif text-2xl sm:text-3xl text-white mt-1 font-bold">
-              {formatCurrency(remainingBudget)} <span className="text-sm font-sans font-normal text-white/50">FCFA</span>
+              {formatCurrency(remainingBudget)} <span className="text-xs font-sans font-normal text-white/50">FCFA</span>
             </p>
           </div>
         </div>
@@ -502,7 +627,7 @@ export default function BudgetDashboardPage({
         {/* Barre de progression */}
         <div className="mt-4 pt-3 border-t border-gray-100">
           <div className="flex justify-between text-xs text-gray-500 mb-1.5 font-medium">
-            <span>Budget consommé</span>
+            <span>Budget consommé (défalqué)</span>
             <span className={consumedPercentage > 100 ? "font-bold text-red-600" : "font-semibold text-gray-900"}>
               {consumedPercentage}% {consumedPercentage > 100 ? "(Dépassement de budget)" : ""}
             </span>
@@ -518,11 +643,216 @@ export default function BudgetDashboardPage({
         </div>
       </section>
 
-      {/* Grid Répartition & Liste des dépenses */}
+      {/* SECTION 1 : LISTE DES CHARGES À ENGAGER */}
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 bg-[#fcfaf7] border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-serif text-xl sm:text-2xl text-gray-900 font-bold">Charges à engager</h2>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100/80 text-amber-900">
+                {chargesAEngager.length} charge(s)
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Postes prévisionnels et devis en attente. Une fois le paiement fait, cliquez sur <strong>« Défalquer »</strong> pour déduire le montant du budget initial.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-[#8f6f33] bg-[#b8924a]/10 px-3 py-1.5 rounded-xl whitespace-nowrap">
+              Total prévu : {formatCurrency(totalChargesPrevue)} FCFA
+            </span>
+            <button
+              onClick={() => openAddModal("À engager")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#281a10] text-[#f7e7b4] text-xs font-bold hover:bg-black transition-colors cursor-pointer"
+            >
+              <Plus size={13} /> Ajouter
+            </button>
+          </div>
+        </div>
+
+        {chargesAEngager.length === 0 ? (
+          <div className="px-6 py-10 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-2 border border-amber-200/50">
+              <Clock size={20} />
+            </div>
+            <p className="text-sm font-semibold text-gray-800">Aucune charge à engager pour l&apos;instant</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+              Enregistrez vos devis et charges prévisionnelles (solde salle, reliquat photographe...). Vous pourrez les défalquer sur votre budget initial en un clic dès paiement.
+            </p>
+            <button
+              onClick={() => openAddModal("À engager")}
+              className="mt-3.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#8f6f33] hover:underline cursor-pointer"
+            >
+              <Plus size={13} /> Prévoir une charge à engager
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50/70 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-100 font-bold">
+                <tr>
+                  <th className="px-4 sm:px-6 py-3">Nature de la charge</th>
+                  <th className="px-4 py-3">Catégorie</th>
+                  <th className="px-4 py-3">Échéance / Date</th>
+                  <th className="px-4 py-3 text-right">Montant prévu</th>
+                  <th className="px-4 sm:px-6 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {chargesAEngager.map((charge) => (
+                  <tr key={charge.id} className="hover:bg-amber-50/20 transition-colors">
+                    <td className="px-4 sm:px-6 py-3.5">
+                      <span className="font-semibold text-gray-900 block text-sm">{charge.description}</span>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-semibold">
+                        {charge.category}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-gray-500 font-mono text-[11px] whitespace-nowrap">
+                      {charge.date
+                        ? new Date(charge.date).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "À définir"}
+                    </td>
+                    <td className="px-4 py-3.5 text-right font-bold text-gray-900 text-sm whitespace-nowrap">
+                      {formatCurrency(charge.amount)} FCFA
+                    </td>
+                    <td className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        {/* BOUTON DÉFALQUER SUR LE BUDGET INITIAL */}
+                        <button
+                          type="button"
+                          onClick={() => openDefalquerModal(charge)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                          title="Marquer comme payée et défalquer immédiatement du budget initial restant"
+                        >
+                          <ArrowDownCircle size={14} className="shrink-0" />
+                          <span>Défalquer sur le budget</span>
+                        </button>
+
+                        <button
+                          onClick={() => openEditModal(charge)}
+                          className="w-7 h-7 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Modifier"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteExpense(charge.id)}
+                          className="w-7 h-7 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* SECTION 2 : DÉPENSES EFFECTUÉES & RÉPARTITION */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
-        {/* Par Catégorie */}
+        {/* Liste des Dépenses Réglées (Défalquées) */}
+        <section className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif text-xl sm:text-2xl text-gray-900 font-bold">Dépenses effectuées</h2>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100/80 text-emerald-900">
+                  {depensesPayees.length} réglée(s)
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Postes déjà réglés et défalqués sur le budget initial.
+              </p>
+            </div>
+            <button
+              onClick={() => openAddModal("Payé")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black text-white text-xs font-bold hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              <Plus size={13} /> Ajouter
+            </button>
+          </div>
+
+          {depensesPayees.length === 0 ? (
+            <div className="px-6 py-10 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-2 text-gray-400">
+                <Receipt size={20} />
+              </div>
+              <p className="text-sm font-semibold text-gray-700">Aucune dépense réglée pour le moment</p>
+              <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                Vos règlements apparaîtront ici dès que vous aurez défalqué vos charges à engager ou ajouté une dépense directe.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {depensesPayees.map((expense) => (
+                <li
+                  key={expense.id}
+                  className="px-4 sm:px-6 py-3.5 flex items-center gap-3 hover:bg-gray-50/50 transition-colors"
+                >
+                  <div
+                    className="w-9 h-9 shrink-0 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center"
+                    style={{ color: categoryColors[expense.category] || "#b8924a" }}
+                  >
+                    <Receipt size={16} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{expense.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                      {expense.category} ·{" "}
+                      {new Date(expense.date).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                      {formatCurrency(expense.amount)} FCFA
+                    </p>
+                    <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                      <Check size={11} /> Défalqué
+                    </span>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-1">
+                    <button
+                      onClick={() => openEditModal(expense)}
+                      className="w-7 h-7 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Modifier"
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteExpense(expense.id)}
+                      className="w-7 h-7 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Répartition par catégorie */}
         <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
-          <h2 className="font-serif text-2xl text-gray-900 font-bold">Par catégorie</h2>
+          <h2 className="font-serif text-xl sm:text-2xl text-gray-900 font-bold">Par catégorie</h2>
           {Object.keys(expensesByCategory).length === 0 ? (
             <div className="py-8 text-center text-gray-400 text-sm">
               <PieChart size={28} className="mx-auto mb-2 opacity-40 text-gray-400" />
@@ -536,7 +866,7 @@ export default function BudgetDashboardPage({
                   const pct = totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0;
                   return (
                     <li key={cat}>
-                      <div className="flex justify-between gap-3 text-sm">
+                      <div className="flex justify-between gap-3 text-xs">
                         <span className="flex items-center gap-2 min-w-0">
                           <span
                             className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -563,97 +893,104 @@ export default function BudgetDashboardPage({
             </ul>
           )}
         </section>
-
-        {/* Liste des Dépenses */}
-        <section className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-5 pb-3 border-b border-gray-100">
-            <h2 className="font-serif text-2xl text-gray-900 font-bold">Dépenses</h2>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
-              {expenses.length} dépense(s)
-            </span>
-          </div>
-
-          {expenses.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3 text-gray-400">
-                <Receipt size={22} />
-              </div>
-              <p className="text-sm font-medium text-gray-700">Aucune dépense enregistrée pour le moment.</p>
-              <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
-                Ajoutez vos acomptes traiteur, location de salle ou tenues pour garder la maîtrise de votre budget.
-              </p>
-              <button
-                onClick={openAddModal}
-                className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#8f6f33] hover:underline cursor-pointer"
-              >
-                <Plus size={14} /> Ajouter ma première dépense
-              </button>
-            </div>
-          ) : (
-            <ul className="divide-y divide-gray-100">
-              {expenses.map((expense) => (
-                <li
-                  key={expense.id}
-                  className="px-4 sm:px-6 py-3.5 flex items-center gap-3 hover:bg-gray-50/50 transition-colors"
-                >
-                  <div
-                    className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center"
-                    style={{ color: categoryColors[expense.category] || "#6b7280" }}
-                  >
-                    <Receipt size={16} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{expense.description}</p>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">
-                      {expense.category} ·{" "}
-                      {new Date(expense.date).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-
-                  <div className="shrink-0 text-right">
-                    <p className="text-sm font-bold text-gray-900 whitespace-nowrap">
-                      {formatCurrency(expense.amount)} F
-                    </p>
-                    <span
-                      className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide font-bold ${getStatusColor(
-                        expense.status
-                      )}`}
-                    >
-                      {expense.status}
-                    </span>
-                  </div>
-
-                  <div className="shrink-0 flex items-center gap-1">
-                    <button
-                      onClick={() => openEditModal(expense)}
-                      className="w-8 h-8 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
-                      aria-label={`Modifier ${expense.description}`}
-                      title="Modifier"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteExpense(expense.id)}
-                      className="w-8 h-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
-                      aria-label={`Supprimer ${expense.description}`}
-                      title="Supprimer"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </div>
 
-      {/* Modale d'Ajout / Modification d'une Dépense */}
+      {/* MODALE DE CONFIRMATION DE DÉFALCATION */}
+      {defalquerModalItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmitting) setDefalquerModalItem(null);
+          }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-gray-100 animate-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                  <ArrowDownCircle size={22} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-gray-900">
+                    Défalquer sur le budget initial
+                  </h3>
+                  <p className="text-xs text-gray-500">Règlement de la charge</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => setDefalquerModalItem(null)}
+                className="p-1 rounded-full text-gray-400 hover:text-gray-700 disabled:opacity-50 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/70 border border-amber-200/60 rounded-2xl text-xs space-y-1">
+              <p className="font-bold text-gray-900 text-sm">{defalquerModalItem.description}</p>
+              <p className="text-gray-600">Catégorie : <strong>{defalquerModalItem.category}</strong></p>
+              <p className="text-gray-600">Montant initialement prévu : <strong>{formatCurrency(defalquerModalItem.amount)} FCFA</strong></p>
+            </div>
+
+            <form onSubmit={handleConfirmDefalquer} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">
+                  Montant réel réglé (FCFA) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  value={defalquerAmount}
+                  onChange={(e) => setDefalquerAmount(e.target.value)}
+                />
+                <span className="text-[11px] text-gray-400 mt-1 block">
+                  Ajustez si le montant réel payé est différent de la prévision.
+                </span>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <Calendar size={13} /> Date de règlement *
+                </label>
+                <input
+                  type="date"
+                  required
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  value={defalquerDate}
+                  onChange={(e) => setDefalquerDate(e.target.value)}
+                />
+              </div>
+
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200/60 rounded-xl text-[11px] text-emerald-900 leading-relaxed">
+                💡 <strong>Défalcation immédiate :</strong> Dès validation, ce montant sera directement déduit du budget initial restant et passera dans vos dépenses effectuées.
+              </div>
+
+              <div className="flex gap-2.5 justify-end pt-2">
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => setDefalquerModalItem(null)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-xs hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !defalquerAmount}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <ArrowDownCircle size={14} className={isSubmitting ? "animate-spin" : ""} />
+                  <span>{isSubmitting ? "Défalcation en cours…" : "Confirmer et défalquer"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE D'AJOUT / MODIFICATION D'UNE DÉPENSE OU CHARGE */}
       {isAddExpenseModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
@@ -665,9 +1002,17 @@ export default function BudgetDashboardPage({
             <div className="p-5 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <div>
                 <h3 className="font-serif font-bold text-xl text-gray-900">
-                  {editingExpenseId ? "Modifier la dépense" : "Ajouter une dépense"}
+                  {editingExpenseId
+                    ? "Modifier"
+                    : newExpense.status === "Payé"
+                    ? "Ajouter une dépense effectuée"
+                    : "Ajouter une charge à engager"}
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">Enregistrez un poste financier pour votre événement</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {newExpense.status === "Payé"
+                    ? "Saisie d'un paiement effectué défalqué sur le budget"
+                    : "Prévision d'une charge à régler ultérieurement"}
+                </p>
               </div>
               <button
                 onClick={() => setIsAddExpenseModalOpen(false)}
@@ -677,15 +1022,47 @@ export default function BudgetDashboardPage({
               </button>
             </div>
 
-            <form onSubmit={handleSaveExpense} className="p-5 sm:p-6 space-y-4">
+            <form onSubmit={handleSaveExpense} className="p-5 sm:p-6 space-y-4 text-xs">
+              {/* Type de poste : Dépense effectuée vs Charge à engager */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                  <FileText size={13} /> Intitulé de la dépense *
+                <label className="block font-bold text-gray-700 mb-1.5">Type de poste financier</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewExpense({ ...newExpense, status: "Payé" })}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      newExpense.status === "Payé"
+                        ? "bg-emerald-50/80 border-emerald-400 text-emerald-950 font-bold shadow-2xs"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="block font-semibold">💳 Dépense effectuée</span>
+                    <span className="text-[10px] text-gray-500 block mt-0.5">Défalqué directement</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewExpense({ ...newExpense, status: "À engager" })}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      newExpense.status === "À engager"
+                        ? "bg-amber-50/80 border-amber-400 text-amber-950 font-bold shadow-2xs"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="block font-semibold">📋 Charge à engager</span>
+                    <span className="text-[10px] text-gray-500 block mt-0.5">À défalquer au paiement</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <FileText size={13} /> Nature de la dépense ou charge *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Acompte Traiteur, Location Sono, Robe de mariée..."
+                  placeholder="Ex: Solde traiteur, Feux d'artifice, Location sono, Robe de mariée..."
                   className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
                   value={newExpense.description}
                   onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
@@ -694,55 +1071,23 @@ export default function BudgetDashboardPage({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Montant (FCFA) *</label>
+                  <label className="block font-bold text-gray-700 mb-1.5">
+                    {newExpense.status === "Payé" ? "Montant réglé (FCFA) *" : "Montant prévu (FCFA) *"}
+                  </label>
                   <input
                     type="number"
                     required
                     min="0"
-                    placeholder="Ex: 150000"
+                    placeholder="Ex: 250000"
                     className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50 font-mono"
                     value={newExpense.amount}
                     onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Statut de paiement</label>
-                  <select
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50 font-semibold"
-                    value={newExpense.status}
-                    onChange={(e) =>
-                      setNewExpense({ ...newExpense, status: e.target.value as "Payé" | "En attente" })
-                    }
-                  >
-                    <option value="Payé" className="text-emerald-700 font-semibold">
-                      Payé (Comptabilisé)
-                    </option>
-                    <option value="En attente" className="text-amber-700 font-semibold">
-                      En attente (Devis / Acompte prévu)
-                    </option>
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Catégorie</label>
-                  <select
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50"
-                    value={newExpense.category}
-                    onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-                  >
-                    <option value="Lieu & Traiteur">Lieu &amp; Traiteur</option>
-                    <option value="Photo & Vidéo">Photo &amp; Vidéo</option>
-                    <option value="Décoration">Décoration &amp; Fleurs</option>
-                    <option value="Animation">Animation (DJ, Artistes)</option>
-                    <option value="Tenues">Tenues &amp; Beauté</option>
-                    <option value="Autre">Autre dépense</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                    <Calendar size={13} /> Date de règlement
+                  <label className="block font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <Calendar size={13} /> {newExpense.status === "Payé" ? "Date de règlement *" : "Date prévue / échéance *"}
                   </label>
                   <input
                     type="date"
@@ -754,20 +1099,72 @@ export default function BudgetDashboardPage({
                 </div>
               </div>
 
+              {/* Sélection de Catégorie & Option Catégorie Libre Non Prévue */}
+              <div className="space-y-2">
+                <label className="block font-bold text-gray-700">Catégorie</label>
+                <select
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#b8924a]/50 font-medium"
+                  value={newExpense.isCustomCategory ? "Autre (personnalisé)" : newExpense.category}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "Autre (personnalisé)") {
+                      setNewExpense({ ...newExpense, isCustomCategory: true, category: val });
+                    } else {
+                      setNewExpense({ ...newExpense, isCustomCategory: false, category: val });
+                    }
+                  }}
+                >
+                  <option value="Lieu & Traiteur">Lieu &amp; Traiteur</option>
+                  <option value="Photo & Vidéo">Photo &amp; Vidéo</option>
+                  <option value="Décoration">Décoration &amp; Fleurs</option>
+                  <option value="Animation">Animation (DJ, Artistes)</option>
+                  <option value="Tenues">Tenues &amp; Beauté</option>
+                  <option value="Transport & Logistique">Transport &amp; Logistique</option>
+                  <option value="Cadeaux & Papeterie">Cadeaux &amp; Papeterie</option>
+                  <option value="Autre (personnalisé)">Autre (saisie libre non prévue par la liste)</option>
+                </select>
+
+                {/* Champ texte libre si catégorie non prévue dans la liste déroulante */}
+                {newExpense.isCustomCategory && (
+                  <div className="p-3 bg-amber-50/60 border border-amber-200/60 rounded-xl space-y-1">
+                    <label className="block font-bold text-amber-950 flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-[#b8924a]" /> Nom de votre catégorie personnalisée *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Sécurité, Feux d'artifice, Hébergement invités..."
+                      className="w-full px-3 py-2 bg-white border border-[#b8924a] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#b8924a]"
+                      value={newExpense.customCategory}
+                      onChange={(e) => setNewExpense({ ...newExpense, customCategory: e.target.value })}
+                    />
+                    <span className="text-[10px] text-amber-800 block">
+                      Cette catégorie libre apparaîtra dans votre répartition et votre historique.
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <div className="pt-3 mt-4 border-t border-gray-100 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setIsAddExpenseModalOpen(false)}
-                  className="flex-1 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                  className="flex-1 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-black text-white hover:bg-gray-900 px-4 py-3 rounded-xl text-sm font-bold shadow-lg shadow-black/10 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex-1 bg-black text-white hover:bg-gray-900 px-4 py-3 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-black/10 transition-colors disabled:opacity-50 cursor-pointer"
                 >
-                  {isSubmitting ? "Sauvegarde..." : editingExpenseId ? "Enregistrer" : "Ajouter la dépense"}
+                  {isSubmitting
+                    ? "Sauvegarde..."
+                    : editingExpenseId
+                    ? "Enregistrer les modifications"
+                    : newExpense.status === "Payé"
+                    ? "Défalquer sur le budget"
+                    : "Enregistrer la charge à engager"}
                 </button>
               </div>
             </form>
