@@ -69,7 +69,13 @@ export function DashboardSidebar() {
                     <div className="flex items-center gap-2.5 truncate pr-2">
                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isEventActive ? 'bg-[#b8924a]' : 'bg-gray-300'}`} />
                       <span className="truncate">{event.name}</span>
-                      {event.status === 'completed' && <span className="px-1.5 py-0.5 bg-gray-200 text-gray-500 rounded text-[10px] uppercase font-bold shrink-0">Clos</span>}
+                      {event.status === 'completed' ? (
+                        <span className="px-1.5 py-0.5 bg-gray-200 text-gray-500 rounded text-[10px] uppercase font-bold shrink-0">Clos</span>
+                      ) : event.plan === "Gold" ? (
+                        <span className="px-1.5 py-0.5 bg-amber-100 text-[#7a5e2b] rounded text-[9px] font-bold shrink-0">Gold</span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 bg-[#1f150e] text-[#f5dfaa] rounded text-[9px] font-extrabold shrink-0">Premium</span>
+                      )}
                     </div>
                     <span className="flex items-center gap-1.5 shrink-0">
                       {!isEventActive && newRsvps[event.id] > 0 && (

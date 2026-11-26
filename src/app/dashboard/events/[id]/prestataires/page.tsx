@@ -1,7 +1,8 @@
 "use client";
 
-import { Store, Plus, Search, MoreHorizontal, Star, Phone, CheckCircle, Clock, Lock, MessageCircle, ExternalLink, MapPin, Camera, Image as ImageIcon, ArrowLeft, X, Users, Calendar, FileText, Download, Share2, RefreshCw } from "lucide-react";
+import { Store, Plus, Search, MoreHorizontal, Star, Phone, CheckCircle, Clock, Lock, MessageCircle, ExternalLink, MapPin, Camera, Image as ImageIcon, ArrowLeft, X, Users, Calendar, FileText, Download, Share2, RefreshCw, Heart, UserCheck, UserPlus, Sparkles, Zap, MessageSquare } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEvents } from "@/store/EventsContext";
 import { notFound } from "next/navigation";
 import { use, useState, useEffect } from "react";
@@ -18,6 +19,10 @@ import { RubriquesView } from "@/components/prestataire/RubriquesView";
 import { sendQuoteAcceptedPushAction } from "@/app/actions/notify";
 import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
+import { ProviderCampaign } from "@/types/campaigns";
+import { fetchActiveCampaignsAction, toggleCampaignLikeAction } from "@/app/actions/campaignActions";
+import { addNotificationForClient, addNotificationForProvider } from "@/lib/notifications";
+import { QuoteRequestModal } from "@/components/dashboard/QuoteRequestModal";
 
 export default function PrestatairesDashboardPage({
   params,
@@ -93,6 +98,174 @@ export default function PrestatairesDashboardPage({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<any | null>(null);
+
+  // Besoins en prestataires & matching
+  const AVAILABLE_SERVICE_CATEGORIES = [
+    { id: "traiteur", name: "Traiteur & Gastronomie", icon: "🍽️" },
+    { id: "photo_video", name: "Photo & Vidéo 4K", icon: "📸" },
+    { id: "decoration", name: "Décoration & Scénographie", icon: "✨" },
+    { id: "salle", name: "Salle de Réception & Domaines", icon: "🏰" },
+    { id: "dj_musique", name: "DJ & Animation Sonore", icon: "🎶" },
+    { id: "tenues", name: "Robes de Mariée & Costumes", icon: "👗" },
+    { id: "beaute", name: "Coiffure & Mise en Beauté", icon: "💄" },
+    { id: "patisserie", name: "Pâtisserie & Gâteau", icon: "🎂" },
+    { id: "papeterie", name: "Faire-part & Papeterie", icon: "💌" },
+    { id: "vehicule", name: "Véhicule de Prestige", icon: "🚗" },
+  ];
+
+  const [selectedNeeds, setSelectedNeeds] = useState<string[]>([]);
+  const [matchingProviders, setMatchingProviders] = useState<any[]>([]);
+  const [loadingNeeds, setLoadingNeeds] = useState(false);
+
+  // Pubs & Boosts sponsorisés
+  const [sponsoredCampaigns, setSponsoredCampaigns] = useState<ProviderCampaign[]>([]);
+  const [likedCampaigns, setLikedCampaigns] = useState<Record<string, boolean>>({});
+  const [followedProviders, setFollowedProviders] = useState<Record<string, boolean>>({});
+  const [quoteModalProvider, setQuoteModalProvider] = useState<any | null>(null);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+
+  // Chargement des besoins enregistrés & des campagnes sponsorisées
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const savedNeeds = localStorage.getItem(`evenium_event_needs_${id}`);
+      if (savedNeeds) {
+        setSelectedNeeds(JSON.parse(savedNeeds));
+      }
+      const savedLikes = localStorage.getItem("evenium_client_liked_campaigns");
+      if (savedLikes) {
+        setLikedCampaigns(JSON.parse(savedLikes));
+      }
+      const savedFollows = localStorage.getItem("evenium_client_followed_providers");
+      if (savedFollows) {
+        setFollowedProviders(JSON.parse(savedFollows));
+      }
+    } catch {}
+
+    // Charger les campagnes actives ciblées pour cet événement
+    async function loadCampaigns() {
+      try {
+        const campaigns = await fetchActiveCampaignsAction({
+          eventType: event?.type,
+          zone: event?.location,
+          limit: 10,
+        });
+        setSponsoredCampaigns(campaigns || []);
+      } catch (err) {
+        console.warn("Failed to load sponsored campaigns:", err);
+      }
+    }
+    loadCampaigns();
+  }, [id, event?.type, event?.location]);
+
+  // Détection & matching automatique des prestataires
+  useEffect(() => {
+    if (selectedNeeds.length === 0) {
+      setMatchingProviders([]);
+      return;
+    }
+    async function findMatches() {
+      setLoadingNeeds(true);
+      try {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, full_name, business_name, avatar_url, activity, rating, review_count, services(*)")
+          .limit(20);
+
+        if (profs && profs.length > 0) {
+          const matches = profs.filter((p: any) => {
+            const acts = (p.activity?.services || []).map((s: string) => s.toLowerCase());
+            const servTitles = (p.services || []).map((s: any) => (s.title || "").toLowerCase());
+            return selectedNeeds.some((need) => {
+              const needle = need.toLowerCase().slice(0, 5);
+              return acts.some((a: string) => a.includes(needle)) || servTitles.some((t: string) => t.includes(needle));
+            });
+          });
+          setMatchingProviders(matches.slice(0, 4));
+
+          // Si de nouveaux matches trouvés, envoyer une alerte client réactive
+          if (matches.length > 0 && typeof window !== "undefined") {
+            const hasNotified = sessionStorage.getItem(`evenium_notified_matches_${id}`);
+            if (!hasNotified) {
+              sessionStorage.setItem(`evenium_notified_matches_${id}`, "1");
+              addNotificationForClient({
+                title: "Prestataires recommandés disponibles",
+                desc: `✨ ${matches.length} prestataire(s) correspondent à vos besoins pour « ${event?.name || "votre événement"} » !`,
+                link: `/dashboard/events/${id}/prestataires`,
+                type: "matching_provider"
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Matching search error:", err);
+      } finally {
+        setLoadingNeeds(false);
+      }
+    }
+    findMatches();
+  }, [selectedNeeds, id, event?.name, supabase]);
+
+  const handleToggleNeed = (categoryName: string) => {
+    const updated = selectedNeeds.includes(categoryName)
+      ? selectedNeeds.filter((n) => n !== categoryName)
+      : [...selectedNeeds, categoryName];
+    setSelectedNeeds(updated);
+    try {
+      localStorage.setItem(`evenium_event_needs_${id}`, JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleLikeCampaign = async (c: ProviderCampaign) => {
+    const isCurrentlyLiked = Boolean(likedCampaigns[c.id]);
+    const nextState = !isCurrentlyLiked;
+    const newLikes = { ...likedCampaigns, [c.id]: nextState };
+    setLikedCampaigns(newLikes);
+    try {
+      localStorage.setItem("evenium_client_liked_campaigns", JSON.stringify(newLikes));
+    } catch {}
+
+    toggleCampaignLikeAction(c.id, "client-me", nextState);
+
+    if (nextState) {
+      addNotificationForProvider(c.provider_id, {
+        title: "Nouveau J'aime reçu ❤️",
+        desc: `Un organisateur a aimé votre publication « ${c.title} » !`,
+        link: "/prestataire/publicite",
+        type: "like"
+      });
+    }
+  };
+
+  const handleFollowProvider = async (c: ProviderCampaign) => {
+    const isCurrentlyFollowed = Boolean(followedProviders[c.provider_id]);
+    const nextState = !isCurrentlyFollowed;
+    const newFollows = { ...followedProviders, [c.provider_id]: nextState };
+    setFollowedProviders(newFollows);
+    try {
+      localStorage.setItem("evenium_client_followed_providers", JSON.stringify(newFollows));
+    } catch {}
+
+    if (nextState) {
+      addNotificationForProvider(c.provider_id, {
+        title: "Nouvel abonné(e) 🎉",
+        desc: `Un organisateur s'est abonné à votre profil (${c.provider_name}) !`,
+        link: "/prestataire/publicite",
+        type: "follow"
+      });
+      addNotificationForClient({
+        title: `Abonnement : ${c.provider_name}`,
+        desc: `✓ Vous êtes désormais abonné(e) à ${c.provider_name}. Vous recevrez ses publications et offres exclusives.`,
+        link: `/dashboard/events/${id}/prestataires`,
+        type: "follow"
+      });
+    }
+  };
+
+  const handleOpenQuoteModal = (providerData: any) => {
+    setQuoteModalProvider(providerData);
+    setIsQuoteModalOpen(true);
+  };
 
   // Fermeture des modales avec la touche Échap
   useEffect(() => {
@@ -418,41 +591,343 @@ export default function PrestatairesDashboardPage({
     notFound();
   }
 
-  if ((event.plan || "").toLowerCase() !== "gold") {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
-        <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Mes Prestataires" />
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 border border-gray-100 shadow-xl max-w-md text-center">
-            <div className="w-20 h-20 bg-[#f5eee1] text-[#8f6f33] rounded-full flex items-center justify-center mx-auto mb-6">
-              <Lock size={32} />
-            </div>
-            <h2 className="font-serif text-2xl font-bold text-black mb-3">Fonctionnalité Gold</h2>
-            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-              La gestion des prestataires est exclusivement réservée aux événements utilisant la formule Gold. Retrouvez tous vos contacts professionnels au même endroit.
-            </p>
-            <Link
-              href={`/dashboard/events/${event.id}/settings`}
-              className="block w-full bg-[#8f6f33] hover:bg-[#7a5e2b] text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md shadow-[#8f6f33]/20 transition-colors text-center"
-            >
-              Évoluer vers la formule Gold
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const isGold = (event?.plan || "").toLowerCase() === "gold";
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
       <EventBreadcrumb eventId={event.id} eventName={event.name} currentPage="Mes Prestataires" />
 
       <div className="mb-8">
-        <h1 className="font-serif text-3xl font-bold text-black mb-2 flex items-center gap-2">
-          Mes Prestataires <Store size={24} className="text-[#b8924a]" />
-        </h1>
-        <p className="text-gray-500 text-sm">Gérez l'équipe de professionnels qui fera le succès de votre événement.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+          <h1 className="font-serif text-3xl font-bold text-black flex items-center gap-2">
+            Mes Prestataires &amp; Découvertes <Store size={24} className="text-[#b8924a]" />
+          </h1>
+          <div className="flex items-center gap-2">
+            {isGold ? (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#b8924a]/15 text-[#8f6f33] border border-[#b8924a]/30">
+                Formule Gold VIP · Tout-en-un
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#1f150e] text-[#f5dfaa] shadow-xs">
+                Formule Premium · INVITATION + SUIVI
+              </span>
+            )}
+          </div>
+        </div>
+        <p className="text-gray-500 text-sm">Gérez l&apos;équipe de professionnels qui fera le succès de votre événement et découvrez les offres sponsorisées.</p>
       </div>
+
+      {/* ─────────────── 1. MES BESOINS EN SERVICES & MATCHING AUTOMATIQUE ─────────────── */}
+      <section className="bg-white rounded-3xl border border-[#ecdcc8] p-5 sm:p-7 shadow-xs mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#fbf7f0] border border-[#b8924a]/30 text-[#8f6f33] flex items-center justify-center font-bold text-lg shrink-0">
+              🎯
+            </div>
+            <div>
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-gray-900">
+                Mes Besoins en Prestataires pour cet Événement
+              </h2>
+              <p className="text-xs text-gray-500">
+                Sélectionnez les services dont vous avez besoin. Dès qu&apos;un prestataire correspondant est disponible ou s&apos;inscrit, vous recevez une alerte directe.
+              </p>
+            </div>
+          </div>
+          {selectedNeeds.length > 0 && (
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#fbf7f0] text-[#8f6f33] border border-[#b8924a]/30 self-start sm:self-auto">
+              {selectedNeeds.length} besoin(s) sélectionné(s)
+            </span>
+          )}
+        </div>
+
+        {/* Grille de sélection des catégories de besoins */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+          {AVAILABLE_SERVICE_CATEGORIES.map((cat) => {
+            const isSelected = selectedNeeds.includes(cat.name);
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => handleToggleNeed(cat.name)}
+                className={`p-3 rounded-2xl border text-xs font-bold transition-all flex items-center gap-2 text-left cursor-pointer ${
+                  isSelected
+                    ? "bg-[#281a10] text-[#f7e7b4] border-[#281a10] shadow-xs"
+                    : "bg-gray-50/70 hover:bg-gray-100 text-gray-700 border-gray-200"
+                }`}
+              >
+                <span className="text-base shrink-0">{cat.icon}</span>
+                <span className="truncate">{cat.name}</span>
+                {isSelected && <span className="ml-auto text-[10px] text-[#f7e7b4]">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Prestataires correspondants détectés en direct */}
+        {selectedNeeds.length > 0 && (
+          <div className="mt-6 pt-5 border-t border-gray-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#8f6f33] flex items-center gap-1.5">
+                <Sparkles size={14} className="text-[#b8924a]" />
+                <span>Prestataires recommandés pour vos besoins ({matchingProviders.length})</span>
+              </h3>
+              {loadingNeeds && <span className="text-xs text-gray-400">Recherche des profils...</span>}
+            </div>
+
+            {matchingProviders.length === 0 && !loadingNeeds ? (
+              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
+                <span>🔔</span>
+                <p>Vos besoins sont enregistrés ! Dès qu&apos;un nouveau prestataire qualifié propose ces services dans votre zone, une notification vous sera envoyée directement.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {matchingProviders.map((mp) => (
+                  <div key={mp.id} className="p-3.5 rounded-2xl border border-gray-200 bg-white hover:border-[#b8924a] transition-all flex flex-col justify-between shadow-2xs">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden bg-neutral-100 border border-gray-200 shrink-0">
+                          {mp.avatar_url ? (
+                            <Image src={mp.avatar_url} alt={mp.business_name || mp.full_name} fill className="object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-bold text-xs text-gray-600 bg-gray-100">
+                              {(mp.business_name || mp.full_name || "P").charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-gray-900 truncate">{mp.business_name || mp.full_name}</p>
+                          <p className="text-[10px] text-[#8f6f33] truncate font-medium">{mp.activity?.services?.[0] || "Prestataire Vérifié"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] text-gray-500">
+                        <Star size={12} className="text-amber-500 fill-amber-500" />
+                        <span className="font-bold text-gray-900">{mp.rating || "5.0"}</span>
+                        <span>({mp.review_count || 1} avis)</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 mt-3 border-t border-gray-100 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenQuoteModal(mp)}
+                        className="flex-1 py-1.5 px-2.5 rounded-xl bg-[#281a10] hover:bg-black text-[#f7e7b4] text-[11px] font-bold text-center transition cursor-pointer"
+                      >
+                        Demander un devis
+                      </button>
+                      <Link
+                        href={`/dashboard/messages?prestataire=${encodeURIComponent(mp.id)}&msg=${encodeURIComponent(`Bonjour, j'organise « ${event?.name || "mon événement"} » et j'aimerais échanger sur vos prestations.`)}`}
+                        className="p-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700"
+                        title="Contacter par message"
+                      >
+                        <MessageSquare size={14} />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* ─────────────── 2. OFFRES SPONSORISÉES & DÉCOUVERTES (PUBS & BOOSTS) ─────────────── */}
+      {sponsoredCampaigns.length > 0 && (
+        <section className="bg-gradient-to-br from-[#faf7f2] via-[#fbf8f3] to-[#f4ede0] rounded-3xl border border-[#ecdcc8] p-5 sm:p-7 shadow-xs mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#ebdcca] mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#281a10] text-[#f7e7b4] flex items-center justify-center font-bold text-lg shadow-xs shrink-0">
+                <Zap size={20} className="text-[#f7e7b4]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-serif text-lg sm:text-xl font-bold text-gray-900">
+                    Découvertes &amp; Offres Sponsorisées (Pubs &amp; Boosts)
+                  </h2>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    En Vedette
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600">
+                  Publications exclusives des prestataires pour votre zone géographique. Aimez (❤️) et abonnez-vous pour suivre leurs nouveautés.
+                </p>
+              </div>
+            </div>
+            <span className="text-xs text-gray-500 font-medium">
+              {sponsoredCampaigns.length} offre(s) active(s)
+            </span>
+          </div>
+
+          {/* Grille des publications au style Instagram avec Like & Follow */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sponsoredCampaigns.map((pub) => {
+              const isLiked = Boolean(likedCampaigns[pub.id]);
+              const isFollowed = Boolean(followedProviders[pub.provider_id]);
+              const isVideo = pub.media_url?.endsWith(".mp4") || pub.media_url?.includes("video");
+
+              return (
+                <div
+                  key={pub.id}
+                  className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between group"
+                >
+                  <div>
+                    {/* Header carte style Insta */}
+                    <div className="p-3.5 flex items-center justify-between border-b border-gray-100">
+                      <div className="flex items-center gap-2.5">
+                        <div className="relative w-9 h-9 rounded-full overflow-hidden bg-neutral-100 border border-gray-200 shrink-0">
+                          {pub.provider_avatar ? (
+                            <Image src={pub.provider_avatar} alt={pub.provider_name} fill className="object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-700 bg-gray-100">
+                              {pub.provider_name.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                            <span>{pub.provider_name}</span>
+                            <CheckCircle size={12} className="text-[#3897f0] fill-[#3897f0] text-white" />
+                          </p>
+                          <span className="text-[10px] text-[#8f6f33] font-medium">
+                            {pub.badge}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bouton S'abonner / Suivre */}
+                      <button
+                        type="button"
+                        onClick={() => handleFollowProvider(pub)}
+                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                          isFollowed
+                            ? "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                            : "bg-[#281a10] hover:bg-black text-[#f7e7b4] shadow-xs"
+                        }`}
+                      >
+                        {isFollowed ? (
+                          <>
+                            <UserCheck size={12} /> <span>Abonné(e)</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus size={12} /> <span>+ Suivre</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Visuel média */}
+                    <div className="relative aspect-square w-full bg-black overflow-hidden">
+                      {isVideo ? (
+                        <video src={pub.media_url || ""} className="w-full h-full object-cover" controls playsInline muted />
+                      ) : pub.media_url ? (
+                        <Image src={pub.media_url} alt={pub.title} fill className="object-cover group-hover:scale-102 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-neutral-400">
+                          <Camera size={32} />
+                        </div>
+                      )}
+
+                      <span className="absolute top-3 left-3 bg-black/80 backdrop-blur-xs text-[#f5ebd7] text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#d4af37]/60 shadow-xs">
+                        {pub.badge}
+                      </span>
+                    </div>
+
+                    {/* Actions Insta (Like & Commentaires) */}
+                    <div className="p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleLikeCampaign(pub)}
+                            className={`flex items-center gap-1.5 text-xs font-bold transition cursor-pointer p-1 rounded-lg ${
+                              isLiked ? "text-rose-600" : "text-gray-600 hover:text-rose-600"
+                            }`}
+                          >
+                            <Heart size={20} className={isLiked ? "fill-rose-500 text-rose-500 animate-in zoom-in" : ""} />
+                            <span>{(pub.likes_count || 12) + (isLiked ? 1 : 0)}</span>
+                          </button>
+
+                          <span className="flex items-center gap-1 text-xs text-gray-500">
+                            <MessageSquare size={17} />
+                            <span>{pub.contacts_count || 0} devis</span>
+                          </span>
+                        </div>
+
+                        <Link
+                          href={`/prestataire-activite?id=${encodeURIComponent(pub.provider_id)}`}
+                          className="text-[11px] font-bold text-[#8f6f33] hover:underline flex items-center gap-1"
+                        >
+                          <span>Vitrine</span>
+                          <ExternalLink size={12} />
+                        </Link>
+                      </div>
+
+                      {/* Titre & Accroche */}
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-gray-900 leading-snug">
+                          {pub.title}
+                        </h4>
+                        <p className="text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed">
+                          {pub.hook}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Boutons d'action : Devis & Message */}
+                  <div className="p-3.5 bg-gray-50/80 border-t border-gray-100 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenQuoteModal({
+                        id: pub.provider_id,
+                        full_name: pub.provider_name,
+                        business_name: pub.provider_name,
+                      })}
+                      className="flex-1 py-2 px-3 rounded-xl bg-[#281a10] hover:bg-black text-[#f7e7b4] text-xs font-bold text-center transition cursor-pointer shadow-xs"
+                    >
+                      {pub.cta_label || "Demander un devis"}
+                    </button>
+                    <Link
+                      href={`/dashboard/messages?prestataire=${encodeURIComponent(pub.provider_id)}&msg=${encodeURIComponent(`Bonjour, j'ai vu votre publication « ${pub.title} » et je souhaite échanger pour mon événement.`)}`}
+                      className="p-2 rounded-xl border border-gray-200 hover:bg-white text-gray-700"
+                      title="Échanger en direct"
+                    >
+                      <MessageSquare size={16} />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────── 3. FORMULE PREMIUM : GESTION CENTRALISÉE DES DEVIS RÉSERVÉE GOLD ─────────────── */}
+      {!isGold ? (
+        <section className="bg-white rounded-3xl border border-[#ecdcc8] p-6 sm:p-10 shadow-sm text-center max-w-3xl mx-auto my-8 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-[#fbf7f0] border border-[#b8924a]/30 text-[#8f6f33] mx-auto flex items-center justify-center shadow-xs">
+            <Lock size={28} />
+          </div>
+          <div>
+            <div className="inline-block bg-[#1f150e] text-[#f5dfaa] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-md mb-2 shadow-xs">
+              INVITATION + SUIVI DES RÉPONSES
+            </div>
+            <h3 className="font-serif text-2xl font-bold text-gray-900">
+              Formule Premium Activée
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 max-w-xl mx-auto mt-2 leading-relaxed">
+              Votre formule Premium inclut l&apos;envoi illimité de vos invitations haute couture, le suivi complet des réponses (RSVP) et le livre d&apos;or. Pour centraliser vos devis, comparer automatiquement les offres prestataires et suivre les acomptes réglés, passez à la <strong>Formule Gold VIP (Tout-en-un)</strong>.
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/events/${event.id}/settings`}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-xs font-bold uppercase tracking-wider shadow-md hover:brightness-110 transition cursor-pointer"
+          >
+            <Sparkles size={14} /> <span>Évoluer vers la Formule Gold VIP</span>
+          </Link>
+        </section>
+      ) : (
+        <>
 
       {/* 3 Onglets sur la même ligne : 1er Annuaire Evenium, 2ème Prestataires Evenium, 3ème Prestataires Externes */}
       <div className="flex items-center gap-2 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto no-scrollbar py-1">
@@ -1445,6 +1920,28 @@ export default function PrestatairesDashboardPage({
           eventName={event?.name || event?.type}
         />
       )}
+
+      {/* Modale Demande de Devis depuis les Pubs/Boosts & Besoins */}
+      {isQuoteModalOpen && (
+        <QuoteRequestModal
+          isOpen={isQuoteModalOpen}
+          onClose={() => {
+            setIsQuoteModalOpen(false);
+            setQuoteModalProvider(null);
+          }}
+          event={event}
+          provider={quoteModalProvider}
+          onSubmitSuccess={() => {
+            alert("Votre demande de devis a été transmise au prestataire avec succès !");
+            setIsQuoteModalOpen(false);
+            setQuoteModalProvider(null);
+            if (isGold) fetchDemandes();
+          }}
+        />
+      )}
+
+      </>
+    )}
 
     </div>
   );

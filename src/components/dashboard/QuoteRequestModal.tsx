@@ -10,7 +10,7 @@ interface QuoteRequestModalProps {
   onClose: () => void;
   event: any;
   provider: any;
-  service: any;
+  service?: any;
   onSubmitSuccess: () => void;
 }
 

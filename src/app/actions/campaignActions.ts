@@ -285,6 +285,48 @@ export async function fetchAdminCampaignsAction(): Promise<ProviderCampaign[]> {
   return RUNTIME_CAMPAIGNS;
 }
 
+export async function deleteProviderCampaignAction(campaignId: string, providerId: string): Promise<boolean> {
+  const idx = RUNTIME_CAMPAIGNS.findIndex((c) => c.id === campaignId && c.provider_id === providerId);
+  if (idx !== -1) {
+    RUNTIME_CAMPAIGNS.splice(idx, 1);
+  }
+
+  try {
+    const admin = getAdminClient();
+    if (admin) {
+      await admin.from("provider_campaigns").delete().eq("id", campaignId).eq("provider_id", providerId);
+    }
+  } catch (err) {
+    console.warn("deleteProviderCampaignAction error:", err);
+  }
+
+  return true;
+}
+
+export async function toggleCampaignLikeAction(
+  campaignId: string,
+  userId: string,
+  increment: boolean
+): Promise<{ likesCount: number }> {
+  const target = RUNTIME_CAMPAIGNS.find((c) => c.id === campaignId);
+  if (target) {
+    target.likes_count = Math.max(0, (target.likes_count || 0) + (increment ? 1 : -1));
+  }
+
+  try {
+    const admin = getAdminClient();
+    if (admin) {
+      if (increment) {
+        await admin.rpc("increment_campaign_likes", { campaign_id: campaignId });
+      }
+    }
+  } catch {
+    // Analytics fallback
+  }
+
+  return { likesCount: target?.likes_count || 0 };
+}
+
 /**
  * Mise à jour du statut par l'admin (modération)
  */

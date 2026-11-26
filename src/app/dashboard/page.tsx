@@ -211,8 +211,8 @@ export default function DashboardPage() {
                         <span className="px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-gray-600">
                           <strong className="text-gray-900">{event.guests?.confirmed || 0}</strong> / {event.guests?.total || 0} confirmés
                         </span>
-                        <span className={`px-2.5 py-1 rounded-full border ${event.plan === "Gold" ? "border-[#b8924a]/40 text-[#7a5e2b] bg-[#b8924a]/10" : "border-gray-100 text-gray-500 bg-gray-50"}`}>
-                          {event.plan}
+                        <span className={`px-2.5 py-1 rounded-full border ${event.plan === "Gold" ? "border-[#b8924a]/40 text-[#7a5e2b] bg-[#b8924a]/10 font-bold" : "border-[#1f150e]/20 text-[#1f150e] bg-amber-50/80 font-bold"}`}>
+                          {event.plan === "Gold" ? "Gold VIP · Tout-en-un" : "Premium · Invitation + Suivi des réponses"}
                         </span>
                         {inDays !== null && inDays >= 0 && (
                           <span className="px-2.5 py-1 rounded-full bg-[#2b2118] text-[#f5eee1]">{inDays === 0 ? "Aujourd'hui" : `J-${inDays}`}</span>

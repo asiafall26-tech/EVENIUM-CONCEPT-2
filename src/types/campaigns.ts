@@ -24,6 +24,7 @@ export interface ProviderCampaign {
   impressions_count: number;
   clicks_count: number;
   contacts_count: number;
+  likes_count?: number;
   created_at: string;
   updated_at: string;
 }

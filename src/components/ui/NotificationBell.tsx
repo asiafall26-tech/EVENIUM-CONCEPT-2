@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bell, CheckCircle, MessageSquare, Clock, AlertTriangle, ArrowRight, LifeBuoy, Inbox, Star, FileText, Users, Store } from "lucide-react";
+import { Bell, CheckCircle, MessageSquare, Clock, AlertTriangle, ArrowRight, LifeBuoy, Inbox, Star, FileText, Users, Store, Heart, Sparkles, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getAdminAlertsAndAutoTerminate } from "@/app/admin/admin-actions";
 import { messagesHref, totalNewRsvps, totalPending, useBadgeStore } from "@/store/BadgeStore";
+import { getClientNotifications, getProviderNotifications } from "@/lib/notifications";
+import { createClient } from "@/utils/supabase/client";
 
 const s = (n: number) => (n > 1 ? "s" : "");
 
@@ -124,9 +126,31 @@ export function NotificationBell({ role }: NotificationBellProps) {
             setNotifications(mapped);
           }
         } catch (_) {}
+      } else if (role === "client") {
+        const clientNotifs = getClientNotifications().map(n => ({
+          ...n,
+          icon: n.type === "like" ? <Heart size={18} className="text-rose-500 fill-rose-500" /> : n.type === "follow" ? <UserPlus size={18} className="text-purple-600" /> : <Sparkles size={18} className="text-[#a47e36]" />
+        }));
+        setNotifications(clientNotifs);
+      } else if (role === "prestataire") {
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const provNotifs = getProviderNotifications(user.id).map(n => ({
+              ...n,
+              icon: n.type === "like" ? <Heart size={18} className="text-rose-500 fill-rose-500" /> : n.type === "follow" ? <UserPlus size={18} className="text-purple-600" /> : <Sparkles size={18} className="text-[#a47e36]" />
+            }));
+            setNotifications(provNotifs);
+          }
+        } catch (_) {}
       }
     }
     loadNotifications();
+
+    const onUpdate = () => loadNotifications();
+    window.addEventListener("evenium_notifications_updated", onUpdate);
+    return () => window.removeEventListener("evenium_notifications_updated", onUpdate);
   }, [role]);
 
   const markAllAsRead = () => {

@@ -36,7 +36,12 @@ import {
   Info,
   UploadCloud,
   FolderOpen,
-  X
+  X,
+  Plus,
+  Trash2,
+  Edit3,
+  ExternalLink,
+  Users
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { ProviderCampaign, CampaignPlanType, CAMPAIGN_PLANS } from "@/types/campaigns";
@@ -44,7 +49,8 @@ import { EVENT_TYPES } from "@/lib/eventTypes";
 import { 
   fetchProviderCampaignsAction, 
   saveProviderCampaignAction, 
-  activateCampaignAction 
+  activateCampaignAction,
+  deleteProviderCampaignAction
 } from "@/app/actions/campaignActions";
 import { MAIN_COUNTRIES, regionsOf, quartiersOf } from "@/lib/zones";
 import { activityFromProfile, ProviderActivity } from "@/lib/providerProfile";
@@ -81,6 +87,10 @@ export default function PrestatairePublicitePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [campaign, setCampaign] = useState<ProviderCampaign | null>(null);
+  const [allCampaigns, setAllCampaigns] = useState<ProviderCampaign[]>([]);
+  const [activeMainTab, setActiveMainTab] = useState<"publications" | "studio">("publications");
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState<number>(142);
   const [currentProviderId, setCurrentProviderId] = useState<string>("prov-me");
   const [providerName, setProviderName] = useState<string>("Mon Entreprise");
   const [providerAvatar, setProviderAvatar] = useState<string | null>(null);
@@ -185,6 +195,7 @@ export default function PrestatairePublicitePage() {
         }
 
         const campaigns = await fetchProviderCampaignsAction(provId);
+        setAllCampaigns(campaigns || []);
         if (campaigns && campaigns.length > 0) {
           const current = campaigns[0];
           setCampaign(current);
@@ -205,7 +216,16 @@ export default function PrestatairePublicitePage() {
               setQuartiers(current.target_zones.slice(1));
             }
           }
+        } else {
+          setActiveMainTab("studio");
         }
+
+        try {
+          const savedFollowers = localStorage.getItem(`evenium_followers_count_${provId}`);
+          if (savedFollowers) {
+            setFollowersCount(parseInt(savedFollowers, 10));
+          }
+        } catch {}
       } catch (err) {
         console.warn("Init error in publicite page:", err);
       } finally {
@@ -303,6 +323,7 @@ export default function PrestatairePublicitePage() {
         plan_type: campaign?.plan_type || "boost_7j",
       });
       setCampaign(updated);
+      setAllCampaigns((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       alert(nextStatus === "active" ? "🚀 Votre annonce est maintenant EN LIGNE auprès des organisateurs !" : "⏸️ Votre annonce a été RETIRÉE de la vitrine.");
     } catch {
       alert("Erreur lors de la mise à jour du statut.");
@@ -319,7 +340,7 @@ export default function PrestatairePublicitePage() {
     setSaving(true);
     try {
       const updated = await saveProviderCampaignAction({
-        id: campaign?.id,
+        id: editingCampaignId || campaign?.id,
         provider_id: currentProviderId,
         provider_name: providerName,
         provider_avatar: providerAvatar,
@@ -334,9 +355,86 @@ export default function PrestatairePublicitePage() {
         plan_type: campaign?.plan_type || "boost_7j",
       });
       setCampaign(updated);
-      alert("Votre annonce Insta et vos réglages de ciblage ont été enregistrés avec succès !");
+      setAllCampaigns((prev) => {
+        const exists = prev.some((c) => c.id === updated.id);
+        return exists ? prev.map((c) => (c.id === updated.id ? updated : c)) : [updated, ...prev];
+      });
+      setEditingCampaignId(null);
+      setActiveMainTab("publications");
+      alert("✨ Votre publication a été enregistrée avec succès et ajoutée à votre onglet Publications !");
     } catch {
       alert("Erreur lors de l'enregistrement de l'annonce.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Basculer en mode édition d'une publication existante
+  const handleEditCampaign = (c: ProviderCampaign) => {
+    setEditingCampaignId(c.id);
+    setCampaign(c);
+    setTitle(c.title || "");
+    setHook(c.hook || "");
+    setBadge(c.badge || BADGE_OPTIONS[0]);
+    const url = c.media_url || PRESET_PHOTOS[0].url;
+    setMediaUrl(url);
+    setMediaType(url.endsWith(".mp4") || url.includes("video") ? "video" : "photo");
+    setCtaLabel(c.cta_label || "Demander un devis");
+    setTargetEventTypes(c.target_event_types || ["Tous"]);
+    if (c.target_zones && c.target_zones.length > 0) {
+      const first = c.target_zones[0];
+      if (regionsOf(country).includes(first)) {
+        setRegion(first);
+        setQuartiers(c.target_zones.slice(1));
+      }
+    }
+    setActiveMainTab("studio");
+  };
+
+  // Réinitialiser le studio pour une nouvelle publication
+  const handleResetStudio = () => {
+    setEditingCampaignId(null);
+    setCampaign(null);
+    setTitle("");
+    setHook("");
+    setBadge(BADGE_OPTIONS[0]);
+    setMediaUrl(PRESET_PHOTOS[0].url);
+    setMediaType("photo");
+    setCtaLabel("Demander un devis");
+    setTargetEventTypes(["Tous"]);
+    setActiveMainTab("studio");
+  };
+
+  // Suppression d'une publication
+  const handleDeleteCampaign = async (c: ProviderCampaign) => {
+    if (!confirm(`Supprimer définitivement la publication « ${c.title} » ?`)) return;
+    try {
+      await deleteProviderCampaignAction(c.id, currentProviderId);
+      const updated = allCampaigns.filter((item) => item.id !== c.id);
+      setAllCampaigns(updated);
+      if (campaign?.id === c.id) {
+        setCampaign(updated[0] || null);
+      }
+      alert("Publication supprimée avec succès.");
+    } catch {
+      alert("Erreur lors de la suppression.");
+    }
+  };
+
+  // Basculer statut actif / pause pour une campagne spécifique
+  const handleToggleStatusFor = async (c: ProviderCampaign) => {
+    const nextStatus = c.status === "active" ? "paused" : "active";
+    setSaving(true);
+    try {
+      const updated = await saveProviderCampaignAction({
+        ...c,
+        status: nextStatus,
+      });
+      setAllCampaigns((prev) => prev.map((item) => (item.id === c.id ? updated : item)));
+      if (campaign?.id === c.id) setCampaign(updated);
+      alert(nextStatus === "active" ? "🟢 Publication mise en ligne sur la vitrine !" : "⏸️ Publication suspendue.");
+    } catch {
+      alert("Erreur lors de la modification du statut.");
     } finally {
       setSaving(false);
     }
@@ -426,6 +524,18 @@ export default function PrestatairePublicitePage() {
               }
             : null
         );
+        setAllCampaigns((prev) =>
+          prev.map((c) =>
+            c.id === activeCampaignId
+              ? {
+                  ...c,
+                  status: "active",
+                  plan_type: selectedPlan,
+                  ends_at: result.endsAt,
+                }
+              : c
+          )
+        );
       } catch {
         setIsProcessingPayment(false);
         alert("Une erreur est survenue lors de l'activation.");
@@ -501,73 +611,426 @@ export default function PrestatairePublicitePage() {
             </button>
           </div>
         </div>
+      </section>
 
-        {/* 2. VITRINE & MONITORING DES PERFORMANCES (STATISTIQUES INSTA INSIGHTS) */}
-        <div className="mt-8 pt-6 border-t border-[#eedfc9] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-          {/* Statut */}
-          <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs col-span-2 sm:col-span-1">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Statut Vitrine</span>
-              <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-neutral-300"}`} />
-            </div>
-            <p className="text-sm font-bold text-[#1e150f] flex items-center gap-1.5">
-              {isOnline ? (
-                <span className="text-emerald-700 flex items-center gap-1">
-                  🟢 En ligne {daysRemaining > 0 && `(${daysRemaining}j)`}
-                </span>
-              ) : (
-                <span className="text-neutral-500">⏸️ En pause / Hors ligne</span>
-              )}
-            </p>
-          </div>
+      {/* SÉLECTEUR D'ONGLET PRINCIPAL : MES PUBLICATIONS (STYLE INSTA) vs STUDIO & NOUVELLE PUB */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white/90 backdrop-blur-xs p-2.5 rounded-2xl border border-[#e4d8c4] shadow-xs">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveMainTab("publications")}
+            className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeMainTab === "publications"
+                ? "bg-[#281a10] text-[#f7e7b4] shadow-sm"
+                : "text-gray-700 hover:text-black hover:bg-gray-100"
+            }`}
+          >
+            <Camera size={16} />
+            <span>Mes Publications (Style Insta)</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              activeMainTab === "publications" ? "bg-[#f7e7b4] text-[#281a10]" : "bg-gray-200 text-gray-800"
+            }`}>
+              {allCampaigns.length}
+            </span>
+          </button>
 
-          {/* Vues / Impressions */}
-          <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Vues Organisateur</span>
-              <Eye size={16} className="text-[#a47e36]" />
-            </div>
-            <p className="font-serif text-xl sm:text-2xl font-bold text-[#1e150f]">
-              {viewsCount.toLocaleString("fr-FR")}
-            </p>
-          </div>
-
-          {/* Likes relatifs */}
-          <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Likes Relatifs</span>
-              <Heart size={16} className="text-rose-500 fill-rose-500" />
-            </div>
-            <p className="font-serif text-xl sm:text-2xl font-bold text-[#1e150f]">
-              {rawLikes.toLocaleString("fr-FR")}
-            </p>
-          </div>
-
-          {/* Clics vitrine */}
-          <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Clics Vitrine</span>
-              <MousePointerClick size={16} className="text-[#a47e36]" />
-            </div>
-            <p className="font-serif text-xl sm:text-2xl font-bold text-[#1e150f]">
-              {clicksCount.toLocaleString("fr-FR")}
-            </p>
-          </div>
-
-          {/* Taux d'engagement */}
-          <div className="bg-white/80 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs col-span-2 sm:col-span-1">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Engagement Insta</span>
-              <Flame size={16} className="text-amber-500" />
-            </div>
-            <p className="font-serif text-xl sm:text-2xl font-bold text-[#a47e36]">
-              {engagementRate}%
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (activeMainTab !== "studio") handleResetStudio();
+            }}
+            className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeMainTab === "studio"
+                ? "bg-[#281a10] text-[#f7e7b4] shadow-sm"
+                : "text-gray-700 hover:text-black hover:bg-gray-100"
+            }`}
+          >
+            <Sparkles size={16} />
+            <span>Studio &amp; {editingCampaignId ? "Modifier Publication" : "Nouvelle Publication"}</span>
+          </button>
         </div>
 
-        {/* GUIDE PRATIQUE COMPLET & DÉTAILLÉ : COMMENT RENTABILISER ET EXPLOITER VOTRE BOOST */}
-        <div className="mt-6 rounded-3xl bg-white border border-[#e8dccb] shadow-sm p-6 sm:p-8 space-y-6">
+        {activeMainTab === "publications" && (
+          <button
+            type="button"
+            onClick={handleResetStudio}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#b8924a] to-[#8f6f33] text-white text-xs font-bold shadow-xs hover:brightness-110 transition cursor-pointer"
+          >
+            <Plus size={15} /> <span>Créer une publication</span>
+          </button>
+        )}
+      </div>
+
+      {/* ─────────────── ONGLET 1 : MES PUBLICATIONS (STYLE INSTA) ─────────────── */}
+      {activeMainTab === "publications" && (
+        <div className="space-y-8 animate-in fade-in duration-300">
+          
+          {/* PROFIL INSTAGRAM DU PRESTATAIRE */}
+          <div className="bg-white rounded-3xl border border-[#ecdcc8] p-6 sm:p-8 shadow-xs">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                {/* Photo de profil avec contour dégradé story Insta */}
+                <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#f59e0b] via-[#ec4899] to-[#8b5cf6] shrink-0 shadow-sm">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-white p-0.5 relative">
+                    {providerAvatar ? (
+                      <Image
+                        src={providerAvatar}
+                        alt={providerName}
+                        fill
+                        className="object-cover rounded-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-[#fbf7f0] text-[#7a5e2b] font-serif text-2xl font-bold flex items-center justify-center">
+                        {providerName.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-serif text-xl sm:text-2xl font-bold text-gray-900">
+                      {providerName}
+                    </h2>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#fbf7f0] border border-[#b8924a]/30 text-[#8f6f33] text-[10px] font-bold">
+                      <CheckCircle2 size={12} className="text-[#b8924a]" /> Partenaire Vérifié Evenium
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {userProfileActivity?.services?.[0] || "Prestataire Événementiel"} · 📍 {country} ({region})
+                  </p>
+                  <p className="text-xs text-gray-600 max-w-lg leading-relaxed">
+                    Vos publications sont diffusées auprès de tous les organisateurs d&apos;événements sur Evenium. Chaque post peut être modifié en direct à tout moment.
+                  </p>
+                </div>
+              </div>
+
+              {/* Statistiques Profil Insta */}
+              <div className="flex items-center gap-6 sm:gap-8 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-8 shrink-0 w-full md:w-auto justify-around md:justify-start">
+                <div className="text-center">
+                  <p className="font-serif text-xl sm:text-2xl font-bold text-gray-900">{allCampaigns.length}</p>
+                  <p className="text-[11px] text-gray-500 font-medium">publications</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-serif text-xl sm:text-2xl font-bold text-gray-900">{followersCount}</p>
+                  <p className="text-[11px] text-gray-500 font-medium">abonnés</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-serif text-xl sm:text-2xl font-bold text-rose-600">
+                    {allCampaigns.reduce((sum, c) => sum + (c.likes_count || 0), 0) + (liked ? 1 : 0) + likesOffset}
+                  </p>
+                  <p className="text-[11px] text-gray-500 font-medium">likes reçus</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-serif text-xl sm:text-2xl font-bold text-[#b8924a]">
+                    {allCampaigns.reduce((sum, c) => sum + (c.impressions_count || 0), 0) + viewsCount}
+                  </p>
+                  <p className="text-[11px] text-gray-500 font-medium">vues</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TABLEAU DE PERFORMANCE RAPIDE (STATISTIQUES INSTA INSIGHTS) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            {/* Statut */}
+            <div className="bg-white/90 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs col-span-2 sm:col-span-1">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Statut Global</span>
+                <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-neutral-300"}`} />
+              </div>
+              <p className="text-sm font-bold text-[#1e150f] flex items-center gap-1.5">
+                {isOnline ? (
+                  <span className="text-emerald-700 flex items-center gap-1">
+                    🟢 En ligne {daysRemaining > 0 && `(${daysRemaining}j)`}
+                  </span>
+                ) : (
+                  <span className="text-neutral-500">⏸️ En pause</span>
+                )}
+              </p>
+            </div>
+
+            {/* Vues / Impressions */}
+            <div className="bg-white/90 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Vues Organisateur</span>
+                <Eye size={16} className="text-[#a47e36]" />
+              </div>
+              <p className="font-serif text-xl sm:text-2xl font-bold text-[#1e150f]">
+                {viewsCount.toLocaleString("fr-FR")}
+              </p>
+            </div>
+
+            {/* Likes relatifs */}
+            <div className="bg-white/90 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Likes Relatifs</span>
+                <Heart size={16} className="text-rose-500 fill-rose-500" />
+              </div>
+              <p className="font-serif text-xl sm:text-2xl font-bold text-[#1e150f]">
+                {rawLikes.toLocaleString("fr-FR")}
+              </p>
+            </div>
+
+            {/* Clics vitrine */}
+            <div className="bg-white/90 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Clics Vitrine</span>
+                <MousePointerClick size={16} className="text-[#a47e36]" />
+              </div>
+              <p className="font-serif text-xl sm:text-2xl font-bold text-[#1e150f]">
+                {clicksCount.toLocaleString("fr-FR")}
+              </p>
+            </div>
+
+            {/* Taux d'engagement */}
+            <div className="bg-white/90 backdrop-blur-xs rounded-2xl border border-[#ecdcc8] p-4 flex flex-col justify-between shadow-2xs col-span-2 sm:col-span-1">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#826f5d]">Engagement Insta</span>
+                <Flame size={16} className="text-amber-500" />
+              </div>
+              <p className="font-serif text-xl sm:text-2xl font-bold text-[#a47e36]">
+                {engagementRate}%
+              </p>
+            </div>
+          </div>
+
+          {/* FEED / GRILLE DES PUBLICATIONS MODIFIABLES COMME SUR INSTA */}
+          {allCampaigns.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-[#ecdcc8] p-10 text-center space-y-4 max-w-xl mx-auto shadow-xs">
+              <div className="w-16 h-16 rounded-full bg-[#fbf7f0] border border-[#b8924a]/30 text-[#8f6f33] mx-auto flex items-center justify-center">
+                <Camera size={28} />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-gray-900">
+                Aucune publication pour le moment
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Créez votre première publication au format Instagram avec vos plus belles photos ou vidéos HD pour capter l&apos;attention des futurs mariés et organisateurs.
+              </p>
+              <button
+                type="button"
+                onClick={handleResetStudio}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#201811] text-[#f7e7b4] text-xs font-bold uppercase tracking-wider hover:brightness-125 transition cursor-pointer shadow-md"
+              >
+                <Plus size={15} /> <span>Créer ma première publication</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+              {allCampaigns.map((pub) => {
+                const isPubOnline = pub.status === "active";
+                const isVideo = pub.media_url?.endsWith(".mp4") || pub.media_url?.includes("video");
+
+                return (
+                  <div
+                    key={pub.id}
+                    className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between group"
+                  >
+                    <div>
+                      {/* En-tête Insta */}
+                      <div className="p-3.5 flex items-center justify-between border-b border-gray-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden bg-neutral-100 border border-gray-200 shrink-0">
+                            {pub.provider_avatar || providerAvatar ? (
+                              <Image
+                                src={pub.provider_avatar || providerAvatar!}
+                                alt={pub.provider_name}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-600">
+                                {pub.provider_name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                              <span>{pub.provider_name}</span>
+                              <CheckCircle2 size={12} className="text-[#3897f0] fill-[#3897f0] text-white" />
+                            </p>
+                            <span className="text-[10px] text-gray-500">
+                              {pub.badge}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Statut Pill */}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isPubOnline
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-gray-100 text-gray-500 border border-gray-200"
+                        }`}>
+                          {isPubOnline ? "🟢 En ligne" : "⏸️ En pause"}
+                        </span>
+                      </div>
+
+                      {/* Visuel Média */}
+                      <div className="relative aspect-square w-full bg-black overflow-hidden">
+                        {isVideo ? (
+                          <video
+                            src={pub.media_url || ""}
+                            className="w-full h-full object-cover"
+                            controls
+                            playsInline
+                            muted
+                          />
+                        ) : pub.media_url ? (
+                          <Image
+                            src={pub.media_url}
+                            alt={pub.title}
+                            fill
+                            className="object-cover group-hover:scale-102 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-neutral-400">
+                            <Camera size={32} />
+                          </div>
+                        )}
+
+                        {/* Badge macaron */}
+                        <span className="absolute top-3 left-3 bg-black/80 backdrop-blur-xs text-[#f5ebd7] text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#d4af37]/60 shadow-xs">
+                          {pub.badge}
+                        </span>
+                      </div>
+
+                      {/* Barre d'interactions style Insta */}
+                      <div className="p-3.5 space-y-2.5">
+                        <div className="flex items-center justify-between text-gray-800">
+                          <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-1 text-xs font-bold text-rose-600">
+                              <Heart size={18} className="fill-rose-500 text-rose-500" />
+                              <span>{pub.likes_count || 12}</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                              <MessageSquare size={16} />
+                              <span>{pub.contacts_count || 0} devis</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                              <Eye size={16} />
+                              <span>{pub.impressions_count || 0} vues</span>
+                            </span>
+                          </div>
+                          <Bookmark size={16} className="text-gray-400" />
+                        </div>
+
+                        {/* Légende */}
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-bold text-gray-900 leading-snug">
+                            {pub.title}
+                          </h4>
+                          <p className="text-xs text-gray-600 mt-1 line-clamp-3 leading-relaxed">
+                            {pub.hook}
+                          </p>
+                        </div>
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+                          {pub.target_zones && pub.target_zones.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-medium">
+                              📍 {pub.target_zones.slice(0, 2).join(", ")}
+                            </span>
+                          )}
+                          {pub.target_event_types && (
+                            <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-medium">
+                              🎉 {pub.target_event_types.slice(0, 2).join(", ")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BARRE D'ACTIONS DIRECTES MODIFIABLES COMME SUR INSTA */}
+                    <div className="p-3.5 bg-gray-50/80 border-t border-gray-100 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditCampaign(pub)}
+                          className="py-2 px-3 rounded-xl bg-white border border-gray-200 hover:border-gray-400 text-gray-800 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                        >
+                          <Edit3 size={13} className="text-[#8f6f33]" />
+                          <span>Modifier</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatusFor(pub)}
+                          className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs ${
+                            isPubOnline
+                              ? "bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200"
+                              : "bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-200"
+                          }`}
+                        >
+                          {isPubOnline ? (
+                            <>
+                              <Pause size={13} /> <span>Mettre en pause</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play size={13} /> <span>Mettre en ligne</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCampaign(pub);
+                            setSelectedPlan(pub.plan_type || "boost_30j");
+                            setIsBoostModalOpen(true);
+                          }}
+                          className="py-2 px-3 rounded-xl bg-[#281a10] hover:bg-black text-[#f7e7b4] text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                        >
+                          <Zap size={13} className="text-[#f7e7b4]" />
+                          <span>Booster</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCampaign(pub)}
+                          className="py-2 px-3 rounded-xl bg-white hover:bg-red-50 text-gray-500 hover:text-red-600 border border-gray-200 hover:border-red-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                        >
+                          <Trash2 size={13} />
+                          <span>Supprimer</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─────────────── ONGLET 2 : STUDIO & NOUVELLE PUBLICATION ─────────────── */}
+      {activeMainTab === "studio" && (
+        <div className="space-y-8 animate-in fade-in duration-300">
+          
+          {/* BANNIÈRE DE MODIFICATION SI ÉDITION EN COURS */}
+          {editingCampaignId && (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950">
+              <div className="flex items-center gap-2.5">
+                <Edit3 size={18} className="text-[#8f6f33] shrink-0" />
+                <div>
+                  <p className="font-bold">Modification de votre publication en cours</p>
+                  <p className="text-amber-800">Modifiez le média, le texte ou le ciblage, puis enregistrez pour mettre à jour instantanément votre post.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetStudio}
+                className="px-3.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-bold hover:bg-amber-100 self-start sm:self-auto cursor-pointer"
+              >
+                Annuler et créer un nouveau
+              </button>
+            </div>
+          )}
+
+          {/* GUIDE PRATIQUE COMPLET & DÉTAILLÉ : COMMENT RENTABILISER ET EXPLOITER VOTRE BOOST */}
+          <div className="rounded-3xl bg-white border border-[#e8dccb] shadow-sm p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-[#281a10] text-[#f7e7b4] flex items-center justify-center shadow-xs shrink-0">
@@ -803,7 +1266,6 @@ export default function PrestatairePublicitePage() {
             </div>
           )}
         </div>
-      </section>
 
       {/* 3. STUDIO D'ÉDITION & APERÇU TEMPS RÉEL AU FORMAT INSTA */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1331,6 +1793,8 @@ export default function PrestatairePublicitePage() {
         </div>
 
       </div>
+        </div>
+      )}
 
       {/* MODAL DE PAIEMENT & ACTIVATION DU BOOST */}
       {isBoostModalOpen && (

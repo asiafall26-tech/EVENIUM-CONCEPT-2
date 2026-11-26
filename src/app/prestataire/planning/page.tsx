@@ -351,7 +351,7 @@ export default function PrestatairePlanningPage() {
               <div className="hidden md:grid grid-cols-7 gap-px bg-gray-100 rounded-2xl overflow-hidden border border-gray-100 [font-variant-numeric:lining-nums]">
                 {/* Header */}
                 {['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'].map(d => (
-                  <div key={d} className="bg-white text-center text-[10px] font-bold text-gray-400 py-3">{d}</div>
+                  <div key={d} className="bg-white text-center text-[10px] font-bold text-gray-800 py-3">{d}</div>
                 ))}
 
                 {/* Blanks */}
@@ -404,7 +404,7 @@ export default function PrestatairePlanningPage() {
               <div className="md:hidden space-y-4 [font-variant-numeric:lining-nums]">
                 <div className="grid grid-cols-7 gap-1 bg-gray-50 p-2 rounded-2xl border border-gray-200">
                   {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((d, idx) => (
-                    <div key={idx} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</div>
+                    <div key={idx} className="text-center text-[10px] font-bold text-gray-800 py-1">{d}</div>
                   ))}
                   {Array.from({ length: firstDayOfMonth }).map((_, i) => (
                     <div key={`m-empty-${i}`} className="h-9"></div>
@@ -465,7 +465,7 @@ export default function PrestatairePlanningPage() {
                     <div className="p-4 rounded-2xl bg-[#fbf7f0] border border-[#b8924a]/30 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f33]">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#4a3512]">
                             {parsedDay.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                           </span>
                           <h4 className="text-sm font-bold text-gray-900">

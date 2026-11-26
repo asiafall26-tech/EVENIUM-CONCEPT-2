@@ -286,8 +286,15 @@ export default function EventDashboardPage({
             </div>
             <div className="flex items-center gap-1.5 text-[#b8924a] font-bold text-sm sm:text-base sm:justify-end">
               <Sparkles size={16} className="shrink-0" />
-              <span>Formule {event.plan}</span>
+              <span>Formule {event.plan === "Gold" ? "Gold VIP" : "Premium"}</span>
             </div>
+            {event.plan !== "Gold" && (
+              <div className="mt-1 sm:text-right">
+                <span className="inline-block bg-[#1f150e] text-[#f5dfaa] text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded shadow-xs">
+                  INVITATION + SUIVI DES RÉPONSES
+                </span>
+              </div>
+            )}
             <p className="text-xs text-gray-600 font-medium mt-1 sm:text-right">
               Modèle : <strong className="text-gray-900">{getInvitationModelName(event.invitationModelId)}</strong>
             </p>
@@ -405,6 +412,13 @@ export default function EventDashboardPage({
               {event.format === "Animée" ? "Animée · Musique" : "Statique · Sans son"}
             </span>
           </div>
+          {event.plan !== "Gold" && (
+            <div className="mb-2 relative z-10">
+              <span className="inline-block bg-[#1f150e] text-[#f5dfaa] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded shadow-xs">
+                INVITATION + SUIVI DES RÉPONSES
+              </span>
+            </div>
+          )}
           <div className="mb-2 relative z-10">
             <span className="text-3xl font-semibold">
               {event.plan === "Gold"

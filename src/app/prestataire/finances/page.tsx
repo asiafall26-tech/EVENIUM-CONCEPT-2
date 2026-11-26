@@ -252,63 +252,63 @@ export default function PrestataireFinancesPage() {
             <DollarSign size={80} />
           </div>
           <div>
-            <p className="text-gray-400 font-medium mb-1 relative z-10 text-xs">Chiffre d'Affaires Brut</p>
-            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#b8924a] relative z-10 mb-1">
-              {devisStats.ca.toLocaleString()} <span className="text-xs text-gray-500">FCFA</span>
+            <p className="text-gray-300 font-semibold mb-1 relative z-10 text-xs">Chiffre d'Affaires Brut</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#f7e7b4] relative z-10 mb-1">
+              {devisStats.ca.toLocaleString()} <span className="text-xs text-gray-300 font-medium">FCFA</span>
             </h3>
           </div>
-          <p className="text-[11px] text-gray-400 relative z-10">{devisStats.count} prestation(s) validée(s)</p>
+          <p className="text-[11px] text-gray-300 font-medium relative z-10">{devisStats.count} prestation(s) validée(s)</p>
         </div>
         
-        <div className="bg-[#fbf7f0] p-5 rounded-3xl border border-[#b8924a]/30 shadow-sm flex flex-col justify-between">
+        <div className="bg-[#fbf7f0] p-5 rounded-3xl border border-[#b8924a]/40 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-9 h-9 bg-white text-[#8f6f33] rounded-full flex items-center justify-center mb-2 shadow-xs">
+            <div className="w-9 h-9 bg-white text-[#4a3512] rounded-full flex items-center justify-center mb-2 shadow-xs">
               <TrendingUp size={18} />
             </div>
-            <p className="text-stone-600 font-medium mb-1 text-xs">Prestations Validées</p>
+            <p className="text-gray-900 font-bold mb-1 text-xs">Prestations Validées</p>
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#8f6f33]">{devisStats.count} devis</h3>
-            <p className="text-[11px] text-stone-500 mt-0.5">Prestations signées</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#4a3512]">{devisStats.count} devis</h3>
+            <p className="text-[11px] text-gray-700 font-medium mt-0.5">Prestations signées</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-9 h-9 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-2">
+            <div className="w-9 h-9 bg-green-50 text-green-700 rounded-full flex items-center justify-center mb-2">
               <DollarSign size={18} />
             </div>
-            <p className="text-gray-500 font-medium mb-1 text-xs">Revenus Encaissés</p>
+            <p className="text-gray-800 font-bold mb-1 text-xs">Revenus Encaissés</p>
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-bold font-serif text-emerald-600">{netEstimated.toLocaleString()} FCFA</h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">Totalité des gains</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-emerald-700">{netEstimated.toLocaleString()} FCFA</h3>
+            <p className="text-[11px] text-gray-600 font-medium mt-0.5">Totalité des gains</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-9 h-9 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-2">
+            <div className="w-9 h-9 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-2">
               <ArrowDownRight size={18} />
             </div>
-            <p className="text-gray-500 font-medium mb-1 text-xs">Dépenses Réalisées</p>
+            <p className="text-gray-800 font-bold mb-1 text-xs">Dépenses Réalisées</p>
           </div>
           <div>
             <h3 className="text-xl sm:text-2xl font-bold font-serif text-black">{totalDepenses.toLocaleString()} FCFA</h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">Frais déduits</p>
+            <p className="text-[11px] text-gray-600 font-medium mt-0.5">Frais déduits</p>
           </div>
         </div>
 
-        <div className="bg-amber-50/50 p-5 rounded-3xl border border-amber-200/80 shadow-sm flex flex-col justify-between">
+        <div className="bg-amber-50/70 p-5 rounded-3xl border border-amber-300 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-9 h-9 bg-amber-100 text-[#8f6f33] rounded-full flex items-center justify-center mb-2">
+            <div className="w-9 h-9 bg-amber-100 text-[#4a3512] rounded-full flex items-center justify-center mb-2">
               <CalendarClock size={18} />
             </div>
-            <p className="text-[#8f6f33] font-medium mb-1 text-xs">Charges à Engager</p>
+            <p className="text-[#4a3512] font-bold mb-1 text-xs">Charges à Engager</p>
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#b8924a]">{totalScheduledPending.toLocaleString()} FCFA</h3>
-            <p className="text-[11px] text-gray-500 mt-0.5">{scheduledExpenses.filter(s => s.status === 'prevue').length} dépense(s) prévue(s)</p>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-[#4a3512]">{totalScheduledPending.toLocaleString()} FCFA</h3>
+            <p className="text-[11px] text-gray-800 font-medium mt-0.5">{scheduledExpenses.filter(s => s.status === 'prevue').length} dépense(s) prévue(s)</p>
           </div>
         </div>
       </div>
@@ -323,35 +323,35 @@ export default function PrestataireFinancesPage() {
         
         <div className="overflow-x-auto">
           <table className="table-stack w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
+            <thead className="bg-gray-100 text-gray-800 font-bold border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 font-medium">Libellé</th>
-                <th className="px-6 py-4 font-medium">Date</th>
-                <th className="px-6 py-4 font-medium text-right">Montant</th>
-                <th className="px-6 py-4 font-medium text-center">Statut</th>
+                <th className="px-6 py-4 font-bold">Libellé</th>
+                <th className="px-6 py-4 font-bold">Date</th>
+                <th className="px-6 py-4 font-bold text-right">Montant</th>
+                <th className="px-6 py-4 font-bold text-center">Statut</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-600 font-medium">Chargement...</td></tr>
               ) : transactions.length > 0 ? (
                 transactions.map((t) => (
                   <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{t.description || t.libelle || 'Transaction'}</td>
-                    <td className="px-6 py-4 text-gray-500 flex items-center gap-2">
-                      <Calendar size={14} className="text-gray-400" /> {new Date(t.date).toLocaleDateString()}
+                    <td className="px-6 py-4 font-semibold text-gray-900">{t.description || t.libelle || 'Transaction'}</td>
+                    <td className="px-6 py-4 text-gray-700 font-medium flex items-center gap-2">
+                      <Calendar size={14} className="text-gray-500" /> {new Date(t.date).toLocaleDateString()}
                     </td>
-                    <td className={`px-6 py-4 text-right font-bold ${t.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
+                    <td className={`px-6 py-4 text-right font-bold ${t.type === 'revenu' ? 'text-green-700' : 'text-red-700'}`}>
                       {t.type === 'revenu' ? '+' : '-'}{Number(t.montant).toLocaleString()} FCFA
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="bg-green-50 text-green-600 px-3 py-1 rounded-full text-xs font-medium">Complété</span>
+                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Complété</span>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">Aucune transaction enregistrée.</td>
+                  <td colSpan={4} className="px-6 py-12 text-center text-gray-600 font-medium">Aucune transaction enregistrée.</td>
                 </tr>
               )}
             </tbody>
@@ -364,10 +364,10 @@ export default function PrestataireFinancesPage() {
         <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fbf7f0]/40">
           <div>
             <h3 className="font-serif text-xl font-bold text-gray-900 flex items-center gap-2">
-              <CalendarClock size={20} className="text-[#8f6f33]" />
+              <CalendarClock size={20} className="text-[#4a3512]" />
               Dépenses Programmées &amp; Charges à Engager
             </h3>
-            <p className="text-gray-500 text-xs mt-0.5">
+            <p className="text-gray-700 font-medium text-xs mt-0.5">
               Anticipez vos achats, locations de matériel et acomptes de sous-traitance avant vos événements.
             </p>
           </div>
