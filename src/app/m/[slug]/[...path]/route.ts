@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { CUSTOM_STORAGE_DIR, storageKey } from "@/lib/customModels";
+import fs from "fs";
+import nodePath from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -48,19 +50,80 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const rel = path.map((p) => decodeURIComponent(p)).join("/");
   const ext = rel.split(".").pop()?.toLowerCase() ?? "";
   const isHtml = ext === "html" || ext === "htm";
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  // Vidéos et musiques : Safari (iPhone, iPad, Mac) ne les lit que s'il peut les demander par morceaux (Range)
+  const type = TYPES[ext] ?? "application/octet-stream";
   const range = isHtml ? null : req.headers.get("range");
-  const res = await fetch(`${base}/storage/v1/object/public/evenium_assets/${CUSTOM_STORAGE_DIR}/${slug}/${storageKey(rel)}`, {
-    cache: "no-store",
-    headers: range ? { Range: range } : undefined,
-  });
-  if (!res.ok) return new Response(res.status === 416 ? "Plage invalide" : "Introuvable", { status: res.status === 416 ? 416 : 404 });
 
-  const type = TYPES[ext] ?? res.headers.get("content-type") ?? "application/octet-stream";
+  // Vérifier d'abord si le fichier existe en local dans public/invitations ou public/custom-models
+  const localCandidates = [
+    nodePath.join(process.cwd(), "public", "invitations", slug, rel),
+    nodePath.join(process.cwd(), "public", "custom-models", slug, rel),
+  ];
+  let localFile: { buffer: Buffer; size: number } | null = null;
+  for (const p of localCandidates) {
+    if (fs.existsSync(p)) {
+      try {
+        const stat = fs.statSync(p);
+        if (stat.isFile()) {
+          localFile = { buffer: fs.readFileSync(p), size: stat.size };
+          break;
+        }
+      } catch {}
+    }
+  }
+
+  let html = "";
+  if (localFile) {
+    if (isHtml) {
+      html = localFile.buffer.toString("utf-8");
+    } else {
+      if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : localFile.size - 1;
+        if (start >= localFile.size || end >= localFile.size) {
+          return new Response("Plage invalide", { status: 416, headers: { "Content-Range": `bytes */${localFile.size}` } });
+        }
+        const chunk = localFile.buffer.subarray(start, end + 1);
+        return new Response(new Uint8Array(chunk), {
+          status: 206,
+          headers: {
+            "Content-Range": `bytes ${start}-${end}/${localFile.size}`,
+            "Accept-Ranges": "bytes",
+            "Content-Length": String(chunk.length),
+            "Content-Type": type,
+          },
+        });
+      }
+      return new Response(new Uint8Array(localFile.buffer), {
+        status: 200,
+        headers: {
+          "Content-Type": type,
+          "Content-Length": String(localFile.size),
+          "Accept-Ranges": "bytes",
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
+    }
+  } else {
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const res = await fetch(`${base}/storage/v1/object/public/evenium_assets/${CUSTOM_STORAGE_DIR}/${slug}/${storageKey(rel)}`, {
+      cache: "no-store",
+      headers: range ? { Range: range } : undefined,
+    });
+    if (!res.ok) return new Response(res.status === 416 ? "Plage invalide" : "Introuvable", { status: res.status === 416 ? 416 : 404 });
+    if (isHtml) {
+      html = await res.text();
+    } else {
+      const headers: Record<string, string> = { "Content-Type": type, "Cache-Control": "public, max-age=3600", "Accept-Ranges": "bytes" };
+      for (const h of ["content-length", "content-range", "etag", "last-modified"]) {
+        const v = res.headers.get(h);
+        if (v) headers[h] = v;
+      }
+      return new Response(res.body, { status: res.status, headers });
+    }
+  }
 
   if (isHtml) {
-    let html = await res.text();
     const isSelfContained = html.includes('id="editor"') || html.includes('id="fab"');
     const isEditMode = req.nextUrl.searchParams.get("canEdit") === "1" || req.nextUrl.searchParams.get("edit") === "1";
     const eventId = req.nextUrl.searchParams.get("eventId") || req.nextUrl.searchParams.get("event");
@@ -144,10 +207,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     return new Response(html, { headers: { "Content-Type": type, "Cache-Control": "no-cache, must-revalidate" } });
   }
 
-  const headers: Record<string, string> = { "Content-Type": type, "Cache-Control": "public, max-age=3600", "Accept-Ranges": "bytes" };
-  for (const h of ["content-length", "content-range", "etag", "last-modified"]) {
-    const v = res.headers.get(h);
-    if (v) headers[h] = v;
-  }
-  return new Response(res.body, { status: res.status, headers });
+  return new Response("Introuvable", { status: 404 });
 }

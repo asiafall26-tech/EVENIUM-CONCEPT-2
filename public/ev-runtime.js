@@ -842,6 +842,34 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleFit);
   window.addEventListener("load", scheduleFit);
 
+  // Capture des soumissions de formulaire RSVP pour les transmettre à Evenium
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (!form || !form.id || (form.id.toLowerCase().indexOf("rsvp") === -1 && form.id.toLowerCase().indexOf("presence") === -1)) return;
+    try {
+      var nameEl = form.querySelector('[name="name"], [name="nom"], #rName, #nom, #guestName, [id*="name"], [id*="nom"]');
+      var name = nameEl ? (nameEl.value || "").trim() : "";
+      var attEl = form.querySelector('[name*="attend"]:checked, [name*="presence"]:checked, #attYes, [id*="attYes"]');
+      var attending = attEl ? (attEl.value === "yes" || attEl.value === "oui" || attEl.checked) : true;
+      var countEl = form.querySelector('[name="guests"], [name="count"], #cnt, #count, [id*="guest"], [id*="cnt"]');
+      var guests = countEl ? parseInt(countEl.value, 10) || 1 : 1;
+      var msgEl = form.querySelector('[name="message"], #rMsg, #msg, textarea');
+      var message = msgEl ? (msgEl.value || "").trim() : "";
+
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: "ev:rsvp",
+          rsvp: {
+            name: name,
+            attending: attending,
+            guests: guests,
+            message: message
+          }
+        }, location.origin);
+      }
+    } catch (err) {}
+  }, true);
+
   window.addEventListener("message", function (e) {
     if (e.origin !== location.origin || !e.data) return;
     var m = e.data;

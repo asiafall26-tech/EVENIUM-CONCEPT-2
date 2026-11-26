@@ -52,9 +52,96 @@ export interface CustomModelRow {
   published_at: string | null;
 }
 
-export const isCustomModelId = (id?: string | null) => !!id && id.startsWith(CUSTOM_PREFIX);
+export const BUILTIN_CUSTOM_MODELS: CustomModelRow[] = [
+  {
+    slug: "notre-histoire",
+    name: "Aminata & Moussa · Notre histoire",
+    entry: "index.html",
+    fields: [],
+    content: {},
+    draft_content: null,
+    cover_url: "/invitations/notre-histoire/holo.jpg",
+    invitation_type: "animée",
+    event_types: ["Mariage", "Anniversaire de mariage", "Couple"],
+    status: "published",
+    updated_at: "2026-11-26T17:00:00.000Z",
+    published_at: "2026-11-26T17:00:00.000Z",
+  },
+  {
+    slug: "horizon",
+    name: "Cheikh & Aïssatou · Horizon",
+    entry: "index.html",
+    fields: [],
+    content: {},
+    draft_content: null,
+    cover_url: "/invitations/horizon/poster.jpg",
+    invitation_type: "animée",
+    event_types: ["Mariage", "Anniversaire de mariage", "Fiançailles"],
+    status: "published",
+    updated_at: "2026-11-26T17:00:00.000Z",
+    published_at: "2026-11-26T17:00:00.000Z",
+  },
+  {
+    slug: "velours-or",
+    name: "Fatou & Ibrahima · Velours & Or",
+    entry: "index.html",
+    fields: [],
+    content: {},
+    draft_content: null,
+    cover_url: "/invitations/velours-or/hero.jpg",
+    invitation_type: "animée",
+    event_types: ["Mariage", "Anniversaire de mariage", "Gala", "Soirée"],
+    status: "published",
+    updated_at: "2026-11-26T17:00:00.000Z",
+    published_at: "2026-11-26T17:00:00.000Z",
+  },
+  {
+    slug: "conference",
+    name: "Forum Leadership & Innovation",
+    entry: "index.html",
+    fields: [],
+    content: {},
+    draft_content: null,
+    cover_url: "/invitations/conference/panel-carre.jpg",
+    invitation_type: "animée",
+    event_types: ["Corporate", "Conférence", "Gala", "Graduation"],
+    status: "published",
+    updated_at: "2026-11-26T17:00:00.000Z",
+    published_at: "2026-11-26T17:00:00.000Z",
+  },
+  {
+    slug: "passport",
+    name: "Wedding Passport · Tropical",
+    entry: "index.html",
+    fields: [],
+    content: {},
+    draft_content: null,
+    cover_url: "/invitations/passport/img0.jpg",
+    invitation_type: "animée",
+    event_types: ["Mariage", "Anniversaire", "Enterrement de vie de jeune fille", "Picnic"],
+    status: "published",
+    updated_at: "2026-11-26T17:00:00.000Z",
+    published_at: "2026-11-26T17:00:00.000Z",
+  },
+];
+
+export const isCustomModelId = (id?: string | null) =>
+  !!id && (
+    id.startsWith(CUSTOM_PREFIX) ||
+    id.startsWith("invit-notre-histoire") ||
+    id.startsWith("invit-horizon") ||
+    id.startsWith("invit-velours-or") ||
+    id.startsWith("invit-conference") ||
+    id.startsWith("invit-passport")
+  );
+
 export const customModelId = (slug: string) => `${CUSTOM_PREFIX}${slug}`;
-export const slugOfModelId = (id: string) => id.slice(CUSTOM_PREFIX.length);
+
+export const slugOfModelId = (id: string) => {
+  if (id.startsWith(CUSTOM_PREFIX)) return id.slice(CUSTOM_PREFIX.length);
+  if (id.startsWith("invit-")) return id.slice("invit-".length);
+  return id;
+};
 
 /** Adresse de la page du modèle (servie par /m/<slug>/…) */
 export const customModelUrl = (m: Pick<CustomModelRow, "slug" | "entry">) => `/m/${m.slug}/${m.entry}`;
@@ -111,8 +198,7 @@ export async function fetchCustomModels(
     let q = supabase.from(CUSTOM_MODELS_TABLE).select(selectCols).order("created_at", { ascending: false });
     if (opts.publishedOnly) q = q.eq("status", "published");
     const { data, error } = await q;
-    if (error || !data) return customModelsCache[cacheKey] ?? [];
-    const res = (data as any[]).map((r) => ({
+    const dbList = (data && !error ? (data as any[]) : []).map((r) => ({
       slug: r.slug,
       name: r.name,
       entry: r.entry,
@@ -127,21 +213,36 @@ export async function fetchCustomModels(
       content: r.content ?? {},
       draft_content: r.draft_content ?? null,
     })) as CustomModelRow[];
+
+    // Fusionner avec les modèles intégrés pour garantir leur présence
+    const seenSlugs = new Set(dbList.map((m) => m.slug));
+    const merged = [...dbList];
+    for (const b of BUILTIN_CUSTOM_MODELS) {
+      if (!seenSlugs.has(b.slug)) {
+        if (!opts.publishedOnly || b.status === "published") {
+          merged.push(b);
+          seenSlugs.add(b.slug);
+        }
+      }
+    }
+
     if (!opts.full) {
-      customModelsCache[cacheKey] = res;
+      customModelsCache[cacheKey] = merged;
       customModelsCache.timestamp = now;
     }
-    return res;
+    return merged;
   } catch (err) {
     console.warn("fetchCustomModels error:", err);
-    return customModelsCache[cacheKey] ?? [];
+    return BUILTIN_CUSTOM_MODELS.filter((m) => !opts.publishedOnly || m.status === "published");
   }
 }
 
 export async function fetchCustomModel(supabase: SupabaseClient, slug: string): Promise<CustomModelRow | null> {
-  const { data, error } = await supabase.from(CUSTOM_MODELS_TABLE).select("*").eq("slug", slug).maybeSingle();
-  if (error || !data) return null;
-  return data as CustomModelRow;
+  try {
+    const { data, error } = await supabase.from(CUSTOM_MODELS_TABLE).select("*").eq("slug", slug).maybeSingle();
+    if (!error && data) return data as CustomModelRow;
+  } catch {}
+  return BUILTIN_CUSTOM_MODELS.find((m) => m.slug === slug) ?? null;
 }
 
 export async function saveCustomModel(supabase: SupabaseClient, slug: string, patch: Partial<CustomModelRow>) {

@@ -180,19 +180,28 @@ export default function InvitationsClientPage({
 
     const imported = customs
       .filter((m) => m.status === "published" && !rows[customModelId(m.slug)]?.is_hidden && !rows[m.slug]?.is_hidden)
-      .map((m) => ({
-        id: customModelId(m.slug),
-        name: m.name,
-        type: m.invitation_type,
-        category: (m.event_types?.[0] ?? "Mariage") as (typeof mockInvitationModels)[number]["category"],
-        events: Array.isArray(m.event_types) ? m.event_types : [],
-        thumbnail: m.cover_url || "/invit-velours-cover.jpg",
-        isPremium: true,
-        description: "Création exclusive Evenium, personnalisable de A à Z.",
-        liveUrl: customModelUrl(m),
-      }));
+      .map((m) => {
+        const mockMatch = mockInvitationModels.find((b) => b.id === `invit-${m.slug}` || b.liveUrl?.includes(m.slug));
+        return {
+          id: customModelId(m.slug),
+          name: m.name,
+          type: m.invitation_type,
+          category: (m.event_types?.[0] ?? mockMatch?.category ?? "Mariage") as (typeof mockInvitationModels)[number]["category"],
+          events: Array.isArray(m.event_types) && m.event_types.length > 0 ? m.event_types : (mockMatch?.events || []),
+          thumbnail: m.cover_url || mockMatch?.thumbnail || "/invit-velours-cover.jpg",
+          isPremium: true,
+          description: mockMatch?.description || "Création exclusive Evenium, personnalisable de A à Z.",
+          liveUrl: customModelUrl(m),
+        };
+      });
 
-    return [...imported, ...builtIn];
+    const seenSlugs = new Set(imported.map((m) => m.id.replace(/^custom:/, "")));
+    const filteredBuiltIn = builtIn.filter((m) => {
+      const slug = m.id.replace(/^invit-/, "");
+      return !seenSlugs.has(slug);
+    });
+
+    return [...imported, ...filteredBuiltIn];
   }, [rows, customs]);
 
   // Liste complète des catégories de filtrage (Tous les modèles + catégories dynamiques)

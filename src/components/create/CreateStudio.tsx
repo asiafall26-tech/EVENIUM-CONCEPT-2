@@ -39,7 +39,7 @@ import EventQRCode from '@/components/ui/EventQRCode';
 import ModelCard from '@/components/landing/ModelCard';
 import { Fleuron, DiamondRule, LuxFrame } from '@/components/landing/LuxOrnaments';
 import { EVENT_TYPES, EVENT_TYPE_ICONS as EVENT_ICONS } from '@/lib/eventTypes';
-import { defaultClassification } from '@/data/mock/invitations';
+import { defaultClassification, mockInvitationModels } from '@/data/mock/invitations';
 import { subscribeToSync, broadcastChange } from '@/lib/syncService';
 import { EventDetailsFields } from '@/components/events/EventDetailsFields';
 import { EMPTY_EVENT_DETAILS, eventDetailsToRow, missingEventDetails, requiresEventDetails, type EventDetails } from '@/lib/eventDetails';
@@ -80,6 +80,7 @@ import {
   fetchCustomModels,
   invalidateCustomModelsCache,
   isCustomModelId,
+  slugOfModelId,
   withoutMusicValues,
   type CustomModelRow,
   type CustomValues,
@@ -307,18 +308,21 @@ function CreateExpressStudioContent({
   }, [reloadCustoms]);
   const customItems = useMemo(
     () =>
-      customModels.map((m) => ({
-        id: customModelId(m.slug),
-        name: m.name,
-        subtitle: "Création exclusive Evenium",
-        image: m.cover_url || "/invit-velours-cover.jpg",
-        color: "",
-        badge: "Nouveau",
-        category: m.event_types[0] ?? "Mariage",
-        compatibleEvents: m.event_types,
-        liveUrl: customModelUrl(m),
-        kind: m.invitation_type as InvitationKind,
-      })),
+      customModels.map((m) => {
+        const mockMatch = mockInvitationModels.find((b) => b.id === `invit-${m.slug}` || b.liveUrl?.includes(m.slug));
+        return {
+          id: customModelId(m.slug),
+          name: m.name,
+          subtitle: mockMatch?.description || "Création exclusive Evenium",
+          image: m.cover_url || mockMatch?.thumbnail || "/invit-velours-cover.jpg",
+          color: "",
+          badge: "Nouveau",
+          category: m.event_types[0] ?? mockMatch?.category ?? "Mariage",
+          compatibleEvents: m.event_types && m.event_types.length > 0 ? m.event_types : (mockMatch?.events || ["Mariage"]),
+          liveUrl: customModelUrl(m),
+          kind: m.invitation_type as InvitationKind,
+        };
+      }),
     [customModels]
   );
   const siteModels = useMemo(() => {
@@ -328,7 +332,18 @@ function CreateExpressStudioContent({
       ...customItems.filter((m) => !hidden.has(m.id)),
     ];
   }, [classifiedModels, publishedModels, customItems]);
-  const customOf = (id: string) => (isCustomModelId(id) ? customModels.find((m) => customModelId(m.slug) === id) ?? null : null);
+  const customOf = (id: string) => {
+    if (!id) return null;
+    return (
+      customModels.find(
+        (m) =>
+          customModelId(m.slug) === id ||
+          `invit-${m.slug}` === id ||
+          m.slug === id ||
+          (isCustomModelId(id) && slugOfModelId(id) === m.slug)
+      ) ?? null
+    );
+  };
   /** Contenu en cours d'un modèle importé (sinon celui publié par l'admin) */
   const customContentOf = (m: CustomModelRow) => customContents[customModelId(m.slug)] ?? customValues(m.fields, m.content);
   const eventCategories = useMemo(() => buildEventCategories(siteModels), [siteModels]);
@@ -364,7 +379,8 @@ function CreateExpressStudioContent({
   // Lien direct vers un modèle importé (ex. depuis sa démo) : ouvert dès que la liste est chargée
   useEffect(() => {
     if (!modelParam || !isCustomModelId(modelParam)) return;
-    const item = customItems.find((m) => m.id === modelParam);
+    const targetId = isCustomModelId(modelParam) ? customModelId(slugOfModelId(modelParam)) : modelParam;
+    const item = customItems.find((m) => m.id === targetId || m.id === modelParam);
     if (!item) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedModelId(item.id);
@@ -513,7 +529,7 @@ function CreateExpressStudioContent({
         m.name.toLowerCase().includes(q) ||
         m.category.toLowerCase().includes(q) ||
         (m.subtitle && m.subtitle.toLowerCase().includes(q)) ||
-        (m.compatibleEvents && m.compatibleEvents.some(e => e.toLowerCase().includes(q)))
+        (m.compatibleEvents && m.compatibleEvents.some((e: string) => e.toLowerCase().includes(q)))
       );
     }
 

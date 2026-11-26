@@ -78,6 +78,61 @@ export const mockInvitationModels: InvitationModel[] = [
     description: "Une invitation sur deux pages qui se tourne comme un faire-part : votre photo en couverture « Happy Birthday », puis une carte crème aux roses bordeaux et dorures avec date, lieu, programme et confirmation de présence.",
     liveUrl: "/invitation-anniversaire",
   },
+  {
+    id: "invit-notre-histoire",
+    name: "Aminata & Moussa · Notre histoire",
+    type: "animée",
+    category: "Mariage",
+    events: ["Mariage", "Anniversaire de mariage", "Couple"],
+    thumbnail: "/invitations/notre-histoire/holo.jpg",
+    isPremium: true,
+    description: "Une rétrospective animée et immersive de votre histoire d'amour en chapitres vidéo cinématiques et photos souvenirs, avec compte à rebours, programme et RSVP.",
+    liveUrl: "/m/notre-histoire/index.html",
+  },
+  {
+    id: "invit-horizon",
+    name: "Cheikh & Aïssatou · Horizon",
+    type: "animée",
+    category: "Mariage",
+    events: ["Mariage", "Anniversaire de mariage", "Fiançailles"],
+    thumbnail: "/invitations/horizon/poster.jpg",
+    isPremium: true,
+    description: "Une invitation moderne et lumineuse avec vidéo d'ouverture cinématique, galerie photo interactive, itinéraire Google Maps et confirmation de présence.",
+    liveUrl: "/m/horizon/index.html",
+  },
+  {
+    id: "invit-velours-or",
+    name: "Fatou & Ibrahima · Velours & Or",
+    type: "animée",
+    category: "Mariage",
+    events: ["Mariage", "Anniversaire de mariage", "Gala", "Soirée"],
+    thumbnail: "/invitations/velours-or/hero.jpg",
+    isPremium: true,
+    description: "Une invitation d'un raffinement rare aux nuances velours bordeaux et dorures impériales : arches d'or, photos du couple, programme détaillé et RSVP interactif.",
+    liveUrl: "/m/velours-or/index.html",
+  },
+  {
+    id: "invit-conference",
+    name: "Forum Leadership & Innovation",
+    type: "animée",
+    category: "Corporate",
+    events: ["Corporate", "Conférence", "Gala", "Graduation"],
+    thumbnail: "/invitations/conference/panel-carre.jpg",
+    isPremium: true,
+    description: "Une invitation professionnelle et institutionnelle de prestige pour conférences, sommets et forums : panels, intervenants clés, agenda et billetterie/RSVP.",
+    liveUrl: "/m/conference/index.html",
+  },
+  {
+    id: "invit-passport",
+    name: "Wedding Passport · Tropical",
+    type: "animée",
+    category: "Mariage",
+    events: ["Mariage", "Anniversaire", "Enterrement de vie de jeune fille", "Picnic"],
+    thumbnail: "/invitations/passport/img0.jpg",
+    isPremium: true,
+    description: "Un faire-part d'exception en format passeport et carte d'embarquement pour mariages exotiques et voyages d'amour : visa personnalisé, programme et vol RSVP.",
+    liveUrl: "/m/passport/index.html",
+  },
 ];
 
 /** Models shown in the homepage showcase (up to 4), in display order */
@@ -197,11 +252,16 @@ export function getInvitationModelName(id?: string | null, customNames?: Record<
   if (model) return model.name;
 
   const lower = id.toLowerCase();
-  if (id === "invit-7" || lower.includes("velours")) return "Velours Bordeaux";
+  if (id === "invit-7" || (lower.includes("velours") && !lower.includes("velours-or"))) return "Velours Bordeaux";
   if (id === "invit-8" || lower.includes("sceau")) return "Sceau d'Or Impérial";
   if (id === "invit-9" || lower.includes("ivoire")) return "Ivoire Couture";
   if (id === "invit-10" || lower.includes("rose")) return "Rose Poudrée & Or Impérial";
   if (id === "invit-11" || lower.includes("anniversaire")) return "Anniversaire Bordeaux & Or";
+  if (id === "invit-notre-histoire" || lower.includes("notre-histoire") || lower.includes("aminata")) return "Aminata & Moussa · Notre histoire";
+  if (id === "invit-horizon" || lower.includes("horizon") || lower.includes("cheikh")) return "Cheikh & Aïssatou · Horizon";
+  if (id === "invit-velours-or" || lower.includes("velours-or") || lower.includes("fatou")) return "Fatou & Ibrahima · Velours & Or";
+  if (id === "invit-conference" || lower.includes("conference") || lower.includes("forum")) return "Forum Leadership & Innovation";
+  if (id === "invit-passport" || lower.includes("passport") || lower.includes("passeport")) return "Wedding Passport · Tropical";
 
   if (id.startsWith("custom:")) {
     const slug = id.replace("custom:", "").replace(/-v\d+$/i, "");
@@ -219,10 +279,15 @@ export function getInvitationModelThumbnail(id?: string | null): string {
   if (model?.thumbnail) return model.thumbnail;
 
   const lower = (id || "").toLowerCase();
-  if (id === "invit-7" || lower.includes("velours")) return "/invit-velours-cover.jpg";
+  if (id === "invit-7" || (lower.includes("velours") && !lower.includes("velours-or"))) return "/invit-velours-cover.jpg";
   if (id === "invit-8" || lower.includes("sceau")) return "/invit-sceau-dor-cover.jpg";
   if (id === "invit-9" || lower.includes("ivoire")) return "/invit-ivoire-cover.jpg";
   if (id === "invit-10" || lower.includes("rose")) return "/invit-rose-or-cover.jpg";
   if (id === "invit-11" || lower.includes("anniversaire")) return "/invit-anniversaire-cover.jpg";
+  if (id === "invit-notre-histoire" || lower.includes("notre-histoire")) return "/invitations/notre-histoire/holo.jpg";
+  if (id === "invit-horizon" || lower.includes("horizon")) return "/invitations/horizon/poster.jpg";
+  if (id === "invit-velours-or" || lower.includes("velours-or")) return "/invitations/velours-or/hero.jpg";
+  if (id === "invit-conference" || lower.includes("conference")) return "/invitations/conference/panel-carre.jpg";
+  if (id === "invit-passport" || lower.includes("passport") || lower.includes("passeport")) return "/invitations/passport/img0.jpg";
   return "/invit-velours-cover.jpg";
 }
