@@ -263,7 +263,7 @@ svg{display:block}
 #musicBtn{right:max(16px,calc(50% - 234px));bottom:calc(env(safe-area-inset-bottom) + 18px);display:none}
 #musicBtn.playing:after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--bdx);animation:ring 1.8s infinite}
 @keyframes ring{from{opacity:.7;transform:scale(.9)}to{opacity:0;transform:scale(1.3)}}
-#editBtn, .fab#editBtn, .ebar, #ebar, #editor, .editor{display:none!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important}
+#editBtn{left:max(16px,calc(50% - 234px));top:calc(env(safe-area-inset-top) + 14px);height:42px;width:auto;padding:0 18px;border-radius:30px;font:600 12px var(--sans);letter-spacing:.12em;display:none;background:#fff;color:var(--bdx);border:1.5px solid var(--bdx);z-index:60}
 #editor{position:fixed;inset:0;z-index:80;display:flex;justify-content:center;background:rgba(40,20,25,.4);opacity:0;pointer-events:none;transition:opacity .3s}
 #editor.open{opacity:1;pointer-events:auto}
 #edPanel{width:100%;max-width:500px;height:100%;background:var(--ivory);display:flex;flex-direction:column;transform:translateY(30px);transition:transform .35s}
@@ -427,6 +427,7 @@ body{background:#F3E7DF}
 <div class="ebar" id="ebar">
   <b>✎ Personnalisation</b>
   <div class="tabs" role="group" aria-label="Affichage"><button id="tabEdit" aria-pressed="true">Modifier</button><button id="tabPrev" aria-pressed="false">Aperçu</button></div>
+  <button class="save" id="saveEdit" type="button" style="background:#d4af37;color:#13090c;font:700 12px var(--sans);padding:8px 16px;border-radius:24px;border:0;cursor:pointer;margin-right:8px;text-transform:uppercase;">Enregistrer</button>
   <button class="edone" id="doneEdit">Terminer</button>
 </div>
 <div id="editor"><div id="edPanel">
@@ -957,6 +958,7 @@ function setTab(p){document.body.classList.toggle('tab-preview',p);$('#tabEdit')
 $('#tabEdit').onclick=()=>setTab(false);$('#tabPrev').onclick=()=>setTab(true);
 $('#editBtn').onclick=()=>{ if($('#cover').style.display!=='none'){ $('#cover').style.display='none'; document.body.classList.remove('locked'); document.body.classList.add('opened'); }
   buildEditor(); document.body.classList.add('editing'); setTab(false); document.querySelectorAll('.page').forEach(p=>p.classList.add('in')); };
+$('#saveEdit').onclick=()=>{if(typeof save==='function')save();try{window.parent&&window.parent.postMessage({type:'evenium:content-change',triggerSave:true},'*')}catch(e){}toast('Modifications enregistrées ✓')};
 $('#doneEdit').onclick=()=>{ document.body.classList.remove('editing','tab-preview'); toast('Modifications enregistrées'); };
 
 $('#edView').onclick=()=>{ $('#editor').classList.remove('open'); if($('#cover').style.display==='none') scrollTo({top:0,behavior:'smooth'}); };

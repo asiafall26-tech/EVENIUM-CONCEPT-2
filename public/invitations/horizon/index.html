@@ -257,7 +257,7 @@ footer p{font-style:italic;color:var(--muted);font-size:19px;margin:6px auto 0;m
 .music.playing svg{display:none}.music.playing .bars{display:flex}
 @keyframes eq{0%,100%{height:5px}50%{height:18px}}
 .music:focus-visible{outline:2px solid #fff;outline-offset:3px}
-.fab, #fab, #editBtn, .ebar, #ebar, #editor, .editor{display:none!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:12px 20px;border-radius:30px;border:1px solid var(--gold-l);background:var(--night);color:var(--gold-l);font-family:var(--caps);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.35)}
 .fab:focus-visible{outline:2px solid #fff;outline-offset:2px}
 
 /* ====== Personnalisation (écran partagé, standard Evenium) ====== */
@@ -477,6 +477,7 @@ body.editing .snav{display:none}
 <div class="ebar" id="ebar" hidden>
   <b>✎ Personnalisation</b>
   <div class="tabs" role="group" aria-label="Affichage"><button id="tabEdit" aria-pressed="true">Modifier</button><button id="tabPrev" aria-pressed="false">Aperçu</button></div>
+  <button class="save" id="saveEdit" type="button" style="background:var(--gold-l,#d4af37);color:var(--night,#13090c);font-family:var(--caps);font-weight:600;font-size:11.5px;letter-spacing:.1em;padding:8px 16px;border-radius:24px;border:0;cursor:pointer;margin-right:8px;text-transform:uppercase;">Enregistrer</button>
   <button class="done" id="doneEdit">Terminer</button>
 </div>
 <aside class="editor" id="editor" hidden aria-label="Champs de l'invitation"></aside>
@@ -804,6 +805,7 @@ body.editing .snav{display:none}
   $('fab').onclick=()=>{if(!opened){opened=true;op.hidden=true;$('archWin').remove;body.classList.remove('locked');body.classList.add('ready');mb.hidden=false}
     if(!built)build();body.classList.add('editing');$('ebar').hidden=false;ed.hidden=false;setTab(false);
     qa('.pre').forEach(el=>el.classList.remove('pre'));revealDate(true);requestAnimationFrame(()=>{fitNames();markCur()})};
+  $('saveEdit').onclick=()=>{if(typeof save==='function')save();try{window.parent&&window.parent.postMessage({type:'evenium:content-change',triggerSave:true},'*')}catch(e){}toast('Modifications enregistrées ✓')};
   $('doneEdit').onclick=()=>{body.classList.remove('editing','tab-preview');$('ebar').hidden=true;ed.hidden=true;applyDate();renderProg();toast('Modifications enregistrées')};
 })();
 </script>

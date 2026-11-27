@@ -188,7 +188,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       // Continuer si la base n'est pas joignable
     }
 
-    let injection = HIDE_INTERNAL_EDITS;
+    let injection = "";
+    if (shouldHideEdit) {
+      injection += HIDE_INTERNAL_EDITS;
+    }
     if (shouldHideEdit || req.nextUrl.searchParams.get("hideCta") === "1" || req.nextUrl.searchParams.get("demo") === "1") {
       injection += `<style id="ev-guest-hide">.btn-validate-full, #ev-exit-btn, .evenium-cta, #ev-end-cta { display: none !important; visibility: hidden !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }</style>`;
     }

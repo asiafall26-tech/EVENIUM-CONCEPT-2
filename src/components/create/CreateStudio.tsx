@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   Sparkles,
+  Save,
   Heart,
   Calendar,
   Clock,
@@ -623,6 +624,15 @@ function CreateExpressStudioContent({
     setIsCheckoutModalOpen(true);
   };
 
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const handleSaveFromEditor = () => {
+    try {
+      iframeRef.current?.contentWindow?.postMessage({ type: 'evenium:trigger-save' }, '*');
+    } catch { }
+    setSaveNotice("Enregistré ✓");
+    setTimeout(() => setSaveNotice(null), 2500);
+  };
+
   // Raccourci clavier universel Échap pour fermer les modales et studios
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -776,7 +786,7 @@ function CreateExpressStudioContent({
       base = custom ? customModelUrl(custom) : `/m/${selectedModelId.slice(7)}/index.html`;
     }
     const delim = base.includes("?") ? "&" : "?";
-    return `${base}${delim}preview=1&canEdit=1&autoEdit=1&hideCta=1&hideEbar=1`;
+    return `${base}${delim}preview=1&canEdit=1&hideCta=1`;
   }, [selectedModelId, customModels]);
 
   // Extraction automatique des métadonnées de l'événement depuis le contenu complet de l'invitation
@@ -1466,19 +1476,102 @@ function CreateExpressStudioContent({
           </div>
         </div>
       ) : (
-        /* ─────────────── 2. STUDIO D'ÉDITION ÉPURÉ (MODIFIER / APERÇU + ENREGISTRER) ─────────────── */
-        <SplitStudioEditor
-          modelId={selectedModelId}
-          customModel={customOf(selectedModelId)}
-          initialContent={currentModelContent}
-          onSave={handleUpdateModelContent}
-          onClose={handleReturnToGallery}
-          onFinalize={handleFinalizeFromEditor}
-          finalizeLabel={`Valider (${currentActualPrice.toLocaleString('fr-FR')} F)`}
-          eventName={customEventName || currentModel?.name || "Mon Événement"}
-          eventType={selectedEventCategory}
-          isStatic={isStaticCard}
-        />
+        /* ─────────────── 2. TEST & PERSONNALISATION IMMERSIVE AVEC CRAYON (PUIS ACHAT) ─────────────── */
+        <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
+          {/* Barre supérieure unique & ergonomique */}
+          <header
+            className="w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none shadow-md"
+            style={{
+              paddingTop: "max(env(safe-area-inset-top, 0px), 32px)",
+              paddingBottom: "10px",
+              minHeight: "calc(4.25rem + env(safe-area-inset-top, 0px))",
+            }}
+          >
+            {/* Côté gauche : Bouton retour vers la galerie des modèles (Échappement direct) */}
+            <button
+              type="button"
+              onClick={handleReturnToGallery}
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer shrink-0"
+              title="Changer de modèle (Raccourci : Échap)"
+            >
+              <ArrowLeft size={14} className="text-[#f0d999] shrink-0" />
+              <span className="hidden sm:inline">Changer de modèle</span>
+              <span className="sm:hidden text-[11px] font-bold">← Modèles</span>
+            </button>
+
+            {/* Centre : Sélecteur segmenté MODIFIER / APERÇU + Enregistrer */}
+            <div className="flex items-center justify-center min-w-0 px-1 gap-2 sm:gap-3">
+              <div className="flex items-center bg-[#251219] p-1 rounded-full border border-white/10 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => handleSetMobileEditorTab('edit')}
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
+                    mobileEditorTab === 'edit'
+                      ? "bg-white text-[#13090C] font-bold shadow-xs"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  MODIFIER
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetMobileEditorTab('preview')}
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
+                    mobileEditorTab === 'preview'
+                      ? "bg-white text-[#13090C] font-bold shadow-xs"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  APERÇU
+                </button>
+              </div>
+
+              {/* Bouton d'enregistrement explicite */}
+              <button
+                type="button"
+                onClick={handleSaveFromEditor}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-[#ebd6b5] hover:text-white text-[11px] font-semibold border border-white/15 transition-all cursor-pointer shrink-0"
+                title="Enregistrer les modifications"
+              >
+                <Save size={12} className="text-[#d4af37]" />
+                <span>{saveNotice || "Enregistrer"}</span>
+              </button>
+
+              <div className="hidden lg:flex items-center gap-2">
+                <span className="font-serif text-sm font-bold text-white tracking-wide truncate max-w-xs text-center">
+                  {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
+                  <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
+                </span>
+              </div>
+            </div>
+
+            {/* Côté droit : Bouton Doré Unique d'Achat & Validation */}
+            <button
+              type="button"
+              onClick={handleFinalizeFromEditor}
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0"
+            >
+              <Lock size={13} className="text-black shrink-0" />
+              <span className="hidden md:inline">Valider &amp; Obtenir mon lien ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
+              <span className="md:hidden text-[11px] font-black">Valider ({currentActualPrice.toLocaleString('fr-FR')} F)</span>
+            </button>
+          </header>
+
+          {/* Corps : Affichage plein écran immersif de l'invitation */}
+          <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0">
+            <div className="w-full h-full bg-black overflow-hidden flex flex-col relative">
+              <iframe
+                ref={iframeRef}
+                src={previewIframeSrc}
+                title="Aperçu interactif du modèle Evenium"
+                className="w-full h-full border-0 bg-black block"
+                allow="autoplay; fullscreen"
+              />
+            </div>
+          </main>
+        </div>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}

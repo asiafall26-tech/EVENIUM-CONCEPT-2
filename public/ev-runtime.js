@@ -8,81 +8,238 @@
   window.__evRuntime = true;
 
   /*
-   * RÈGLE D'OR EVENIUM : Camouflage et suppression TOTALE et DÉFINITIVE de tous les boutons internes
-   * d'édition (crayons, boutons flottants #fab, #editBtn, barres d'édition .ebar) sur TOUS les modèles
-   * actuels et futurs, en TOUT temps (publication, prévisualisation, démo, invité, etc.).
-   * L'édition se fait exclusivement via les onglets Evenium (MODIFIER / APERÇU).
+   * RÈGLE D'OR EVENIUM :
+   * 1. Mode Découverte (visiteur sans choix, demo=1, hideEdit=1) ou Invités (guest=1, /invite/) :
+   *    -> AUCUN CRAYON. Tous les boutons d'édition internes sont masqués et purgés.
+   * 2. Mode Édition (après avoir cliqué sur Choisir, canEdit=1 ou edit=1) :
+   *    -> Le crayon « ✎ Personnaliser » est PRÉSENT et ACTIF.
+   *    -> En cliquant sur le crayon, l'éditeur du modèle s'ouvre avec ses deux onglets :
+   *       « Modifier » et « Aperçu », et les sections propres au modèle.
+   *    -> Un bouton « Enregistrer » permet de sauvegarder les modifications.
    */
-  var HIDE_PENCIL_CSS =
-    "#fab, #fabEdit, #editFab, #editBtn, #edit-toggle, #editRsvp, #floating-edit, " +
-    ".fab, button.fab, a.fab, .edit-fab, .fab-edit, .btn-edit, .edit-btn, .floating-edit-btn, " +
-    "#ebar, .ebar, div.ebar, " +
-    "[aria-label*='Personnaliser'], [aria-label*='Modifier'], [aria-label*='Éditer'], " +
-    "[title*='Personnaliser'], [title*='Modifier'], [title*='Éditer'], " +
-    "#panel, #pf, #editor, .editor, .editor[role='dialog'], [id*='edit-modal'], aside.editor { " +
-    "display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; " +
-    "width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }";
+  var isEditMode = (
+    location.search.indexOf("canEdit=1") !== -1 ||
+    location.search.indexOf("edit=1") !== -1
+  );
 
-  try {
-    var editSt = document.createElement("style");
-    editSt.id = "ev-hide-pencils";
-    editSt.textContent = HIDE_PENCIL_CSS;
-    (document.head || document.documentElement).appendChild(editSt);
-  } catch (e) { }
+  var isGuestOrDiscovery = (
+    location.search.indexOf("guest=1") !== -1 ||
+    location.search.indexOf("hideEdit=1") !== -1 ||
+    location.search.indexOf("demo=1") !== -1 ||
+    location.pathname.indexOf("/invite/") !== -1 ||
+    !isEditMode
+  );
 
-  function purgeInternalEditButtons() {
-    var selectors = [
-      "#fab", "#fabEdit", "#editFab", "#editBtn", "#edit-toggle", "#editRsvp", "#floating-edit",
-      ".fab", "button.fab", "a.fab", ".edit-fab", ".fab-edit", ".btn-edit", ".edit-btn", ".floating-edit-btn",
-      "#ebar", ".ebar", "div.ebar",
-      "[aria-label*='Personnaliser']", "[aria-label*='Modifier']", "[aria-label*='Éditer']",
-      "[title*='Personnaliser']", "[title*='Modifier']", "[title*='Éditer']",
-      "#panel", "#pf", "#editor", ".editor", "aside.editor", "[id*='edit-modal']"
-    ];
-    for (var i = 0; i < selectors.length; i++) {
+  if (isGuestOrDiscovery) {
+    var HIDE_PENCIL_CSS =
+      "#fab, #fabEdit, #editFab, #editBtn, #edit-toggle, #editRsvp, #floating-edit, " +
+      ".fab, button.fab, a.fab, .edit-fab, .fab-edit, .btn-edit, .edit-btn, .floating-edit-btn, " +
+      "#ebar, .ebar, div.ebar, " +
+      "[aria-label*='Personnaliser'], [aria-label*='Modifier'], [aria-label*='Éditer'], " +
+      "[title*='Personnaliser'], [title*='Modifier'], [title*='Éditer'], " +
+      "#panel, #pf, #editor, .editor, .editor[role='dialog'], [id*='edit-modal'], aside.editor { " +
+      "display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; " +
+      "width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }";
+
+    try {
+      var editSt = document.createElement("style");
+      editSt.id = "ev-hide-pencils";
+      editSt.textContent = HIDE_PENCIL_CSS;
+      (document.head || document.documentElement).appendChild(editSt);
+    } catch (e) { }
+
+    function purgeInternalEditButtons() {
+      var selectors = [
+        "#fab", "#fabEdit", "#editFab", "#editBtn", "#edit-toggle", "#editRsvp", "#floating-edit",
+        ".fab", "button.fab", "a.fab", ".edit-fab", ".fab-edit", ".btn-edit", ".edit-btn", ".floating-edit-btn",
+        "#ebar", ".ebar", "div.ebar",
+        "[aria-label*='Personnaliser']", "[aria-label*='Modifier']", "[aria-label*='Éditer']",
+        "[title*='Personnaliser']", "[title*='Modifier']", "[title*='Éditer']",
+        "#panel", "#pf", "#editor", ".editor", "aside.editor", "[id*='edit-modal']"
+      ];
+      for (var i = 0; i < selectors.length; i++) {
+        try {
+          var found = document.querySelectorAll(selectors[i]);
+          for (var j = 0; j < found.length; j++) {
+            found[j].remove();
+          }
+        } catch (e) { }
+      }
       try {
-        var found = document.querySelectorAll(selectors[i]);
-        for (var j = 0; j < found.length; j++) {
-          found[j].remove();
+        var fabs = document.querySelectorAll("button, .fab, a, div[role='button']");
+        for (var k = 0; k < fabs.length; k++) {
+          var b = fabs[k];
+          if (b.id === "ev-top-bar" || b.closest("#ev-top-bar")) continue;
+          var txt = (b.textContent || "").trim();
+          if (txt.indexOf("✎") !== -1 || txt.indexOf("Personnaliser") !== -1) {
+            b.remove();
+            continue;
+          }
+          var p = b.querySelector("path");
+          if (p) {
+            var d = p.getAttribute("d") || "";
+            if (
+              d.indexOf("M4 20h4L19") !== -1 ||
+              d.indexOf("M17 3a2.828") !== -1 ||
+              d.indexOf("18.37 5.63") !== -1 ||
+              d.indexOf("M3 17.25V21") !== -1 ||
+              d.indexOf("12 20h9") !== -1
+            ) {
+              b.remove();
+            }
+          }
         }
       } catch (e) { }
     }
+
+    purgeInternalEditButtons();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", purgeInternalEditButtons);
+    }
+    window.addEventListener("load", purgeInternalEditButtons);
+    var pencilObserver = new MutationObserver(purgeInternalEditButtons);
     try {
-      var fabs = document.querySelectorAll("button, .fab, a, div[role='button']");
-      for (var k = 0; k < fabs.length; k++) {
-        var b = fabs[k];
-        if (b.id === "ev-top-bar" || b.closest("#ev-top-bar")) continue;
-        var txt = (b.textContent || "").trim();
-        if (txt.indexOf("✎") !== -1 || txt.indexOf("Personnaliser") !== -1) {
-          b.remove();
-          continue;
-        }
-        var p = b.querySelector("path");
-        if (p) {
-          var d = p.getAttribute("d") || "";
-          if (
-            d.indexOf("M4 20h4L19") !== -1 ||
-            d.indexOf("M17 3a2.828") !== -1 ||
-            d.indexOf("18.37 5.63") !== -1 ||
-            d.indexOf("M3 17.25V21") !== -1 ||
-            d.indexOf("12 20h9") !== -1
-          ) {
-            b.remove();
+      pencilObserver.observe(document.documentElement, { childList: true, subtree: true });
+    } catch (e) { }
+  } else {
+    // Mode ÉDITION (canEdit=1) : Le crayon « ✎ Personnaliser » est actif, visible et interactif
+    function revealEditPencil() {
+      var editBtns = document.querySelectorAll("#fab, #editBtn, .fab-edit, [aria-label*='Personnaliser']");
+      for (var i = 0; i < editBtns.length; i++) {
+        try {
+          editBtns[i].hidden = false;
+          editBtns[i].style.display = "";
+          editBtns[i].style.visibility = "visible";
+          editBtns[i].style.opacity = "1";
+          editBtns[i].style.pointerEvents = "auto";
+        } catch (e) { }
+      }
+
+      // S'assurer que la barre d'édition du modèle possède un bouton Enregistrer
+      ensureSaveButton();
+      setupTabs();
+    }
+
+    function ensureSaveButton() {
+      var ebar = document.getElementById("ebar");
+      if (!ebar) return;
+      if (document.getElementById("ev-save-btn") || document.getElementById("saveEdit")) return;
+      var doneBtn = document.getElementById("doneEdit");
+      var saveBtn = document.createElement("button");
+      saveBtn.id = "ev-save-btn";
+      saveBtn.type = "button";
+      saveBtn.textContent = "💾 Enregistrer";
+      saveBtn.setAttribute("style", "background: #d4af37 !important; color: #13090c !important; font-weight: 700 !important; font-size: 11px !important; padding: 6px 14px !important; border-radius: 20px !important; border: none !important; cursor: pointer !important; margin-right: 8px !important; text-transform: uppercase !important; letter-spacing: .06em !important; box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;");
+      saveBtn.onclick = function () {
+        try {
+          if (typeof window.save === "function") window.save();
+        } catch (e) { }
+        try {
+          window.parent && window.parent.postMessage({ type: "evenium:content-change", triggerSave: true }, "*");
+        } catch (e) { }
+        try {
+          var t = document.getElementById("toast");
+          if (t) {
+            t.textContent = "Modifications enregistrées ✓";
+            t.hidden = false;
+            setTimeout(function () { t.hidden = true; }, 3200);
+          }
+        } catch (e) { }
+      };
+      if (doneBtn && doneBtn.parentNode) {
+        doneBtn.parentNode.insertBefore(saveBtn, doneBtn);
+      } else {
+        ebar.appendChild(saveBtn);
+      }
+    }
+
+    function setupTabs() {
+      var tEdit = document.getElementById("tabEdit");
+      var tPrev = document.getElementById("tabPrev");
+      if (tEdit && !tEdit.__evHooked) {
+        tEdit.__evHooked = true;
+        tEdit.addEventListener("click", function () {
+          document.body.classList.remove("tab-preview");
+          tEdit.setAttribute("aria-pressed", "true");
+          if (tPrev) tPrev.setAttribute("aria-pressed", "false");
+        });
+      }
+      if (tPrev && !tPrev.__evHooked) {
+        tPrev.__evHooked = true;
+        tPrev.addEventListener("click", function () {
+          document.body.classList.add("tab-preview");
+          tPrev.setAttribute("aria-pressed", "true");
+          if (tEdit) tEdit.setAttribute("aria-pressed", "false");
+        });
+      }
+    }
+
+    revealEditPencil();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", revealEditPencil);
+    }
+    window.addEventListener("load", revealEditPencil);
+    var editObserver = new MutationObserver(revealEditPencil);
+    try {
+      editObserver.observe(document.documentElement, { childList: true, subtree: true });
+    } catch (e) { }
+
+    // Écoute des commandes provenant de la barre Evenium parente (MODIFIER / APERÇU / ENREGISTRER)
+    window.addEventListener("message", function (e) {
+      if (!e.data || typeof e.data !== "object") return;
+      if (e.data.type === "evenium:set-tab") {
+        var isPrev = e.data.tab === "preview";
+        if (isPrev) {
+          document.body.classList.add("tab-preview");
+          var tPrev = document.getElementById("tabPrev");
+          var tEdit = document.getElementById("tabEdit");
+          if (tPrev) tPrev.setAttribute("aria-pressed", "true");
+          if (tEdit) tEdit.setAttribute("aria-pressed", "false");
+          var passEd = document.getElementById("editor");
+          if (passEd && passEd.classList.contains("open")) {
+            passEd.classList.remove("open");
+          }
+        } else {
+          document.body.classList.remove("tab-preview");
+          document.body.classList.add("editing");
+          var tPrev2 = document.getElementById("tabPrev");
+          var tEdit2 = document.getElementById("tabEdit");
+          if (tEdit2) tEdit2.setAttribute("aria-pressed", "true");
+          if (tPrev2) tPrev2.setAttribute("aria-pressed", "false");
+          var eb = document.getElementById("ebar");
+          if (eb) eb.hidden = false;
+          var ed = document.getElementById("editor");
+          if (ed) {
+            ed.hidden = false;
+            ed.classList.add("open");
+          }
+          var fab = document.getElementById("fab");
+          if (fab && typeof fab.onclick === "function" && !document.body.classList.contains("editing")) {
+            try { fab.click(); } catch (err) { }
           }
         }
+      } else if (e.data.type === "evenium:trigger-save") {
+        try {
+          if (typeof window.save === "function") window.save();
+        } catch (err) { }
+        try {
+          var t = document.getElementById("toast");
+          if (t) {
+            t.textContent = "Modifications enregistrées ✓";
+            t.hidden = false;
+            t.classList.add("on");
+            setTimeout(function () {
+              t.hidden = true;
+              t.classList.remove("on");
+            }, 3000);
+          }
+        } catch (err) { }
+        try {
+          window.parent && window.parent.postMessage({ type: "evenium:content-change", triggerSave: true }, "*");
+        } catch (err) { }
       }
-    } catch (e) { }
+    });
   }
-
-  purgeInternalEditButtons();
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", purgeInternalEditButtons);
-  }
-  window.addEventListener("load", purgeInternalEditButtons);
-  var pencilObserver = new MutationObserver(purgeInternalEditButtons);
-  try {
-    pencilObserver.observe(document.documentElement, { childList: true, subtree: true });
-  } catch (e) { }
 
   /*
    * Fondus sonores des modèles : un volume calculé hors de 0 – 1 (ex. -0.0002 en fin de fondu) fait planter
