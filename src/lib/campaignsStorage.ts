@@ -3,7 +3,8 @@ import {
   fetchActiveCampaignsAction, 
   fetchProviderCampaignsAction, 
   saveProviderCampaignAction, 
-  deleteProviderCampaignAction 
+  deleteProviderCampaignAction,
+  toggleCampaignLikeAction
 } from "@/app/actions/campaignActions";
 import { addNotificationForClient } from "@/lib/notifications";
 
@@ -236,4 +237,51 @@ export async function deleteCampaignLocallyAndRemotely(
   }
 
   return true;
+}
+
+/**
+ * Alterne le J'aime sur une publication et synchronise instantanément en local et sur le serveur
+ */
+export async function toggleCampaignLikeLocallyAndRemotely(
+  campaignId: string,
+  increment: boolean
+): Promise<number> {
+  const existingList = getStoredCampaigns();
+  let updatedCount = 0;
+  const idx = existingList.findIndex((c) => c.id === campaignId);
+  if (idx >= 0) {
+    const cur = existingList[idx].likes_count || 0;
+    updatedCount = Math.max(0, cur + (increment ? 1 : -1));
+    existingList[idx] = {
+      ...existingList[idx],
+      likes_count: updatedCount,
+    };
+    setStoredCampaigns(existingList);
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("evenium_campaign_like_updated", {
+        detail: { campaignId, likesCount: updatedCount, increment },
+      })
+    );
+    window.dispatchEvent(new CustomEvent("evenium_campaigns_updated"));
+  }
+
+  try {
+    const res = await toggleCampaignLikeAction(campaignId, "client", increment);
+    if (res && typeof res.likesCount === "number") {
+      updatedCount = res.likesCount;
+      const reList = getStoredCampaigns();
+      const reIdx = reList.findIndex((c) => c.id === campaignId);
+      if (reIdx >= 0) {
+        reList[reIdx].likes_count = updatedCount;
+        setStoredCampaigns(reList);
+      }
+    }
+  } catch (err) {
+    console.warn("toggleCampaignLikeLocallyAndRemotely server notice:", err);
+  }
+
+  return updatedCount;
 }

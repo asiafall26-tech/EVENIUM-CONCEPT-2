@@ -232,14 +232,15 @@ function CreateExpressStudioContent({
   const [selectedEventCategory, setSelectedEventCategory] = useState<string>(() => {
     const raw = categoryParam || (typeof window !== "undefined" ? sessionStorage.getItem('evenium:last_category') : null);
     if (raw) {
-      const lower = raw.toLowerCase();
+      const lower = raw.toLowerCase().trim();
+      if (lower === "invitations" || lower === "invitation" || lower === "tous" || lower === "all") return "Tous";
       if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") return "Couple";
       if (lower === "voeux" || lower === "vœux" || lower === "voeu") return "Vœux";
       if (lower === "noel" || lower === "noël") return "Noël";
       if (lower === "fetes" || lower === "fêtes" || lower === "nouvel-an" || lower.includes("fin")) return "Fêtes de fin d'année";
       return raw;
     }
-    return "Mariage";
+    return "Tous";
   });
   const [selectedModelId, setSelectedModelId] = useState<string>(() => {
     const p = searchParams.get('model');
@@ -250,8 +251,9 @@ function CreateExpressStudioContent({
   useEffect(() => {
     const cat = searchParams.get('category') || searchParams.get('cat');
     if (cat) {
-      const lower = cat.toLowerCase();
-      if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") setSelectedEventCategory("Couple");
+      const lower = cat.toLowerCase().trim();
+      if (lower === "invitations" || lower === "invitation" || lower === "tous" || lower === "all") setSelectedEventCategory("Tous");
+      else if (lower === "couple" || lower === "mots-doux" || lower === "mot_doux") setSelectedEventCategory("Couple");
       else if (lower === "voeux" || lower === "vœux" || lower === "voeu") setSelectedEventCategory("Vœux");
       else if (lower === "noel" || lower === "noël") setSelectedEventCategory("Noël");
       else if (lower === "fetes" || lower === "fêtes" || lower === "nouvel-an" || lower.includes("fin")) setSelectedEventCategory("Fêtes de fin d'année");
@@ -523,22 +525,33 @@ function CreateExpressStudioContent({
   const filteredModels = useMemo(() => {
     let result = siteModels;
 
-    if (selectedEventCategory === "Vœux") {
+    const normCat = selectedEventCategory.toLowerCase().trim();
+    if (normCat === "vœux" || normCat === "voeux" || normCat === "voeu") {
       result = result.filter((m) => m.kind === "voeu");
-    } else if (selectedEventCategory === "Couple") {
+    } else if (normCat === "couple" || normCat === "mots-doux" || normCat === "mot_doux") {
       result = result.filter((m) => m.kind === "couple" || m.kind === "mot_doux");
+    } else if (normCat === "invitations" || normCat === "invitation") {
+      result = result.filter((m) => m.kind !== "voeu" && m.kind !== "couple" && m.kind !== "mot_doux");
     } else if (selectedEventCategory !== "Tous") {
-      result = result.filter((m) => (m.compatibleEvents || []).includes(selectedEventCategory));
+      const matched = result.filter((m) => (m.compatibleEvents || []).includes(selectedEventCategory));
+      if (matched.length > 0) {
+        result = matched;
+      }
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      result = result.filter((m) =>
+      const filteredByQuery = result.filter((m) =>
         m.name.toLowerCase().includes(q) ||
         m.category.toLowerCase().includes(q) ||
         (m.subtitle && m.subtitle.toLowerCase().includes(q)) ||
         (m.compatibleEvents && m.compatibleEvents.some((e: string) => e.toLowerCase().includes(q)))
       );
+      if (filteredByQuery.length > 0) {
+        result = filteredByQuery;
+      } else {
+        result = filteredByQuery; // keep empty if search query really has no match
+      }
     }
 
     return result;
@@ -1496,55 +1509,18 @@ function CreateExpressStudioContent({
             >
               <ArrowLeft size={14} className="text-[#f0d999] shrink-0" />
               <span className="hidden sm:inline">Changer de modèle</span>
-              <span className="sm:hidden text-[11px] font-bold">← Modèles</span>
+              <span className="sm:hidden text-[11px] font-bold">Modèles</span>
             </button>
 
-            {/* Centre : Sélecteur segmenté MODIFIER / APERÇU + Enregistrer */}
-            <div className="flex items-center justify-center min-w-0 px-1 gap-2 sm:gap-3">
-              <div className="flex items-center bg-[#251219] p-1 rounded-full border border-white/10 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => handleSetMobileEditorTab('edit')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
-                    mobileEditorTab === 'edit'
-                      ? "bg-white text-[#13090C] font-bold shadow-xs"
-                      : "text-white/60 hover:text-white"
-                  }`}
-                >
-                  MODIFIER
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetMobileEditorTab('preview')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${
-                    mobileEditorTab === 'preview'
-                      ? "bg-white text-[#13090C] font-bold shadow-xs"
-                      : "text-white/60 hover:text-white"
-                  }`}
-                >
-                  APERÇU
-                </button>
-              </div>
-
-              {/* Bouton d'enregistrement explicite */}
-              <button
-                type="button"
-                onClick={handleSaveFromEditor}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-[#ebd6b5] hover:text-white text-[11px] font-semibold border border-white/15 transition-all cursor-pointer shrink-0"
-                title="Enregistrer les modifications"
-              >
-                <Save size={12} className="text-[#d4af37]" />
-                <span>{saveNotice || "Enregistrer"}</span>
-              </button>
-
-              <div className="hidden lg:flex items-center gap-2">
-                <span className="font-serif text-sm font-bold text-white tracking-wide truncate max-w-xs text-center">
-                  {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
-                  <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
-                </span>
-              </div>
+            {/* Centre : Nom du modèle & indication claire d'édition avec le crayon */}
+            <div className="flex items-center justify-center min-w-0 px-2 gap-2 text-center">
+              <span className="font-serif text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[150px] sm:max-w-xs">
+                {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
+              </span>
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] sm:text-[11px] font-medium shrink-0">
+                <Sparkles size={11} className="text-[#D4AF37]" />
+                <span className="hidden sm:inline">Cliquez sur</span> <span>✎ Personnaliser</span>
+              </span>
             </div>
 
             {/* Côté droit : Bouton Doré Unique d'Achat & Validation */}

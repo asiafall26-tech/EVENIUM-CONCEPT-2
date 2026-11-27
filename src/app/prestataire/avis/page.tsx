@@ -19,12 +19,21 @@ export default function PrestataireAvisPage() {
 
   useEffect(() => {
     fetchReviews();
+
+    const handleNewReview = () => {
+      fetchReviews();
+    };
+    window.addEventListener("evenium_review_added", handleNewReview);
+    return () => window.removeEventListener("evenium_review_added", handleNewReview);
   }, []);
 
   const fetchReviews = async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setProviderId(user.id);
 
     try {
@@ -45,16 +54,28 @@ export default function PrestataireAvisPage() {
         localReplies = JSON.parse(localStorage.getItem(localRepliesKey) || "{}");
       } catch { }
 
+      // Avis enregistrés localement pour ce prestataire
+      const localReviewsKey = `evenium_provider_reviews_${user.id}`;
+      let localReviews: any[] = [];
+      try {
+        localReviews = JSON.parse(localStorage.getItem(localReviewsKey) || "[]");
+      } catch { }
+
+      const allMap = new Map<string, any>();
       if (data && data.length > 0) {
-        const merged = data.map(r => ({
-          ...r,
-          reply: r.reply || localReplies[r.id] || null
-        }));
-        setReviews(merged);
-      } else {
-        // Zéro faux avis : liste vide transparente
-        setReviews([]);
+        data.forEach(r => allMap.set(r.id, r));
       }
+      localReviews.forEach(r => {
+        if (!allMap.has(r.id)) {
+          allMap.set(r.id, r);
+        }
+      });
+
+      const merged = Array.from(allMap.values()).map(r => ({
+        ...r,
+        reply: r.reply || localReplies[r.id] || null
+      }));
+      setReviews(merged);
     } catch {
       setReviews([]);
     }

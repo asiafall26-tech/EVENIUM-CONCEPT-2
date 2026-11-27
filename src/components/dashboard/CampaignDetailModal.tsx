@@ -24,7 +24,8 @@ import {
   Clock 
 } from "lucide-react";
 import { ProviderCampaign } from "@/types/campaigns";
-import { toggleCampaignLikeAction, recordCampaignAction } from "@/app/actions/campaignActions";
+import { recordCampaignAction } from "@/app/actions/campaignActions";
+import { toggleCampaignLikeLocallyAndRemotely } from "@/lib/campaignsStorage";
 import { addNotificationForProvider } from "@/lib/notifications";
 
 interface CampaignDetailModalProps {
@@ -50,11 +51,11 @@ export function CampaignDetailModal({
 
   const isVideo = campaign.media_url?.endsWith(".mp4") || campaign.media_url?.includes("video");
 
-  const handleLike = () => {
+  const handleLike = async () => {
     const nextState = !liked;
     setLiked(nextState);
     setLikesOffset((prev) => (nextState ? prev + 1 : prev - 1));
-    toggleCampaignLikeAction(campaign.id, "client-viewer", nextState);
+    await toggleCampaignLikeLocallyAndRemotely(campaign.id, nextState);
     if (nextState) {
       addNotificationForProvider(campaign.provider_id, {
         title: "Nouveau J'aime reçu ❤️",

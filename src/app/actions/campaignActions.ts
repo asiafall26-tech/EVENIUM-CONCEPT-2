@@ -366,24 +366,45 @@ export async function toggleCampaignLikeAction(
   userId: string,
   increment: boolean
 ): Promise<{ likesCount: number }> {
+  let count = 0;
   const target = RUNTIME_CAMPAIGNS.find((c) => c.id === campaignId);
   if (target) {
     target.likes_count = Math.max(0, (target.likes_count || 0) + (increment ? 1 : -1));
+    count = target.likes_count;
     writePersistedCampaigns(RUNTIME_CAMPAIGNS);
   }
 
   try {
     const admin = getAdminClient();
     if (admin) {
-      if (increment) {
-        await admin.rpc("increment_campaign_likes", { campaign_id: campaignId });
+      const { data: dbItem } = await admin
+        .from("provider_campaigns")
+        .select("likes_count")
+        .eq("id", campaignId)
+        .maybeSingle();
+
+      const base = dbItem?.likes_count ?? count;
+      const nextCount = Math.max(0, base + (increment ? 1 : -1));
+
+      const { error: updateErr } = await admin
+        .from("provider_campaigns")
+        .update({ likes_count: nextCount, updated_at: new Date().toISOString() })
+        .eq("id", campaignId);
+
+      if (!updateErr) {
+        count = nextCount;
+      }
+
+      if (target) {
+        target.likes_count = count;
+        writePersistedCampaigns(RUNTIME_CAMPAIGNS);
       }
     }
-  } catch {
-    // Analytics fallback
+  } catch (err) {
+    console.warn("toggleCampaignLikeAction db notice:", err);
   }
 
-  return { likesCount: target?.likes_count || 0 };
+  return { likesCount: count };
 }
 
 /**

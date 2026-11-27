@@ -20,8 +20,8 @@ import { sendQuoteAcceptedPushAction } from "@/app/actions/notify";
 import { LeaveReviewModal } from "@/components/reviews/LeaveReviewModal";
 import EventBreadcrumb from "@/components/dashboard/EventBreadcrumb";
 import { ProviderCampaign } from "@/types/campaigns";
-import { fetchActiveCampaignsAction, toggleCampaignLikeAction } from "@/app/actions/campaignActions";
-import { loadActiveCampaigns } from "@/lib/campaignsStorage";
+import { fetchActiveCampaignsAction } from "@/app/actions/campaignActions";
+import { loadActiveCampaigns, toggleCampaignLikeLocallyAndRemotely } from "@/lib/campaignsStorage";
 import { addNotificationForClient, addNotificationForProvider } from "@/lib/notifications";
 import { QuoteRequestModal } from "@/components/dashboard/QuoteRequestModal";
 import { CampaignQuoteRequestModal } from "@/components/dashboard/CampaignQuoteRequestModal";
@@ -240,7 +240,16 @@ export default function PrestatairesDashboardPage({
       localStorage.setItem("evenium_client_liked_campaigns", JSON.stringify(newLikes));
     } catch {}
 
-    toggleCampaignLikeAction(c.id, "client-me", nextState);
+    // Mise à jour visuelle immédiate du compteur de likes
+    setSponsoredCampaigns(prev => prev.map(item => {
+      if (item.id === c.id) {
+        const cur = item.likes_count || 0;
+        return { ...item, likes_count: Math.max(0, cur + (nextState ? 1 : -1)) };
+      }
+      return item;
+    }));
+
+    await toggleCampaignLikeLocallyAndRemotely(c.id, nextState);
 
     if (nextState) {
       addNotificationForProvider(c.provider_id, {

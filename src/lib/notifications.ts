@@ -9,7 +9,7 @@ export interface EveniumNotificationItem {
   time: string;
   link?: string;
   bg?: string;
-  type?: "like" | "follow" | "matching_provider" | "boost_offer" | "quote" | "rsvp" | "message";
+  type?: "like" | "follow" | "matching_provider" | "boost_offer" | "quote" | "rsvp" | "message" | "review";
   createdAt: string;
 }
 

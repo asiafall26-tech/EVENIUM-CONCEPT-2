@@ -301,7 +301,22 @@ export default function PrestataireCataloguePage() {
   // ---------------------------------------------------------
   // APERÇU
   // ---------------------------------------------------------
-  const renderPreview = () => (
+  const renderPreview = () => {
+    const fallbackTitle = form.title || (
+      form.prestations.length > 0
+        ? `Offre · ${form.prestations.join(' & ')}`
+        : activity.services.length > 0
+          ? `Offre · ${activity.services.join(' & ')}`
+          : "Offre personnalisée"
+    );
+
+    const fallbackPriceDisplay = form.priceType === "Sur devis"
+      ? "Sur devis"
+      : form.price
+        ? `${form.priceType} ${Number(form.price).toLocaleString('fr-FR')} FCFA`
+        : "Sur devis";
+
+    return (
     <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden sticky top-6 max-h-[90vh] overflow-y-auto flex flex-col">
       <div className="relative h-64 bg-gray-100 shrink-0">
         {form.imagePreview ? (
@@ -315,10 +330,10 @@ export default function PrestataireCataloguePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         <div className="absolute bottom-6 left-6 text-white pr-6">
           <span className="bg-[#b8924a] text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm mb-3 inline-block">
-            {offerTagLine({ infos_pratiques: { event_types: form.eventTypes, prestations: form.prestations } })}
+            {offerTagLine({ infos_pratiques: { event_types: form.eventTypes.length > 0 ? form.eventTypes : activity.event_types, prestations: form.prestations.length > 0 ? form.prestations : activity.services } })}
           </span>
-          <h2 className="font-serif text-3xl font-bold mb-1 leading-tight">{form.title || "Nom de l'offre"}</h2>
-          <p className="text-[#d9c08c] font-semibold text-lg">{form.priceType} {form.price ? `${Number(form.price).toLocaleString('fr-FR')} FCFA` : "--- FCFA"}</p>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold mb-1 leading-tight">{fallbackTitle}</h2>
+          <p className="text-[#d9c08c] font-semibold text-base sm:text-lg">{fallbackPriceDisplay}</p>
         </div>
       </div>
 
@@ -353,16 +368,22 @@ export default function PrestataireCataloguePage() {
           </div>
         )}
 
-        {((!form.hidden.includes('infos') && (form.practicalInfos.capacite || form.practicalInfos.duree)) || form.zones.length > 0) && (
+        {((!form.hidden.includes('infos') && (form.practicalInfos.capacite || form.practicalInfos.duree)) || form.zones.length > 0 || activity.zones.length > 0) && (
           <div>
             <h3 className="text-sm font-bold text-black uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Informations pratiques</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {form.zones.length > 0 && (
-                <div className="flex items-center gap-3 bg-[#f5eee1] p-3 rounded-xl">
-                  <MapPin size={20} className="text-[#8f6f33]" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(form.zones.length > 0 || activity.zones.length > 0) && (
+                <div className="flex items-start gap-3 bg-[#f5eee1] p-3 rounded-xl col-span-1 sm:col-span-2">
+                  <MapPin size={20} className="text-[#8f6f33] shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[10px] text-[#8f6f33] uppercase tracking-wider font-bold">Zones</p>
-                    <p className="text-sm font-medium text-gray-900">{form.zones.length} zone(s)</p>
+                    <p className="text-[10px] text-[#8f6f33] uppercase tracking-wider font-bold">Zones d&apos;intervention</p>
+                    <p className="text-xs font-semibold text-gray-900">
+                      {form.zones.length > 0
+                        ? form.zones.join(', ')
+                        : activity.zones.length > 0
+                          ? activity.zones.join(', ')
+                          : "Toute la région"}
+                    </p>
                   </div>
                 </div>
               )}
@@ -402,13 +423,18 @@ export default function PrestataireCataloguePage() {
         )}
 
         <div className="pt-4">
-          <button className="w-full py-4 bg-black text-white font-bold rounded-xl shadow-lg" disabled>
-            Demander un devis
-          </button>
+          <div className="w-full py-3.5 px-4 bg-stone-900 text-white font-bold rounded-xl shadow-md flex items-center justify-between">
+            <span className="text-sm font-semibold">Demander un devis</span>
+            <span className="text-[11px] text-[#d4af37] font-medium bg-white/10 px-2.5 py-1 rounded-full">Aperçu client actif</span>
+          </div>
+          <p className="text-[11px] text-gray-400 text-center mt-2">
+            Les organisateurs pourront directement formuler une demande de devis sur cette offre.
+          </p>
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // ---------------------------------------------------------
   // FORMULAIRE
