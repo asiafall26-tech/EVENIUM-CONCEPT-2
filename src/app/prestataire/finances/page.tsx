@@ -321,7 +321,36 @@ export default function PrestataireFinancesPage() {
           </button>
         </div>
         
-        <div className="overflow-x-auto">
+        {/* Vue Mobile (sm:hidden) : Cartes compactes */}
+        <div className="sm:hidden divide-y divide-gray-100">
+          {loading ? (
+            <div className="py-8 text-center text-gray-500 font-medium text-xs">Chargement...</div>
+          ) : transactions.length > 0 ? (
+            transactions.map((t) => (
+              <div key={t.id} className="py-3 px-1 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-gray-900 text-sm truncate">{t.description || t.libelle || 'Transaction'}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                    <Calendar size={12} /> {new Date(t.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className={`font-bold text-sm ${t.type === 'revenu' ? 'text-green-700' : 'text-red-700'}`}>
+                    {t.type === 'revenu' ? '+' : '-'}{Number(t.montant).toLocaleString()} FCFA
+                  </p>
+                  <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-[10px] font-bold mt-0.5">
+                    Complété
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-8 text-center text-gray-500 text-xs">Aucune transaction enregistrée.</div>
+          )}
+        </div>
+
+        {/* Vue Grand Écran (hidden sm:block) */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="table-stack w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-gray-100 text-gray-800 font-bold border-b border-gray-200">
               <tr>

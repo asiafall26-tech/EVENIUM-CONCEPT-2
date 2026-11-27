@@ -609,9 +609,11 @@ export default function CataloguePrestatairesPage({
                     <span className="font-serif text-3xl sm:text-5xl font-bold text-gray-400 opacity-20">{provider.name.substring(0, 2).toUpperCase()}</span>
                   </div>
                 )}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-[#8f6f33] flex items-center gap-1 shadow-sm">
-                  <Star size={12} className="fill-[#8f6f33]" /> {provider.rating || 5}
-                </div>
+                {provider.rating ? (
+                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-[#8f6f33] flex items-center gap-1 shadow-sm">
+                    <Star size={12} className="fill-[#8f6f33]" /> {provider.rating}
+                  </div>
+                ) : null}
               </div>
               
               <div className="p-6 flex-1 flex flex-col">

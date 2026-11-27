@@ -50,7 +50,7 @@ export function PrestataireProvider({ children }: { children: ReactNode }) {
         id: p.id,
         name: p.full_name || "Prestataire",
         role: providerHeadline(p),
-        rating: 5,
+        rating: null,
         phone: p.phone || "Non renseigné",
         isPlatformProvider: true,
         zone: locationLabel(activityFromProfile(p).country, activityFromProfile(p).zones) || p.address || "Non renseigné",

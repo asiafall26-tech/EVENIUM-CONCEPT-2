@@ -331,7 +331,7 @@ export default function PrestataireProfilPage() {
       </div>
 
       {/* 1. GRANDE BANNIÈRE PANORAMIQUE HAUTE DÉFINITION (FORMAT AMÉLIORÉ ET ÉLÉGANT) */}
-      <div className="relative w-full h-52 sm:h-72 rounded-3xl overflow-hidden bg-gradient-to-r from-amber-100/70 via-[#fbf7f0] to-stone-200 border border-gray-200 shadow-sm mb-8 group">
+      <div className="relative w-full h-56 sm:h-80 rounded-3xl overflow-hidden bg-gradient-to-r from-amber-100/70 via-[#fbf7f0] to-stone-200 border border-gray-200 shadow-sm mb-8 group">
         {profile?.cover_url ? (
           <img src={profile.cover_url} className="w-full h-full object-cover" alt="Bannière de couverture" />
         ) : (
@@ -679,7 +679,7 @@ export default function PrestataireProfilPage() {
       >
         <div className="max-h-[80vh] overflow-y-auto pr-1">
           {/* Bannière panoramique */}
-          <div className="relative w-full h-44 sm:h-56 rounded-2xl overflow-hidden bg-stone-200 border border-gray-200 mb-6">
+          <div className="relative w-full h-56 sm:h-72 rounded-2xl overflow-hidden bg-stone-200 border border-gray-200 mb-6">
             {profile?.cover_url ? (
               <img src={profile.cover_url} className="w-full h-full object-cover" alt="Couverture" />
             ) : (

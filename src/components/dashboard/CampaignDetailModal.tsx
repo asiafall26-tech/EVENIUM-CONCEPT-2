@@ -172,12 +172,12 @@ export function CampaignDetailModal({
                 }`}
               >
                 <Heart size={18} className={liked ? "fill-rose-500 text-rose-500 animate-in zoom-in" : ""} />
-                <span>{(campaign.likes_count || 14) + likesOffset} J&apos;aime</span>
+                <span>{(campaign.likes_count || 0) + likesOffset} J&apos;aime</span>
               </button>
 
               <span className="flex items-center gap-1.5 text-xs text-gray-500">
                 <Eye size={16} />
-                <span>{campaign.impressions_count || 48} vues</span>
+                <span>{campaign.impressions_count || 0} vues</span>
               </span>
 
               <span className="flex items-center gap-1.5 text-xs text-gray-500">

@@ -539,6 +539,7 @@ export default function PrestatairesDashboardPage({
         
         return {
           id: prof?.id || d.prestataire_id,
+          prestataire_id: d.prestataire_id || prof?.id,
           demande_id: d.id,
           devis: relatedDevis,
           name: prof?.full_name || d.client_name || 'Prestataire',
@@ -547,7 +548,7 @@ export default function PrestatairesDashboardPage({
           rubriques: prof?.rubriques ?? null,
           phone: prof?.phone || 'Non renseigné',
           zone: (prof && locationLabel(activityFromProfile(prof).country, activityFromProfile(prof).zones)) || prof?.address || 'Non renseigné',
-          rating: 5,
+          rating: null,
           isPlatformProvider: prof?.is_evenium_certified !== false,
           status: relatedDevis?.status === 'Accepté' ? 'Confirmé' : (relatedDevis ? 'Devis envoyé' : d.status),
           cost: relatedDevis ? `${Number(relatedDevis.total || relatedDevis.amount || 0).toLocaleString('fr-FR')} FCFA` : (d.budget_indicatif || d.budget_propose ? `${Number(d.budget_indicatif || d.budget_propose).toLocaleString('fr-FR')} FCFA (Estimé)` : "Sur devis"),
@@ -866,7 +867,7 @@ export default function PrestatairesDashboardPage({
                             }`}
                           >
                             <Heart size={20} className={isLiked ? "fill-rose-500 text-rose-500 animate-in zoom-in" : ""} />
-                            <span>{(pub.likes_count || 12) + (isLiked ? 1 : 0)}</span>
+                            <span>{(pub.likes_count || 0) + (isLiked ? 1 : 0)}</span>
                           </button>
 
                           <span className="flex items-center gap-1 text-xs text-gray-500">
@@ -1135,7 +1136,7 @@ export default function PrestatairesDashboardPage({
                   )}
                   {p.isPlatformProvider ? (
                     <Link 
-                      href={`/dashboard/messages?contactId=${p.prestataire_id || ''}&contactName=${encodeURIComponent(p.name || '')}&eventName=${encodeURIComponent(event.name || '')}&eventType=${encodeURIComponent(event.type || '')}`} 
+                      href={`/dashboard/messages?prestataire=${encodeURIComponent(p.prestataire_id || p.id || '')}&name=${encodeURIComponent(p.name || '')}&eventName=${encodeURIComponent(event.name || '')}&eventType=${encodeURIComponent(event.type || '')}`} 
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f5eee1] text-[#8f6f33] rounded-lg text-xs font-bold hover:bg-[#e4d8c4] transition-colors cursor-pointer"
                     >
                       <MessageCircle size={14} /> Contacter

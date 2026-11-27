@@ -11,7 +11,7 @@ import { notifyMessageReceipt } from "@/lib/notifications";
 
 function ClientMessagesInner() {
   const searchParams = useSearchParams();
-  const contactIdParam = searchParams.get('prestataire') || searchParams.get('contactId') || searchParams.get('userId');
+  const contactIdParam = searchParams.get('prestataire') || searchParams.get('contactId') || searchParams.get('userId') || searchParams.get('contact') || searchParams.get('providerId');
   const contactNameParam = searchParams.get('name') || searchParams.get('contactName') || searchParams.get('providerName');
   const eventNameParam = searchParams.get('eventName');
   const eventTypeParam = searchParams.get('eventType');
@@ -282,12 +282,43 @@ function ClientMessagesInner() {
       alert("Erreur lors de la création : " + error);
     } else {
       setIsModalOpen(false);
-      setActiveConvId(selectedContactId);
+      handleSelectConversation(selectedContactId);
       setSelectedContactId("");
       setInitialMessage("");
       fetchData();
     }
   };
+
+  const handleSelectConversation = (id: string | null) => {
+    setActiveConvId(id);
+    if (!id) return;
+    const exists = conversations.some(c => c.id === id);
+    if (!exists) {
+      const prof = profiles[id] || potentialContacts.find(c => c.id === id) || {
+        id,
+        full_name: 'Prestataire',
+        role: 'prestataire'
+      };
+      const newConv = {
+        id,
+        profile: prof,
+        lastMessage: {
+          id: 'new',
+          sender_id: myId || '',
+          receiver_id: id,
+          content: 'Démarrer une discussion',
+          created_at: new Date().toISOString(),
+          is_read: true,
+        },
+        messages: [],
+        unread: 0,
+      };
+      setConversations(prev => [newConv, ...prev.filter(c => c.id !== id)]);
+    }
+  };
+
+  const providerContacts = potentialContacts.filter(c => c.role === 'prestataire');
+  const adminContacts = potentialContacts.filter(c => c.role === 'admin');
 
   return (
     <MessagingView
@@ -296,7 +327,7 @@ function ClientMessagesInner() {
       myProfile={myId ? profiles[myId] : undefined}
       conversations={conversations}
       activeConvId={activeConvId}
-      onSelectConversation={setActiveConvId}
+      onSelectConversation={handleSelectConversation}
       reply={newMessage}
       onReplyChange={setNewMessage}
       onSendReply={handleSendPrivate}
@@ -312,7 +343,24 @@ function ClientMessagesInner() {
         onMessageChange: setInitialMessage,
         onSubmit: handleStartConversation,
         placeholder: "Sélectionnez un contact",
-        groups: [{ options: potentialContacts.map(c => ({ value: c.id, label: c.role === 'admin' ? 'Support Evenium (Admin)' : `${c.full_name} (${c.role === 'prestataire' ? 'Prestataire' : 'Organisateur'})` })) }],
+        groups: [
+          ...(providerContacts.length > 0 ? [{
+            label: "Prestataires",
+            options: providerContacts.map(c => ({
+              value: c.id,
+              label: `${c.full_name || 'Prestataire'} (Prestataire)`,
+              group: "Prestataire"
+            }))
+          }] : []),
+          ...(adminContacts.length > 0 ? [{
+            label: "Support Evenium",
+            options: adminContacts.map(c => ({
+              value: c.id,
+              label: `${c.full_name || 'Admin'} (Support Evenium)`,
+              group: "Support Evenium"
+            }))
+          }] : [])
+        ],
       }}
     />
   );

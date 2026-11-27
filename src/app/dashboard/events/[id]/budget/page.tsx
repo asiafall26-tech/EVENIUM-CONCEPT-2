@@ -688,73 +688,127 @@ export default function BudgetDashboardPage({
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50/70 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-100 font-bold">
-                <tr>
-                  <th className="px-4 sm:px-6 py-3">Nature de la charge</th>
-                  <th className="px-4 py-3">Catégorie</th>
-                  <th className="px-4 py-3">Échéance / Date</th>
-                  <th className="px-4 py-3 text-right">Montant prévu</th>
-                  <th className="px-4 sm:px-6 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {chargesAEngager.map((charge) => (
-                  <tr key={charge.id} className="hover:bg-amber-50/20 transition-colors">
-                    <td className="px-4 sm:px-6 py-3.5">
-                      <span className="font-semibold text-gray-900 block text-sm">{charge.description}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-semibold">
-                        {charge.category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-gray-500 font-mono text-[11px] whitespace-nowrap">
-                      {charge.date
-                        ? new Date(charge.date).toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "À définir"}
-                    </td>
-                    <td className="px-4 py-3.5 text-right font-bold text-gray-900 text-sm whitespace-nowrap">
-                      {formatCurrency(charge.amount)} FCFA
-                    </td>
-                    <td className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* BOUTON DÉFALQUER SUR LE BUDGET INITIAL */}
-                        <button
-                          type="button"
-                          onClick={() => openDefalquerModal(charge)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
-                          title="Marquer comme payée et défalquer immédiatement du budget initial restant"
-                        >
-                          <ArrowDownCircle size={14} className="shrink-0" />
-                          <span>Défalquer sur le budget</span>
-                        </button>
-
-                        <button
-                          onClick={() => openEditModal(charge)}
-                          className="w-7 h-7 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
-                          title="Modifier"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteExpense(charge.id)}
-                          className="w-7 h-7 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
-                          title="Supprimer"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+          <div>
+            {/* Vue Mobile (sm:hidden) : Cartes tactiles directes */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {chargesAEngager.map((charge) => (
+                <div key={charge.id} className="p-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <span className="font-bold text-gray-900 text-sm block truncate">{charge.description}</span>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-semibold">
+                          {charge.category}
+                        </span>
+                        <span className="text-gray-500 text-[11px]">
+                          {charge.date
+                            ? new Date(charge.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
+                            : "À définir"}
+                        </span>
                       </div>
-                    </td>
+                    </div>
+                    <span className="font-serif font-bold text-gray-900 text-sm shrink-0 whitespace-nowrap">
+                      {formatCurrency(charge.amount)} FCFA
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => openDefalquerModal(charge)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
+                    >
+                      <ArrowDownCircle size={14} />
+                      <span>Défalquer sur le budget</span>
+                    </button>
+                    <button
+                      onClick={() => openEditModal(charge)}
+                      className="p-2 text-gray-500 hover:text-black rounded-xl border border-gray-200 cursor-pointer"
+                      title="Modifier"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteExpense(charge.id)}
+                      className="p-2 text-gray-500 hover:text-red-600 rounded-xl border border-gray-200 cursor-pointer"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Vue Grand Écran (hidden sm:block) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50/70 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-100 font-bold">
+                  <tr>
+                    <th className="px-4 sm:px-6 py-3">Nature de la charge</th>
+                    <th className="px-4 py-3">Catégorie</th>
+                    <th className="px-4 py-3">Échéance / Date</th>
+                    <th className="px-4 py-3 text-right">Montant prévu</th>
+                    <th className="px-4 sm:px-6 py-3 text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {chargesAEngager.map((charge) => (
+                    <tr key={charge.id} className="hover:bg-amber-50/20 transition-colors">
+                      <td className="px-4 sm:px-6 py-3.5">
+                        <span className="font-semibold text-gray-900 block text-sm">{charge.description}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="inline-block px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-semibold">
+                          {charge.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-gray-500 font-mono text-[11px] whitespace-nowrap">
+                        {charge.date
+                          ? new Date(charge.date).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "À définir"}
+                      </td>
+                      <td className="px-4 py-3.5 text-right font-bold text-gray-900 text-sm whitespace-nowrap">
+                        {formatCurrency(charge.amount)} FCFA
+                      </td>
+                      <td className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* BOUTON DÉFALQUER SUR LE BUDGET INITIAL */}
+                          <button
+                            type="button"
+                            onClick={() => openDefalquerModal(charge)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                            title="Marquer comme payée et défalquer immédiatement du budget initial restant"
+                          >
+                            <ArrowDownCircle size={14} className="shrink-0" />
+                            <span>Défalquer sur le budget</span>
+                          </button>
+
+                          <button
+                            onClick={() => openEditModal(charge)}
+                            className="w-7 h-7 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Modifier"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExpense(charge.id)}
+                            className="w-7 h-7 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Supprimer"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>

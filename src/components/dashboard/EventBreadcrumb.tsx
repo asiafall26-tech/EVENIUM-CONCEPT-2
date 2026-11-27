@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { ChevronRight, ArrowLeft, Home, Calendar } from "lucide-react";
+import { ChevronRight, ArrowLeft, Home, Calendar, Send, Wallet, Users, CheckSquare } from "lucide-react";
 
 interface Props {
   eventId: string;
@@ -32,6 +32,7 @@ export default function EventBreadcrumb({
   enableEscapeKey = true,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname() || "";
 
   // Écoute de la touche Échap pour échapper facilement à la page courante
   useEffect(() => {
@@ -64,85 +65,146 @@ export default function EventBreadcrumb({
       : "← Retour à l'événement"
     : "← Mes événements";
 
+  const eventTabs = [
+    {
+      id: "apercu",
+      label: "Aperçu",
+      href: `/dashboard/events/${eventId}`,
+      icon: Home,
+      isActive: pathname === `/dashboard/events/${eventId}`,
+    },
+    {
+      id: "invitations",
+      label: "Invitations & RSVP",
+      href: `/dashboard/events/${eventId}/invitations`,
+      icon: Send,
+      isActive: pathname.includes(`/dashboard/events/${eventId}/invitations`),
+    },
+    {
+      id: "budget",
+      label: "Budget",
+      href: `/dashboard/events/${eventId}/budget`,
+      icon: Wallet,
+      isActive: pathname.includes(`/dashboard/events/${eventId}/budget`),
+    },
+    {
+      id: "prestataires",
+      label: "Prestataires",
+      href: `/dashboard/events/${eventId}/prestataires`,
+      icon: Users,
+      isActive: pathname.includes(`/dashboard/events/${eventId}/prestataires`),
+    },
+    {
+      id: "checklist",
+      label: "Checklist",
+      href: `/dashboard/events/${eventId}/checklist`,
+      icon: CheckSquare,
+      isActive: pathname.includes(`/dashboard/events/${eventId}/checklist`),
+    },
+  ];
+
   return (
-    <nav
-      aria-label="Fil d'Ariane et navigation"
-      className={`flex items-center justify-between gap-3 text-xs sm:text-sm font-medium py-2 px-1 mb-4 sm:mb-6 flex-wrap select-none ${className}`}
-    >
-      {/* Fil d'Ariane */}
-      <ol className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-gray-500">
-        <li className="flex items-center gap-1.5">
-          <Link
-            href="/dashboard"
-            className="hover:text-black transition-colors flex items-center gap-1 text-[#8f6f33] font-semibold"
-            title="Revenir au tableau de bord principal"
-          >
-            <Home size={13} className="shrink-0" />
-            <span className="hidden sm:inline">Tableau de bord</span>
-            <span className="sm:hidden">Accueil</span>
-          </Link>
-        </li>
-
-        <li aria-hidden="true" className="text-gray-300">
-          <ChevronRight size={13} />
-        </li>
-
-        <li className="flex items-center gap-1.5 min-w-0">
-          {currentPage ? (
-            <Link
-              href={`/dashboard/events/${eventId}`}
-              className="hover:text-black transition-colors text-gray-600 hover:underline truncate max-w-[140px] sm:max-w-xs font-serif"
-              title={`Aperçu de ${eventName}`}
-            >
-              {eventName}
-            </Link>
-          ) : (
-            <span className="text-gray-900 font-semibold truncate max-w-[200px] sm:max-w-md font-serif">
-              {eventName}
-            </span>
-          )}
-        </li>
-
-        {parentPage && (
-          <>
-            <li aria-hidden="true" className="text-gray-300">
-              <ChevronRight size={13} />
-            </li>
-            <li>
-              <Link
-                href={parentPage.href}
-                className="hover:text-black transition-colors text-gray-600 hover:underline"
-              >
-                {parentPage.label}
-              </Link>
-            </li>
-          </>
-        )}
-
-        {currentPage && (
-          <>
-            <li aria-hidden="true" className="text-gray-300">
-              <ChevronRight size={13} />
-            </li>
-            <li className="text-black font-bold">
-              <span>{currentPage}</span>
-            </li>
-          </>
-        )}
-      </ol>
-
-      {/* Bouton d'échappement express (Retour) */}
-      <Link
-        href={backHref}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-black border border-gray-200/80 transition-all active:scale-95 shrink-0 ml-auto cursor-pointer"
-        title="Revenir en arrière (Raccourci clavier : Échap)"
+    <div className={`mb-4 sm:mb-6 select-none ${className}`}>
+      <nav
+        aria-label="Fil d'Ariane et navigation"
+        className="flex items-center justify-between gap-3 text-xs sm:text-sm font-medium py-2 px-1 flex-wrap"
       >
-        <ArrowLeft size={13} className="text-[#8f6f33] shrink-0" />
-        <span>{backLabel}</span>
-        <kbd className="hidden md:inline-block px-1.5 py-0.2 bg-white rounded border border-gray-200 text-[10px] text-gray-400 font-mono">
-          Échap
-        </kbd>
-      </Link>
-    </nav>
+        {/* Fil d'Ariane */}
+        <ol className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-gray-500">
+          <li className="flex items-center gap-1.5">
+            <Link
+              href="/dashboard"
+              className="hover:text-black transition-colors flex items-center gap-1 text-[#8f6f33] font-semibold"
+              title="Revenir au tableau de bord principal"
+            >
+              <Home size={13} className="shrink-0" />
+              <span className="hidden sm:inline">Tableau de bord</span>
+              <span className="sm:hidden">Accueil</span>
+            </Link>
+          </li>
+
+          <li aria-hidden="true" className="text-gray-300">
+            <ChevronRight size={13} />
+          </li>
+
+          <li className="flex items-center gap-1.5 min-w-0">
+            {currentPage ? (
+              <Link
+                href={`/dashboard/events/${eventId}`}
+                className="hover:text-black transition-colors text-gray-600 hover:underline truncate max-w-[140px] sm:max-w-xs font-serif"
+                title={`Aperçu de ${eventName}`}
+              >
+                {eventName}
+              </Link>
+            ) : (
+              <span className="text-gray-900 font-semibold truncate max-w-[200px] sm:max-w-md font-serif">
+                {eventName}
+              </span>
+            )}
+          </li>
+
+          {parentPage && (
+            <>
+              <li aria-hidden="true" className="text-gray-300">
+                <ChevronRight size={13} />
+              </li>
+              <li>
+                <Link
+                  href={parentPage.href}
+                  className="hover:text-black transition-colors text-gray-600 hover:underline"
+                >
+                  {parentPage.label}
+                </Link>
+              </li>
+            </>
+          )}
+
+          {currentPage && (
+            <>
+              <li aria-hidden="true" className="text-gray-300">
+                <ChevronRight size={13} />
+              </li>
+              <li className="text-black font-bold">
+                <span>{currentPage}</span>
+              </li>
+            </>
+          )}
+        </ol>
+
+        {/* Bouton d'échappement express (Retour) */}
+        <Link
+          href={backHref}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-black border border-gray-200/80 transition-all active:scale-95 shrink-0 ml-auto cursor-pointer"
+          title="Revenir en arrière (Raccourci clavier : Échap)"
+        >
+          <ArrowLeft size={13} className="text-[#8f6f33] shrink-0" />
+          <span>{backLabel}</span>
+          <kbd className="hidden md:inline-block px-1.5 py-0.2 bg-white rounded border border-gray-200 text-[10px] text-gray-400 font-mono">
+            Échap
+          </kbd>
+        </Link>
+      </nav>
+
+      {/* Barre d'onglets de l'événement (Navigation rapide responsive sur mobile et écran large) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pt-2 pb-1 border-t border-gray-200/60 mt-1">
+        {eventTabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <Link
+              key={tab.id}
+              href={tab.href}
+              className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                tab.isActive
+                  ? "bg-[#241b13] text-[#d9c08c] shadow-xs ring-1 ring-[#b8924a]/30"
+                  : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200/80"
+              }`}
+            >
+              <Icon size={13} className={tab.isActive ? "text-[#d9c08c]" : "text-gray-400"} />
+              <span>{tab.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }

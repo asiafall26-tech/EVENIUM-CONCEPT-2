@@ -109,7 +109,7 @@ export function notifyMessageReceipt(params: {
   preview: string;
 }) {
   if (typeof window === "undefined") return;
-  const isReceiverProvider = params.receiverId.startsWith("prov") || params.receiverId.includes("prestataire");
+  const isReceiverProvider = params.senderRole === "client" || params.receiverId.startsWith("prov") || params.receiverId.includes("prestataire");
   const link = isReceiverProvider
     ? `/prestataire/messages?contactId=${encodeURIComponent(params.senderId)}&contactName=${encodeURIComponent(params.senderName)}`
     : `/dashboard/messages?prestataire=${encodeURIComponent(params.senderId)}&name=${encodeURIComponent(params.senderName)}`;

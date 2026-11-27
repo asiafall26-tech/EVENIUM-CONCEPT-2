@@ -95,7 +95,7 @@ export default function PrestatairePublicitePage() {
   const [allCampaigns, setAllCampaigns] = useState<ProviderCampaign[]>([]);
   const [activeMainTab, setActiveMainTab] = useState<"publications" | "studio">("publications");
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
-  const [followersCount, setFollowersCount] = useState<number>(142);
+  const [followersCount, setFollowersCount] = useState<number>(0);
   const [currentProviderId, setCurrentProviderId] = useState<string>("prov-me");
   const [providerName, setProviderName] = useState<string>("Mon Entreprise");
   const [providerAvatar, setProviderAvatar] = useState<string | null>(null);
@@ -905,7 +905,7 @@ export default function PrestatairePublicitePage() {
                           <div className="flex items-center gap-4">
                             <span className="flex items-center gap-1 text-xs font-bold text-rose-600">
                               <Heart size={18} className="fill-rose-500 text-rose-500" />
-                              <span>{pub.likes_count || 12}</span>
+                              <span>{pub.likes_count || 0}</span>
                             </span>
                             <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
                               <MessageSquare size={16} />
