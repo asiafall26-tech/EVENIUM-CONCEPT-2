@@ -263,7 +263,7 @@ svg{display:block}
 #musicBtn{right:max(16px,calc(50% - 234px));bottom:calc(env(safe-area-inset-bottom) + 18px);display:none}
 #musicBtn.playing:after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--bdx);animation:ring 1.8s infinite}
 @keyframes ring{from{opacity:.7;transform:scale(.9)}to{opacity:0;transform:scale(1.3)}}
-#editBtn{left:max(16px,calc(50% - 234px));top:calc(env(safe-area-inset-top) + 14px);height:42px;width:auto;padding:0 18px;border-radius:30px;font:600 12px var(--sans);letter-spacing:.12em;display:none;background:#fff;color:var(--bdx);border:1.5px solid var(--bdx);z-index:60}
+#editBtn, .fab#editBtn, .ebar, #ebar, #editor, .editor{display:none!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important}
 #editor{position:fixed;inset:0;z-index:80;display:flex;justify-content:center;background:rgba(40,20,25,.4);opacity:0;pointer-events:none;transition:opacity .3s}
 #editor.open{opacity:1;pointer-events:auto}
 #edPanel{width:100%;max-width:500px;height:100%;background:var(--ivory);display:flex;flex-direction:column;transform:translateY(30px);transition:transform .35s}

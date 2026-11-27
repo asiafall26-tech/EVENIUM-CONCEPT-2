@@ -97,7 +97,7 @@ export async function getBadgeCounts(rsvpSeenAt: Record<string, string> = {}, pr
         }
       }
     }
-  } catch {}
+  } catch { }
 
   result.unreadMessages = Math.max(dbUnread, diskUnread);
 
@@ -170,7 +170,7 @@ export async function markConversationRead(otherUserId: string) {
       .eq("receiver_id", userId)
       .eq("sender_id", otherUserId)
       .eq("is_read", false);
-  } catch {}
+  } catch { }
 
   return { success: true };
 }

@@ -198,7 +198,12 @@ export async function fetchCustomModels(
     let q = supabase.from(CUSTOM_MODELS_TABLE).select(selectCols).order("created_at", { ascending: false });
     if (opts.publishedOnly) q = q.eq("status", "published");
     const { data, error } = await q;
-    const dbList = (data && !error ? (data as any[]) : []).map((r) => ({
+    if (error) {
+      console.warn("fetchCustomModels db error:", error);
+      return BUILTIN_CUSTOM_MODELS.filter((m) => !opts.publishedOnly || m.status === "published");
+    }
+
+    const dbList = ((data as any[]) || []).map((r) => ({
       slug: r.slug,
       name: r.name,
       entry: r.entry,
@@ -214,23 +219,14 @@ export async function fetchCustomModels(
       draft_content: r.draft_content ?? null,
     })) as CustomModelRow[];
 
-    // Fusionner avec les modèles intégrés pour garantir leur présence
-    const seenSlugs = new Set(dbList.map((m) => m.slug));
-    const merged = [...dbList];
-    for (const b of BUILTIN_CUSTOM_MODELS) {
-      if (!seenSlugs.has(b.slug)) {
-        if (!opts.publishedOnly || b.status === "published") {
-          merged.push(b);
-          seenSlugs.add(b.slug);
-        }
-      }
-    }
+    // La base de données est la source de vérité absolue. Les modèles supprimés par l'admin ne sont JAMAIS réinjectés.
+    const resultList = dbList;
 
     if (!opts.full) {
-      customModelsCache[cacheKey] = merged;
+      customModelsCache[cacheKey] = resultList;
       customModelsCache.timestamp = now;
     }
-    return merged;
+    return resultList;
   } catch (err) {
     console.warn("fetchCustomModels error:", err);
     return BUILTIN_CUSTOM_MODELS.filter((m) => !opts.publishedOnly || m.status === "published");

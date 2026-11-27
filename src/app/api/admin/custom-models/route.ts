@@ -76,6 +76,16 @@ export async function DELETE(req: NextRequest) {
     if (files.length) await admin().storage.from(BUCKET).remove(files);
     const { error } = await admin().from(CUSTOM_MODELS_TABLE).delete().eq("slug", slug);
     if (error) throw new Error(error.message);
+
+    // Enregistrer un tombstone d'exclusion définitive pour neutraliser tout retour intempestif
+    try {
+      await admin().from("invitation_models_settings").upsert([
+        { model_id: `custom:${slug}`, content: { model_deleted: true }, is_hidden: true, updated_at: new Date().toISOString() },
+        { model_id: slug, content: { model_deleted: true }, is_hidden: true, updated_at: new Date().toISOString() },
+        { model_id: `invit-${slug}`, content: { model_deleted: true }, is_hidden: true, updated_at: new Date().toISOString() }
+      ], { onConflict: "model_id" });
+    } catch { }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Erreur serveur." }, { status: 500 });

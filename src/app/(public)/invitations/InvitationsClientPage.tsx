@@ -164,8 +164,17 @@ export default function InvitationsClientPage({
 
   // Modèles disponibles sur le site : les modèles retirés par l'admin sont rigoureusement exclus
   const siteModels = useMemo(() => {
+    const isExcluded = (idOrSlug: string) => {
+      const slug = idOrSlug.replace(/^(custom:|invit-)/, "");
+      const cid = customModelId(slug);
+      const invId = `invit-${slug}`;
+      const r = rows[idOrSlug] || rows[cid] || rows[slug] || rows[invId];
+      if (!r) return false;
+      return r.is_hidden || isModelDeleted(r);
+    };
+
     const builtIn = mockInvitationModels
-      .filter((m) => !rows[m.id]?.is_hidden && !isModelDeleted(rows[m.id]))
+      .filter((m) => !isExcluded(m.id))
       .map((m) => {
         const c = classificationOf(rows[m.id], defaultClassification(m.id));
         return {
@@ -179,7 +188,7 @@ export default function InvitationsClientPage({
       });
 
     const imported = customs
-      .filter((m) => m.status === "published" && !rows[customModelId(m.slug)]?.is_hidden && !rows[m.slug]?.is_hidden)
+      .filter((m) => m.status === "published" && !isExcluded(m.slug))
       .map((m) => {
         const mockMatch = mockInvitationModels.find((b) => b.id === `invit-${m.slug}` || b.liveUrl?.includes(m.slug));
         return {

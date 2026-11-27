@@ -33,10 +33,10 @@ const TYPES: Record<string, string> = {
   txt: "text/plain; charset=utf-8",
 };
 
-/** Style préventif masquant immédiatement les boutons d'édition internes (crayons, fab, modals locaux) */
-const HIDE_INTERNAL_EDITS = `<style id="ev-hide-pencils">#fabEdit,#editFab,#editBtn,#edit-toggle,#editRsvp,.edit-fab,.fab-edit,.btn-edit,.edit-btn,[aria-label*="Personnaliser"],[aria-label*="Modifier"],[aria-label*="Éditer"],[title*="Personnaliser"],[title*="Modifier"],#panel,#pf,#editor,.editor[role="dialog"]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;width:0!important;height:0!important;position:absolute!important;left:-9999px!important;}</style>`;
+/** Style préventif masquant immédiatement les boutons d'édition internes (crayons, fab, modals locaux) sur tous les modèles actuels et futurs */
+const HIDE_INTERNAL_EDITS = `<style id="ev-hide-pencils">#fab,#fabEdit,#editFab,#editBtn,#edit-toggle,#editRsvp,#floating-edit,.fab,button.fab,a.fab,.edit-fab,.fab-edit,.btn-edit,.edit-btn,.floating-edit-btn,#ebar,.ebar,div.ebar,[aria-label*="Personnaliser"],[aria-label*="Modifier"],[aria-label*="Éditer"],[title*="Personnaliser"],[title*="Modifier"],#panel,#pf,#editor,.editor,.editor[role="dialog"],aside.editor,[id*="edit-modal"]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;width:0!important;height:0!important;position:absolute!important;left:-9999px!important;}</style>`;
 
-/** Script qui rend la page éditable (valeurs reçues du studio, de la création ou de l'invitation) */
+/** Script qui rend la page éditable et masque définitivement tous les crayons */
 const RUNTIME = `${HIDE_INTERNAL_EDITS}<script src="/ev-runtime.js" defer></script>`;
 
 /**
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
           localFile = { buffer: fs.readFileSync(p), size: stat.size };
           break;
         }
-      } catch {}
+      } catch { }
     }
   }
 
@@ -188,18 +188,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       // Continuer si la base n'est pas joignable
     }
 
-    let injection = "";
-    if (isSelfContained) {
-      if (shouldHideEdit) {
-        injection = `<style id="ev-guest-hide">#fab, #ebar, .fab, .ebar, #editor, .editor, button.fab, div.ebar, aside.editor, .btn-validate-full, #ev-exit-btn, .evenium-cta, #ev-end-cta { display: none !important; visibility: hidden !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }</style>`;
-      } else if (req.nextUrl.searchParams.get("hideEbar") === "1" || req.nextUrl.searchParams.get("preview") === "1") {
-        injection = `<style id="ev-embedded-ebar">#ebar, .ebar, div.ebar { display: none !important; visibility: hidden !important; pointer-events: none !important; height: 0 !important; min-height: 0 !important; padding: 0 !important; } body.editing { padding-top: 0 !important; } .editor, aside.editor { top: 0 !important; }</style>`;
-      }
-    } else {
-      injection = shouldHideEdit
-        ? `${HIDE_INTERNAL_EDITS}<script src="/ev-runtime.js" defer></script>`
-        : `<script src="/ev-runtime.js" defer></script>`;
+    let injection = HIDE_INTERNAL_EDITS;
+    if (shouldHideEdit || req.nextUrl.searchParams.get("hideCta") === "1" || req.nextUrl.searchParams.get("demo") === "1") {
+      injection += `<style id="ev-guest-hide">.btn-validate-full, #ev-exit-btn, .evenium-cta, #ev-end-cta { display: none !important; visibility: hidden !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; }</style>`;
     }
+    injection += `<script src="/ev-runtime.js" defer></script>`;
 
     if (injection) {
       html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, `${injection}</body>`) : html + injection;

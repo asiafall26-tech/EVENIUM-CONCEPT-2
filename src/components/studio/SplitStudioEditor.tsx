@@ -8,7 +8,9 @@ import {
   SlidersHorizontal,
   MessageSquare,
   Sparkles,
-  Smartphone
+  Smartphone,
+  Save,
+  Eye
 } from "lucide-react";
 import {
   getModelStudioConfig,
@@ -44,7 +46,7 @@ export default function SplitStudioEditor({
   onSave,
   onClose,
   onFinalize,
-  finalizeLabel = "TERMINER",
+  finalizeLabel = "Enregistrer les modifications",
   customModel,
   eventId,
   eventName,
@@ -260,6 +262,27 @@ export default function SplitStudioEditor({
     handleFieldChange("__saved_messages", updated);
   };
 
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+  // Enregistrer explicitement les modifications (sauvegarde manuelle immédiate)
+  const handleExplicitSave = async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    setSaveStatus("saving");
+    try {
+      if (onSave) {
+        await onSave(content);
+      }
+      setSaveStatus("saved");
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 3000);
+    } catch (e) {
+      console.error("Erreur à l'enregistrement manuel:", e);
+      setSaveStatus("error");
+    }
+  };
+
   // Terminer / valider
   const handleFinish = async () => {
     if (saveTimeoutRef.current) {
@@ -364,12 +387,28 @@ export default function SplitStudioEditor({
           </div>
         </div>
 
-        {/* Côté droit : Bouton doré TERMINER */}
+        {/* Côté droit : Bouton Enregistrer & Bouton doré d'action */}
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={handleExplicitSave}
+            title="Enregistrer les modifications"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer"
+          >
+            {saveStatus === "saving" ? (
+              <Loader2 size={13} className="animate-spin text-amber-300" />
+            ) : showSaveSuccess ? (
+              <Check size={13} className="text-emerald-400" />
+            ) : (
+              <Save size={13} className="text-[#D4AF37]" />
+            )}
+            <span>{showSaveSuccess ? "Enregistré !" : "Enregistrer"}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleFinish}
-            className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#EBD6B5] hover:bg-[#F3E2C7] active:scale-95 text-[#3C0D16] font-bold text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer shrink-0"
+            className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-[#3C0D16] font-extrabold text-xs uppercase tracking-wider hover:brightness-105 active:scale-95 transition-all shadow-md cursor-pointer shrink-0"
           >
             {finalizeLabel}
           </button>
@@ -454,6 +493,40 @@ export default function SplitStudioEditor({
               </div>
             )}
           </div>
+
+          {/* Barre d'action inférieure fixe du panneau d'édition : Enregistrer les modifications */}
+          <div className="p-3 bg-[#FAF7F2] border-t border-[#E8DFD5] flex items-center justify-between gap-2.5 shrink-0 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setMobileTab("preview")}
+              className="min-[900px]:hidden px-3.5 py-2.5 rounded-xl border border-[#D4AF37]/40 bg-white text-neutral-800 text-xs font-semibold hover:bg-neutral-50 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <Eye size={14} className="text-[#8f6f33]" />
+              <span>Voir aperçu</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExplicitSave}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#b8924a] to-[#d4af37] text-black font-extrabold text-xs uppercase tracking-wider hover:brightness-105 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {saveStatus === "saving" ? (
+                <>
+                  <Loader2 size={14} className="animate-spin text-black" />
+                  <span>Enregistrement…</span>
+                </>
+              ) : showSaveSuccess ? (
+                <>
+                  <Check size={14} className="text-black" />
+                  <span>Modifications enregistrées !</span>
+                </>
+              ) : (
+                <>
+                  <Save size={14} className="text-black" />
+                  <span>Enregistrer les modifications</span>
+                </>
+              )}
+            </button>
+          </div>
         </aside>
 
         {/* APERÇU EN DIRECT (Plein écran sur mobile quand mobileTab === 'preview', ou volet droit sur desktop ≥ 900 px) */}
@@ -477,6 +550,26 @@ export default function SplitStudioEditor({
               className="w-full h-full border-0 bg-[#13090C]"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
+          </div>
+
+          {/* Raccourci tactile flottant sur mobile en mode aperçu : Revenir à Modifier ou Enregistrer */}
+          <div className="min-[900px]:hidden absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-[#13090C]/90 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-xl">
+            <button
+              type="button"
+              onClick={() => setMobileTab("edit")}
+              className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+            >
+              <SlidersHorizontal size={13} />
+              <span>Modifier</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExplicitSave}
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F3E5AB] text-black text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+            >
+              {showSaveSuccess ? <Check size={13} /> : <Save size={13} />}
+              <span>{showSaveSuccess ? "Enregistré" : "Enregistrer"}</span>
+            </button>
           </div>
         </main>
       </div>

@@ -85,7 +85,7 @@ import {
   type CustomModelRow,
   type CustomValues,
 } from '@/lib/customModels';
-import { classificationOf, fetchModelDefaults, hiddenModelIds, invalidateModelDefaultsCache, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
+import { classificationOf, fetchModelDefaults, hiddenModelIds, invalidateModelDefaultsCache, isModelDeleted, modelCoverOf, modelNameOf, type InvitationKind, type ModelDefaultRow } from '@/lib/modelDefaults';
 import { CartesStudio, type CartesStudioValue } from '@/components/cartes/CartesStudio';
 import { CardStudioModal } from '@/components/cartes/CardStudioModal';
 import {
@@ -326,10 +326,17 @@ function CreateExpressStudioContent({
     [customModels]
   );
   const siteModels = useMemo(() => {
-    const hidden = hiddenModelIds(publishedModels);
+    const isExcluded = (idOrSlug: string) => {
+      const slug = idOrSlug.replace(/^(custom:|invit-)/, "");
+      const cid = customModelId(slug);
+      const invId = `invit-${slug}`;
+      const r = publishedModels[idOrSlug] || publishedModels[cid] || publishedModels[slug] || publishedModels[invId];
+      if (!r) return false;
+      return r.is_hidden || isModelDeleted(r);
+    };
     return [
-      ...classifiedModels.filter((m) => !hidden.has(m.id)),
-      ...customItems.filter((m) => !hidden.has(m.id)),
+      ...classifiedModels.filter((m) => !isExcluded(m.id)),
+      ...customItems.filter((m) => !isExcluded(m.id)),
     ];
   }, [classifiedModels, publishedModels, customItems]);
   const customOf = (id: string) => {
@@ -552,7 +559,12 @@ function CreateExpressStudioContent({
 
   // Modèle retiré du site alors qu'il était ouvert par un lien : retour à la galerie
   useEffect(() => {
-    if (hasChosenModel && hiddenModelIds(publishedModels).has(selectedModelId)) {
+    if (!hasChosenModel || !selectedModelId) return;
+    const slug = selectedModelId.replace(/^(custom:|invit-)/, "");
+    const cid = customModelId(slug);
+    const invId = `invit-${slug}`;
+    const r = publishedModels[selectedModelId] || publishedModels[cid] || publishedModels[slug] || publishedModels[invId];
+    if (r && (r.is_hidden || isModelDeleted(r))) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasChosenModel(false);
     }
@@ -1225,6 +1237,30 @@ function CreateExpressStudioContent({
     }
   };
 
+  const currentModelContent = useMemo(() => {
+    if (selectedModelId === VELOURS_MODEL_ID) return veloursContent;
+    if (selectedModelId === SCEAU_MODEL_ID) return sceauContent;
+    if (selectedModelId === IVOIRE_MODEL_ID) return ivoireContent;
+    if (selectedModelId === ROSE_OR_MODEL_ID) return roseOrContent;
+    if (selectedModelId === ANNIVERSAIRE_MODEL_ID) return anniversaireContent;
+    const m = customOf(selectedModelId);
+    if (m) return customContentOf(m);
+    return {};
+  }, [selectedModelId, veloursContent, sceauContent, ivoireContent, roseOrContent, anniversaireContent, customContents]);
+
+  const handleUpdateModelContent = (updated: Record<string, any>) => {
+    if (!updated) return;
+    if (selectedModelId === VELOURS_MODEL_ID) setVeloursContent((prev: any) => ({ ...prev, ...updated }));
+    else if (selectedModelId === SCEAU_MODEL_ID) setSceauContent((prev: any) => ({ ...prev, ...updated }));
+    else if (selectedModelId === IVOIRE_MODEL_ID) setIvoireContent((prev: any) => ({ ...prev, ...updated }));
+    else if (selectedModelId === ROSE_OR_MODEL_ID) setRoseOrContent((prev: any) => ({ ...prev, ...updated }));
+    else if (selectedModelId === ANNIVERSAIRE_MODEL_ID) setAnniversaireContent((prev: any) => ({ ...prev, ...updated }));
+    else {
+      const m = customOf(selectedModelId);
+      if (m) setCustomContents((all) => ({ ...all, [customModelId(m.slug)]: updated }));
+    }
+  };
+
   return (
     <div className="w-full relative min-h-screen">
 
@@ -1314,16 +1350,16 @@ function CreateExpressStudioContent({
                           try { sessionStorage.setItem('evenium:last_category', cat.id); } catch { }
                         }}
                         className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${isSelected
-                            ? "bg-neutral-900 text-white font-semibold shadow-xs"
-                            : "bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200/80"
+                          ? "bg-neutral-900 text-white font-semibold shadow-xs"
+                          : "bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200/80"
                           }`}
                       >
                         <span>{cat.icon}</span>
                         <span>{cat.label}</span>
                         <span
                           className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isSelected
-                              ? "bg-white/20 text-white"
-                              : "bg-neutral-100 text-neutral-500"
+                            ? "bg-white/20 text-white"
+                            : "bg-neutral-100 text-neutral-500"
                             }`}
                         >
                           {cat.count}
@@ -1430,92 +1466,19 @@ function CreateExpressStudioContent({
           </div>
         </div>
       ) : (
-        /* ─────────────── 2. TEST & PERSONNALISATION IMMERSIVE AVEC CRAYON (PUIS ACHAT) ─────────────── */
-        <div className="fixed inset-0 z-50 bg-[#0e0a08] flex flex-col overflow-hidden font-sans select-none">
-          {/* Barre supérieure unique & ergonomique : aucun doublon sur mobile, prise en compte stricte de l'encoche */}
-          <header
-            className="w-full bg-[#13090C] border-b border-black/50 px-2.5 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none shadow-md"
-            style={{
-              paddingTop: "max(env(safe-area-inset-top, 0px), 32px)",
-              paddingBottom: "10px",
-              minHeight: "calc(4.25rem + env(safe-area-inset-top, 0px))",
-            }}
-          >
-            {/* Côté gauche : Bouton retour vers la galerie des modèles (Échappement direct) */}
-            <button
-              type="button"
-              onClick={handleReturnToGallery}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer shrink-0"
-              title="Changer de modèle (Raccourci : Échap)"
-            >
-              <ArrowLeft size={14} className="text-[#f0d999] shrink-0" />
-              <span className="hidden sm:inline">Changer de modèle</span>
-              <span className="sm:hidden text-[11px] font-bold">← Modèles</span>
-            </button>
-
-            {/* Centre : Sélecteur segmenté MODIFIER / APERÇU sur mobile, Titre & Crayon sur desktop */}
-            <div className="flex items-center justify-center min-w-0 px-1">
-              {/* Sélecteur mobile exclusif (zéro doublon avec l'iframe) */}
-              <div className="flex md:hidden items-center bg-[#251219] p-1 rounded-full border border-white/10 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => handleSetMobileEditorTab('edit')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${mobileEditorTab === 'edit'
-                      ? "bg-white text-[#13090C] font-bold shadow-xs"
-                      : "text-white/60 hover:text-white"
-                    }`}
-                >
-                  MODIFIER
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetMobileEditorTab('preview')}
-                  className={`px-3 py-1 rounded-full text-[10.5px] font-semibold tracking-wider uppercase transition-all cursor-pointer ${mobileEditorTab === 'preview'
-                      ? "bg-white text-[#13090C] font-bold shadow-xs"
-                      : "text-white/60 hover:text-white"
-                    }`}
-                >
-                  APERÇU
-                </button>
-              </div>
-
-              {/* Titre & Indication Crayon sur grand écran */}
-              <div className="hidden md:flex items-center gap-2">
-                <span className="font-serif text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-xs text-center">
-                  {modelNameOf(publishedModels[selectedModelId], "Modèle d'invitation")}
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#EBD6B5] text-[10px] font-bold tracking-wider uppercase shrink-0">
-                  <Sparkles size={11} className="text-[#D4AF37]" /> Personnalisez avec le crayon ✏️
-                </span>
-              </div>
-            </div>
-
-            {/* Côté droit : Bouton Doré Unique d'Achat & Validation */}
-            <button
-              type="button"
-              onClick={handleFinalizeFromEditor}
-              className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black text-xs sm:text-sm font-extrabold shadow-lg shadow-[#D4AF37]/25 hover:brightness-105 active:scale-95 transition-all border border-[#D4AF37]/60 cursor-pointer shrink-0"
-            >
-              <Lock size={13} className="text-black shrink-0" />
-              <span className="hidden md:inline">Valider &amp; Obtenir mon lien ({currentActualPrice.toLocaleString('fr-FR')} FCFA)</span>
-              <span className="md:hidden text-[11px] font-black">Valider ({currentActualPrice.toLocaleString('fr-FR')} F)</span>
-            </button>
-          </header>
-
-          {/* Corps : Affichage plein écran immersif de l'invitation (Split view sur grand écran, navigation Modifier/Aperçu sur mobile) */}
-          <main className="flex-1 w-full h-full bg-[#0e0a08] relative flex items-center justify-center overflow-hidden p-0">
-            <div className="w-full h-full bg-black overflow-hidden flex flex-col relative">
-              {/* Iframe avec communication postMessage en temps réel */}
-              <iframe
-                ref={iframeRef}
-                src={previewIframeSrc}
-                title="Aperçu interactif du modèle Evenium"
-                className="w-full h-full border-0 bg-black block"
-                allow="autoplay; fullscreen"
-              />
-            </div>
-          </main>
-        </div>
+        /* ─────────────── 2. STUDIO D'ÉDITION ÉPURÉ (MODIFIER / APERÇU + ENREGISTRER) ─────────────── */
+        <SplitStudioEditor
+          modelId={selectedModelId}
+          customModel={customOf(selectedModelId)}
+          initialContent={currentModelContent}
+          onSave={handleUpdateModelContent}
+          onClose={handleReturnToGallery}
+          onFinalize={handleFinalizeFromEditor}
+          finalizeLabel={`Valider (${currentActualPrice.toLocaleString('fr-FR')} F)`}
+          eventName={customEventName || currentModel?.name || "Mon Événement"}
+          eventType={selectedEventCategory}
+          isStatic={isStaticCard}
+        />
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
